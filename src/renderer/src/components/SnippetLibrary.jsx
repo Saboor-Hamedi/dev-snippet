@@ -1,7 +1,7 @@
 // --- SnippetLibrary.jsx ---
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import SnippetCard from './SnippetCard'
-
+import ThemeComponent from './ThemeComponent'
 const STORAGE_KEY = 'codeSnippets'
 
 const SnippetLibrary = () => {
@@ -73,9 +73,9 @@ const SnippetLibrary = () => {
   }, [])
 
   // Request delete (triggers modal)
-  const handleRequestDelete = (id) => {
+  const handleRequestDelete = useCallback((id) => {
     setConfirmDeleteId(id)
-  }
+  }, [])
 
   // Confirm delete
   const handleConfirmDelete = () => {
@@ -113,6 +113,8 @@ const SnippetLibrary = () => {
             <p>Save and organize your code snippets</p>
           </div>
           <div className="header-right">
+            <ThemeComponent />
+
             <div className="header-search-container">
               <input
                 type="text"

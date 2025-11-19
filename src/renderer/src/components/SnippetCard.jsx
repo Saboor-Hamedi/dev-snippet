@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react'
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { useState, useRef, useEffect, memo } from 'react'
+import { PrismAsyncLight as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism'
 // ✅ Safe clipboard utility
 const copyToClipboard = async (text) => {
@@ -36,8 +36,6 @@ const copyToClipboard = async (text) => {
 
 const SnippetCard = ({ snippet, onRequestDelete }) => {
   const [copied, setCopied] = useState(false)
-  const codeRef = useRef(null)
-  // Optional: Highlight code on mount (if using Prism.js or similar)
   // Language mapping for syntax highlighter
   const languageMap = {
     javascript: 'javascript',
@@ -76,7 +74,7 @@ const SnippetCard = ({ snippet, onRequestDelete }) => {
         </div>
         <div className="card-actions">
           <button className={`copy-button ${copied ? 'copied' : ''}`} onClick={handleCopy}>
-            {copied ? '✓ Copied' : 'Copy'}
+            {copied ? 'Copied' : 'Copy'}
           </button>
           <button className="delete-button" onClick={handleDelete} title="Delete snippet">
             Delete
@@ -89,12 +87,8 @@ const SnippetCard = ({ snippet, onRequestDelete }) => {
         <SyntaxHighlighter
           language={languageMap[snippet.language] || 'text'}
           style={tomorrow}
-          customStyle={{
-            margin: 0,
-            borderRadius: '8px',
-            fontSize: '14px',
-            lineHeight: '1.4'
-          }}
+          // 3. OPTIONAL: Clean up props to avoid new object creation
+          customStyle={{ margin: 0, borderRadius: '8px', fontSize: '14px' }}
           showLineNumbers={true}
           wrapLongLines={true}
         >
@@ -117,4 +111,4 @@ const SnippetCard = ({ snippet, onRequestDelete }) => {
   )
 }
 
-export default SnippetCard
+export default memo(SnippetCard)
