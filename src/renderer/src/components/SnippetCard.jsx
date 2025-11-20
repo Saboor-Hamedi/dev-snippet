@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect, memo } from 'react'
-import { PrismAsyncLight as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism'
-// ✅ Safe clipboard utility
+import { useState, useCallback, memo, useEffect } from 'react'
+import SnippetViewModal from './SnippetViewModal'
+import useSyntaxHighlight from '../hook/useSyntaxHighlight'
+
 const copyToClipboard = async (text) => {
   // Try modern Clipboard API
   if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
@@ -36,18 +36,10 @@ const copyToClipboard = async (text) => {
 
 const SnippetCard = ({ snippet, onRequestDelete }) => {
   const [copied, setCopied] = useState(false)
-  // Language mapping for syntax highlighter
-  const languageMap = {
-    javascript: 'javascript',
-    python: 'python',
-    html: 'html',
-    css: 'css',
-    java: 'java',
-    cpp: 'cpp',
-    php: 'php',
-    ruby: 'ruby',
-    other: 'text'
-  }
+  const [isViewModalOpen, setisViewModalOpen] = useState(false)
+
+  const highlightedContent = useSyntaxHighlight(snippet.code, snippet.language)
+  const isCode = snippet.language !== 'text'
 
   // end
   const handleCopy = async () => {
@@ -60,54 +52,81 @@ const SnippetCard = ({ snippet, onRequestDelete }) => {
       console.error('Failed to copy snippet')
     }
   }
-
-  const handleDelete = () => {
+  // Delete snippets
+  const handleDelete = useCallback(() => {
     onRequestDelete(snippet.id)
-  }
+  }, [onRequestDelete, snippet.id])
+
+  // For model
+  const openModal = useCallback(() => {
+    setisViewModalOpen(true)
+  }, [])
+
+  const closeModal = useCallback(() => {
+    setisViewModalOpen(false)
+  }, [])
+
+  // Close View Model
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (e.key === 'Escape') {
+        setisViewModalOpen(false)
+      }
+    }
+    document.addEventListener('keydown', handleKeyPress)
+    return () => document.removeEventListener('keydown', handleKeyPress)
+  })
 
   return (
-    <div className="snippet-card">
-      <div className="card-header">
-        <div className="card-title-section">
-          <h3 className="card-title">{snippet.title}</h3>
-          <span className="card-language">{snippet.language}</span>
-        </div>
-        <div className="card-actions">
-          <button className={`copy-button ${copied ? 'copied' : ''}`} onClick={handleCopy}>
-            {copied ? 'Copied' : 'Copy'}
-          </button>
-          <button className="delete-button" onClick={handleDelete} title="Delete snippet">
-            Delete
-          </button>
-        </div>
-      </div>
+    <section>
+      {/* model */}
 
-      <div className="code-container">
-        {/* <pre className="code-block">{snippet.code}</pre> */}
-        <SyntaxHighlighter
-          language={languageMap[snippet.language] || 'text'}
-          style={tomorrow}
-          // 3. OPTIONAL: Clean up props to avoid new object creation
-          customStyle={{ margin: 0, borderRadius: '8px', fontSize: '14px' }}
-          showLineNumbers={true}
-          wrapLongLines={true}
-        >
-          {snippet.code}
-        </SyntaxHighlighter>
-      </div>
+      <SnippetViewModal
+        open={isViewModalOpen}
+        onClose={closeModal}
+        snippet={snippet}
+        onRequestDelete={onRequestDelete}
+      />
+      {/*  end model */}
+      <div className="snippet-card">
+        <div className="card-header">
+          <div className="card-title-section"></div>
+        </div>
 
-      <div className="card-footer">
-        <span className="timestamp">
-          {new Date(snippet.timestamp).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          })}
-        </span>
+        {/* <div className="code-container">
+          <pre className="code-block">{snippet.code}</pre>
+        </div> */}
+        <div className={`content-wrapper ${isCode ? 'code-wrapper' : 'text-wrapper'}`}>
+          {highlightedContent}
+        </div>
+
+        <div className="card-footer">
+          <span className="timestamp">
+            {new Date(snippet.timestamp).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })}
+          </span>
+          <div className="card-actions">
+            <button
+              className={`copy-button default-button ${copied ? 'copied' : ''}`}
+              onClick={handleCopy}
+            >
+              {copied ? 'Copied' : 'Copy'}
+            </button>
+            <button className="delete-button default-button" onClick={handleDelete}>
+              Delete
+            </button>
+            <button onClick={openModal} className="default-button">
+              View
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
   )
 }
 

@@ -1,0 +1,70 @@
+
+/* Base styles for code content */
+.code-content {
+  font-family: 'Fira Code', 'Monaco', 'Cascadia Code', monospace;
+  line-height: 1.5;
+}
+
+/* Syntax Highlighting Classes */
+.code-content .keyword {
+  color: #ff79c6; /* Pink */
+  font-weight: 600;
+}
+
+.code-content .string {
+  color: #f1fa8c; /* Yellow */
+}
+
+.code-content .comment {
+  color: #6272a4; /* Grey Blue */
+  font-style: italic;
+}
+
+.code-content .number {
+  color: #bd93f9; /* Purple */
+}
+
+.code-content .constant {
+  color: #ffb86c; /* Orange */
+}
+
+.code-content .function {
+  color: #50fa7b; /* Green */
+}
+
+/* HTML/XML Specific */
+.code-content .tag {
+  color: #ff79c6; /* Pink */
+}
+
+.code-content .attribute {
+  color: #50fa7b; /* Green */
+}
+
+/* CSS Specific */
+.code-content .selector {
+  color: #ff79c6; /* Pink */
+}
+
+.code-content .property {
+  color: #8be9fd; /* Cyan */
+}
+
+.code-content .unit {
+  color: #bd93f9; /* Purple */
+}
+
+.code-content .color {
+  color: #ffb86c; /* Orange */
+}
+
+/* Theme-specific overrides (optional, but good for consistency) */
+.midnight-syntax .code-content .keyword { color: #ff79c6; }
+.midnight-syntax .code-content .string { color: #f1fa8c; }
+.midnight-syntax .code-content .comment { color: #6272a4; }
+
+.solar-dawn .code-content .keyword { color: #d73672; }
+.solar-dawn .code-content .string { color: #8a6c0c; }
+.solar-dawn .code-content .comment { color: #8b949e; }
+.solar-dawn .code-content .tag { color: #22863a; }
+.solar-dawn .code-content .attribute { color: #6f42c1; }

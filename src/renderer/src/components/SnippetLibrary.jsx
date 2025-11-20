@@ -1,7 +1,7 @@
-// --- SnippetLibrary.jsx ---
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import SnippetCard from './SnippetCard'
 import ThemeComponent from './ThemeComponent'
+import DeleteModel from '../utils/DeleteModel'
 const STORAGE_KEY = 'codeSnippets'
 
 const SnippetLibrary = () => {
@@ -9,7 +9,11 @@ const SnippetLibrary = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [newSnippetCode, setNewSnippetCode] = useState('')
   const [language, setLanguage] = useState('javascript')
-  const [confirmDeleteId, setConfirmDeleteId] = useState(null) // for modal
+  const [deleteModal, setDeleteModal] = useState({
+    isOpen: false, 
+    snippetId: null,
+    snippetTitle: ''
+  })
   const saveTimeoutRef = useRef(null)
 
   // Load Data from LocalStorage
@@ -72,24 +76,47 @@ const SnippetLibrary = () => {
     }, 300)
   }, [])
 
+  // Toast Notification
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (e.key === 'Escape') {
+        if (deleteModal.isOpen) {
+          setDeleteModal({
+            isOpen: false,
+            snippetId: null,
+            snippetTitle: ''
+          })
+        }
+       
+      }
+    }
+    
+    document.addEventListener('keydown', handleKeyPress)
+    return () => document.removeEventListener('keydown', handleKeyPress)
+  }, [deleteModal.isOpen]) //  modal states as dependencies
+
   // Request delete (triggers modal)
   const handleRequestDelete = useCallback((id) => {
-    setConfirmDeleteId(id)
-  }, [])
+      const snippet = snippets.find((s) => s.id === id)
+      setDeleteModal({
+        isOpen: true,
+        snippetId: id,
+        snippetTitle: snippet ? snippet.title : 'Snippet'
+      })
+  }, [snippets])
 
   // Confirm delete
   const handleConfirmDelete = () => {
-    if (confirmDeleteId !== null) {
-      const updatedSnippets = snippets.filter((snippet) => snippet.id !== confirmDeleteId)
+    if (deleteModal.snippetId) {
+      const updatedSnippets = snippets.filter((snippet) => snippet.id !== deleteModal.snippetId)
       setSnippets(updatedSnippets)
       saveSnippetsToStorage(updatedSnippets)
     }
-    setConfirmDeleteId(null)
-  }
-
-  // Cancel delete
-  const handleCancelDelete = () => {
-    setConfirmDeleteId(null)
+    setDeleteModal({
+      isOpen: false,
+      snippetId: null,
+      snippetTitle: ''
+    })
   }
 
   // Filter Snippets
@@ -109,7 +136,7 @@ const SnippetLibrary = () => {
       <div className="app-header">
         <div className="header-content">
           <div className="header-left">
-            <h1>💎 Code Vault</h1>
+            <h1>Quick Snippets</h1>
             <p>Save and organize your code snippets</p>
           </div>
           <div className="header-right">
@@ -204,22 +231,12 @@ const SnippetLibrary = () => {
       </div>
 
       {/* ✅ Delete Confirmation Modal */}
-      {confirmDeleteId !== null && (
-        <div className="modal-overlay" onClick={handleCancelDelete}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3>⚠️ Confirm Deletion</h3>
-            <p>Are you sure you want to delete this snippet?</p>
-            <div className="modal-buttons">
-              <button className="modal-cancel" onClick={handleCancelDelete}>
-                Cancel
-              </button>
-              <button className="modal-confirm" onClick={handleConfirmDelete}>
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteModel
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, snippetId: null, snippetTitle: '' })}
+        onConfirm={handleConfirmDelete}
+        snippetTitle={deleteModal.snippetTitle}
+      />
     </div>
   )
 }
