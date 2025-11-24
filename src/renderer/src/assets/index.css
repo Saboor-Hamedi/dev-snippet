@@ -269,3 +269,92 @@ body {
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
+
+/* Syntax Highlighting - Enhanced */
+.code-content {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', monospace;
+  font-size: 0.875rem;
+  line-height: 1.75;
+  color: #e2e8f0;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+.text-content {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.75;
+  padding: 1rem;
+  color: #e2e8f0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Syntax highlighting token colors */
+.code-content .comment {
+  color: #6b7280;
+  font-style: italic;
+  opacity: 0.8;
+}
+
+.code-content .string {
+  color: #6ee7b7;
+  font-weight: 500;
+}
+
+.code-content .keyword {
+  color: #c084fc;
+  font-weight: 600;
+}
+
+.code-content .constant {
+  color: #fbbf24;
+  font-weight: 500;
+}
+
+.code-content .number {
+  color: #60a5fa;
+  font-weight: 500;
+}
+
+.code-content .tag {
+  color: #f472b6;
+  font-weight: 500;
+}
+
+.code-content .attribute {
+  color: #a78bfa;
+}
+
+.code-content .selector {
+  color: #fbbf24;
+  font-weight: 500;
+}
+
+.code-content .property {
+  color: #60a5fa;
+}
+
+.code-content .color {
+  color: #6ee7b7;
+}
+
+.code-content .unit {
+  color: #fbbf24;
+}
+
+/* Code block styling */
+pre {
+  margin: 0;
+  padding: 0;
+  overflow-x: auto;
+}
+
+code {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', monospace;
+  font-size: 0.875rem;
+  line-height: 1.75;
+}
+
+/* Snippet Card Styles */
+

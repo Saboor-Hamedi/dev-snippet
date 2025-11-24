@@ -25,9 +25,11 @@
     "@headlessui/react": "^2.2.9",
     "@mui/material": "^7.3.5",
     "better-sqlite3": "^12.4.6",
+    "lucide-react": "^0.554.0",
     "prop-types": "^15.8.1",
     "react-modal": "^3.16.3",
-    "react-syntax-highlighter": "^16.1.0"
+    "react-syntax-highlighter": "^16.1.0",
+    "sugar-high": "^0.9.5"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config": "^2.1.0",

@@ -164,19 +164,7 @@
 }
 
 /* === Snippet Card === */
-.snippet-card {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--card-shadow);
-    overflow: hidden;
-    transition: transform 0.2s, box-shadow 0.2s;
-}
 
-.snippet-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-}
 
 .card-header {
     padding: 1rem 1.25rem 0.25rem;

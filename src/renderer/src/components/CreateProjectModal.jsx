@@ -9,7 +9,8 @@ const CreateProjectModal = ({ isOpen, onClose, onSave }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    onSave({ title, description, language })
+    // Include description as code for now, or empty string
+    onSave({ title, code: description || '', language })
     setTitle('')
     setDescription('')
     setLanguage('javascript')
@@ -17,7 +18,7 @@ const CreateProjectModal = ({ isOpen, onClose, onSave }) => {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm ">
       <div className="bg-slate-800 border border-slate-700 rounded-xl w-full max-w-md p-6 shadow-2xl animate-in fade-in zoom-in duration-200">
         <h2 className="text-xl font-bold text-white mb-4">Create New Project</h2>
         <form onSubmit={handleSubmit} className="space-y-4">

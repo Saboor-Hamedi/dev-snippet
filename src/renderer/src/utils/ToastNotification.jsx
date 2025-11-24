@@ -9,12 +9,12 @@ export const useToast = () => {
     setTimeout(() => setToast(null), 3000)
   }
 
-  return [toast, showToast]
+  return { toast, showToast }
 }
 
 // Example Usage (copy this into your component):
 /*
-const [toast, showToast] = useToast()
+const { toast, showToast } = useToast()
 
 const handleCopy = async () => {
   // Assuming copyToClipboard is a function you have
