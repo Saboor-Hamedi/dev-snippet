@@ -1,9 +1,12 @@
 /* ===== SNIPPET CARDS ===== */
 .snippet-list {
+
   display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-top: 0;
+    flex-direction: column;
+    gap: 0.4rem;
+    overflow-y: auto;
+    max-height: calc(100vh -  150px);
+    padding: 0 0.5rem;
 }
 
 .snippet-card {

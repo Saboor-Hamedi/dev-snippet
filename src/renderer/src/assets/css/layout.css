@@ -6,17 +6,24 @@
   width: 100%;
   margin: 0 auto;
   align-items: start;
-  padding: 1rem;
+  padding: 0.2rem;
   box-sizing: border-box;
-  margin-top: 2rem;
+  /* background-color: red; */
+  margin-top: 0.1rem;
+ 
 }
 
 .snippets-column {
   min-height: calc(100vh - 120px);
+  margin-bottom: 0.5rem;
+ 
 }
 
 .form-column {
   position: sticky;
   top: 100px;
   height: fit-content;
+  /* background-color: red; */
+  /* padding: 0.1rem; */
+  
 }

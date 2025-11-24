@@ -1,7 +1,7 @@
 import { useState, useCallback, memo, useEffect } from 'react'
 import SnippetViewModal from './SnippetViewModal'
 import useSyntaxHighlight from '../hook/useSyntaxHighlight'
-
+import { useToast } from '../utils/ToastNotification'
 const copyToClipboard = async (text) => {
   // Try modern Clipboard API
   if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
@@ -37,6 +37,7 @@ const copyToClipboard = async (text) => {
 const SnippetCard = ({ snippet, onRequestDelete }) => {
   const [copied, setCopied] = useState(false)
   const [isViewModalOpen, setisViewModalOpen] = useState(false)
+  const [toast, showToast] = useToast()
 
   const highlightedContent = useSyntaxHighlight(snippet.code, snippet.language)
   const isCode = snippet.language !== 'text'
@@ -47,9 +48,9 @@ const SnippetCard = ({ snippet, onRequestDelete }) => {
     if (success) {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
+      showToast('✓ Snippet Copied')
     } else {
-      // Optional: show small toast or alert
-      console.error('Failed to copy snippet')
+      showToast('Failed to copy snippet')
     }
   }
   // Delete snippets
@@ -79,6 +80,7 @@ const SnippetCard = ({ snippet, onRequestDelete }) => {
 
   return (
     <section>
+      {toast && <div className="toast">{toast}</div>}
       {/* model */}
 
       <SnippetViewModal

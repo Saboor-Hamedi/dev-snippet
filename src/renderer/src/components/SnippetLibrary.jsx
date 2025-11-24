@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react'
 import SnippetCard from './SnippetCard'
 import ThemeComponent from './ThemeComponent'
 import DeleteModel from '../utils/DeleteModel'
+import { useToast } from '../utils/ToastNotification'
 const STORAGE_KEY = 'codeSnippets'
 
 const SnippetLibrary = () => {
@@ -10,10 +11,13 @@ const SnippetLibrary = () => {
   const [newSnippetCode, setNewSnippetCode] = useState('')
   const [language, setLanguage] = useState('javascript')
   const [deleteModal, setDeleteModal] = useState({
-    isOpen: false, 
+    isOpen: false,
     snippetId: null,
     snippetTitle: ''
   })
+
+  // show notification
+  const [toast, showToast] = useToast()
   const saveTimeoutRef = useRef(null)
 
   // Load Data from LocalStorage
@@ -43,7 +47,10 @@ const SnippetLibrary = () => {
   // Save New Snippet
   const handleSaveSnippet = (e) => {
     e.preventDefault()
-    if (!newSnippetCode.trim()) return
+    if (!newSnippetCode.trim()) {
+      showToast('❌ Please enter some code')
+      return
+    }
 
     const codePreview =
       newSnippetCode.trim().substring(0, 40) + (newSnippetCode.length > 40 ? '...' : '')
@@ -58,8 +65,11 @@ const SnippetLibrary = () => {
 
     const updatedSnippets = [newEntry, ...snippets]
     setSnippets(updatedSnippets)
-    saveSnippetsToStorage(updatedSnippets)
     setNewSnippetCode('')
+
+    // Save with debounce but show toast immediately (optimistic update)
+    showToast('✓ Snippet saved successfully!')
+    saveSnippetsToStorage(updatedSnippets)
   }
 
   // Debounced save
@@ -70,6 +80,11 @@ const SnippetLibrary = () => {
     saveTimeoutRef.current = setTimeout(() => {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSnippets))
+        // Optional: Verify save worked
+        const saved = localStorage.getItem(STORAGE_KEY)
+        if (!saved) {
+          console.error('Save verification failed')
+        }
       } catch (err) {
         console.error('Failed to save snippets to localStorage:', err)
       }
@@ -87,23 +102,25 @@ const SnippetLibrary = () => {
             snippetTitle: ''
           })
         }
-       
       }
     }
-    
+
     document.addEventListener('keydown', handleKeyPress)
     return () => document.removeEventListener('keydown', handleKeyPress)
   }, [deleteModal.isOpen]) //  modal states as dependencies
 
   // Request delete (triggers modal)
-  const handleRequestDelete = useCallback((id) => {
+  const handleRequestDelete = useCallback(
+    (id) => {
       const snippet = snippets.find((s) => s.id === id)
       setDeleteModal({
         isOpen: true,
         snippetId: id,
         snippetTitle: snippet ? snippet.title : 'Snippet'
       })
-  }, [snippets])
+    },
+    [snippets]
+  )
 
   // Confirm delete
   const handleConfirmDelete = () => {
@@ -111,6 +128,7 @@ const SnippetLibrary = () => {
       const updatedSnippets = snippets.filter((snippet) => snippet.id !== deleteModal.snippetId)
       setSnippets(updatedSnippets)
       saveSnippetsToStorage(updatedSnippets)
+      showToast('Successfully Delete.')
     }
     setDeleteModal({
       isOpen: false,
@@ -132,6 +150,7 @@ const SnippetLibrary = () => {
 
   return (
     <div className="app-container">
+      {toast && <div className="toast">{toast}</div>}
       {/* Header with Search */}
       <div className="app-header">
         <div className="header-content">

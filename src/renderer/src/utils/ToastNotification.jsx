@@ -3,12 +3,12 @@ import { useState } from 'react'
 // Simple toast hook
 export const useToast = () => {
   const [toast, setToast] = useState(null)
-  
+
   const showToast = (message) => {
     setToast(message)
     setTimeout(() => setToast(null), 3000)
   }
-  
+
   return [toast, showToast]
 }
 
