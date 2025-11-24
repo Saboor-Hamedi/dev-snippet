@@ -1,0 +1,271 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom CSS Variables */
+:root {
+  --ev-c-white: #ffffff;
+  --ev-c-white-soft: #f8fafc;
+  --ev-c-white-mute: #f1f5f9;
+
+  --ev-c-black: #020617; /* Slate 950 */
+  --ev-c-black-soft: #0f172a; /* Slate 900 */
+  --ev-c-black-mute: #1e293b; /* Slate 800 */
+
+  --ev-c-gray-1: #94a3b8;
+  --ev-c-gray-2: #64748b;
+  --ev-c-gray-3: #475569;
+
+  --ev-c-accent: #0ea5e9; /* Sky 500 */
+  --ev-c-accent-hover: #0284c7; /* Sky 600 */
+
+  --color-background: var(--ev-c-black);
+  --color-background-soft: var(--ev-c-black-soft);
+  --color-background-mute: var(--ev-c-black-mute);
+  --color-text: var(--ev-c-white-soft);
+
+  --activity-bar-width: 60px;
+  --sidebar-width: 300px; /* Slightly wider for better readability */
+}
+
+/* Base Styles */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  color: var(--color-text);
+  background: var(--color-background);
+  line-height: 1.6;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden; /* Prevent body scroll, layout handles it */
+}
+
+#root {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Refined Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--ev-c-black-mute);
+  border: 2px solid var(--ev-c-black-soft); /* Creates padding effect */
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ev-c-gray-3);
+}
+
+/* Activity Bar */
+.activity-bar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: var(--activity-bar-width);
+  background-color: var(--ev-c-black-soft);
+  border-right: 1px solid var(--ev-c-black-mute);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem 0;
+  gap: 1rem;
+  z-index: 50;
+}
+
+.activity-bar-item {
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  color: var(--ev-c-gray-2);
+  position: relative;
+}
+
+.activity-bar-item:hover {
+  color: var(--ev-c-white);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.activity-bar-item.active {
+  color: var(--ev-c-accent);
+  background-color: rgba(14, 165, 233, 0.1);
+}
+
+.activity-bar-item.active::before {
+  content: '';
+  position: absolute;
+  left: -4px; /* Slightly outside to look like a border */
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 1.5rem;
+  background-color: var(--ev-c-accent);
+  border-radius: 0 4px 4px 0;
+  box-shadow: 0 0 10px var(--ev-c-accent);
+}
+
+/* Sidebar */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: var(--activity-bar-width);
+  height: 100%;
+  width: var(--sidebar-width);
+  background-color: rgba(15, 23, 42, 0.95); /* High opacity for readability */
+  backdrop-filter: blur(12px);
+  border-right: 1px solid var(--ev-c-black-mute);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 40;
+}
+
+.sidebar.collapsed {
+  transform: translateX(-100%);
+}
+
+/* Main Content */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  margin-left: calc(var(--activity-bar-width) + var(--sidebar-width));
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: var(--ev-c-black);
+}
+
+.main-content.sidebar-collapsed {
+  margin-left: var(--activity-bar-width);
+}
+
+/* Form Controls */
+.search-input {
+  width: 100%;
+  padding: 0.625rem 1rem;
+  background-color: rgba(30, 41, 59, 0.5);
+  border: 1px solid var(--ev-c-black-mute);
+  border-radius: 0.5rem;
+  color: var(--ev-c-white);
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.search-input::placeholder {
+  color: var(--ev-c-gray-2);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--ev-c-accent);
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+  background-color: rgba(30, 41, 59, 0.8);
+}
+
+/* Buttons */
+.btn-primary {
+  padding: 0.625rem 1.25rem;
+  background: linear-gradient(135deg, var(--ev-c-accent), var(--ev-c-accent-hover));
+  color: white;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.2);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 8px -1px rgba(14, 165, 233, 0.3);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  padding: 0.625rem 1.25rem;
+  background-color: var(--ev-c-black-mute);
+  color: var(--ev-c-white-soft);
+  border-radius: 0.5rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background-color: var(--ev-c-gray-3);
+  border-color: var(--ev-c-gray-2);
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  padding: 1rem 1.5rem;
+  background-color: rgba(30, 41, 59, 0.9);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--ev-c-black-mute);
+  color: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease-out;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 500;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Code Editor Area */
+.code-editor-container {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+}
+
+/* Utility for Glassmorphism */
+.glass-panel {
+  background-color: rgba(30, 41, 59, 0.4);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}

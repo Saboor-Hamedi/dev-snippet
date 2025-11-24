@@ -4,7 +4,12 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()]
+    plugins: [externalizeDepsPlugin()],
+    build: {
+      rollupOptions: {
+        external: ['electron']
+      }
+    }
   },
   preload: {
     plugins: [externalizeDepsPlugin()]
@@ -15,6 +20,9 @@ export default defineConfig({
         '@renderer': resolve('src/renderer/src')
       }
     },
-    plugins: [react()]
+    plugins: [react()],
+    css: {
+      postcss: './postcss.config.js'
+    }
   }
 })

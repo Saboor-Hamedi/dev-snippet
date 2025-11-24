@@ -1,1 +1,7 @@
-XC  CX  CX Assalamu'alaikum warahmatullahi wabarakatuh.Assalamu'alaikum warahmatullahi wabarakatuh.
+import SnippetLibrary from './components/SnippetLibrary'
+
+function App() {
+  return <SnippetLibrary />
+}
+
+export default App
