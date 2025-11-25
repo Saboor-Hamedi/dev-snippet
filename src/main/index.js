@@ -177,6 +177,7 @@ app.whenReady().then(() => {
     return db.prepare('SELECT * FROM snippets ORDER BY timestamp DESC').all()
   })
 
+  // insert or update snippet
   ipcMain.handle('db:saveSnippet', (event, snippet) => {
     const stmt = db.prepare(
       'INSERT OR REPLACE INTO snippets (id, title, code, language, timestamp, type) VALUES (@id, @title, @code, @language, @timestamp, @type)'

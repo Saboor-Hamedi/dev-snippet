@@ -1,11 +1,12 @@
+// Edit snippets
 import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { X } from 'lucide-react'
 import toCapitalized from '../hook/stringUtils'
-
+import { useKeyboardShortcuts } from '../hook/useKeyboardShortcuts'
 const SnippetEditor = ({ onSave, initialSnippet, onCancel }) => {
   const [code, setCode] = useState(initialSnippet?.code || '')
-  const [language, setLanguage] = useState(initialSnippet?.language || 'javascript')
+  const [language, setLanguage] = useState(initialSnippet?.language || 'txt')
 
   // Update state if initialSnippet changes
   useEffect(() => {
@@ -15,25 +16,7 @@ const SnippetEditor = ({ onSave, initialSnippet, onCancel }) => {
     }
   }, [initialSnippet])
 
-  // Auto-save on Ctrl+S
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault()
-        if (code.trim()) {
-          handleSave()
-        }
-      }
-      // Escape to cancel
-      if (e.key === 'Escape' && onCancel) {
-        onCancel()
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [code, language, onCancel])
-
+  // update or create snippet
   const handleSave = () => {
     // Validation
     if (!code.trim()) return
@@ -60,6 +43,11 @@ const SnippetEditor = ({ onSave, initialSnippet, onCancel }) => {
       setCode('')
     }
   }
+  // Handle keyboard shortcuts
+  useKeyboardShortcuts({
+    onEscape: onCancel,
+    onSave: handleSave
+  })
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -125,26 +113,26 @@ const SnippetEditor = ({ onSave, initialSnippet, onCancel }) => {
               onChange={(e) => setLanguage(e.target.value)}
               className="bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded px-2 py-1 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary-500 transition-colors"
             >
-              <option value="javascript">JavaScript</option>
-              <option value="python">Python</option>
-              <option value="bash">Bash / Shell</option>
+              <option value="js">JavaScript</option>
+              <option value="py">Python</option>
+              <option value="sh">Bash / Shell</option>
               <option value="html">HTML</option>
               <option value="css">CSS</option>
               <option value="json">JSON</option>
-              <option value="markdown">Markdown</option>
+              <option value="md">Markdown</option>
               <option value="sql">SQL</option>
               <option value="cpp">C++</option>
               <option value="java">Java</option>
-              <option value="plaintext">Plain Text</option>
+              <option value="txt">Plain Text</option>
             </select>
           </div>
 
           {/* Save button for mobile/accessibility */}
           <button
             type="submit"
-            className="px-3 py-1.5 text-xs bg-primary-600 hover:bg-primary-500 text-white rounded font-medium transition-colors md:hidden"
+            className="px-3 py-1.5 text-xs bg-primary-600 hover:bg-primary-500 text-white rounded font-medium transition-colors"
           >
-            Save
+            {initialSnippet ? 'Update' : 'Save'}
           </button>
         </div>
       </form>
