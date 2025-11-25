@@ -3,11 +3,9 @@ import { useMemo } from 'react'
 const useSyntaxHighlight = (code, language = 'text') => {
   return useMemo(() => {
     if (language === 'text') {
-      return <div className="text-content">{code}</div>
+      return code // Return plain text for non-code content
     }
-
-    const highlightedCode = highlightCode(code, language)
-    return <div className="code-content" dangerouslySetInnerHTML={{ __html: highlightedCode }} />
+    return highlightCode(code, language) // Return HTML string for highlighted code
   }, [code, language])
 }
 

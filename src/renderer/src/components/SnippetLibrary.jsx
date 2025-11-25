@@ -10,6 +10,8 @@ import SnippetEditor from './SnippetEditor'
 import SnippetViewer from './SnippetViewer'
 import DeleteModel from '../utils/DeleteModel'
 import CreateProjectModal from './CreateProjectModal'
+import RenameModal from './RenameModal'
+import CommandPalette from './CommandPalette'
 
 const SnippetLibrary = () => {
   // 1. Logic & Data (From Hook)
@@ -24,14 +26,16 @@ const SnippetLibrary = () => {
   } = useSnippetData()
 
   // 2. UI STATE (Local only)
-  const [activeView, setActiveView] = useState('explorer')
+  const [activeView, setActiveView] = useState('welcome')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
 
   // Modals
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, title: '' })
   const [createProjectModalOpen, setCreateProjectModalOpen] = useState(false)
+  const [renameModal, setRenameModal] = useState({ isOpen: false, item: null })
   const [isCreatingSnippet, setIsCreatingSnippet] = useState(false)
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
 
   const { toast, showToast } = useToast()
 
@@ -80,11 +84,20 @@ const SnippetLibrary = () => {
   // 5. Keyboard Shortcuts
   useEffect(() => {
     const handleKeyPress = (e) => {
+      // Prevent Ctrl+R (Reload)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+        e.preventDefault()
+        console.log('Reload prevented')
+        return
+      }
+
       // Escape closes modals and editor
       if (e.key === 'Escape') {
         if (deleteModal.isOpen) setDeleteModal({ ...deleteModal, isOpen: false })
         if (createProjectModalOpen) setCreateProjectModalOpen(false)
+        if (renameModal.isOpen) setRenameModal({ ...renameModal, isOpen: false })
         if (isCreatingSnippet) setIsCreatingSnippet(false)
+        if (isCommandPaletteOpen) setIsCommandPaletteOpen(false)
       }
       // Ctrl+B toggles sidebar
       if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
@@ -95,12 +108,48 @@ const SnippetLibrary = () => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
         e.preventDefault()
         setIsCreatingSnippet(true)
-        setActiveView('explorer')
+      }
+      // Ctrl+P toggles Command Palette
+      if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+        e.preventDefault()
+        setIsCommandPaletteOpen((prev) => !prev)
       }
     }
     document.addEventListener('keydown', handleKeyPress)
     return () => document.removeEventListener('keydown', handleKeyPress)
-  }, [deleteModal.isOpen, createProjectModalOpen, isCreatingSnippet])
+  }, [
+    deleteModal.isOpen,
+    createProjectModalOpen,
+    renameModal.isOpen,
+    isCreatingSnippet,
+    isCommandPaletteOpen
+  ])
+
+  // 6. Rename Logic -- This is where the rename modal is triggered and the rename is handled
+  const handleRename = async (newName) => {
+    if (!renameModal.item) return
+    const updatedItem = { ...renameModal.item, title: newName }
+    const isProject = renameModal.item.type === 'project'
+    const itemType = isProject ? 'project' : 'snippet'
+
+    try {
+      const apiMethod = isProject ? 'saveProject' : 'saveSnippet'
+      if (!window.api?.[apiMethod]) {
+        throw new Error(`API method ${apiMethod} not found`)
+      }
+      await window.api[apiMethod](updatedItem)
+      showToast(`✓ ${itemType} renamed`)
+      // finally refresh the list
+      if (createProject && isProject) {
+        createProject(updatedItem)
+      }
+    } catch (error) {
+      console.error('Rename failed:', error)
+      showToast('❌ Rename failed')
+    } finally {
+      setRenameModal({ isOpen: false, item: null })
+    }
+  }
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white overflow-hidden transition-colors duration-200">
@@ -124,15 +173,20 @@ const SnippetLibrary = () => {
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
             selectedSnippet={selectedSnippet}
-            onSelect={setSelectedSnippet}
+            onSelect={(item) => {
+              setSelectedSnippet(item)
+              if (activeView === 'settings') {
+                setActiveView('snippets')
+              }
+            }}
             // Wiring up actions
             onDeleteRequest={(id) => {
               const item = filteredItems.find((i) => i.id === id)
               setDeleteModal({ isOpen: true, id, title: item?.title || 'Item' })
             }}
             onCreateProject={() => setCreateProjectModalOpen(true)}
-            // Add a button in Sidebar to trigger handleOpenFile if you want
-            // onOpenFile={handleOpenFile}
+            onCreateSnippet={() => setIsCreatingSnippet(true)}
+            onRenameRequest={(item) => setRenameModal({ isOpen: true, item })}
           />
         </div>
       )}
@@ -145,6 +199,7 @@ const SnippetLibrary = () => {
           snippets={snippets}
           projects={projects}
           onCloseSnippet={() => setSelectedSnippet(null)}
+          onCancelEditor={() => setIsCreatingSnippet(false)}
           onSave={(code) => {
             saveSnippet(code)
             setIsCreatingSnippet(false)
@@ -179,6 +234,30 @@ const SnippetLibrary = () => {
         onSave={(data) => {
           createProject(data) // Call Hook
           setCreateProjectModalOpen(false)
+        }}
+      />
+
+      <RenameModal
+        isOpen={renameModal.isOpen}
+        onClose={() => setRenameModal({ ...renameModal, isOpen: false })}
+        onRename={handleRename}
+        currentName={renameModal.item?.title || ''}
+        title={`Rename ${renameModal.item?.type === 'project' ? 'Project' : 'Snippet'}`}
+      />
+
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        snippets={snippets}
+        projects={projects}
+        onSelect={(item) => {
+          setSelectedSnippet(item)
+          // Switch view if needed
+          if (item.type === 'project') {
+            setActiveView('projects')
+          } else {
+            setActiveView('snippets')
+          }
         }}
       />
     </div>

@@ -2,30 +2,84 @@
 @tailwind components;
 @tailwind utilities;
 
+
+
+
 /* Custom CSS Variables */
 :root {
+  /* Color Palette */
   --ev-c-white: #ffffff;
   --ev-c-white-soft: #f8fafc;
   --ev-c-white-mute: #f1f5f9;
 
-  --ev-c-black: #020617; /* Slate 950 */
-  --ev-c-black-soft: #0f172a; /* Slate 900 */
-  --ev-c-black-mute: #1e293b; /* Slate 800 */
+  --ev-c-black: #020617;
+  --ev-c-black-soft: #0f172a;
+  --ev-c-black-mute: #1e293b;
 
   --ev-c-gray-1: #94a3b8;
   --ev-c-gray-2: #64748b;
   --ev-c-gray-3: #475569;
 
-  --ev-c-accent: #0ea5e9; /* Sky 500 */
-  --ev-c-accent-hover: #0284c7; /* Sky 600 */
+  --ev-c-accent: #0ea5e9;
+  --ev-c-accent-hover: #0284c7;
 
+  /* Default to Dark Theme */
   --color-background: var(--ev-c-black);
   --color-background-soft: var(--ev-c-black-soft);
   --color-background-mute: var(--ev-c-black-mute);
   --color-text: var(--ev-c-white-soft);
 
+  /* Map generic names for easier usage */
+  --primary: var(--ev-c-accent);
+  --background: var(--color-background);
+  --surface: var(--color-background-soft);
+
   --activity-bar-width: 60px;
-  --sidebar-width: 300px; /* Slightly wider for better readability */
+  --sidebar-width: 300px;
+}
+
+/* Light Theme */
+[data-theme='light'] {
+  --color-background: var(--ev-c-white);
+  --color-background-soft: var(--ev-c-white-soft);
+  --color-background-mute: var(--ev-c-white-mute);
+  --color-text: var(--ev-c-black);
+}
+
+/* Dark Theme */
+[data-theme='dark'] {
+  --color-background: var(--ev-c-black);
+  --color-background-soft: var(--ev-c-black-soft);
+  --color-background-mute: var(--ev-c-black-mute);
+  --color-text: var(--ev-c-white-soft);
+}
+
+/* Midnight Theme (Deep Blue/Purple) */
+[data-theme='midnight'] {
+  --ev-c-black: #0b0c15;
+  --ev-c-black-soft: #151621;
+  --ev-c-black-mute: #2a2b3d;
+  --ev-c-accent: #6366f1; /* Indigo */
+  --ev-c-accent-hover: #4f46e5;
+
+  --color-background: var(--ev-c-black);
+  --color-background-soft: var(--ev-c-black-soft);
+  --color-background-mute: var(--ev-c-black-mute);
+  --color-text: #e0e7ff;
+}
+
+/* Ocean Theme (Deep Teal/Cyan) */
+[data-theme='ocean'] {
+  --ev-c-black: #041319;
+  --ev-c-black-soft: #082f3a;
+  --ev-c-black-mute: #0e4b5b;
+  --ev-c-accent: #06b6d4; /* Cyan */
+  --ev-c-accent-hover: #0891b2;
+
+  --color-background: var(--ev-c-black);
+  --color-background-soft: var(--ev-c-black-soft);
+  --color-background-mute: var(--ev-c-black-mute);
+  --color-text: #cffafe;
 }
 
 /* Base Styles */
@@ -42,13 +96,20 @@ body {
   color: var(--color-text);
   background: var(--color-background);
   line-height: 1.6;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family:
+    'Inter',
+    system-ui,
+    -apple-system,
+    sans-serif;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow: hidden; /* Prevent body scroll, layout handles it */
 }
-
+.bg-primary { background-color: var(--primary); }
+.bg-background { background-color: var(--background); }
+.bg-surface { background-color: var(--surface); }
+.text-primary { color: var(--primary); }
 #root {
   width: 100%;
   height: 100vh;
@@ -278,10 +339,16 @@ body {
   color: #e2e8f0;
   font-weight: 400;
   letter-spacing: 0.01em;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .text-content {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family:
+    'Inter',
+    system-ui,
+    -apple-system,
+    sans-serif;
   font-size: 0.95rem;
   line-height: 1.75;
   padding: 1rem;
@@ -357,4 +424,3 @@ code {
 }
 
 /* Snippet Card Styles */
-

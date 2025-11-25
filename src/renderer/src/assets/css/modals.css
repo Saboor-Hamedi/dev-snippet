@@ -94,7 +94,8 @@
   line-height: 1.6;
 }
 
-.code-content, .text-content {
+.code-content,
+.text-content {
   margin: 0;
   white-space: pre-wrap;
   word-break: break-word;

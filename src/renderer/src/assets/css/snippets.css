@@ -1,15 +1,12 @@
 /* ===== SNIPPET CARDS ===== */
 .snippet-list {
-
   display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    overflow-y: auto;
-    max-height: calc(100vh -  150px);
-    padding: 0 0.5rem;
+  flex-direction: column;
+  gap: 0.4rem;
+  overflow-y: auto;
+  max-height: calc(100vh - 150px);
+  padding: 0 0.5rem;
 }
-
-
 
 .card-header {
   display: flex;
@@ -56,7 +53,9 @@
   align-items: center;
 }
 
-.copy-button, .view-button, .delete-button {
+.copy-button,
+.view-button,
+.delete-button {
   background: var(--color-bg-tertiary);
   color: var(--color-text-secondary);
   border: 1px solid var(--color-border);
@@ -69,7 +68,9 @@
   border-radius: 4px;
 }
 
-.copy-button:hover, .view-button:hover, .delete-button:hover {
+.copy-button:hover,
+.view-button:hover,
+.delete-button:hover {
   background: var(--color-accent-primary);
   color: white;
   border-color: var(--color-accent-primary);

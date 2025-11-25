@@ -1,5 +1,6 @@
 /* ===== CSS VARIABLES & THEMES ===== */
-:root, .midnight-syntax {
+:root,
+.midnight-syntax {
   --color-bg-primary: #0f1117;
   --color-bg-secondary: #1a1d29;
   --color-bg-tertiary: #252a3a;

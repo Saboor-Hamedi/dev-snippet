@@ -58,12 +58,28 @@
 }
 
 /* Theme-specific overrides (optional, but good for consistency) */
-.midnight-syntax .code-content .keyword { color: #ff79c6; }
-.midnight-syntax .code-content .string { color: #f1fa8c; }
-.midnight-syntax .code-content .comment { color: #6272a4; }
+.midnight-syntax .code-content .keyword {
+  color: #ff79c6;
+}
+.midnight-syntax .code-content .string {
+  color: #f1fa8c;
+}
+.midnight-syntax .code-content .comment {
+  color: #6272a4;
+}
 
-.solar-dawn .code-content .keyword { color: #d73672; }
-.solar-dawn .code-content .string { color: #8a6c0c; }
-.solar-dawn .code-content .comment { color: #8b949e; }
-.solar-dawn .code-content .tag { color: #22863a; }
-.solar-dawn .code-content .attribute { color: #6f42c1; }
+.solar-dawn .code-content .keyword {
+  color: #d73672;
+}
+.solar-dawn .code-content .string {
+  color: #8a6c0c;
+}
+.solar-dawn .code-content .comment {
+  color: #8b949e;
+}
+.solar-dawn .code-content .tag {
+  color: #22863a;
+}
+.solar-dawn .code-content .attribute {
+  color: #6f42c1;
+}

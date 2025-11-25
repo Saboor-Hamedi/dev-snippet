@@ -4,6 +4,14 @@ const STORAGE_KEY = 'quick-snippets-theme'
 
 const ThemeComponent = () => {
   const [currentTheme, setCurrentTheme] = useState('dark')
+
+  const themes = [
+    { id: 'light', icon: '☀️', label: 'Light' },
+    { id: 'dark', icon: '🌙', label: 'Dark' },
+    { id: 'midnight', icon: '🌌', label: 'Midnight' },
+    { id: 'ocean', icon: '🌊', label: 'Ocean' }
+  ]
+
   useEffect(() => {
     const loadTheme = async () => {
       try {
@@ -21,11 +29,16 @@ const ThemeComponent = () => {
   }, [])
 
   useEffect(() => {
-    if (currentTheme === 'dark') {
-      document.documentElement.classList.add('dark')
-    } else {
+    // Apply theme to document
+    document.documentElement.setAttribute('data-theme', currentTheme)
+
+    // Handle Tailwind dark mode class
+    if (currentTheme === 'light') {
       document.documentElement.classList.remove('dark')
+    } else {
+      document.documentElement.classList.add('dark')
     }
+
     if (window.api && window.api.saveSetting) {
       window.api
         .saveSetting('theme', currentTheme)
@@ -33,36 +46,21 @@ const ThemeComponent = () => {
     }
   }, [currentTheme])
 
-  const toggleTheme = () => {
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark'
-    setCurrentTheme(newTheme)
+  const cycleTheme = () => {
+    const currentIndex = themes.findIndex((t) => t.id === currentTheme)
+    const nextIndex = (currentIndex + 1) % themes.length
+    setCurrentTheme(themes[nextIndex].id)
   }
+
+  const currentThemeObj = themes.find((t) => t.id === currentTheme) || themes[1]
 
   return (
     <button
-      onClick={toggleTheme}
-      className="w-full h-full flex items-center justify-center transition-colors"
-      title={`Switch to ${currentTheme === 'dark' ? 'light' : 'dark'} theme`}
+      onClick={cycleTheme}
+      className="w-full h-full flex items-center justify-center transition-colors hover:text-primary-400"
+      title={`Current theme: ${currentThemeObj.label}`}
     >
-      {currentTheme === 'dark' ? (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-          />
-        </svg>
-      ) : (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
-          />
-        </svg>
-      )}
+      <span className="text-lg">{currentThemeObj.icon}</span>
     </button>
   )
 }

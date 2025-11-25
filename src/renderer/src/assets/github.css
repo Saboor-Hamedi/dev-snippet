@@ -1,0 +1,11 @@
+/* Override highlight.js background */
+.hljs {
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.hljs pre {
+  background: transparent !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}

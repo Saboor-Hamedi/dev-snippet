@@ -6,16 +6,23 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          200: '#bae6fd',
-          300: '#7dd3fc',
-          400: '#38bdf8',
-          500: '#0ea5e9',
-          600: '#0284c7',
-          700: '#0369a1',
-          800: '#075985',
-          900: '#0c4a6e'
+          50: 'var(--ev-c-accent)', // Using accent for all for now to ensure visibility
+          100: 'var(--ev-c-accent)',
+          200: 'var(--ev-c-accent)',
+          300: 'var(--ev-c-accent)',
+          400: 'var(--ev-c-accent)',
+          500: 'var(--ev-c-accent)', // Main primary color
+          600: 'var(--ev-c-accent-hover)',
+          700: 'var(--ev-c-accent-hover)',
+          800: 'var(--ev-c-accent-hover)',
+          900: 'var(--ev-c-accent-hover)'
+        },
+        // We can also map slate/backgrounds if we want full control
+        slate: {
+          50: 'var(--color-background-soft)',
+          100: 'var(--color-background-mute)',
+          800: 'var(--color-background-mute)',
+          900: 'var(--color-background)'
         }
       },
       animation: {

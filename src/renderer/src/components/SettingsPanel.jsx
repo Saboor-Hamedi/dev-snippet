@@ -1,16 +1,23 @@
 import React, { useState, useEffect } from 'react'
-import ThemeComponent from './ThemeComponent' // Reusing your existing theme toggle
 import { useToast } from '../utils/ToastNotification'
+import ThemeModal from './ThemeModal'
+import ThemeEditor from './ThemeEditor'
+import { SunMoon, FileDown, Settings, Palette } from 'lucide-react'
 
 const SettingsPanel = () => {
   const { showToast } = useToast()
 
-  // Local state for settings (You can hook this up to your database later)
+  // Local state for settings
   const [fontSize, setFontSize] = useState(14)
   const [wordWrap, setWordWrap] = useState('on')
   const [autoSave, setAutoSave] = useState(false)
+  const [currentTheme, setCurrentTheme] = useState(null)
+  const [activeTab, setActiveTab] = useState('general')
 
-  // Handle Export Data (Moved logic here from the old big file)
+  // Modal State
+  const [isThemeModalOpen, setIsThemeModalOpen] = useState(false)
+
+  // Handle Export Data
   const handleExportData = async () => {
     try {
       if (
@@ -19,11 +26,8 @@ const SettingsPanel = () => {
         window.api?.getSnippets &&
         window.api?.getProjects
       ) {
-        // 1. Fetch current data
         const snippets = await window.api.getSnippets()
         const projects = await window.api.getProjects()
-
-        // 2. Open Save Dialog
         const path = await window.api.saveFileDialog()
 
         if (path) {
@@ -33,7 +37,6 @@ const SettingsPanel = () => {
             snippets,
             projects
           }
-          // 3. Write File
           await window.api.writeFile(path, JSON.stringify(data, null, 2))
           showToast('✓ Data exported successfully')
         }
@@ -46,157 +49,204 @@ const SettingsPanel = () => {
     }
   }
 
+  // Theme
+  const handleSaveTheme = (theme) => {
+    setCurrentTheme(theme)
+    showToast('✓ Theme saved successfully')
+  }
+
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-300 overflow-y-auto transition-colors duration-200">
-      {/* Header */}
-      <div className="p-8 pb-4 border-b border-slate-200 dark:border-slate-800">
-        <h1 className="text-3xl font-light text-slate-900 dark:text-white mb-2">Settings</h1>
-        <p className="text-slate-500 text-sm">Manage your editor preferences and data.</p>
+    <div className="h-full flex bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-300 overflow-hidden transition-colors duration-200">
+      {/* Sidebar Navigation */}
+      <div className="w-64 border-r border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/80 backdrop-blur-sm flex flex-col">
+        <nav className="flex-1 p-4 space-y-2">
+          <div className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3 px-3">
+            Configuration
+          </div>
+
+          <button
+            onClick={() => setActiveTab('general')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+              activeTab === 'general'
+                ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Settings size={18} />
+            <span>General</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('theme')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+              activeTab === 'theme'
+                ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Palette size={18} />
+            <span>Theme Editor</span>
+          </button>
+        </nav>
+
+        {/* Footer Info */}
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800">
+          <div className="text-xs text-slate-500 dark:text-slate-400">
+            <div className="flex items-center justify-between mb-1">
+              <span>Version</span>
+              <span className="font-mono">1.0.0</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Theme</span>
+              <span className="font-mono capitalize">
+                {document.documentElement.getAttribute('data-theme') || 'default'}
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="p-8 max-w-4xl space-y-12">
-        {/* SECTION 1: APPEARANCE */}
-        <section>
-          <h2 className="text-lg font-medium text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-            <span className="text-primary-500">#</span> Appearance
-          </h2>
-          <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700/50 p-6 space-y-6">
-            {/* Theme Toggle */}
-            <div className="flex items-center justify-between">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-                  Color Theme
-                </label>
-                <p className="text-xs text-slate-500 mt-1">Switch between light and dark modes.</p>
-              </div>
-              <div className="bg-slate-200 dark:bg-slate-900 rounded p-1">
-                <ThemeComponent />
-              </div>
-            </div>
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto">
+          {activeTab === 'general' && (
+            <div className="p-6 space-y-8 max-w-3xl">
+              {/* APPEARANCE SECTION */}
+              <section>
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">
+                  Appearance
+                </h3>
+                <div className="bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-700/50 overflow-hidden">
+                  {/* Theme Select */}
+                  <div className="p-5 flex items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-700/50">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-900 dark:text-white">
+                        Color Theme
+                      </label>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Select your preferred visual theme.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setIsThemeModalOpen(true)}
+                      className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm"
+                    >
+                      <SunMoon size={14} />
+                      Change Theme
+                    </button>
+                  </div>
 
-            {/* Font Size */}
-            <div className="flex items-center justify-between">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-                  Font Size
-                </label>
-                <p className="text-xs text-slate-500 mt-1">Controls the font size in pixels.</p>
-              </div>
-              <input
-                type="number"
-                value={fontSize}
-                onChange={(e) => setFontSize(e.target.value)}
-                className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded w-20 px-3 py-1.5 text-sm text-slate-900 dark:text-white focus:ring-1 focus:ring-primary-500 outline-none transition-colors"
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* SECTION 2: EDITOR */}
-        <section>
-          <h2 className="text-lg font-medium text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-            <span className="text-primary-500">#</span> Text Editor
-          </h2>
-          <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700/50 p-6 space-y-6">
-            {/* Word Wrap */}
-            <div className="flex items-center justify-between">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-                  Word Wrap
-                </label>
-                <p className="text-xs text-slate-500 mt-1">Controls how lines should wrap.</p>
-              </div>
-              <select
-                value={wordWrap}
-                onChange={(e) => setWordWrap(e.target.value)}
-                className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-3 py-1.5 text-sm text-slate-900 dark:text-white outline-none transition-colors"
-              >
-                <option value="off">off</option>
-                <option value="on">on</option>
-                <option value="bounded">bounded</option>
-              </select>
-            </div>
-
-            {/* Auto Save */}
-            <div className="flex items-center justify-between">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-                  Auto Save
-                </label>
-                <p className="text-xs text-slate-500 mt-1">
-                  Automatically save changes after delay.
-                </p>
-              </div>
-              <button
-                onClick={() => setAutoSave(!autoSave)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  autoSave ? 'bg-primary-600' : 'bg-slate-300 dark:bg-slate-700'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    autoSave ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-            </div>
-          </div>
-        </section>
-
-        {/* SECTION 3: DATA & SYSTEM */}
-        <section>
-          <h2 className="text-lg font-medium text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-            <span className="text-red-400">#</span> System & Data
-          </h2>
-          <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700/50 p-6 space-y-6">
-            <div className="flex items-start justify-between">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-                  Export Library
-                </label>
-                <p className="text-xs text-slate-500 mt-1 max-w-sm">
-                  Create a JSON backup of all your snippets and projects.
-                </p>
-              </div>
-              <button
-                onClick={handleExportData}
-                className="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                  />
-                </svg>
-                Export Data
-              </button>
-            </div>
-
-            {/* Shortcut Reference */}
-            <div className="pt-6 border-t border-slate-200 dark:border-slate-700/50">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
-                Keyboard Shortcuts
-              </h3>
-              <div className="grid grid-cols-2 gap-4 text-sm text-slate-600 dark:text-slate-400">
-                <div className="flex justify-between">
-                  <span>Toggle Sidebar</span>
-                  <kbd className="bg-slate-200 dark:bg-slate-900 px-2 py-0.5 rounded border border-slate-300 dark:border-slate-700 font-mono text-xs text-slate-700 dark:text-slate-300">
-                    Ctrl+B
-                  </kbd>
+                  {/* Font Size */}
+                  <div className="p-5 flex items-center justify-between gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-900 dark:text-white">
+                        Font Size
+                      </label>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Controls the font size in pixels.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        value={fontSize}
+                        onChange={(e) => setFontSize(e.target.value)}
+                        className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg w-20 px-3 py-2 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
+                      />
+                      <span className="text-sm text-slate-500">px</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span>Close Modal</span>
-                  <kbd className="bg-slate-200 dark:bg-slate-900 px-2 py-0.5 rounded border border-slate-300 dark:border-slate-700 font-mono text-xs text-slate-700 dark:text-slate-300">
-                    Esc
-                  </kbd>
+              </section>
+
+              {/* EDITOR SECTION */}
+              <section>
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">
+                  Text Editor
+                </h3>
+                <div className="bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-700/50 overflow-hidden">
+                  {/* Word Wrap */}
+                  <div className="p-5 flex items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-700/50">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-900 dark:text-white">
+                        Word Wrap
+                      </label>
+                      <p className="text-xs text-slate-500 mt-1">Controls how lines should wrap.</p>
+                    </div>
+                    <select
+                      value={wordWrap}
+                      onChange={(e) => setWordWrap(e.target.value)}
+                      className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
+                    >
+                      <option value="off">Off</option>
+                      <option value="on">On</option>
+                      <option value="bounded">Bounded</option>
+                    </select>
+                  </div>
+
+                  {/* Auto Save */}
+                  <div className="p-5 flex items-center justify-between gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-900 dark:text-white">
+                        Auto Save
+                      </label>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Automatically save changes after delay.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setAutoSave(!autoSave)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${
+                        autoSave ? 'bg-primary-600' : 'bg-slate-300 dark:bg-slate-700'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          autoSave ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
                 </div>
-              </div>
+              </section>
+
+              {/* DATA & SYSTEM SECTION */}
+              <section>
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">
+                  System & Data
+                </h3>
+                <div className="bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-700/50 overflow-hidden">
+                  <div className="p-5 flex items-center justify-between gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-900 dark:text-white">
+                        Export Library
+                      </label>
+                      <p className="text-xs text-slate-500 mt-1 max-w-sm">
+                        Create a JSON backup of all your snippets and projects.
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleExportData}
+                      className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+                    >
+                      <FileDown size={14} />
+                      Export Data
+                    </button>
+                  </div>
+                </div>
+              </section>
             </div>
-          </div>
-        </section>
+          )}
+
+          {activeTab === 'theme' && (
+            <ThemeEditor currentTheme={currentTheme} onSaveTheme={handleSaveTheme} />
+          )}
+        </div>
       </div>
+
+      {/* Theme Modal */}
+      <ThemeModal isOpen={isThemeModalOpen} onClose={() => setIsThemeModalOpen(false)} />
     </div>
   )
 }

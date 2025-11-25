@@ -1,14 +1,18 @@
 import React from 'react'
+import PropTypes from 'prop-types'
 import SnippetViewer from '../SnippetViewer'
 import SnippetEditor from '../SnippetEditor'
 import SettingsPanel from '../SettingsPanel'
 import SnippetCard from '../SnippetCard'
+import WelcomePage from '../WelcomePage'
+import { Plus } from 'lucide-react'
 
 const Workbench = ({
   activeView,
   selectedSnippet,
   onSave,
   onCloseSnippet,
+  onCancelEditor,
   snippets,
   projects,
   onDeleteRequest,
@@ -29,11 +33,17 @@ const Workbench = ({
     setEditingSnippet(null)
   }
 
+  // Priority 1: Settings
   if (activeView === 'settings') {
     return <SettingsPanel />
   }
 
-  // If editing a snippet (or creating new one if we treat it that way, but usually new is handled by default return)
+  // Priority 2: Editor mode (creating new snippet)
+  if (activeView === 'editor') {
+    return <SnippetEditor onSave={onSave} onCancel={onCancelEditor} />
+  }
+
+  // Priority 3: Editing a snippet
   if (editingSnippet) {
     return (
       <SnippetEditor
@@ -44,7 +54,7 @@ const Workbench = ({
     )
   }
 
-  // If a snippet is selected (Viewing), show the Viewer
+  // Priority 4: Viewing a selected snippet
   if (selectedSnippet) {
     return (
       <SnippetViewer
@@ -55,105 +65,27 @@ const Workbench = ({
     )
   }
 
-  // Get the items to display based on active view
-  const items = activeView === 'projects' ? projects : snippets
-
-  // If in explorer or projects view, show the grid of cards
-  if (activeView === 'explorer' || activeView === 'projects') {
+  // Priority 5: Projects view - show grid
+  if (activeView === 'projects') {
+    const items = projects
     return (
       <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-900 overflow-hidden transition-colors duration-200">
-        {/* Header - Aligned with viewer */}
+        {/* Header */}
         <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex-shrink-0 flex items-center justify-between transition-colors duration-200">
           <div className="flex items-center gap-3">
-            <h1 className="text-sm font-medium text-slate-900 dark:text-white">
-              {activeView === 'explorer' ? 'Code Snippets' : 'Projects'}
-            </h1>
+            <h1 className="text-sm font-medium text-slate-900 dark:text-white">Projects</h1>
             <span className="text-xs text-slate-400 dark:text-slate-600">•</span>
-
             <p className="text-xs text-slate-500">
-              {items.length} {activeView === 'explorer' ? 'snippet' : 'project'}
-              {items.length !== 1 ? 's' : ''}
+              {items.length} project{items.length !== 1 ? 's' : ''}
             </p>
           </div>
-
-          {/* New Snippet Button */}
-          {activeView === 'explorer' && (
-            <button
-              onClick={onNewSnippet}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 hover:bg-primary-500 text-white rounded-md font-medium transition-all text-xs shadow-sm"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-              New Snippet
-            </button>
-          )}
         </div>
 
-        {/* Snippet Grid or Welcome */}
+        {/* Projects Grid */}
         <div className="flex-1 overflow-y-auto p-6">
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
-              <div className="mb-8">
-                <svg
-                  className="w-24 h-24 text-slate-300 dark:text-slate-600 mb-6 mx-auto"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-                <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-3">
-                  {activeView === 'explorer' ? 'Welcome to Quick Snippets' : 'No Projects Yet'}
-                </h2>
-                <p className="text-slate-500 dark:text-slate-400 text-lg mb-8 max-w-md mx-auto">
-                  {activeView === 'explorer'
-                    ? 'Store and organize your code snippets in one place. Get started by creating your first snippet.'
-                    : 'Create your first project to organize related snippets together.'}
-                </p>
-              </div>
-
-              {activeView === 'explorer' && (
-                <div className="space-y-4">
-                  <button
-                    onClick={onNewSnippet}
-                    className="flex items-center gap-3 px-8 py-4 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-semibold transition-all shadow-xl hover:shadow-2xl hover:scale-105 text-lg"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 4v16m8-8H4"
-                      />
-                    </svg>
-                    Create Your First Snippet
-                  </button>
-
-                  <div className="flex items-center gap-4 text-sm text-slate-500">
-                    <div className="flex items-center gap-2">
-                      <kbd className="px-2 py-1 bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-xs text-slate-600 dark:text-slate-400">
-                        Ctrl
-                      </kbd>
-                      <span>+</span>
-                      <kbd className="px-2 py-1 bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-xs text-slate-600 dark:text-slate-400">
-                        N
-                      </kbd>
-                      <span className="ml-2">New Snippet</span>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <p className="text-slate-500">No projects yet</p>
             </div>
           ) : (
             <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-6 pb-6">
@@ -172,8 +104,75 @@ const Workbench = ({
     )
   }
 
-  // Default: show full-screen editor (New Snippet)
-  return <SnippetEditor onSave={onSave} />
+  // Priority 6: Snippets view - show grid or welcome
+  if (activeView === 'snippets') {
+    const items = snippets
+    // Show snippets grid if there are snippets, otherwise show welcome page
+    if (items.length > 0) {
+      return (
+        <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-900 overflow-hidden transition-colors duration-200">
+          {/* Header */}
+          <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex-shrink-0 flex items-center justify-between transition-colors duration-200">
+            <div className="flex items-center gap-3">
+              <h1 className="text-sm font-medium text-slate-900 dark:text-white">Code Snippets</h1>
+              <span className="text-xs text-slate-400 dark:text-slate-600">•</span>
+              <p className="text-xs text-slate-500">
+                {items.length} snippet{items.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+
+            {/* Create a new snippet on the top of the page */}
+            <button
+              onClick={onNewSnippet}
+              className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
+            >
+              <Plus size={14} />
+            </button>
+          </div>
+
+          {/* Snippets Grid */}
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-6 pb-6">
+              {items.map((item) => (
+                <SnippetCard
+                  key={item.id}
+                  snippet={item}
+                  onRequestDelete={onDeleteRequest}
+                  onEdit={handleEdit}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )
+    } else {
+      // Show welcome page when no snippets exist
+      return (
+        <div className="h-full">
+          <WelcomePage onNewSnippet={onNewSnippet} />
+        </div>
+      )
+    }
+  }
+
+  // FINAL FALLBACK: Show welcome page when activeView is undefined/null or doesn't match any condition
+  return (
+    <div className="h-full">
+      <WelcomePage onNewSnippet={onNewSnippet} />
+    </div>
+  )
+}
+
+Workbench.propTypes = {
+  activeView: PropTypes.string.isRequired,
+  selectedSnippet: PropTypes.object,
+  onSave: PropTypes.func.isRequired,
+  onCloseSnippet: PropTypes.func.isRequired,
+  onCancelEditor: PropTypes.func,
+  snippets: PropTypes.array.isRequired,
+  projects: PropTypes.array.isRequired,
+  onDeleteRequest: PropTypes.func.isRequired,
+  onNewSnippet: PropTypes.func.isRequired
 }
 
 export default Workbench
