@@ -269,7 +269,8 @@ const SnippetEditor = ({ onSave, initialSnippet, onCancel, onNew }) => {
                 onChange={(e) => setCode(e.target.value)}
                 onKeyDown={handleKeyDown}
                 onScroll={handleEditorScroll}
-                className="w-full h-full overflow-y-auto bg-slate-50 dark:bg-[#0d1117] text-slate-800 dark:text-white p-4 font-mono text-sm resize-none border-none outline-none focus:outline-none focus:ring-0 leading-relaxed tracking-normal transition-colors duration-200"
+                className="w-full h-full overflow-y-auto text-slate-800 dark:text-white p-4 font-mono text-sm resize-none border-none outline-none focus:outline-none focus:ring-0 leading-relaxed tracking-normal transition-colors duration-200"
+                style={{ backgroundColor: 'var(--color-background)' }}
                 spellCheck="false"
                 autoFocus
               />
@@ -321,7 +322,8 @@ const SnippetEditor = ({ onSave, initialSnippet, onCancel, onNew }) => {
                   onChange={(e) => setCode(e.target.value)}
                   onKeyDown={handleKeyDown}
                   onScroll={handleEditorScroll}
-                  className="w-full h-full overflow-y-auto bg-slate-50 dark:bg-[#0d1117] text-slate-800 dark:text-white p-4 font-mono text-sm resize-none border-none outline-none focus:outline-none focus:ring-0 leading-relaxed tracking-normal transition-colors duration-200"
+                  className="w-full h-full overflow-y-auto text-slate-800 dark:text-white p-4 font-mono text-sm resize-none border-none outline-none focus:outline-none focus:ring-0 leading-relaxed tracking-normal transition-colors duration-200"
+                  style={{ backgroundColor: 'var(--color-background)' }}
                   spellCheck="false"
                   autoFocus
                 />
@@ -340,7 +342,8 @@ const SnippetEditor = ({ onSave, initialSnippet, onCancel, onNew }) => {
             onChange={(e) => setCode(e.target.value)}
             onKeyDown={handleKeyDown}
             onScroll={handleEditorScroll}
-            className="w-full h-full overflow-y-auto bg-slate-50 dark:bg-[#0d1117] text-slate-800 dark:text-white p-4 font-mono text-sm resize-none border-none outline-none focus:outline-none focus:ring-0 leading-relaxed tracking-normal transition-colors duration-200"
+            className="w-full h-full overflow-y-auto text-slate-800 dark:text-white p-4 font-mono text-sm resize-none border-none outline-none focus:outline-none focus:ring-0 leading-relaxed tracking-normal transition-colors duration-200"
+            style={{ backgroundColor: 'var(--color-background)' }}
             spellCheck="false"
             autoFocus
           />

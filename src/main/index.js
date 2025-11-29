@@ -13,6 +13,8 @@ function initDB() {
 
   // Enable WAL mode for better performance
   db.pragma('journal_mode = WAL')
+  db.pragma('synchronous = NORMAL')
+  db.pragma('busy_timeout = 5000')
 
   // Create tables if they don't exist
   db.exec(`
@@ -33,10 +35,16 @@ function initDB() {
       timestamp INTEGER,
       type TEXT
     );
-    
+
     CREATE TABLE IF NOT EXISTS settings (
       key TEXT PRIMARY KEY,
       value TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS theme (
+      id TEXT PRIMARY KEY,
+      name TEXT,
+      colors TEXT
     );
   `)
 
@@ -217,6 +225,19 @@ app.whenReady().then(() => {
 
   ipcMain.handle('db:saveSetting', (event, key, value) => {
     db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(key, value)
+    return true
+  })
+
+  ipcMain.handle('db:getTheme', () => {
+    const row = db.prepare('SELECT id, name, colors FROM theme WHERE id = ?').get('current')
+    return row || null
+  })
+
+  ipcMain.handle('db:saveTheme', (event, theme) => {
+    const stmt = db.prepare(
+      'INSERT OR REPLACE INTO theme (id, name, colors) VALUES (@id, @name, @colors)'
+    )
+    stmt.run(theme)
     return true
   })
 

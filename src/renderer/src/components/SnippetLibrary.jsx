@@ -239,7 +239,13 @@ const SnippetLibrary = () => {
 
       {/* Sidebar - Collapsible (hidden in markdown view) */}
       {!sidebarCollapsed && (
-        <div className="w-80 flex-shrink-0 border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 transition-colors duration-200">
+        <div
+          className="w-80 flex-shrink-0 border-r transition-colors duration-200"
+          style={{
+            backgroundColor: 'var(--color-background-soft)',
+            borderColor: 'var(--border-color)'
+          }}
+        >
           <Sidebar
             activeView={activeView}
             items={filteredItems}

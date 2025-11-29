@@ -20,6 +20,9 @@ const api = {
   deleteProject: (id) => electronAPI.ipcRenderer.invoke('db:deleteProject', id),
   getSetting: (key) => electronAPI.ipcRenderer.invoke('db:getSetting', key),
   saveSetting: (key, value) => electronAPI.ipcRenderer.invoke('db:saveSetting', key, value)
+  ,
+  getTheme: () => electronAPI.ipcRenderer.invoke('db:getTheme'),
+  saveTheme: (theme) => electronAPI.ipcRenderer.invoke('db:saveTheme', theme)
 }
 
 if (process.contextIsolated) {

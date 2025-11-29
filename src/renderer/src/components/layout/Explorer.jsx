@@ -1,6 +1,16 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Search, Trash2, Pencil, Plus, FileCode, FileText, Briefcase, Globe, CodeXml } from 'lucide-react'
+import {
+  Search,
+  Trash2,
+  Pencil,
+  Plus,
+  FileCode,
+  FileText,
+  Briefcase,
+  Globe,
+  CodeXml
+} from 'lucide-react'
 import SidebarHeader, { EmptyState } from './SidebarHeader'
 
 const Explorer = ({
@@ -17,7 +27,8 @@ const Explorer = ({
 }) => {
   // Helper function to filter items based on search term
   const getFileIcon = (item) => {
-    if (item.type === 'project') return <Briefcase size={14} className="text-slate-600 dark:text-slate-300" />
+    if (item.type === 'project')
+      return <Briefcase size={14} className="text-slate-600 dark:text-slate-300" />
     const title = String(item.title || '')
     const ext = title.includes('.') ? title.split('.').pop().toLowerCase() : ''
     const lang = (item.language || '').toLowerCase()
@@ -132,12 +143,14 @@ const Explorer = ({
                     ${
                       isSelected
                         ? 'bg-[var(--selected-bg)] text-[var(--selected-text)] font-medium shadow-sm'
-                        : 'text-slate-600 dark:text-[var(--text-main)] hover:bg-[var(--hover-bg)] hover:text-[var(--hover-text)]'
+                        : 'text-[var(--text-main)] hover:bg-[var(--hover-bg)] hover:text-[var(--hover-text)]'
                     }
                   `}
                 >
                   {/* File Icon */}
-                  <span className={`flex-shrink-0 ${isSelected ? 'opacity-100' : 'opacity-80'} text-[#333] dark:text-slate-300`}>
+                  <span
+                    className={`flex-shrink-0 ${isSelected ? 'opacity-100' : 'opacity-80'} text-[#333] dark:text-slate-300`}
+                  >
                     {getFileIcon(item)}
                   </span>
 
