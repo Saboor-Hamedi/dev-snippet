@@ -506,3 +506,23 @@ code {
 }
 
 /* Snippet Card Styles */
+/* Performance containment */
+.editor-container,
+.preview-container {
+  contain: content;
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
+}
+
+/* Selection usability */
+.editor-textarea,
+.preview-content,
+pre,
+code,
+.hljs {
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
+  pointer-events: auto;
+}

@@ -132,74 +132,18 @@ const Explorer = ({
           </div>
         ) : (
           <div className="space-y-[1px]">
-            {items.map((item) => {
-              const isSelected = selectedSnippet?.id === item.id
-
-              return (
-                <div
-                  key={item.id}
-                  onClick={() => onSelect(item)}
-                  className={`
-                    group relative flex items-center gap-2 px-3 py-1.5 cursor-pointer select-none text-xs rounded-sm transition-colors duration-100
-                    ${
-                      isSelected
-                        ? 'bg-[var(--selected-bg)] text-[var(--selected-text)] font-medium shadow-sm'
-                        : 'text-[var(--sidebar-text)] hover:bg-[var(--hover-bg)] hover:text-[var(--hover-text)]'
-                    }
-                `}
-                >
-                  {/* File Icon */}
-                  <span
-                    className={`flex-shrink-0 ${isSelected ? 'opacity-100' : 'opacity-80'} transition-opacity group-hover:opacity-100`}
-                  >
-                    {getFileIcon(item)}
-                  </span>
-
-                  {/* Filename */}
-                  <span className="truncate flex-1 font-mono leading-relaxed">
-                    {getFilename(item)}
-                  </span>
-
-                  {/* Actions Group (Hidden until hover) */}
-                  <div
-                    className={`
-                    flex items-center gap-1
-                    ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}
-                    transition-opacity
-                  `}
-                  >
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onRenameRequest && onRenameRequest(item)
-                      }}
-                      className={`p-1 rounded transition-colors ${
-                        isSelected
-                          ? 'hover:bg-[var(--hover-bg)] text-[var(--selected-text)]'
-                          : 'hover:bg-[var(--selected-bg)] text-slate-400 hover:text-[var(--hover-text)]'
-                      }`}
-                      title="Rename"
-                    >
-                      <Pencil size={12} />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onDeleteRequest(item.id)
-                      }}
-                      className={`p-1 rounded transition-colors ${
-                        isSelected
-                          ? 'hover:bg-red-600 text-[var(--selected-text)]'
-                          : 'hover:bg-[var(--selected-bg)] text-slate-400 hover:text-red-500'
-                      }`}
-                      title="Delete"
-                    >
-                      <Trash2 size={12} />
-                    </button>
-                  </div>
-                </div>
-              )
-            })}
+            {items.map((item) => (
+              <SidebarItem
+                key={item.id}
+                item={item}
+                isSelected={selectedSnippet?.id === item.id}
+                onSelect={onSelect}
+                onRenameRequest={onRenameRequest}
+                onDeleteRequest={onDeleteRequest}
+                getFilename={getFilename}
+                getFileIcon={getFileIcon}
+              />
+            ))}
           </div>
         )}
       </div>
@@ -221,3 +165,64 @@ Explorer.propTypes = {
 }
 
 export default Explorer
+
+const SidebarItem = React.memo(
+  ({ item, isSelected, onSelect, onRenameRequest, onDeleteRequest, getFilename, getFileIcon }) => {
+    return (
+      <div
+        onClick={() => onSelect(item)}
+        className={`
+        group relative flex items-center gap-2 px-3 py-1.5 cursor-pointer select-none text-xs rounded-sm transition-colors duration-100
+        ${
+          isSelected
+            ? 'bg-[var(--selected-bg)] text-[var(--selected-text)] font-medium shadow-sm'
+            : 'text-[var(--sidebar-text)] hover:bg-[var(--hover-bg)] hover:text-[var(--hover-text)]'
+        }
+      `}
+      >
+        <span
+          className={`flex-shrink-0 ${isSelected ? 'opacity-100' : 'opacity-80'} transition-opacity group-hover:opacity-100`}
+        >
+          {getFileIcon(item)}
+        </span>
+        <span className="truncate flex-1 font-mono leading-relaxed">{getFilename(item)}</span>
+        <div
+          className={`
+          flex items-center gap-1
+          ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}
+          transition-opacity
+        `}
+        >
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onRenameRequest && onRenameRequest(item)
+            }}
+            className={`p-1 rounded transition-colors ${
+              isSelected
+                ? 'hover:bg-[var(--hover-bg)] text-[var(--selected-text)]'
+                : 'hover:bg-[var(--selected-bg)] text-slate-400 hover:text-[var(--hover-text)]'
+            }`}
+            title="Rename"
+          >
+            <Pencil size={12} />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onDeleteRequest(item.id)
+            }}
+            className={`p-1 rounded transition-colors ${
+              isSelected
+                ? 'hover:bg-red-600 text-[var(--selected-text)]'
+                : 'hover:bg-[var(--selected-bg)] text-slate-400 hover:text-red-500'
+            }`}
+            title="Delete"
+          >
+            <Trash2 size={12} />
+          </button>
+        </div>
+      </div>
+    )
+  }
+)

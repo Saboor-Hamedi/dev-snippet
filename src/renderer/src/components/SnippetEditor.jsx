@@ -16,6 +16,7 @@ const SnippetEditor = ({ onSave, initialSnippet, onCancel, onNew }) => {
   // Debounce the code value - wait 1000ms after user stops typing
   const [debouncedCode] = useDebounce(code, 1000)
   const [debouncedLanguage] = useDebounce(language, 1000)
+  const [debouncedPreviewCode] = useDebounce(code, 200)
 
   // Track if this is the initial mount to prevent autosave on first render
   const isInitialMount = useRef(true)
@@ -69,8 +70,11 @@ const SnippetEditor = ({ onSave, initialSnippet, onCancel, onNew }) => {
     html = html.replace(/\n/g, '<br/>')
     return html
   }
-  const previewHtml = useMemo(() => renderMarkdown(code || ''), [code])
-  const highlightedHtml = useHighlight(code || '', language)
+  const previewHtml = useMemo(
+    () => renderMarkdown(debouncedPreviewCode || ''),
+    [debouncedPreviewCode]
+  )
+  const highlightedHtml = useHighlight(debouncedPreviewCode || '', language)
   const isMarkdownLike = /^(# |## |### |> |\* |\d+\. )/m.test(code || '')
   const showMarkdown = language === 'md' || language === 'markdown' || isMarkdownLike
   const showCodePreview = !showMarkdown && language !== 'txt'
@@ -238,8 +242,7 @@ const SnippetEditor = ({ onSave, initialSnippet, onCancel, onNew }) => {
           {previewPosition === 'left' ? (
             <div
               ref={previewRef}
-              onScroll={handlePreviewScroll}
-              className="h-full min-h-0 overflow-auto bg-transparent"
+              className="h-full min-h-0 overflow-auto bg-transparent preview-container"
               style={{ maxHeight: '100%' }}
             >
               {showMarkdown ? (
@@ -256,7 +259,10 @@ const SnippetEditor = ({ onSave, initialSnippet, onCancel, onNew }) => {
               )}
             </div>
           ) : (
-            <div className="h-full min-h-0 overflow-hidden" style={{ maxHeight: '100%' }}>
+            <div
+              className="h-full min-h-0 overflow-hidden editor-container"
+              style={{ maxHeight: '100%' }}
+            >
               <textarea
                 key={`left-${layoutMode}-${previewPosition}`}
                 placeholder="Type your snippets here..."
@@ -264,8 +270,7 @@ const SnippetEditor = ({ onSave, initialSnippet, onCancel, onNew }) => {
                 ref={textareaRef}
                 onChange={(e) => setCode(e.target.value)}
                 onKeyDown={handleKeyDown}
-                onScroll={handleEditorScroll}
-                className="w-full h-full overflow-y-auto text-slate-800 dark:text-white p-4 font-mono text-sm resize-none border-none outline-none focus:outline-none focus:ring-0 leading-relaxed tracking-normal transition-colors duration-200"
+                className="w-full h-full overflow-y-auto text-slate-800 dark:text-white p-4 font-mono text-sm resize-none border-none outline-none focus:outline-none focus:ring-0 leading-relaxed tracking-normal transition-colors duration-200 editor-textarea"
                 style={{ backgroundColor: 'var(--color-background)' }}
                 spellCheck="false"
                 autoFocus
@@ -286,8 +291,7 @@ const SnippetEditor = ({ onSave, initialSnippet, onCancel, onNew }) => {
             previewPosition === 'right' ? (
               <div
                 ref={previewRef}
-                onScroll={handlePreviewScroll}
-                className="h-full min-h-0 overflow-auto bg-transparent"
+                className="h-full min-h-0 overflow-auto bg-transparent preview-container"
                 style={{ maxHeight: '100%' }}
               >
                 {showMarkdown ? (
@@ -304,7 +308,10 @@ const SnippetEditor = ({ onSave, initialSnippet, onCancel, onNew }) => {
                 )}
               </div>
             ) : (
-              <div className="h-full min-h-0 overflow-hidden" style={{ maxHeight: '100%' }}>
+              <div
+                className="h-full min-h-0 overflow-hidden editor-container"
+                style={{ maxHeight: '100%' }}
+              >
                 <textarea
                   key={`right-${layoutMode}-${previewPosition}`}
                   placeholder="Type your snippets here..."
@@ -312,8 +319,7 @@ const SnippetEditor = ({ onSave, initialSnippet, onCancel, onNew }) => {
                   ref={textareaRef}
                   onChange={(e) => setCode(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  onScroll={handleEditorScroll}
-                  className="w-full h-full overflow-y-auto text-slate-800 dark:text-white p-4 font-mono text-sm resize-none border-none outline-none focus:outline-none focus:ring-0 leading-relaxed tracking-normal transition-colors duration-200"
+                  className="w-full h-full overflow-y-auto text-slate-800 dark:text-white p-4 font-mono text-sm resize-none border-none outline-none focus:outline-none focus:ring-0 leading-relaxed tracking-normal transition-colors duration-200 editor-textarea"
                   style={{ backgroundColor: 'var(--color-background)' }}
                   spellCheck="false"
                   autoFocus
@@ -325,15 +331,14 @@ const SnippetEditor = ({ onSave, initialSnippet, onCancel, onNew }) => {
       )}
 
       {layoutMode === 'editor' && (
-        <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-hidden editor-container">
           <textarea
             placeholder="Type your snippets here..."
             value={code}
             ref={textareaRef}
             onChange={(e) => setCode(e.target.value)}
             onKeyDown={handleKeyDown}
-            onScroll={handleEditorScroll}
-            className="w-full h-full overflow-y-auto text-slate-800 dark:text-white p-4 font-mono text-sm resize-none border-none outline-none focus:outline-none focus:ring-0 leading-relaxed tracking-normal transition-colors duration-200"
+            className="w-full h-full overflow-y-auto text-slate-800 dark:text-white p-4 font-mono text-sm resize-none border-none outline-none focus:outline-none focus:ring-0 leading-relaxed tracking-normal transition-colors duration-200 editor-textarea"
             style={{ backgroundColor: 'var(--color-background)' }}
             spellCheck="false"
             autoFocus
@@ -342,10 +347,9 @@ const SnippetEditor = ({ onSave, initialSnippet, onCancel, onNew }) => {
       )}
 
       {layoutMode === 'preview' && canPreview && (
-        <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-hidden preview-container">
           <div
             ref={previewRef}
-            onScroll={handlePreviewScroll}
             className="h-full min-h-0 overflow-auto bg-transparent"
             style={{ maxHeight: '100%' }}
           >

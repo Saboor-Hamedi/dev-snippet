@@ -46,8 +46,8 @@ const MarkdownPreview = ({ content }) => {
   const style = isDark ? atomOneDark : docco
 
   return (
-    <div className="p-4">
-      <div className="prose prose-slate dark:prose-invert max-w-none">
+    <div className="p-4 preview-content">
+      <div className="prose prose-slate dark:prose-invert max-w-none preview-content">
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           components={{
@@ -105,4 +105,4 @@ const MarkdownPreview = ({ content }) => {
   )
 }
 
-export default MarkdownPreview
+export default React.memo(MarkdownPreview)
