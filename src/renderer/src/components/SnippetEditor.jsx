@@ -1,35 +1,33 @@
-// Edit snippets
+// Edit snippets with autosave functionality - Clean live editing experience
 
 import React, { useState, useEffect, useRef } from 'react'
 import PropTypes from 'prop-types'
-import { X, Check, Pencil, Copy } from 'lucide-react'
-import toCapitalized from '../hook/stringUtils'
+import { useDebounce } from 'use-debounce'
 import { useTextEditor } from '../hook/useTextEditor'
 import { useKeyboardShortcuts } from '../hook/useKeyboardShortcuts'
-import DocumentHeader from './layout/DocumentHeader'
+
 const SnippetEditor = ({ onSave, initialSnippet, onCancel }) => {
   const { code, setCode, textareaRef, handleKeyDown } = useTextEditor(initialSnippet?.code || '')
-  // 2. We keep language state here because it's specific to the UI, not the text editing logic
   const [language, setLanguage] = React.useState(initialSnippet?.language || 'txt')
-  // Update language if initialSnippet changes
-  React.useEffect(() => {
-    if (initialSnippet) {
-      setLanguage(initialSnippet.language)
-      // Note: 'code' updates automatically inside useTextEditor via its internal useEffect
-    }
-  }, [initialSnippet])
 
-  const isCode = (language || '') !== 'txt'
-  const codeLines = (code || '').split('\n')
-  const formattedTimestamp = new Date(initialSnippet?.timestamp || Date.now()).toLocaleDateString(
-    'en-US',
-    {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+  // Debounce the code value - wait 1000ms after user stops typing
+  const [debouncedCode] = useDebounce(code, 1000)
+  const [debouncedLanguage] = useDebounce(language, 1000)
+
+  // Track if this is the initial mount to prevent autosave on first render
+  const isInitialMount = useRef(true)
+  const lastSnippetId = useRef(initialSnippet?.id)
+
+  // Update language/code if initialSnippet changes (only on ID change to prevent autosave loops)
+  React.useEffect(() => {
+    if (initialSnippet && initialSnippet.id !== lastSnippetId.current) {
+      setLanguage(initialSnippet.language)
+      setCode(initialSnippet.code)
+      lastSnippetId.current = initialSnippet.id
     }
-  )
+  }, [initialSnippet?.id])
+
+  // Auto-detect language based on code content
   React.useEffect(() => {
     const t = code || ''
     const has = (r) => r.test(t)
@@ -44,16 +42,49 @@ const SnippetEditor = ({ onSave, initialSnippet, onCancel }) => {
     else if (has(/\bpublic\s+class\b|System\.out\.println|package\s+\w+/)) detected = 'java'
     else if (has(/^#!.*(bash|sh)|\becho\b|\bcd\b|\bfi\b/)) detected = 'sh'
     else if (has(/^(# |## |### |> |\* |\d+\. )/m)) detected = 'md'
-    if (detected !== language) setLanguage(detected)
-  }, [code])
 
-  // update or create snippet
-  const handleSave = () => {
-    if (!code.trim()) return
+    // Only switch language if we detected something specific (not txt)
+    // This prevents flickering back to 'txt' while typing
+    if (detected !== 'txt' && detected !== language) {
+      setLanguage(detected)
+    }
+  }, [code, language])
 
-    const title = initialSnippet?.title || 'untitled'
+  // Autosave effect - triggers when user stops typing
+  useEffect(() => {
+    // Skip autosave on initial mount
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+      return
+    }
 
-    // Construct the object
+    // Only autosave if snippet has a title (project is created/named)
+    if (!initialSnippet?.title) {
+      return
+    }
+
+    // Construct the updated snippet
+    const updatedSnippet = {
+      id: initialSnippet.id,
+      title: initialSnippet.title,
+      code: debouncedCode,
+      language: debouncedLanguage,
+      timestamp: Date.now(),
+      type: initialSnippet.type || 'snippet'
+    }
+
+    // Trigger autosave
+    onSave(updatedSnippet)
+  }, [debouncedCode, debouncedLanguage])
+
+  // Handle keyboard shortcuts (only Escape now)
+  useKeyboardShortcuts({
+    onEscape: onCancel
+  })
+
+  // Manual save for new snippets (that don't have a title yet)
+  const handleManualSave = () => {
+    const title = initialSnippet?.title || 'Untitled'
     const newSnippet = {
       id: initialSnippet?.id || Date.now().toString(),
       title: title,
@@ -62,121 +93,57 @@ const SnippetEditor = ({ onSave, initialSnippet, onCancel }) => {
       timestamp: Date.now(),
       type: 'snippet'
     }
-
-    // Send it back to the parent
     onSave(newSnippet)
-
-    // Reset form only if not editing
-    if (!initialSnippet) {
-      setCode('')
-    }
-  }
-  // Handle keyboard shortcuts
-  useKeyboardShortcuts({
-    onEscape: onCancel,
-    onSave: handleSave
-  })
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(code || '')
-    } catch (err) {
-      console.error('Failed to copy:', err)
-    }
-  }
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    handleSave()
   }
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-slate-900 transition-colors duration-200">
-      {/* VS Code Style Header */}
-     
+    <div className="h-full flex flex-col bg-slate-50 dark:bg-[#0f172a] transition-colors duration-200 relative">
+      {/* Pure EDITOR AREA - No headers, no buttons, just code */}
+      <textarea
+        placeholder="Type your snippets here..."
+        value={code}
+        ref={textareaRef}
+        onChange={(e) => setCode(e.target.value)}
+        onKeyDown={handleKeyDown}
+        className="
+          w-full h-full
+          bg-slate-50 dark:bg-[#0f172a]
+          text-slate-800 dark:text-slate-300
+          p-4
+          font-mono text-sm
 
-      <DocumentHeader
-        title={initialSnippet?.title || 'Untitled'}
-        subtitle={language}
-        onClose={onCancel}
-        rightContent={
-          <>
-            {/* Meta info */}
-            <div className="flex items-center gap-2 text-xs text-slate-500 ">
-              <span className="text-slate-400 dark:text-slate-600">•</span>
-              <span>{formattedTimestamp}</span>
-            </div>
+          /* REMOVE BORDERS & RINGS */
+          resize-none
+          border-none
+          outline-none
+          focus:outline-none
+          focus:ring-0
 
-            {/* Action buttons */}
-            <div className="flex items-center gap-1">
-              {onSave && (
-                <button
-                  onClick={handleSave}
-                  className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
-                  title="Edit snippet"
-                >
-                  <Pencil size={12} />
-                </button>
-              )}
+          /* TYPOGRAPHY POLISH */
+          leading-relaxed
+          tracking-normal
 
-              <button
-                onClick={handleCopy}
-                className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
-                title="Copy to clipboard"
-              >
-                <Copy size={12} />
-              </button>
-            </div>
-          </>
-        }
+          /* VISUAL FLINT */
+          caret-primary-600 dark:caret-primary-400
+          selection:bg-primary-200 dark:selection:bg-primary-900/50
+
+          transition-colors duration-200
+        "
+        spellCheck="false"
+        autoFocus
       />
 
-      <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
-        {/* EDITOR AREA */}
-        <div className="flex-1 relative">
-          <textarea
-            placeholder="Type your snippets here..."
-            value={code}
-            ref={textareaRef}
-            onChange={(e) => setCode(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="
-                    w-full h-full
-                    bg-slate-50 dark:bg-[#0f172a]
-                    text-slate-800 dark:text-slate-300
-                    p-4
-                    font-mono text-sm
-
-                    /* REMOVE BORDERS & RINGS */
-                    resize-none
-                    border-none
-                    outline-none
-                    focus:outline-none
-                    focus:ring-0  /* This is key: removes the blue Tailwind glow */
-
-                    /* TYPOGRAPHY POLISH */
-                    leading-relaxed /* More space between lines (1.625) */
-                    tracking-normal
-
-                    /* VISUAL FLINT */
-                    caret-primary-600 dark:caret-primary-400 /* Colored blinking cursor */
-                    selection:bg-primary-200 dark:selection:bg-primary-900/50 /* Highlight color */
-
-                    transition-colors duration-200
-                  "
-            spellCheck="false"
-            autoFocus
-          />
-        </div>
-
-        {/* Footer - Save button only */}
-        <div className="border-t border-slate-200 dark:border-slate-700 px-4 py-2 bg-white dark:bg-slate-800/50 flex items-center justify-end backdrop-blur-sm transition-colors duration-200">
+      {/* Show Save button ONLY for new snippets (no title) */}
+      {!initialSnippet?.title && (
+        <div className="absolute bottom-4 right-4">
           <button
-            type="submit"
-            className="px-3 py-1.5 text-xs bg-primary-600 hover:bg-primary-500 text-white rounded font-medium transition-colors"
+            onClick={handleManualSave}
+            className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded shadow-lg text-sm font-medium transition-colors"
           >
-            {initialSnippet ? 'Update' : 'Save'}
+            Save Snippet
           </button>
         </div>
-      </form>
+      )}
     </div>
   )
 }

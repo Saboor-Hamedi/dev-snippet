@@ -2,8 +2,6 @@
 import { useEffect, useRef } from 'react'
 
 export const useKeyboardShortcuts = (shortcuts) => {
-  // We use refs to keep the latest callback versions without restarting the event listener
-  // This prevents the "remove/add listener" loop every time you type a character.
   const shortcutsRef = useRef(shortcuts)
 
   useEffect(() => {
@@ -12,18 +10,10 @@ export const useKeyboardShortcuts = (shortcuts) => {
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // 1. Handle Escape
+      // Escpe close
       if (e.key === 'Escape') {
         if (shortcutsRef.current.onEscape) {
           shortcutsRef.current.onEscape()
-        }
-      }
-
-      // 2. Handle Save (Ctrl+S or Cmd+S)
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault() // Stop browser "Save Page" dialog
-        if (shortcutsRef.current.onSave) {
-          shortcutsRef.current.onSave()
         }
       }
     }

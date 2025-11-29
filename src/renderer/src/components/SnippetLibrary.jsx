@@ -229,11 +229,11 @@ const SnippetLibrary = () => {
           onCloseSnippet={() => setSelectedSnippet(null)}
           onCancelEditor={() => setIsCreatingSnippet(false)}
           onSave={(item) => {
-            const needsName = !/\.[a-z0-9]+$/i.test(String(item.title || ''))
-            if (needsName) {
-              setRenameModal({ isOpen: true, item })
-            } else {
-              saveSnippet(item)
+            saveSnippet(item)
+            // If we were creating a new snippet, switch to viewing/editing it
+            // so the editor doesn't close or reset.
+            if (isCreatingSnippet) {
+              setSelectedSnippet(item)
               setIsCreatingSnippet(false)
             }
           }}

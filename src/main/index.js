@@ -1,6 +1,5 @@
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
-import { is } from '@electron-toolkit/utils'
 import fs from 'fs/promises'
 import Database from 'better-sqlite3'
 
@@ -75,7 +74,8 @@ function createWindow() {
 
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+  const isDev = !app.isPackaged
+  if (isDev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
@@ -174,7 +174,7 @@ app.whenReady().then(() => {
 
   // Snippets
   ipcMain.handle('db:getSnippets', () => {
-    return db.prepare('SELECT * FROM snippets ORDER BY timestamp DESC').all()
+    return db.prepare('SELECT * FROM snippets ORDER BY title ASC').all()
   })
 
   // insert or update snippet
@@ -193,7 +193,7 @@ app.whenReady().then(() => {
 
   // Projects
   ipcMain.handle('db:getProjects', () => {
-    return db.prepare('SELECT * FROM projects ORDER BY timestamp DESC').all()
+    return db.prepare('SELECT * FROM projects ORDER BY title ASC').all()
   })
 
   ipcMain.handle('db:saveProject', (event, project) => {

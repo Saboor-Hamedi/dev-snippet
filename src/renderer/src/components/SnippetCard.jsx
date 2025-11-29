@@ -1,7 +1,6 @@
 // This is my snippets in the workbench
-import { useState, useCallback, memo, useEffect } from 'react'
+import { useState, useCallback, memo } from 'react'
 import PropTypes from 'prop-types'
-import SnippetViewModal from './SnippetViewModal'
 import useHighlight from '../hook/useHighlight'
 import toCapitalized from '../hook/stringUtils'
 import { useToast } from '../utils/ToastNotification'
@@ -35,10 +34,8 @@ const copyToClipboard = async (text) => {
     return false
   }
 }
-
 const SnippetCard = ({ snippet, onRequestDelete, onEdit }) => {
   const [copied, setCopied] = useState(false)
-  const [isViewModalOpen, setisViewModalOpen] = useState(false)
   const { toast, showToast } = useToast()
 
   const highlightedContent = useHighlight(snippet.code, snippet.language)
@@ -76,24 +73,6 @@ const SnippetCard = ({ snippet, onRequestDelete, onEdit }) => {
     [onEdit, snippet]
   )
 
-  const openModal = useCallback(() => {
-    setisViewModalOpen(true)
-  }, [])
-
-  const closeModal = useCallback(() => {
-    setisViewModalOpen(false)
-  }, [])
-
-  useEffect(() => {
-    const handleKeyPress = (e) => {
-      if (e.key === 'Escape') {
-        setisViewModalOpen(false)
-      }
-    }
-    document.addEventListener('keydown', handleKeyPress)
-    return () => document.removeEventListener('keydown', handleKeyPress)
-  })
-
   return (
     <div
       className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700
@@ -101,14 +80,6 @@ const SnippetCard = ({ snippet, onRequestDelete, onEdit }) => {
         min-h-[200px] flex flex-col"
     >
       {toast && <div className="toast">{toast}</div>}
-
-      <SnippetViewModal
-        open={isViewModalOpen}
-        onClose={closeModal}
-        snippet={snippet}
-        onRequestDelete={onRequestDelete}
-        onEdit={() => onEdit && onEdit(snippet)}
-      />
 
       {/* Card Header */}
       <div className="flex items-start justify-between p-3 pb-2">
@@ -136,7 +107,7 @@ const SnippetCard = ({ snippet, onRequestDelete, onEdit }) => {
               ? 'bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700'
               : 'bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700'
           }`}
-          onClick={openModal}
+          onClick={handleEdit}
         >
           <div className="max-h-32 overflow-y-hidden p-3">
             {isCode ? (
@@ -179,7 +150,7 @@ const SnippetCard = ({ snippet, onRequestDelete, onEdit }) => {
         </button>
 
         <button
-          onClick={openModal}
+          onClick={handleEdit}
           className="flex items-center justify-center p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
           title="View snippet"
         >

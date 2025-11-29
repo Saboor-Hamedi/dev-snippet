@@ -1,11 +1,9 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import SidebarHeader from '../layout/SidebarHeader'
-import SnippetViewer from '../SnippetViewer'
 import SnippetEditor from '../SnippetEditor'
 import SettingsPanel from '../SettingsPanel'
 import SnippetCard from '../SnippetCard'
-import MarkDown from '../markdown/MarkDown'
 import WelcomePage from '../WelcomePage'
 
 const Workbench = ({
@@ -62,51 +60,14 @@ const Workbench = ({
   // Priority 4: Viewing a selected snippet
   if (selectedSnippet) {
     return (
-      <SnippetViewer
-        snippet={selectedSnippet}
-        onClose={onCloseSnippet}
-        onEdit={() => handleEdit(selectedSnippet)}
+      <SnippetEditor
+        initialSnippet={selectedSnippet}
+        onSave={handleSave}
+        onCancel={onCloseSnippet}
       />
     )
   }
-  // Priority 5: Snippets view - show grid or welcome
-  if (activeView === 'snippets') {
-    const items = snippets
-    // Show snippets grid if there are snippets, otherwise show welcome page
-    if (items.length > 0) {
-      return (
-        <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-900 overflow-hidden transition-colors duration-200">
-          {/* Snippets Header, this is where the snippets shows in the card */}
-          <SidebarHeader
-            title="Snippets"
-            count={items.length}
-            // itemLabel="Snippet"
-            onAction={onNewSnippet}
-          />
-          {/* Snippets Grid */}
-          <div className="flex-1 overflow-y-auto p-6">
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-6 pb-6">
-              {items.map((item) => (
-                <SnippetCard
-                  key={item.id}
-                  snippet={item}
-                  onRequestDelete={onDeleteRequest}
-                  onEdit={handleEdit}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      )
-    } else {
-      // Show welcome page when no snippets exist
-      return (
-        <div className="h-full">
-          <WelcomePage onNewSnippet={onNewSnippet} />
-        </div>
-      )
-    }
-  }
+
   // Priority 6: Projects view - show grid
   if (activeView === 'projects') {
     const items = projects
