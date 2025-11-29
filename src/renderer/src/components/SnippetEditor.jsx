@@ -2,14 +2,38 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import PropTypes from 'prop-types'
 import { useDebounce, useDebouncedCallback } from 'use-debounce'
-import { useTextEditor } from '../hook/useTextEditor'
 import { useKeyboardShortcuts } from '../hook/useKeyboardShortcuts'
 import useHighlight from '../hook/useHighlight'
 import MarkdownPreview from './MarkdownPreview.jsx'
 import ViewToolbar from './ViewToolbar'
 import WelcomePage from './WelcomePage'
-import ContextMenu from './ContextMenu'
 import StatusBar from './StatusBar.jsx'
+import Editor from 'react-simple-code-editor'
+import hljs from 'highlight.js/lib/core'
+import javascript from 'highlight.js/lib/languages/javascript'
+import python from 'highlight.js/lib/languages/python'
+import xml from 'highlight.js/lib/languages/xml'
+import css from 'highlight.js/lib/languages/css'
+import json from 'highlight.js/lib/languages/json'
+import markdown from 'highlight.js/lib/languages/markdown'
+import bash from 'highlight.js/lib/languages/bash'
+import sql from 'highlight.js/lib/languages/sql'
+import cpp from 'highlight.js/lib/languages/cpp'
+import java from 'highlight.js/lib/languages/java'
+import php from 'highlight.js/lib/languages/php'
+
+hljs.registerLanguage('javascript', javascript)
+hljs.registerLanguage('python', python)
+hljs.registerLanguage('html', xml)
+hljs.registerLanguage('xml', xml)
+hljs.registerLanguage('css', css)
+hljs.registerLanguage('json', json)
+hljs.registerLanguage('markdown', markdown)
+hljs.registerLanguage('bash', bash)
+hljs.registerLanguage('sql', sql)
+hljs.registerLanguage('cpp', cpp)
+hljs.registerLanguage('java', java)
+hljs.registerLanguage('php', php)
 
 const SnippetEditor = ({
   onSave,
@@ -24,7 +48,8 @@ const SnippetEditor = ({
   projects,
   onSnippetMentionClick
 }) => {
-  const { code, setCode, textareaRef, handleKeyDown } = useTextEditor(initialSnippet?.code || '')
+  const [code, setCode] = useState(initialSnippet?.code || '')
+  const textareaRef = useRef(null) // Keep ref for compatibility if needed, though Editor manages its own
   const [language, setLanguage] = React.useState(initialSnippet?.language || 'txt')
 
   // Debounce the code value - wait 1000ms after user stops typing
@@ -192,37 +217,12 @@ const SnippetEditor = ({
   const outerRef = useRef(null)
   const [nameOpen, setNameOpen] = useState(false)
   const [nameInput, setNameInput] = useState('')
-  const [menu, setMenu] = useState(null)
-  const [mentionOpen, setMentionOpen] = useState(false)
-  const [mentionQuery, setMentionQuery] = useState('')
-  const [mentionPos, setMentionPos] = useState({ x: 0, y: 0 })
-  const [mentionItems, setMentionItems] = useState([])
 
   useEffect(() => {
     if (!canPreview && layoutMode !== 'editor') {
       setLayoutMode('editor')
     }
   }, [canPreview, layoutMode])
-
-  const handleEditorScroll = (e) => {
-    if (!previewRef.current || syncingRef.current || previewSelectionLocked) return
-    const max = e.target.scrollHeight - e.target.clientHeight
-    const ratio = max > 0 ? e.target.scrollTop / max : 0
-    const pMax = previewRef.current.scrollHeight - previewRef.current.clientHeight
-    syncingRef.current = true
-    previewRef.current.scrollTop = pMax > 0 ? ratio * pMax : 0
-    syncingRef.current = false
-  }
-
-  const handlePreviewScroll = (e) => {
-    if (!textareaRef.current || syncingRef.current || previewSelectionLocked) return
-    const max = e.target.scrollHeight - e.target.clientHeight
-    const ratio = max > 0 ? e.target.scrollTop / max : 0
-    const tMax = textareaRef.current.scrollHeight - textareaRef.current.clientHeight
-    syncingRef.current = true
-    textareaRef.current.scrollTop = tMax > 0 ? ratio * tMax : 0
-    syncingRef.current = false
-  }
 
   const startResize = (ev) => {
     ev.preventDefault()
@@ -245,175 +245,6 @@ const SnippetEditor = ({
     }
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup', onUp)
-  }
-
-  const computeCaretPosition = () => {
-    const ta = textareaRef.current
-    if (!ta) return { x: 0, y: 0 }
-    const div = document.createElement('div')
-    const style = getComputedStyle(ta)
-    ;[
-      'fontFamily',
-      'fontSize',
-      'fontWeight',
-      'letterSpacing',
-      'whiteSpace',
-      'wordBreak',
-      'lineHeight',
-      'paddingTop',
-      'paddingRight',
-      'paddingBottom',
-      'paddingLeft',
-      'borderTopWidth',
-      'borderLeftWidth',
-      'textAlign'
-    ].forEach((k) => (div.style[k] = style[k]))
-    div.style.position = 'absolute'
-    div.style.visibility = 'hidden'
-    div.style.width = ta.clientWidth + 'px'
-    div.style.whiteSpace = 'pre-wrap'
-    div.style.wordBreak = 'break-word'
-    const before = (code || '').slice(0, ta.selectionStart)
-    const after = (code || '').slice(ta.selectionStart)
-    div.innerHTML =
-      before.replace(/\n/g, '<br/>') +
-      '<span id="caret">\u200b</span>' +
-      after.replace(/\n/g, '<br/>')
-    ta.parentElement.appendChild(div)
-    const caret = div.querySelector('#caret')
-    const rectTa = ta.getBoundingClientRect()
-    const rectClone = div.getBoundingClientRect()
-    const rectCaret = caret.getBoundingClientRect()
-    const offsetX = rectCaret.left - rectClone.left
-    const offsetY = rectCaret.top - rectClone.top
-    const viewportX = rectTa.left + offsetX
-    const viewportY = rectTa.top + offsetY
-    const pos = { x: viewportX, y: viewportY }
-    div.remove()
-    return pos
-  }
-
-  const updateCaretOverlay = () => {
-    const ta = textareaRef.current
-    if (!ta) return
-    const container = ta.parentElement
-    if (!container) return
-    const el = container.querySelector('.custom-caret')
-    if (!el) return
-    const style = getComputedStyle(ta)
-    const lh = parseFloat(style.lineHeight || '20')
-    const padL = parseFloat(style.paddingLeft || '0') + parseFloat(style.borderLeftWidth || '0')
-    const padT = parseFloat(style.paddingTop || '0') + parseFloat(style.borderTopWidth || '0')
-    const selStart = ta.selectionStart || 0
-    const selEnd = ta.selectionEnd || selStart
-    const before = (code || '').slice(0, selStart)
-    const lineIndex = (before.match(/\n/g) || []).length
-    const lineStart = before.lastIndexOf('\n') + 1
-    const col = selStart - (lineStart < 0 ? 0 : lineStart)
-    // measure monospace char width once
-    if (!charWidth || charWidth <= 0) {
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')
-      ctx.font = `${style.fontWeight || 'normal'} ${style.fontSize} ${style.fontFamily}`
-      const w = ctx.measureText('M').width
-      if (w && w > 0) setCharWidth(w)
-    }
-    const x = padL + col * (charWidth || 8) - ta.scrollLeft
-    const y = padT + lineIndex * lh - ta.scrollTop
-    const root = getComputedStyle(document.documentElement)
-    const styleType = (root.getPropertyValue('--caret-style') || 'bar').trim()
-    const caretW = (root.getPropertyValue('--caret-width') || '3px').trim()
-    const pos = computeCaretPosition()
-    const containerRect = container.getBoundingClientRect()
-    const taRect = ta.getBoundingClientRect()
-    el.style.left = `${Math.max(0, Math.round((pos.x || x) - containerRect.left))}px`
-    el.style.top = `${Math.max(0, Math.round((pos.y || y) - containerRect.top))}px`
-    if (styleType === 'block' || (styleType !== 'bar' && styleType !== 'underline')) {
-      el.style.width = `${charWidth || 8}px`
-      el.style.height = `${lh}px`
-      el.style.opacity = '0.5'
-    } else if (styleType === 'underline') {
-      el.style.width = `${charWidth || 8}px`
-      el.style.height = '2px'
-      el.style.top = `${Math.max(0, Math.round((pos.y || y) + lh - 2))}px`
-      el.style.opacity = '1'
-    } else {
-      el.style.width = caretW
-      el.style.height = `${lh}px`
-      el.style.opacity = '1'
-    }
-    el.style.display = selStart === selEnd ? 'block' : 'none'
-    // current line background
-    ta.style.backgroundImage = 'linear-gradient(var(--current-line-bg), var(--current-line-bg))'
-    ta.style.backgroundRepeat = 'no-repeat'
-    ta.style.backgroundSize = `100% ${lh}px`
-    ta.style.backgroundPosition = `0 ${Math.max(0, Math.round((pos.y || y) - taRect.top))}px`
-  }
-
-  const updateMention = () => {
-    const ta = textareaRef.current
-    if (!ta) return
-    const pos = ta.selectionStart
-    const text = code || ''
-    let i = pos - 1
-    while (i >= 0 && /[a-zA-Z0-9_\-.]/.test(text[i])) i--
-    if (text[i] === '@') {
-      const start = i + 1
-      const query = text.slice(start, pos)
-      setMentionQuery(query)
-      const coords = computeCaretPosition()
-      const padX = 12
-      const padY = 20
-      let vx = (coords.x || 0) + padX
-      let vy = (coords.y || 0) + padY
-      const menuW = 320
-      const menuH = 220
-      vx = Math.max(8, Math.min(vx, window.innerWidth - menuW - 8))
-      vy = Math.max(8, Math.min(vy, window.innerHeight - menuH - 8))
-      const suggestions = [...(snippets || []), ...(projects || [])]
-        .filter((s) => (s.title || '').toLowerCase().includes(query.toLowerCase()))
-        .slice(0, 5)
-      setMentionItems(suggestions)
-      setMentionPos({ x: vx, y: vy })
-      setMentionOpen(true)
-    } else {
-      setMentionOpen(false)
-    }
-  }
-
-  const throttledMention = useDebouncedCallback(updateMention, 80)
-  const throttledCaret = useDebouncedCallback(updateCaretOverlay, 16)
-
-  useEffect(() => {
-    setTimeout(() => {
-      try {
-        updateCaretOverlay()
-      } catch {}
-    }, 0)
-  }, [layoutMode, previewPosition])
-
-  const insertMention = (snippet) => {
-    const ta = textareaRef.current
-    if (!ta) return
-    const pos = ta.selectionStart
-    const text = code || ''
-    let i = pos - 1
-    while (i >= 0 && /[a-zA-Z0-9_\-.]/.test(text[i])) i--
-    if (text[i] !== '@') return
-    const start = i
-    const slug = (snippet.title || '').toLowerCase().trim().replace(/\s+/g, '-')
-    console.log('mention.insert', { slug, id: snippet.id })
-    const before = text.slice(0, start)
-    const after = text.slice(pos)
-    const inserted = `@${slug} `
-    const newVal = before + inserted + after
-    setCode(newVal)
-    const caret = before.length + inserted.length
-    requestAnimationFrame(() => {
-      ta.selectionStart = caret
-      ta.selectionEnd = caret
-      setMentionOpen(false)
-    })
   }
 
   // Trigger debounced save on content or language change
@@ -484,10 +315,6 @@ const SnippetEditor = ({
           <div
             ref={outerRef}
             className="h-full flex flex-col items-stretch bg-slate-50 dark:bg-[#0d1117] transition-colors duration-200 relative"
-            onContextMenu={(e) => {
-              e.preventDefault()
-              setMenu({ x: e.clientX, y: e.clientY })
-            }}
           >
             <ViewToolbar
               onNew={onNew}
@@ -556,48 +383,41 @@ const SnippetEditor = ({
                   </div>
                 ) : (
                   <div
-                    className="h-full min-h-0 overflow-hidden editor-container"
-                    style={{ maxHeight: '100%' }}
+                    className="h-full min-h-0 overflow-hidden editor-container relative"
+                    style={{ maxHeight: '100%', backgroundColor: 'var(--editor-bg)' }}
                   >
-                    <textarea
-                      key={`left-${layoutMode}-${previewPosition}`}
-                      placeholder="Type your snippets here..."
-                      value={code}
-                      ref={textareaRef}
-                      onChange={(e) => {
-                        setCode(e.target.value)
-                        throttledCaret()
-                      }}
-                      onInput={() => {
-                        throttledMention()
-                        throttledCaret()
-                      }}
-                      onKeyUp={() => {
-                        throttledMention()
-                        throttledCaret()
-                      }}
-                      onKeyDown={(e) => {
-                        handleKeyDown(e)
-                        throttledCaret()
-                      }}
-                      onFocus={throttledCaret}
-                      onSelect={throttledCaret}
-                      onScroll={throttledCaret}
-                      onClick={throttledCaret}
-                      onMouseUp={throttledCaret}
-                      className="w-full h-full overflow-y-auto text-slate-800 dark:text-white p-4 resize-none border-none outline-none focus:outline-none focus:ring-0 tracking-normal transition-colors duration-200 editor-textarea"
-                      style={{
-                        backgroundColor: 'var(--color-background)',
-                        fontFamily: 'var(--editor-font-family)',
-                        fontSize: 'var(--editor-font-size)',
-                        lineHeight: 'var(--editor-line-height)',
-                        paddingBottom: 'calc(var(--editor-font-size) * var(--editor-line-height))',
-                        caretColor: 'transparent'
-                      }}
-                      spellCheck="false"
-                      autoFocus
-                    />
-                    <div className="custom-caret" style={{ display: 'none' }} />
+                    <div className="h-full w-full overflow-auto custom-scrollbar">
+                      <Editor
+                        value={code}
+                        onValueChange={setCode}
+                        highlight={(code) => {
+                          const languageMap = {
+                            js: 'javascript',
+                            py: 'python',
+                            sh: 'bash',
+                            md: 'markdown',
+                            txt: 'txt',
+                            php: 'php'
+                          }
+                          const mappedLanguage = languageMap[language] || language
+                          if (mappedLanguage === 'txt') return code
+                          try {
+                            return hljs.highlight(code, { language: mappedLanguage }).value
+                          } catch {
+                            return code
+                          }
+                        }}
+                        padding={16}
+                        style={{
+                          fontFamily: 'var(--editor-font-family)',
+                          fontSize: 'var(--editor-font-size)',
+                          lineHeight: 'var(--editor-line-height)',
+                          backgroundColor: 'transparent',
+                          minHeight: '100%'
+                        }}
+                        textareaClassName="focus:outline-none"
+                      />
+                    </div>
                   </div>
                 )}
 
@@ -654,49 +474,41 @@ const SnippetEditor = ({
                     </div>
                   ) : (
                     <div
-                      className="h-full min-h-0 overflow-hidden editor-container"
-                      style={{ maxHeight: '100%' }}
+                      className="h-full min-h-0 overflow-hidden editor-container relative"
+                      style={{ maxHeight: '100%', backgroundColor: 'var(--editor-bg)' }}
                     >
-                      <textarea
-                        key={`right-${layoutMode}-${previewPosition}`}
-                        placeholder="Type your snippets here..."
-                        value={code}
-                        ref={textareaRef}
-                        onChange={(e) => {
-                          setCode(e.target.value)
-                          throttledCaret()
-                        }}
-                        onInput={() => {
-                          throttledMention()
-                          throttledCaret()
-                        }}
-                        onKeyUp={() => {
-                          throttledMention()
-                          throttledCaret()
-                        }}
-                        onKeyDown={(e) => {
-                          handleKeyDown(e)
-                          throttledCaret()
-                        }}
-                        onFocus={throttledCaret}
-                        onSelect={throttledCaret}
-                        onScroll={throttledCaret}
-                        onClick={throttledCaret}
-                        onMouseUp={throttledCaret}
-                        className="w-full h-full overflow-y-auto text-slate-800 dark:text-white p-4 resize-none border-none outline-none focus:outline-none focus:ring-0 tracking-normal transition-colors duration-200 editor-textarea"
-                        style={{
-                          backgroundColor: 'var(--color-background)',
-                          fontFamily: 'var(--editor-font-family)',
-                          fontSize: 'var(--editor-font-size)',
-                          lineHeight: 'var(--editor-line-height)',
-                          paddingBottom:
-                            'calc(var(--editor-font-size) * var(--editor-line-height))',
-                          caretColor: 'transparent'
-                        }}
-                        spellCheck="false"
-                        autoFocus
-                      />
-                      <div className="custom-caret" style={{ display: 'none' }} />
+                      <div className="h-full w-full overflow-auto custom-scrollbar">
+                        <Editor
+                          value={code}
+                          onValueChange={setCode}
+                          highlight={(code) => {
+                            const languageMap = {
+                              js: 'javascript',
+                              py: 'python',
+                              sh: 'bash',
+                              md: 'markdown',
+                              txt: 'txt',
+                              php: 'php'
+                            }
+                            const mappedLanguage = languageMap[language] || language
+                            if (mappedLanguage === 'txt') return code
+                            try {
+                              return hljs.highlight(code, { language: mappedLanguage }).value
+                            } catch {
+                              return code
+                            }
+                          }}
+                          padding={16}
+                          style={{
+                            fontFamily: 'var(--editor-font-family)',
+                            fontSize: 'var(--editor-font-size)',
+                            lineHeight: 'var(--editor-line-height)',
+                            backgroundColor: 'transparent',
+                            minHeight: '100%'
+                          }}
+                          textareaClassName="focus:outline-none"
+                        />
+                      </div>
                     </div>
                   )
                 ) : null}
@@ -704,45 +516,42 @@ const SnippetEditor = ({
             )}
 
             {layoutMode === 'editor' && (
-              <div className="flex-1 min-h-0 overflow-hidden editor-container">
-                <textarea
-                  placeholder="Type your snippets here..."
-                  value={code}
-                  ref={textareaRef}
-                  onChange={(e) => {
-                    setCode(e.target.value)
-                    throttledCaret()
-                  }}
-                  onInput={() => {
-                    throttledMention()
-                    throttledCaret()
-                  }}
-                  onKeyUp={() => {
-                    throttledMention()
-                    throttledCaret()
-                  }}
-                  onKeyDown={(e) => {
-                    handleKeyDown(e)
-                    throttledCaret()
-                  }}
-                  onFocus={throttledCaret}
-                  onSelect={throttledCaret}
-                  onScroll={throttledCaret}
-                  onClick={throttledCaret}
-                  onMouseUp={throttledCaret}
-                  className="w-full h-full overflow-y-auto text-slate-800 dark:text-white p-4 resize-none border-none outline-none focus:outline-none focus:ring-0 tracking-normal transition-colors duration-200 editor-textarea"
-                  style={{
-                    backgroundColor: 'var(--color-background)',
-                    fontFamily: 'var(--editor-font-family)',
-                    fontSize: 'var(--editor-font-size)',
-                    lineHeight: 'var(--editor-line-height)',
-                    paddingBottom: 'calc(var(--editor-font-size) * var(--editor-line-height))',
-                    caretColor: 'transparent'
-                  }}
-                  spellCheck="false"
-                  autoFocus
-                />
-                <div className="custom-caret" style={{ display: 'none' }} />
+              <div
+                className="flex-1 min-h-0 overflow-hidden editor-container relative"
+                style={{ backgroundColor: 'var(--editor-bg)' }}
+              >
+                <div className="h-full w-full overflow-auto custom-scrollbar">
+                  <Editor
+                    value={code}
+                    onValueChange={setCode}
+                    highlight={(code) => {
+                      const languageMap = {
+                        js: 'javascript',
+                        py: 'python',
+                        sh: 'bash',
+                        md: 'markdown',
+                        txt: 'txt',
+                        php: 'php'
+                      }
+                      const mappedLanguage = languageMap[language] || language
+                      if (mappedLanguage === 'txt') return code
+                      try {
+                        return hljs.highlight(code, { language: mappedLanguage }).value
+                      } catch {
+                        return code
+                      }
+                    }}
+                    padding={16}
+                    style={{
+                      fontFamily: 'var(--editor-font-family)',
+                      fontSize: 'var(--editor-font-size)',
+                      lineHeight: 'var(--editor-line-height)',
+                      backgroundColor: 'transparent',
+                      minHeight: '100%'
+                    }}
+                    textareaClassName="focus:outline-none"
+                  />
+                </div>
               </div>
             )}
 
@@ -799,95 +608,6 @@ const SnippetEditor = ({
                 >
                   Save
                 </button>
-              </div>
-            )}
-
-            {menu && (
-              <ContextMenu
-                x={menu.x}
-                y={menu.y}
-                onClose={() => setMenu(null)}
-                onCut={() => {
-                  setMenu(null)
-                  document.execCommand('cut')
-                }}
-                onCopy={() => {
-                  setMenu(null)
-                  const ta = textareaRef.current
-                  if (!ta) return
-                  const selText = ta.value.substring(ta.selectionStart, ta.selectionEnd)
-                  if (selText) navigator.clipboard.writeText(selText)
-                }}
-                onPaste={() => {
-                  setMenu(null)
-                  const ta = textareaRef.current
-                  if (!ta) return
-                  ta.focus()
-                  navigator.clipboard.readText().then((txt) => {
-                    const start = ta.selectionStart
-                    const end = ta.selectionEnd
-                    const newVal = (code || '').slice(0, start) + txt + (code || '').slice(end)
-                    setCode(newVal)
-                    const caret = start + txt.length
-                    requestAnimationFrame(() => {
-                      ta.selectionStart = caret
-                      ta.selectionEnd = caret
-                    })
-                  })
-                }}
-                onSelectAll={() => {
-                  setMenu(null)
-                  textareaRef.current?.focus()
-                  const ta = textareaRef.current
-                  if (!ta) return
-                  ta.selectionStart = 0
-                  ta.selectionEnd = (code || '').length
-                }}
-                onDelete={() => {
-                  setMenu(null)
-                  if (initialSnippet?.id && window.confirm('Delete this snippet?')) {
-                    isDeletingRef.current = true
-                    if (typeof onDelete === 'function') onDelete(initialSnippet.id)
-                  }
-                }}
-              />
-            )}
-
-            {mentionOpen && (
-              <div
-                className="fixed text-sm"
-                style={{
-                  position: 'fixed',
-                  left: mentionPos.x,
-                  top: mentionPos.y,
-                  zIndex: 10000,
-                  backgroundColor: 'rgba(255, 250, 200, 0.98)',
-                  color: '#1f2937',
-                  border: '2px solid #f59e0b',
-                  borderRadius: 8,
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
-                  pointerEvents: 'auto'
-                }}
-              >
-                {mentionItems.length > 0 ? (
-                  mentionItems.map((s) => (
-                    <button
-                      key={s.id}
-                      onMouseDown={(e) => {
-                        e.preventDefault()
-                        insertMention(s)
-                      }}
-                      className="flex items-center gap-2 px-3 py-2 w-full text-left hover:bg-yellow-100"
-                    >
-                      <span className="font-medium text-slate-900 truncate">
-                        @{(s.title || '').toLowerCase().replace(/\s+/g, '-')}
-                      </span>
-                      <span className="text-xs text-slate-600 truncate">{s.title}</span>
-                    </button>
-                  ))
-                ) : (
-                  <div className="px-3 py-2 text-slate-700">No matches</div>
-                )}
               </div>
             )}
 
