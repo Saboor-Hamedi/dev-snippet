@@ -27,6 +27,12 @@ export const useTheme = () => {
       if (colors.text) root.style.setProperty('--text-main', colors.text)
       if (colors.accent) root.style.setProperty('--accent', colors.accent)
       if (colors.border) root.style.setProperty('--border-color', colors.border)
+      if (colors.caretWidth)
+        root.style.setProperty(
+          '--caret-width',
+          String(colors.caretWidth).endsWith('px') ? colors.caretWidth : `${colors.caretWidth}px`
+        )
+      if (colors.caretStyle) root.style.setProperty('--caret-style', colors.caretStyle)
       // Hover/selected tuning
       if (themeId === 'polaris') {
         root.style.setProperty('--hover-bg', '#f1f5f9')

@@ -1,9 +1,11 @@
 import React, { useEffect } from 'react'
 import SnippetLibrary from './components/SnippetLibrary'
 import { useTheme } from './hook/useTheme'
+import { useFontSettings } from './hook/useFontSettings'
 
 function App() {
   const { setTheme } = useTheme()
+  useFontSettings()
   useEffect(() => {
     const load = async () => {
       try {

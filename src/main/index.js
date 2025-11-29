@@ -22,19 +22,25 @@ function initDB() {
       id TEXT PRIMARY KEY,
       title TEXT,
       code TEXT,
+      code_draft TEXT,
       language TEXT,
       timestamp INTEGER,
       type TEXT,
-      tags TEXT
+      tags TEXT,
+      is_draft INTEGER,
+      sort_index INTEGER
     );
 
     CREATE TABLE IF NOT EXISTS projects (
       id TEXT PRIMARY KEY,
       title TEXT,
       code TEXT,
+      code_draft TEXT,
       language TEXT,
       timestamp INTEGER,
-      type TEXT
+      type TEXT,
+      is_draft INTEGER,
+      sort_index INTEGER
     );
 
     CREATE TABLE IF NOT EXISTS settings (
@@ -49,13 +55,26 @@ function initDB() {
     );
   `)
 
-  // Ensure 'tags' column exists for snippets (for inline hashtag storage)
+  // Ensure optional columns exist (migrations)
   try {
-    const cols = db.prepare('PRAGMA table_info(snippets)').all()
-    const hasTags = cols.some((c) => c.name === 'tags')
-    if (!hasTags) {
-      db.exec('ALTER TABLE snippets ADD COLUMN tags TEXT')
+    const colsSnippets = db.prepare('PRAGMA table_info(snippets)').all()
+    const ensureCol = (name, ddl) => {
+      if (!colsSnippets.some((c) => c.name === name)) db.exec(ddl)
     }
+    ensureCol('tags', 'ALTER TABLE snippets ADD COLUMN tags TEXT')
+    ensureCol('code_draft', 'ALTER TABLE snippets ADD COLUMN code_draft TEXT')
+    ensureCol('is_draft', 'ALTER TABLE snippets ADD COLUMN is_draft INTEGER')
+    ensureCol('sort_index', 'ALTER TABLE snippets ADD COLUMN sort_index INTEGER')
+  } catch {}
+
+  try {
+    const colsProjects = db.prepare('PRAGMA table_info(projects)').all()
+    const ensureColP = (name, ddl) => {
+      if (!colsProjects.some((c) => c.name === name)) db.exec(ddl)
+    }
+    ensureColP('code_draft', 'ALTER TABLE projects ADD COLUMN code_draft TEXT')
+    ensureColP('is_draft', 'ALTER TABLE projects ADD COLUMN is_draft INTEGER')
+    ensureColP('sort_index', 'ALTER TABLE projects ADD COLUMN sort_index INTEGER')
   } catch {}
 
   return db
@@ -77,6 +96,10 @@ function createWindow() {
     autoHideMenuBar: true,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      enableRemoteModule: false,
+      webSecurity: true,
       sandbox: false
     }
   })
@@ -86,8 +109,17 @@ function createWindow() {
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url)
+    try {
+      const url = new URL(details.url)
+      if (url.protocol === 'http:' || url.protocol === 'https:') {
+        shell.openExternal(details.url)
+      }
+    } catch {}
     return { action: 'deny' }
+  })
+
+  mainWindow.webContents.on('will-navigate', (event) => {
+    event.preventDefault()
   })
 
   // HMR for renderer base on electron-vite cli.
@@ -155,6 +187,7 @@ app.whenReady().then(() => {
 
   ipcMain.handle('fs:readFile', async (event, path) => {
     try {
+      if (typeof path !== 'string') throw new Error('Invalid path')
       const content = await fs.readFile(path, 'utf-8')
       return content
     } catch (err) {
@@ -165,6 +198,8 @@ app.whenReady().then(() => {
 
   ipcMain.handle('fs:writeFile', async (event, path, content) => {
     try {
+      if (typeof path !== 'string') throw new Error('Invalid path')
+      if (typeof content !== 'string') throw new Error('Invalid content')
       await fs.writeFile(path, content, 'utf-8')
       return true
     } catch (err) {
@@ -175,6 +210,7 @@ app.whenReady().then(() => {
 
   ipcMain.handle('fs:readDirectory', async (event, path) => {
     try {
+      if (typeof path !== 'string') throw new Error('Invalid path')
       const files = await fs.readdir(path, { withFileTypes: true })
       return files.map((file) => ({
         name: file.name,
@@ -192,15 +228,17 @@ app.whenReady().then(() => {
 
   // Snippets
   ipcMain.handle('db:getSnippets', () => {
-    return db.prepare('SELECT * FROM snippets ORDER BY title ASC').all()
+    return db
+      .prepare('SELECT * FROM snippets ORDER BY COALESCE(sort_index, 0) ASC, title ASC')
+      .all()
   })
 
   // insert or update snippet
   ipcMain.handle('db:saveSnippet', (event, snippet) => {
     const stmt = db.prepare(
-      'INSERT OR REPLACE INTO snippets (id, title, code, language, timestamp, type, tags) VALUES (@id, @title, @code, @language, @timestamp, @type, @tags)'
+      'INSERT OR REPLACE INTO snippets (id, title, code, language, timestamp, type, tags, is_draft, sort_index) VALUES (@id, @title, @code, @language, @timestamp, @type, @tags, @is_draft, @sort_index)'
     )
-    stmt.run({ ...snippet, tags: snippet.tags || '' })
+    stmt.run({ ...snippet, tags: snippet.tags || '', is_draft: snippet.is_draft ? 1 : 0 })
     return true
   })
 
@@ -211,14 +249,60 @@ app.whenReady().then(() => {
 
   // Projects
   ipcMain.handle('db:getProjects', () => {
-    return db.prepare('SELECT * FROM projects ORDER BY title ASC').all()
+    return db
+      .prepare('SELECT * FROM projects ORDER BY COALESCE(sort_index, 0) ASC, title ASC')
+      .all()
   })
 
   ipcMain.handle('db:saveProject', (event, project) => {
     const stmt = db.prepare(
-      'INSERT OR REPLACE INTO projects (id, title, code, language, timestamp, type) VALUES (@id, @title, @code, @language, @timestamp, @type)'
+      'INSERT OR REPLACE INTO projects (id, title, code, language, timestamp, type, is_draft, sort_index) VALUES (@id, @title, @code, @language, @timestamp, @type, @is_draft, @sort_index)'
     )
-    stmt.run(project)
+    stmt.run({ ...project, is_draft: project.is_draft ? 1 : 0 })
+    return true
+  })
+
+  // Batch order update
+  // Order update handlers removed per request
+
+  // Draft handlers
+  ipcMain.handle('db:saveSnippetDraft', (event, payload) => {
+    const { id, code_draft, language } = payload
+    const stmt = db.prepare(
+      'UPDATE snippets SET code_draft = ?, is_draft = 1, language = COALESCE(?, language) WHERE id = ?'
+    )
+    stmt.run(code_draft, language || null, id)
+    return true
+  })
+
+  ipcMain.handle('db:commitSnippetDraft', (event, id) => {
+    const row = db.prepare('SELECT code_draft FROM snippets WHERE id = ?').get(id)
+    if (row && row.code_draft != null) {
+      const stmt = db.prepare(
+        'UPDATE snippets SET code = code_draft, code_draft = NULL, is_draft = 0, timestamp = ? WHERE id = ?'
+      )
+      stmt.run(Date.now(), id)
+    }
+    return true
+  })
+
+  ipcMain.handle('db:saveProjectDraft', (event, payload) => {
+    const { id, code_draft, language } = payload
+    const stmt = db.prepare(
+      'UPDATE projects SET code_draft = ?, is_draft = 1, language = COALESCE(?, language) WHERE id = ?'
+    )
+    stmt.run(code_draft, language || null, id)
+    return true
+  })
+
+  ipcMain.handle('db:commitProjectDraft', (event, id) => {
+    const row = db.prepare('SELECT code_draft FROM projects WHERE id = ?').get(id)
+    if (row && row.code_draft != null) {
+      const stmt = db.prepare(
+        'UPDATE projects SET code = code_draft, code_draft = NULL, is_draft = 0, timestamp = ? WHERE id = ?'
+      )
+      stmt.run(Date.now(), id)
+    }
     return true
   })
 
@@ -249,6 +333,19 @@ app.whenReady().then(() => {
     )
     stmt.run(theme)
     return true
+  })
+
+  ipcMain.handle('confirm-delete', async (event, message) => {
+    const res = await dialog.showMessageBox({
+      type: 'warning',
+      buttons: ['Cancel', 'Delete'],
+      defaultId: 1,
+      cancelId: 0,
+      title: 'Confirm Delete',
+      message: message || 'Delete this item?',
+      noLink: true
+    })
+    return res.response === 1
   })
 
   createWindow()

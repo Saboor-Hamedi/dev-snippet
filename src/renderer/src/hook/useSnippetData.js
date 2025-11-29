@@ -32,7 +32,7 @@ export const useSnippetData = () => {
     try {
       if (window.api?.saveSnippet) {
         // Enforce type 'snippet'
-        const payload = { ...snippet, type: 'snippet' }
+        const payload = { ...snippet, type: 'snippet', sort_index: snippet.sort_index ?? null }
         await window.api.saveSnippet(payload)
         // Update local list in-place to avoid flicker
         setSnippets((prev) => {
@@ -116,7 +116,7 @@ export const useSnippetData = () => {
     try {
       if (window.api?.saveProject) {
         // Enforce type 'project'
-        const payload = { ...project, type: 'project' }
+        const payload = { ...project, type: 'project', sort_index: project.sort_index ?? null }
         await window.api.saveProject(payload)
         // Update local list in-place to avoid flicker
         setProjects((prev) => {

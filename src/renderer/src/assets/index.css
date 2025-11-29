@@ -2,9 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-
-
-
 /* Custom CSS Variables */
 :root {
   /* Color Palette */
@@ -49,6 +46,16 @@
   --hover-bg: #21262d;
   --hover-text: #ffffff;
   --toolbar-height: 40px;
+
+  /* Live font preview variables */
+  --editor-font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', monospace;
+  --editor-font-size: 0.875rem;
+  --preview-font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', monospace;
+  --preview-font-size: 0.875rem;
+  --caret-width: 3px;
+  --current-line-bg: rgba(88, 166, 255, 0.12);
+  --editor-line-height: 1.6;
+  --caret-style: bar;
 }
 
 /* Light Theme */
@@ -67,7 +74,9 @@
   --selected-text: #24292f;
   --hover-bg: #eef6ff;
   --hover-text: #24292f;
+  --current-line-bg: rgba(9, 105, 218, 0.10);
 }
+
 
 /* Dark Theme */
 [data-theme='dark'] {
@@ -85,6 +94,7 @@
   --selected-text: #ffffff;
   --hover-bg: #21262d;
   --hover-text: #ffffff;
+  --current-line-bg: rgba(88, 166, 255, 0.12);
 }
 
 /* Midnight Theme (neutralized to black scheme) */
@@ -161,10 +171,18 @@ body {
   -moz-osx-font-smoothing: grayscale;
   overflow: hidden; /* Prevent body scroll, layout handles it */
 }
-.bg-primary { background-color: var(--primary); }
-.bg-background { background-color: var(--background); }
-.bg-surface { background-color: var(--surface); }
-.text-primary { color: var(--primary); }
+.bg-primary {
+  background-color: var(--primary);
+}
+.bg-background {
+  background-color: var(--background);
+}
+.bg-surface {
+  background-color: var(--surface);
+}
+.text-primary {
+  color: var(--primary);
+}
 #root {
   width: 100%;
   height: 100vh;
@@ -403,7 +421,7 @@ body {
 
 /* Code Editor Area */
 .code-editor-container {
-  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  font-family: var(--editor-font-family);
 }
 
 /* Utility for Glassmorphism */
@@ -415,8 +433,8 @@ body {
 
 /* Syntax Highlighting - Enhanced */
 .code-content {
-  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', monospace;
-  font-size: 0.875rem;
+  font-family: var(--preview-font-family);
+  font-size: var(--preview-font-size);
   line-height: 1.75;
   color: #e2e8f0;
   font-weight: 400;
@@ -500,8 +518,8 @@ pre {
 }
 
 code {
-  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', monospace;
-  font-size: 0.875rem;
+  font-family: var(--preview-font-family);
+  font-size: var(--preview-font-size);
   line-height: 1.75;
 }
 
@@ -513,6 +531,7 @@ code {
   user-select: text;
   -webkit-user-select: text;
   cursor: text;
+  position: relative;
 }
 
 /* Selection usability */
@@ -527,4 +546,57 @@ code,
   pointer-events: auto;
 }
 
-.mention-pill { cursor: pointer !important; }
+.mention-pill {
+  cursor: pointer !important;
+}
+
+/* Enhanced text selection in preview */
+.preview-container ::selection,
+.preview-content ::selection,
+pre ::selection,
+code ::selection,
+.hljs ::selection {
+  background-color: var(--selection-bg);
+  color: inherit;
+}
+
+/* Ensure code blocks in preview are selectable */
+.preview-container pre,
+.preview-container code {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  cursor: text !important;
+}
+
+/* Make mentions clickable but preserve text selection around them */
+.md-mention {
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Better cursor indication for code preview */
+.preview-container {
+  cursor: text;
+}
+
+.preview-container:active {
+  cursor: text;
+}
+
+/* Live preview font for code blocks */
+.hljs {
+  font-family: var(--preview-font-family) !important;
+  font-size: var(--preview-font-size) !important;
+  line-height: var(--editor-line-height);
+}
+
+.custom-caret {
+  position: fixed;
+  width: var(--caret-width);
+  background: var(--color-text);
+  pointer-events: none;
+  z-index: 1000;
+  transform: translateZ(0);
+}

@@ -47,6 +47,52 @@ const SnippetLibrary = () => {
   const [activeProject, setActiveProject] = useState(null)
   const modalKeyRef = useRef(0)
 
+  // Removed global OS file drop handler in favor of sidebar-focused drop + dnd-kit
+  // Re-introduce guarded global drop for OS files: only acts when hovering sidebar list container
+  useEffect(() => {
+    const onDragOver = (e) => {
+      try {
+        const types = Array.from(e.dataTransfer?.types || [])
+        if (!types.includes('Files')) return
+        e.preventDefault()
+        e.dataTransfer.dropEffect = 'copy'
+      } catch {}
+    }
+    const onDrop = async (e) => {
+      try {
+        const types = Array.from(e.dataTransfer?.types || [])
+        if (!types.includes('Files')) return
+        e.preventDefault()
+        const files = Array.from(e.dataTransfer.files || [])
+        for (const f of files) {
+          const path = f.path || ''
+          if (!path) continue
+          const name = path.split('\\').pop().split('/').pop()
+          const content = await window.api.readFile(path)
+          const ext = (name.includes('.') ? name.split('.').pop() : 'txt')?.toLowerCase()
+          const draft = {
+            id: `draft-${Date.now().toString()}-${Math.random().toString(36).slice(2)}`,
+            title: 'untitled',
+            code: content,
+            language: ext || 'txt',
+            timestamp: Date.now(),
+            type: activeView === 'projects' ? 'project' : 'snippet',
+            is_draft: true
+          }
+          setSnippets((prev) => [draft, ...prev])
+          setActiveSnippet(draft)
+          setSelectedSnippet(draft)
+        }
+      } catch {}
+    }
+    window.addEventListener('dragover', onDragOver)
+    window.addEventListener('drop', onDrop)
+    return () => {
+      window.removeEventListener('dragover', onDragOver)
+      window.removeEventListener('drop', onDrop)
+    }
+  }, [activeView])
+
   // Ensure only items of current view are open
   useEffect(() => {
     if (isCreatingSnippet) return
@@ -339,10 +385,12 @@ const SnippetLibrary = () => {
                 const stillExists =
                   snippets.some((s) => s.id === prev.id) || projects.some((p) => p.id === prev.id)
                 if (!isDeleted && stillExists) {
-                  if (prev.type === 'project') {
-                    await saveProject(prev, { skipSelectedUpdate: true })
-                  } else {
-                    await saveSnippet(prev, { skipSelectedUpdate: true })
+                  if (!prev.is_draft) {
+                    if (prev.type === 'project') {
+                      await saveProject(prev, { skipSelectedUpdate: true })
+                    } else {
+                      await saveSnippet(prev, { skipSelectedUpdate: true })
+                    }
                   }
                 }
               }
@@ -369,7 +417,22 @@ const SnippetLibrary = () => {
               await handleDeleteSnippet(id)
             }}
             onCreateProject={() => setCreateProjectModalOpen(true)}
-            onCreateSnippet={() => setIsCreatingSnippet(true)}
+            onCreateSnippet={() => {
+              setIsCreatingSnippet(true)
+              const draft = {
+                id: `draft-${Date.now()}`,
+                title: '',
+                code: '',
+                language: 'txt',
+                timestamp: Date.now(),
+                type: 'snippet',
+                is_draft: true
+              }
+              setSnippets((prev) => [draft, ...prev])
+              setActiveSnippet(draft)
+              setSelectedSnippet(draft)
+              setActiveView('snippets')
+            }}
             onRenameRequest={(item) => {
               setRenameInput(item?.title || '')
               setRenameModal({ isOpen: true, item })
@@ -408,8 +471,36 @@ const SnippetLibrary = () => {
             }
           }}
           onDeleteRequest={handleDeleteSnippet}
-          onNewSnippet={() => setIsCreatingSnippet(true)}
+          onNewSnippet={() => {
+            setIsCreatingSnippet(true)
+            const draft = {
+              id: `draft-${Date.now()}`,
+              title: '',
+              code: '',
+              language: 'txt',
+              timestamp: Date.now(),
+              type: 'snippet',
+              is_draft: true
+            }
+            setSnippets((prev) => [draft, ...prev])
+            setActiveSnippet(draft)
+            setSelectedSnippet(draft)
+            setActiveView('snippets')
+          }}
           onNewProject={() => setCreateProjectModalOpen(true)}
+          onSnippetSelect={(snippet) => {
+            // Handle snippet mention click - select and open the snippet
+            setIsCreatingSnippet(false)
+            if (snippet.type === 'project') {
+              setActiveProject(snippet)
+              setSelectedSnippet(snippet)
+              setActiveView('projects')
+            } else {
+              setActiveSnippet(snippet)
+              setSelectedSnippet(snippet)
+              setActiveView('snippets')
+            }
+          }}
           onChange={(code) => {
             if (activeView === 'projects') {
               if (activeProject) {

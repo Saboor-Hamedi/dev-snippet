@@ -80,6 +80,7 @@ const Explorer = ({
     return extensions[language?.toLowerCase()] || '.txt'
   }
   const getFilename = (item) => {
+    if (item.is_draft && (!item.title || !item.title.trim())) return '(Untitled)'
     if (item.title.includes('.')) return item.title
     const cleanTitle = item.title.replace(/[^a-zA-Z0-9-_]/g, '_')
     return `${cleanTitle}${getExtension(item.language)}`
@@ -96,6 +97,7 @@ const Explorer = ({
   // Safety check,, item is never undefined.
   const safeItems = items || []
   const displayCount = activeView === 'snipets' ? null : safeItems.length
+
   return (
     <>
       {/* 1. Shared Header Component */}
@@ -125,7 +127,10 @@ const Explorer = ({
       </div>
 
       {/* 3. File List */}
-      <div className="flex-1 overflow-y-auto px-1 py-1">
+      <div
+        className="flex-1 overflow-y-auto px-1 py-1"
+        data-explorer-context={isProjects ? 'projects' : 'snippets'}
+      >
         {items.length === 0 ? (
           <div className="mt-8 opacity-70">
             <EmptyState message={searchTerm ? 'No results' : `No ${activeView}`} />

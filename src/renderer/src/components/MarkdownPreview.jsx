@@ -46,8 +46,11 @@ const MarkdownPreview = ({ content, onSnippetClick, snippets = [], language }) =
   const style = isDark ? atomOneDark : docco
 
   return (
-    <div className="p-4 preview-content">
-      <div className="prose prose-slate dark:prose-invert max-w-none preview-content">
+    <div className="p-4 preview-content" style={{ userSelect: 'text' }}>
+      <div
+        className="prose prose-slate dark:prose-invert max-w-none preview-content"
+        style={{ userSelect: 'text' }}
+      >
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           components={{
@@ -206,6 +209,21 @@ const renderWithTagsAndMentions = (children, snippets, onSnippetClick, language)
 
 const CodeBlock = ({ language, code, style }) => {
   const [copied, setCopied] = React.useState(false)
+  const badge = (() => {
+    const m = {
+      javascript: 'JS',
+      python: 'PY',
+      html: 'HTML',
+      xml: 'XML',
+      css: 'CSS',
+      sql: 'SQL',
+      bash: 'SH',
+      java: 'JAVA',
+      cpp: 'CPP',
+      markdown: 'MD'
+    }
+    return m[String(language || '').toLowerCase()] || (language || '').toString().toUpperCase()
+  })()
   const onCopy = async () => {
     try {
       await navigator.clipboard.writeText(code)
@@ -214,10 +232,16 @@ const CodeBlock = ({ language, code, style }) => {
     } catch {}
   }
   return (
-    <div className="relative group">
+    <div className="relative group" style={{ userSelect: 'text' }}>
+      <span
+        className="absolute top-2 left-2 px-2 py-1 text-[10px] rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
+        title={language}
+      >
+        {badge}
+      </span>
       <button
         onClick={onCopy}
-        className="absolute top-2 right-2 px-2 py-1 text-xs rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 opacity-0 group-hover:opacity-100 transition-opacity"
+        className="absolute top-2 right-2 px-2 py-1 text-xs rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 opacity-60 hover:opacity-100"
         title="Copy code"
       >
         {copied ? '✓ Copied' : 'Copy'}
@@ -226,7 +250,7 @@ const CodeBlock = ({ language, code, style }) => {
         PreTag="div"
         language={language}
         style={style}
-        customStyle={{ margin: 0, borderRadius: 6 }}
+        customStyle={{ margin: 0, borderRadius: 6, userSelect: 'text' }}
       >
         {code}
       </SyntaxHighlighter>

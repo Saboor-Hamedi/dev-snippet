@@ -2,12 +2,26 @@ import React, { useState, useEffect } from 'react'
 import { useToast } from '../utils/ToastNotification'
 import ThemeModal from './ThemeModal'
 import { SunMoon, FileDown, Settings } from 'lucide-react'
+import { useFontSettings } from '../hook/useFontSettings'
 
 const SettingsPanel = () => {
   const { showToast } = useToast()
 
   // Local state for settings
-  const [fontSize, setFontSize] = useState(14)
+  const {
+    editorFontFamily,
+    editorFontSize,
+    previewFontFamily,
+    previewFontSize,
+    caretStyle,
+    caretWidth,
+    updateEditorFontFamily,
+    updateEditorFontSize,
+    updatePreviewFontFamily,
+    updatePreviewFontSize,
+    updateCaretWidth,
+    updateCaretStyle
+  } = useFontSettings()
   const [wordWrap, setWordWrap] = useState('on')
   const [autoSave, setAutoSave] = useState(false)
   const [activeTab, setActiveTab] = useState('general')
@@ -119,25 +133,124 @@ const SettingsPanel = () => {
                     </button>
                   </div>
 
-                  {/* Font Size */}
+                  {/* Editor Font Family */}
                   <div className="p-5 flex items-center justify-between gap-4">
                     <div>
                       <label className="block text-sm font-medium text-slate-900 dark:text-white">
-                        Font Size
+                        Editor Font Family
                       </label>
-                      <p className="text-xs text-slate-500 mt-1">
-                        Controls the font size in pixels.
-                      </p>
+                      <p className="text-xs text-slate-500 mt-1">Monospace fonts recommended.</p>
+                    </div>
+                    <select
+                      value={editorFontFamily}
+                      onChange={(e) => updateEditorFontFamily(e.target.value)}
+                      className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
+                    >
+                      <option>JetBrains Mono</option>
+                      <option>Fira Code</option>
+                      <option>Consolas</option>
+                      <option>Monaco</option>
+                      <option>Courier New</option>
+                    </select>
+                  </div>
+
+                  {/* Editor Font Size */}
+                  <div className="p-5 flex items-center justify-between gap-4 border-t border-slate-200 dark:border-slate-700/50">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-900 dark:text-white">
+                        Editor Font Size
+                      </label>
+                      <p className="text-xs text-slate-500 mt-1">Controls the editor font size.</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <input
                         type="number"
-                        value={fontSize}
-                        onChange={(e) => setFontSize(e.target.value)}
+                        value={editorFontSize}
+                        onChange={(e) => updateEditorFontSize(e.target.value)}
                         className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg w-20 px-3 py-2 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
                       />
                       <span className="text-sm text-slate-500">px</span>
                     </div>
+                  </div>
+
+                  {/* Preview Font Family */}
+                  <div className="p-5 flex items-center justify-between gap-4 border-t border-slate-200 dark:border-slate-700/50">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-900 dark:text-white">
+                        Preview Font Family
+                      </label>
+                      <p className="text-xs text-slate-500 mt-1">Applies to code preview blocks.</p>
+                    </div>
+                    <select
+                      value={previewFontFamily}
+                      onChange={(e) => updatePreviewFontFamily(e.target.value)}
+                      className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
+                    >
+                      <option>JetBrains Mono</option>
+                      <option>Fira Code</option>
+                      <option>Consolas</option>
+                      <option>Monaco</option>
+                      <option>Courier New</option>
+                    </select>
+                  </div>
+
+                  {/* Preview Font Size */}
+                  <div className="p-5 flex items-center justify-between gap-4 border-t border-slate-200 dark:border-slate-700/50">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-900 dark:text-white">
+                        Preview Font Size
+                      </label>
+                      <p className="text-xs text-slate-500 mt-1">Controls code preview size.</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        value={previewFontSize}
+                        onChange={(e) => updatePreviewFontSize(e.target.value)}
+                        className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg w-20 px-3 py-2 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
+                      />
+                      <span className="text-sm text-slate-500">px</span>
+                    </div>
+                  </div>
+
+                  {/* Caret Width */}
+                  <div className="p-5 flex items-center justify-between gap-4 border-t border-slate-200 dark:border-slate-700/50">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-900 dark:text-white">
+                        Caret Width
+                      </label>
+                      <p className="text-xs text-slate-500 mt-1">Thickness of the text cursor.</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        value={parseInt((caretWidth || '3px').replace('px', ''))}
+                        onChange={(e) => updateCaretWidth(e.target.value)}
+                        className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg w-20 px-3 py-2 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
+                      />
+                      <span className="text-sm text-slate-500">px</span>
+                    </div>
+                  </div>
+
+                  {/* Caret Style */}
+                  <div className="p-5 flex items-center justify-between gap-4 border-t border-slate-200 dark:border-slate-700/50">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-900 dark:text-white">
+                        Caret Style
+                      </label>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Choose bar, block, or underline.
+                      </p>
+                    </div>
+                    <select
+                      value={caretStyle}
+                      onChange={(e) => updateCaretStyle(e.target.value)}
+                      className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
+                    >
+                      <option value="bar">Bar</option>
+                      <option value="block">Block</option>
+                      <option value="underline">Underline</option>
+                    </select>
                   </div>
                 </div>
               </section>

@@ -30,7 +30,7 @@ const SnippetEditor = ({
   // Debounce the code value - wait 1000ms after user stops typing
   const [debouncedCode] = useDebounce(code, 1000)
   const [debouncedLanguage] = useDebounce(language, 1000)
-  const [debouncedPreviewCode] = useDebounce(code, 200)
+  const [debouncedPreviewCode] = useDebounce(code, 400)
   const isDeletingRef = useRef(false)
 
   const debouncedSave = useDebouncedCallback(() => {
@@ -38,6 +38,8 @@ const SnippetEditor = ({
     if (!id) return
     if (isDeletingRef.current) return
     if (window.__deletedIds && window.__deletedIds.has(id)) return
+    // Guard: skip autosave for drafts without title
+    if (initialSnippet?.is_draft && (!initialSnippet?.title || !initialSnippet.title.trim())) return
     const updatedSnippet = {
       id: id,
       title: initialSnippet.title,
@@ -119,11 +121,15 @@ const SnippetEditor = ({
     html = html.replace(/\n/g, '<br/>')
     return html
   }
-  const previewHtml = useMemo(
-    () => renderMarkdown(debouncedPreviewCode || ''),
-    [debouncedPreviewCode]
-  )
-  const highlightedHtml = useHighlight(debouncedPreviewCode || '', language)
+  const [previewSelectionLocked, setPreviewSelectionLocked] = useState(false)
+  const [lockedPreviewCode, setLockedPreviewCode] = useState(initialSnippet?.code || '')
+  useEffect(() => {
+    if (!previewSelectionLocked) {
+      setLockedPreviewCode(debouncedPreviewCode || '')
+    }
+  }, [debouncedPreviewCode, previewSelectionLocked])
+  const previewHtml = useMemo(() => renderMarkdown(lockedPreviewCode || ''), [lockedPreviewCode])
+  const highlightedHtml = useHighlight(lockedPreviewCode || '', language)
   const enhanceMentionsHtml = (html) => {
     const safe = String(html || '')
     return safe.replace(/@([a-zA-Z0-9_.-]+)/g, (m, p1) => {
@@ -199,7 +205,7 @@ const SnippetEditor = ({
   }, [canPreview, layoutMode])
 
   const handleEditorScroll = (e) => {
-    if (!previewRef.current || syncingRef.current) return
+    if (!previewRef.current || syncingRef.current || previewSelectionLocked) return
     const max = e.target.scrollHeight - e.target.clientHeight
     const ratio = max > 0 ? e.target.scrollTop / max : 0
     const pMax = previewRef.current.scrollHeight - previewRef.current.clientHeight
@@ -209,7 +215,7 @@ const SnippetEditor = ({
   }
 
   const handlePreviewScroll = (e) => {
-    if (!textareaRef.current || syncingRef.current) return
+    if (!textareaRef.current || syncingRef.current || previewSelectionLocked) return
     const max = e.target.scrollHeight - e.target.clientHeight
     const ratio = max > 0 ? e.target.scrollTop / max : 0
     const tMax = textareaRef.current.scrollHeight - textareaRef.current.clientHeight
@@ -283,9 +289,63 @@ const SnippetEditor = ({
     const viewportX = rectTa.left + offsetX - ta.scrollLeft
     const viewportY = rectTa.top + offsetY - ta.scrollTop
     const pos = { x: viewportX, y: viewportY }
-    console.log('mention.caret(viewport-adjusted)', pos)
     div.remove()
     return pos
+  }
+
+  const updateCaretOverlay = () => {
+    const ta = textareaRef.current
+    if (!ta) return
+    const container = ta.parentElement
+    if (!container) return
+    const el = container.querySelector('.custom-caret')
+    if (!el) return
+    const style = getComputedStyle(ta)
+    const lh = parseFloat(style.lineHeight || '20')
+    const padL = parseFloat(style.paddingLeft || '0') + parseFloat(style.borderLeftWidth || '0')
+    const padT = parseFloat(style.paddingTop || '0') + parseFloat(style.borderTopWidth || '0')
+    const selStart = ta.selectionStart || 0
+    const selEnd = ta.selectionEnd || selStart
+    const before = (code || '').slice(0, selStart)
+    const lineIndex = (before.match(/\n/g) || []).length
+    const lineStart = before.lastIndexOf('\n') + 1
+    const col = selStart - (lineStart < 0 ? 0 : lineStart)
+    // measure monospace char width once
+    if (!charWidth || charWidth <= 0) {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      ctx.font = `${style.fontWeight || 'normal'} ${style.fontSize} ${style.fontFamily}`
+      const w = ctx.measureText('M').width
+      if (w && w > 0) setCharWidth(w)
+    }
+    const x = padL + col * (charWidth || 8) - ta.scrollLeft
+    const y = padT + lineIndex * lh - ta.scrollTop
+    const root = getComputedStyle(document.documentElement)
+    const styleType = (root.getPropertyValue('--caret-style') || 'bar').trim()
+    const caretW = (root.getPropertyValue('--caret-width') || '3px').trim()
+    const pos = computeCaretPosition()
+    el.style.left = `${Math.max(0, Math.round(pos.x || x))}px`
+    el.style.top = `${Math.max(0, Math.round(pos.y || y))}px`
+    if (styleType === 'block' || (styleType !== 'bar' && styleType !== 'underline')) {
+      el.style.width = `${charWidth || 8}px`
+      el.style.height = `${lh}px`
+      el.style.opacity = '0.5'
+    } else if (styleType === 'underline') {
+      el.style.width = `${charWidth || 8}px`
+      el.style.height = '2px'
+      el.style.top = `${Math.max(0, Math.round((pos.y || y) + lh - 2))}px`
+      el.style.opacity = '1'
+    } else {
+      el.style.width = caretW
+      el.style.height = `${lh}px`
+      el.style.opacity = '1'
+    }
+    el.style.display = selStart === selEnd ? 'block' : 'none'
+    // current line background
+    ta.style.backgroundImage = 'linear-gradient(var(--current-line-bg), var(--current-line-bg))'
+    ta.style.backgroundRepeat = 'no-repeat'
+    ta.style.backgroundSize = `100% ${lh}px`
+    ta.style.backgroundPosition = `0 ${Math.max(0, y)}px`
   }
 
   const updateMention = () => {
@@ -311,15 +371,24 @@ const SnippetEditor = ({
       const suggestions = [...(snippets || []), ...(projects || [])]
         .filter((s) => (s.title || '').toLowerCase().includes(query.toLowerCase()))
         .slice(0, 5)
-      console.log('mention.open', { query, pos, suggestions: suggestions.map((s) => s.title) })
       setMentionItems(suggestions)
       setMentionPos({ x: vx, y: vy })
       setMentionOpen(true)
     } else {
-      console.log('mention.close')
       setMentionOpen(false)
     }
   }
+
+  const throttledMention = useDebouncedCallback(updateMention, 80)
+  const throttledCaret = useDebouncedCallback(updateCaretOverlay, 16)
+
+  useEffect(() => {
+    setTimeout(() => {
+      try {
+        updateCaretOverlay()
+      } catch {}
+    }, 0)
+  }, [layoutMode, previewPosition])
 
   const insertMention = (snippet) => {
     const ta = textareaRef.current
@@ -397,7 +466,8 @@ const SnippetEditor = ({
       language: lang,
       timestamp: Date.now(),
       type: initialSnippet?.type || (activeView === 'projects' ? 'project' : 'snippet'),
-      tags: extractTags(code)
+      tags: extractTags(code),
+      is_draft: false
     }
     onSave(payload)
   }
@@ -444,19 +514,34 @@ const SnippetEditor = ({
                 {previewPosition === 'left' ? (
                   <div
                     ref={previewRef}
+                    onMouseDown={() => setPreviewSelectionLocked(true)}
+                    onMouseUp={() => setTimeout(() => setPreviewSelectionLocked(false), 600)}
                     className="h-full min-h-0 overflow-auto bg-transparent preview-container"
                     style={{ maxHeight: '100%' }}
                   >
                     {showMarkdown ? (
                       <MarkdownPreview
-                        content={code}
-                        snippets={[...(snippets || []), ...(projects || [])]}
+                        content={lockedPreviewCode || ''}
+                        snippets={[
+                          ...(snippets || []),
+                          ...(projects || []),
+                          ...(initialSnippet?.id ? [initialSnippet] : [])
+                        ]}
                         language={language}
                         onSnippetClick={onSnippetMentionClick}
                       />
                     ) : (
                       <div className="p-4">
-                        <pre className="text-xs font-mono leading-5 m-0">
+                        <pre
+                          className="m-0"
+                          style={{
+                            fontFamily: 'var(--preview-font-family)',
+                            fontSize: 'var(--preview-font-size)',
+                            lineHeight: 'var(--editor-line-height)',
+                            paddingBottom:
+                              'calc(var(--preview-font-size) * var(--editor-line-height))'
+                          }}
+                        >
                           <code
                             onClick={handleMentionClickInPreview}
                             style={{ userSelect: 'text', cursor: 'text' }}
@@ -477,15 +562,40 @@ const SnippetEditor = ({
                       placeholder="Type your snippets here..."
                       value={code}
                       ref={textareaRef}
-                      onChange={(e) => setCode(e.target.value)}
-                      onInput={updateMention}
-                      onKeyUp={updateMention}
-                      onKeyDown={handleKeyDown}
-                      className="w-full h-full overflow-y-auto text-slate-800 dark:text-white p-4 font-mono text-sm resize-none border-none outline-none focus:outline-none focus:ring-0 leading-relaxed tracking-normal transition-colors duration-200 editor-textarea"
-                      style={{ backgroundColor: 'var(--color-background)' }}
+                      onChange={(e) => {
+                        setCode(e.target.value)
+                        throttledCaret()
+                      }}
+                      onInput={() => {
+                        throttledMention()
+                        throttledCaret()
+                      }}
+                      onKeyUp={() => {
+                        throttledMention()
+                        throttledCaret()
+                      }}
+                      onKeyDown={(e) => {
+                        handleKeyDown(e)
+                        throttledCaret()
+                      }}
+                      onFocus={throttledCaret}
+                      onSelect={throttledCaret}
+                      onScroll={throttledCaret}
+                      onClick={throttledCaret}
+                      onMouseUp={throttledCaret}
+                      className="w-full h-full overflow-y-auto text-slate-800 dark:text-white p-4 resize-none border-none outline-none focus:outline-none focus:ring-0 tracking-normal transition-colors duration-200 editor-textarea"
+                      style={{
+                        backgroundColor: 'var(--color-background)',
+                        fontFamily: 'var(--editor-font-family)',
+                        fontSize: 'var(--editor-font-size)',
+                        lineHeight: 'var(--editor-line-height)',
+                        paddingBottom: 'calc(var(--editor-font-size) * var(--editor-line-height))',
+                        caretColor: 'transparent'
+                      }}
                       spellCheck="false"
                       autoFocus
                     />
+                    <div className="custom-caret" style={{ display: 'none' }} />
                   </div>
                 )}
 
@@ -502,19 +612,34 @@ const SnippetEditor = ({
                   previewPosition === 'right' ? (
                     <div
                       ref={previewRef}
+                      onMouseDown={() => setPreviewSelectionLocked(true)}
+                      onMouseUp={() => setTimeout(() => setPreviewSelectionLocked(false), 600)}
                       className="h-full min-h-0 overflow-auto bg-transparent preview-container"
                       style={{ maxHeight: '100%' }}
                     >
                       {showMarkdown ? (
                         <MarkdownPreview
-                          content={code}
-                          snippets={[...(snippets || []), ...(projects || [])]}
+                          content={lockedPreviewCode || ''}
+                          snippets={[
+                            ...(snippets || []),
+                            ...(projects || []),
+                            ...(initialSnippet?.id ? [initialSnippet] : [])
+                          ]}
                           language={language}
                           onSnippetClick={onSnippetMentionClick}
                         />
                       ) : (
                         <div className="p-4">
-                          <pre className="text-xs font-mono leading-5 m-0">
+                          <pre
+                            className="m-0"
+                            style={{
+                              fontFamily: 'var(--preview-font-family)',
+                              fontSize: 'var(--preview-font-size)',
+                              lineHeight: 'var(--editor-line-height)',
+                              paddingBottom:
+                                'calc(var(--preview-font-size) * var(--editor-line-height))'
+                            }}
+                          >
                             <code
                               onClick={handleMentionClickInPreview}
                               style={{ userSelect: 'text', cursor: 'text' }}
@@ -535,15 +660,39 @@ const SnippetEditor = ({
                         placeholder="Type your snippets here..."
                         value={code}
                         ref={textareaRef}
-                        onChange={(e) => setCode(e.target.value)}
-                        onInput={updateMention}
-                        onKeyUp={updateMention}
-                        onKeyDown={handleKeyDown}
-                        className="w-full h-full overflow-y-auto text-slate-800 dark:text-white p-4 font-mono text-sm resize-none border-none outline-none focus:outline-none focus:ring-0 leading-relaxed tracking-normal transition-colors duration-200 editor-textarea"
-                        style={{ backgroundColor: 'var(--color-background)' }}
+                        onChange={(e) => {
+                          setCode(e.target.value)
+                          throttledCaret()
+                        }}
+                        onInput={() => {
+                          throttledMention()
+                          throttledCaret()
+                        }}
+                        onKeyUp={() => {
+                          throttledMention()
+                          throttledCaret()
+                        }}
+                        onKeyDown={(e) => {
+                          handleKeyDown(e)
+                          throttledCaret()
+                        }}
+                        onFocus={throttledCaret}
+                        onSelect={throttledCaret}
+                        onScroll={throttledCaret}
+                        onClick={throttledCaret}
+                        onMouseUp={throttledCaret}
+                        className="w-full h-full overflow-y-auto text-slate-800 dark:text-white p-4 resize-none border-none outline-none focus:outline-none focus:ring-0 tracking-normal transition-colors duration-200 editor-textarea"
+                        style={{
+                          backgroundColor: 'var(--color-background)',
+                          fontFamily: 'var(--editor-font-family)',
+                          fontSize: 'var(--editor-font-size)',
+                          lineHeight: 'var(--editor-line-height)',
+                          paddingBottom: 'calc(var(--editor-font-size) * var(--editor-line-height))'
+                        }}
                         spellCheck="false"
                         autoFocus
                       />
+                      <div className="custom-caret" style={{ display: 'none' }} />
                     </div>
                   )
                 ) : null}
@@ -556,15 +705,39 @@ const SnippetEditor = ({
                   placeholder="Type your snippets here..."
                   value={code}
                   ref={textareaRef}
-                  onChange={(e) => setCode(e.target.value)}
-                  onInput={updateMention}
-                  onKeyUp={updateMention}
-                  onKeyDown={handleKeyDown}
-                  className="w-full h-full overflow-y-auto text-slate-800 dark:text-white p-4 font-mono text-sm resize-none border-none outline-none focus:outline-none focus:ring-0 leading-relaxed tracking-normal transition-colors duration-200 editor-textarea"
-                  style={{ backgroundColor: 'var(--color-background)' }}
+                  onChange={(e) => {
+                    setCode(e.target.value)
+                    throttledCaret()
+                  }}
+                  onInput={() => {
+                    throttledMention()
+                    throttledCaret()
+                  }}
+                  onKeyUp={() => {
+                    throttledMention()
+                    throttledCaret()
+                  }}
+                  onKeyDown={(e) => {
+                    handleKeyDown(e)
+                    throttledCaret()
+                  }}
+                  onFocus={throttledCaret}
+                  onSelect={throttledCaret}
+                  onScroll={throttledCaret}
+                  onClick={throttledCaret}
+                  onMouseUp={throttledCaret}
+                  className="w-full h-full overflow-y-auto text-slate-800 dark:text-white p-4 resize-none border-none outline-none focus:outline-none focus:ring-0 tracking-normal transition-colors duration-200 editor-textarea"
+                  style={{
+                    backgroundColor: 'var(--color-background)',
+                    fontFamily: 'var(--editor-font-family)',
+                    fontSize: 'var(--editor-font-size)',
+                    lineHeight: 'var(--editor-line-height)',
+                    paddingBottom: 'calc(var(--editor-font-size) * var(--editor-line-height))'
+                  }}
                   spellCheck="false"
                   autoFocus
                 />
+                <div className="custom-caret" style={{ display: 'none' }} />
               </div>
             )}
 
@@ -572,19 +745,34 @@ const SnippetEditor = ({
               <div className="flex-1 min-h-0 overflow-hidden preview-container">
                 <div
                   ref={previewRef}
+                  onMouseDown={() => setPreviewSelectionLocked(true)}
+                  onMouseUp={() => setTimeout(() => setPreviewSelectionLocked(false), 600)}
                   className="h-full min-h-0 overflow-auto bg-transparent"
                   style={{ maxHeight: '100%' }}
                 >
                   {showMarkdown ? (
                     <MarkdownPreview
-                      content={code}
-                      snippets={[...(snippets || []), ...(projects || [])]}
+                      content={lockedPreviewCode || ''}
+                      snippets={[
+                        ...(snippets || []),
+                        ...(projects || []),
+                        ...(initialSnippet?.id ? [initialSnippet] : [])
+                      ]}
                       language={language}
                       onSnippetClick={onSnippetMentionClick}
                     />
                   ) : (
                     <div className="p-4">
-                      <pre className="text-xs font-mono leading-5 m-0">
+                      <pre
+                        className="m-0"
+                        style={{
+                          fontFamily: 'var(--preview-font-family)',
+                          fontSize: 'var(--preview-font-size)',
+                          lineHeight: 'var(--editor-line-height)',
+                          paddingBottom:
+                            'calc(var(--preview-font-size) * var(--editor-line-height))'
+                        }}
+                      >
                         <code
                           onClick={handleMentionClickInPreview}
                           style={{ userSelect: 'text', cursor: 'text' }}
@@ -754,7 +942,8 @@ const SnippetEditor = ({
                           timestamp: Date.now(),
                           type:
                             initialSnippet?.type ||
-                            (activeView === 'projects' ? 'project' : 'snippet')
+                            (activeView === 'projects' ? 'project' : 'snippet'),
+                          is_draft: false
                         }
                         setNameOpen(false)
                         onSave(payload)

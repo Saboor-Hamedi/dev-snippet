@@ -16,7 +16,8 @@ const Workbench = ({
   onDeleteRequest,
   onNewSnippet,
   onNewProject,
-  currentContext
+  currentContext,
+  onSnippetSelect
 }) => {
   const [editingSnippet, setEditingSnippet] = React.useState(null)
 
@@ -53,9 +54,7 @@ const Workbench = ({
         activeView={currentContext}
         snippets={snippets}
         projects={projects}
-        onSnippetMentionClick={(snippet) => {
-          setEditingSnippet(snippet)
-        }}
+        onSnippetMentionClick={onSnippetSelect}
         isCreateMode
       />
     )
@@ -74,9 +73,7 @@ const Workbench = ({
         onDelete={onDeleteRequest}
         snippets={snippets}
         projects={projects}
-        onSnippetMentionClick={(snippet) => {
-          setEditingSnippet(snippet)
-        }}
+        onSnippetMentionClick={onSnippetSelect}
       />
     )
   }
@@ -94,9 +91,7 @@ const Workbench = ({
         onDelete={onDeleteRequest}
         snippets={snippets}
         projects={projects}
-        onSnippetMentionClick={(snippet) => {
-          setEditingSnippet(snippet)
-        }}
+        onSnippetMentionClick={onSnippetSelect}
       />
     )
   }
@@ -145,7 +140,8 @@ Workbench.propTypes = {
   onDeleteRequest: PropTypes.func.isRequired,
   onNewSnippet: PropTypes.func.isRequired,
   onNewProject: PropTypes.func.isRequired,
-  currentContext: PropTypes.string
+  currentContext: PropTypes.string,
+  onSnippetSelect: PropTypes.func
 }
 
 export default Workbench
