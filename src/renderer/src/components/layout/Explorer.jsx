@@ -66,6 +66,7 @@ const Explorer = ({
       css: '.css',
       json: '.json',
       markdown: '.md',
+      md: '.md',
       java: '.java',
       cpp: '.cpp',
       typescript: '.ts',

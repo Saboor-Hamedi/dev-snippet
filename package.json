@@ -29,8 +29,10 @@
     "highlight.js": "^11.11.1",
     "lucide-react": "^0.554.0",
     "prop-types": "^15.8.1",
+    "react-markdown": "^10.1.0",
     "react-modal": "^3.16.3",
     "react-syntax-highlighter": "^16.1.0",
+    "remark-gfm": "^4.0.1",
     "sugar-high": "^0.9.5",
     "use-debounce": "^10.0.6"
   },

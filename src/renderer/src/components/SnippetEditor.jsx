@@ -6,6 +6,7 @@ import { useDebounce } from 'use-debounce'
 import { useTextEditor } from '../hook/useTextEditor'
 import { useKeyboardShortcuts } from '../hook/useKeyboardShortcuts'
 import useHighlight from '../hook/useHighlight'
+import MarkdownPreview from './MarkdownPreview.jsx'
 import ViewToolbar from './ViewToolbar'
 
 const SnippetEditor = ({ onSave, initialSnippet, onCancel, onNew }) => {
@@ -31,7 +32,6 @@ const SnippetEditor = ({ onSave, initialSnippet, onCancel, onNew }) => {
 
   // Auto-detect language based on code content
   React.useEffect(() => {
-    if (isInitialMount.current) return
     const t = code || ''
     const has = (r) => r.test(t)
     let detected = 'txt'
@@ -71,7 +71,8 @@ const SnippetEditor = ({ onSave, initialSnippet, onCancel, onNew }) => {
   }
   const previewHtml = useMemo(() => renderMarkdown(code || ''), [code])
   const highlightedHtml = useHighlight(code || '', language)
-  const showMarkdown = language === 'md' || language === 'markdown'
+  const isMarkdownLike = /^(# |## |### |> |\* |\d+\. )/m.test(code || '')
+  const showMarkdown = language === 'md' || language === 'markdown' || isMarkdownLike
   const showCodePreview = !showMarkdown && language !== 'txt'
   const canPreview = showMarkdown || showCodePreview
   const [layoutMode, setLayoutMode] = useState('editor')
@@ -242,12 +243,7 @@ const SnippetEditor = ({ onSave, initialSnippet, onCancel, onNew }) => {
               style={{ maxHeight: '100%' }}
             >
               {showMarkdown ? (
-                <div className="p-4">
-                  <div
-                    className="prose prose-slate dark:prose-invert max-w-none"
-                    dangerouslySetInnerHTML={{ __html: previewHtml }}
-                  />
-                </div>
+                <MarkdownPreview content={code} />
               ) : (
                 <div className="p-4">
                   <pre className="text-xs font-mono leading-5 m-0">
@@ -295,12 +291,7 @@ const SnippetEditor = ({ onSave, initialSnippet, onCancel, onNew }) => {
                 style={{ maxHeight: '100%' }}
               >
                 {showMarkdown ? (
-                  <div className="p-4">
-                    <div
-                      className="prose prose-slate dark:prose-invert max-w-none"
-                      dangerouslySetInnerHTML={{ __html: previewHtml }}
-                    />
-                  </div>
+                  <MarkdownPreview content={code} />
                 ) : (
                   <div className="p-4">
                     <pre className="text-xs font-mono leading-5 m-0">
@@ -359,12 +350,7 @@ const SnippetEditor = ({ onSave, initialSnippet, onCancel, onNew }) => {
             style={{ maxHeight: '100%' }}
           >
             {showMarkdown ? (
-              <div className="p-4">
-                <div
-                  className="prose prose-slate dark:prose-invert max-w-none"
-                  dangerouslySetInnerHTML={{ __html: previewHtml }}
-                />
-              </div>
+              <MarkdownPreview content={code} />
             ) : (
               <div className="p-4">
                 <pre className="text-xs font-mono leading-5 m-0">

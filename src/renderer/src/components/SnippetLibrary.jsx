@@ -62,15 +62,8 @@ const SnippetLibrary = () => {
       return items.filter((item) => item.title.toLowerCase().includes(searchTerm.toLowerCase()))
     }
 
-    // C. Default (All Snippets)
-    const items = snippets.filter(
-      (s) =>
-        s.type !== 'markdown' &&
-        s.language !== 'markdown' &&
-        !String(s.title || '')
-          .toLowerCase()
-          .endsWith('.md')
-    )
+    // C. Default (All Snippets) — include markdown too
+    const items = snippets
     if (!searchTerm.trim()) return items
 
     return items.filter(
