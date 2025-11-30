@@ -2,24 +2,17 @@ import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { useToast } from '../utils/ToastNotification'
 import { useSnippetData } from '../hook/useSnippetData'
 // Components
-import ActivityBar from './layout/ActivityBar'
-import Sidebar from './layout/Sidebar'
 import Workbench from './workbench/Workbench'
-import CreateProjectModal from './CreateProjectModal'
-import CommandPalette from './CommandPalette'
 
 const SnippetLibrary = () => {
   // 1. Logic & Data (From Hook)
   const {
     snippets,
-    projects,
     selectedSnippet,
     setSelectedSnippet,
     setSnippets,
     saveSnippet,
-    saveProject,
     deleteItem,
-    createProject,
     onNewSnippet
   } = useSnippetData()
 
@@ -28,7 +21,6 @@ const SnippetLibrary = () => {
     // Restore activeView from localStorage, default to 'snippets'
     return localStorage.getItem('activeView') || 'snippets'
   })
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
 
   // Persist activeView to localStorage whenever it changes
@@ -37,15 +29,12 @@ const SnippetLibrary = () => {
   }, [activeView])
 
   // Modals
-  const [createProjectModalOpen, setCreateProjectModalOpen] = useState(false)
   const [renameModal, setRenameModal] = useState({ isOpen: false, item: null })
   const [renameInput, setRenameInput] = useState('')
   const [isCreatingSnippet, setIsCreatingSnippet] = useState(false)
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
   const { toast, showToast } = useToast()
   const [activeSnippet, setActiveSnippet] = useState(null)
-  const [activeProject, setActiveProject] = useState(null)
-  const modalKeyRef = useRef(0)
 
   // Removed global OS file drop handler in favor of sidebar-focused drop + dnd-kit
   // Re-introduce guarded global drop for OS files: only acts when hovering sidebar list container
@@ -76,7 +65,7 @@ const SnippetLibrary = () => {
             code: content,
             language: ext || 'txt',
             timestamp: Date.now(),
-            type: activeView === 'projects' ? 'project' : 'snippet',
+            type: 'snippet',
             is_draft: true
           }
           setSnippets((prev) => [draft, ...prev])
@@ -96,17 +85,12 @@ const SnippetLibrary = () => {
   // Ensure only items of current view are open
   useEffect(() => {
     if (isCreatingSnippet) return
-    if (activeView === 'projects') {
-      setSelectedSnippet(activeProject || null)
-    } else if (activeView === 'snippets' || activeView === 'markdown') {
+    if (activeView === 'snippets' || activeView === 'markdown') {
       setSelectedSnippet(activeSnippet || null)
     }
-  }, [activeView, activeSnippet, activeProject, isCreatingSnippet])
+  }, [activeView, activeSnippet, isCreatingSnippet])
   // 3. Search Filter Logic
   const filteredItems = useMemo(() => {
-    // A. Handle Projects
-    if (activeView === 'projects') return projects
-
     // B. Handle Markdown
     if (activeView === 'markdown') {
       const items = snippets.filter(
@@ -125,7 +109,7 @@ const SnippetLibrary = () => {
         item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (item.language && item.language.toLowerCase().includes(searchTerm.toLowerCase()))
     )
-  }, [snippets, projects, searchTerm, activeView])
+  }, [snippets, searchTerm, activeView])
   // 4. Global Actions (e.g. Opening a file from OS)
   const handleOpenFile = async () => {
     try {
@@ -167,29 +151,14 @@ const SnippetLibrary = () => {
 
       // Escape closes modals and editor
       if (e.key === 'Escape') {
-        if (createProjectModalOpen) setCreateProjectModalOpen(false)
         if (renameModal.isOpen) setRenameModal({ ...renameModal, isOpen: false })
         if (isCreatingSnippet) setIsCreatingSnippet(false)
         if (isCommandPaletteOpen) setIsCommandPaletteOpen(false)
       }
-      // Ctrl+B toggles sidebar
-      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
-        e.preventDefault()
-        setSidebarCollapsed((prev) => !prev)
-      }
-      // Ctrl+N creates new item based on context
+      // Ctrl+N creates new snippet
       if ((e.ctrlKey || e.metaKey) && e.key === 'n' && !e.shiftKey) {
         e.preventDefault()
-        if (activeView === 'projects') {
-          setCreateProjectModalOpen(true)
-        } else {
-          setIsCreatingSnippet(true)
-        }
-      }
-      // Ctrl+Shift+N creates new project
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'n') {
-        e.preventDefault()
-        setCreateProjectModalOpen(true)
+        setIsCreatingSnippet(true)
       }
       // Ctrl+Shift+W goes to Welcome page
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'w') {
@@ -221,13 +190,12 @@ const SnippetLibrary = () => {
     document.addEventListener('keydown', handleKeyPress)
     return () => document.removeEventListener('keydown', handleKeyPress)
   }, [
-    createProjectModalOpen,
-    renameModal.isOpen,
     isCreatingSnippet,
     isCommandPaletteOpen,
     selectedSnippet,
     showToast,
-    activeView
+    activeView,
+    renameModal.isOpen
   ])
 
   // 6. Rename Logic -- This is where the rename modal is triggered and the rename is handled
@@ -262,7 +230,6 @@ const SnippetLibrary = () => {
       lang = 'txt'
     }
     updatedItem.language = lang
-    const isProject = renameModal.item.type === 'project'
 
     // 2. Update the selected item immediately (optimistic update)
     if (selectedSnippet && selectedSnippet.id === updatedItem.id) {
@@ -272,11 +239,7 @@ const SnippetLibrary = () => {
     // 3. Save to backend using the hook's functions
     // These functions automatically reload the sidebar list after saving
     try {
-      if (isProject) {
-        await saveProject(updatedItem)
-      } else {
-        await saveSnippet(updatedItem)
-      }
+      await saveSnippet(updatedItem)
       // Toast is shown by the hook functions
     } catch (error) {
       // Error toast is shown by the hook functions
@@ -301,21 +264,13 @@ const SnippetLibrary = () => {
 
       // Check if active BEFORE deleting (because deleteItem might change selectedSnippet)
       const wasActive =
-        (activeView === 'snippets' || activeView === 'projects') &&
-        (selectedSnippet?.id === id || activeSnippet?.id === id || activeProject?.id === id)
+        activeView === 'snippets' && (selectedSnippet?.id === id || activeSnippet?.id === id)
 
       // Determine type and list to calculate next item
-      const isProject = projects.some((p) => p.id === id)
-
       // We need to know the remaining items *after* deletion to update local state
       let nextItem = null
-      if (isProject) {
-        const remaining = projects.filter((p) => p.id !== id)
-        if (remaining.length > 0) nextItem = remaining[0]
-      } else {
-        const remaining = snippets.filter((s) => s.id !== id)
-        if (remaining.length > 0) nextItem = remaining[0]
-      }
+      const remaining = snippets.filter((s) => s.id !== id)
+      if (remaining.length > 0) nextItem = remaining[0]
 
       // Use the hook's deleteItem which handles API calls and state updates for both snippets and projects
       await deleteItem(id)
@@ -325,13 +280,7 @@ const SnippetLibrary = () => {
 
       // Update local selection state to match what the hook did (or should have done)
       if (wasActive) {
-        if (isProject) {
-          setActiveProject(nextItem)
-          // If no next item, activeView remains 'projects' but selectedSnippet becomes null
-          // Workbench will handle showing empty state or Welcome
-        } else {
-          setActiveSnippet(nextItem)
-        }
+        setActiveSnippet(nextItem)
 
         // If we have a next item, ensure it's selected (hook does this, but we sync local state above)
         // If NO next item, we might want to show Welcome if list is empty
@@ -351,118 +300,18 @@ const SnippetLibrary = () => {
     <div className="flex h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white overflow-hidden transition-colors duration-200">
       {toast && <div className="toast">{toast}</div>}
 
-      {/* Activity Bar - Fixed */}
-      <div className="flex-shrink-0">
-        <ActivityBar
-          activeView={activeView}
-          setActiveView={(view) => {
-            setActiveView(view)
-            setIsCreatingSnippet(false)
-          }}
-          toggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
-        />
-      </div>
-
-      {/* Sidebar - Collapsible (hidden in markdown view) */}
-      {!sidebarCollapsed && (
-        <div
-          className="w-80 flex-shrink-0 border-r transition-colors duration-200"
-          style={{
-            backgroundColor: 'var(--color-background-soft)',
-            borderColor: 'var(--border-color)'
-          }}
-        >
-          <Sidebar
-            activeView={activeView}
-            items={filteredItems}
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            selectedSnippet={selectedSnippet}
-            onSelect={async (item) => {
-              if (selectedSnippet && selectedSnippet.title) {
-                const prev = selectedSnippet
-                const isDeleted = !!(window.__deletedIds && window.__deletedIds.has(prev.id))
-                const stillExists =
-                  snippets.some((s) => s.id === prev.id) || projects.some((p) => p.id === prev.id)
-                if (!isDeleted && stillExists) {
-                  if (!prev.is_draft) {
-                    if (prev.type === 'project') {
-                      await saveProject(prev, { skipSelectedUpdate: true })
-                    } else {
-                      await saveSnippet(prev, { skipSelectedUpdate: true })
-                    }
-                  }
-                }
-              }
-              setIsCreatingSnippet(false)
-              if (item?.type === 'project') {
-                setActiveProject(item)
-                setSelectedSnippet(item)
-                setActiveView('projects')
-              } else {
-                setActiveSnippet(item)
-                setSelectedSnippet(item)
-                setActiveView('snippets')
-              }
-              if (activeView === 'settings') {
-                setActiveView('snippets')
-              }
-            }}
-            // Wiring up actions
-            onDeleteRequest={async (id) => {
-              const item = snippets.find((i) => i.id === id)
-              const title = item?.title || 'Item'
-              const ok = window.confirm(`Delete "${title}"?`)
-              if (!ok) return
-              await handleDeleteSnippet(id)
-            }}
-            onCreateProject={() => setCreateProjectModalOpen(true)}
-            onCreateSnippet={() => {
-              setIsCreatingSnippet(true)
-              const draft = {
-                id: `draft-${Date.now()}`,
-                title: '',
-                code: '',
-                language: 'txt',
-                timestamp: Date.now(),
-                type: 'snippet',
-                is_draft: true
-              }
-              setSnippets((prev) => [draft, ...prev])
-              setActiveSnippet(draft)
-              setSelectedSnippet(draft)
-              setActiveView('snippets')
-            }}
-            onRenameRequest={(item) => {
-              setRenameInput(item?.title || '')
-              setRenameModal({ isOpen: true, item })
-            }}
-          />
-        </div>
-      )}
       {/* Main Workbench */}
       <div className="flex-1 flex flex-col items-stretch min-h-0 overflow-hidden bg-slate-50 dark:bg-slate-900 transition-colors duration-200">
         <Workbench
           activeView={isCreatingSnippet ? 'editor' : activeView}
           currentContext={activeView}
-          selectedSnippet={activeView === 'projects' ? activeProject : selectedSnippet}
+          selectedSnippet={selectedSnippet}
           snippets={snippets}
-          projects={projects}
           onCloseSnippet={() => setSelectedSnippet(null)}
           onCancelEditor={() => setIsCreatingSnippet(false)}
           onSave={(item) => {
-            const isProject =
-              item.type === 'project' ||
-              projects.some((p) => p.id === item.id) ||
-              activeView === 'projects'
-
-            if (isProject) {
-              saveProject(item)
-              setActiveProject(item)
-            } else {
-              saveSnippet(item)
-              setActiveSnippet(item)
-            }
+            saveSnippet(item)
+            setActiveSnippet(item)
             // If we were creating a new snippet, switch to viewing/editing it
             // so the editor doesn't close or reset.
             if (isCreatingSnippet) {
@@ -487,57 +336,22 @@ const SnippetLibrary = () => {
             setSelectedSnippet(draft)
             setActiveView('snippets')
           }}
-          onNewProject={() => setCreateProjectModalOpen(true)}
-          onSnippetSelect={(snippet) => {
-            // Handle snippet mention click - select and open the snippet
-            setIsCreatingSnippet(false)
-            if (snippet.type === 'project') {
-              setActiveProject(snippet)
-              setSelectedSnippet(snippet)
-              setActiveView('projects')
-            } else {
-              setActiveSnippet(snippet)
-              setSelectedSnippet(snippet)
-              setActiveView('snippets')
-            }
-          }}
           onChange={(code) => {
-            if (activeView === 'projects') {
-              if (activeProject) {
-                const updated = { ...activeProject, code }
-                setActiveProject(updated)
-                setSelectedSnippet(updated)
-              }
-            } else {
-              if (selectedSnippet) {
-                const updated = { ...selectedSnippet, code }
-                setActiveSnippet(updated)
-                setSelectedSnippet(updated)
-              }
+            if (selectedSnippet) {
+              const updated = { ...selectedSnippet, code }
+              setActiveSnippet(updated)
+              setSelectedSnippet(updated)
             }
           }}
         />
       </div>
-
-      {/* Modals */}
-
-      <CreateProjectModal
-        key={`modal-${modalKeyRef.current}`}
-        isOpen={createProjectModalOpen}
-        onClose={() => setCreateProjectModalOpen(false)}
-        onSave={(data) => {
-          createProject(data) // Call Hook
-          setCreateProjectModalOpen(false)
-          modalKeyRef.current += 1 // Increment for next open
-        }}
-      />
 
       {renameModal.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-md mx-4 border border-slate-200 dark:border-slate-700">
             <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                {`Rename ${renameModal.item?.type === 'project' ? 'Project' : 'Snippet'}`}
+                Rename Snippet
               </h3>
               <button
                 onClick={() => setRenameModal({ ...renameModal, isOpen: false })}
@@ -577,15 +391,9 @@ const SnippetLibrary = () => {
         isOpen={isCommandPaletteOpen}
         onClose={() => setIsCommandPaletteOpen(false)}
         snippets={snippets}
-        projects={projects}
         onSelect={(item) => {
           setSelectedSnippet(item)
-          // Switch view if needed
-          if (item.type === 'project') {
-            setActiveView('projects')
-          } else {
-            setActiveView('snippets')
-          }
+          setActiveView('snippets')
         }}
       />
     </div>

@@ -57,7 +57,17 @@
   --editor-line-height: 1.6;
   --caret-style: bar;
 }
+/* Prevent Monaco from overriding line padding */
+.monaco-editor .view-lines .view-line {
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+}
 
+/* Ensure code block padding doesn’t shift text */
+.markdown-code-block-line>.view-line {
+  padding-left: 12px !important;
+  /* 8px base + 4px bar */
+}
 /* Light Theme */
 [data-theme='light'] {
   --color-background: #f6f8fa; /* workbench */

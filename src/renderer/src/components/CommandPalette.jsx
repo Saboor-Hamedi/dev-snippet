@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react'
 import PropTypes from 'prop-types'
-import { Search, FileCode, Folder, ArrowRight } from 'lucide-react'
+import { Search, FileCode, ArrowRight } from 'lucide-react'
 
-const CommandPalette = ({ isOpen, onClose, snippets = [], projects = [], onSelect }) => {
+const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
   const [search, setSearch] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const inputRef = useRef(null)
@@ -14,20 +14,16 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], projects = [], onSelec
 
     const searchLower = search.toLowerCase()
     const snippetResults = snippets
-      .filter(
-        (s) =>
-          (s.title || '').toLowerCase().includes(searchLower) ||
-          (s.language || '').toLowerCase().includes(searchLower) ||
-          (s.code || '').toLowerCase().includes(searchLower)
-      )
+      .filter((s) => {
+        const titleMatch = (s.title || '').toLowerCase().includes(searchLower)
+        const langMatch = (s.language || '').toLowerCase().includes(searchLower)
+        const codeMatch = (s.code || '').toLowerCase().includes(searchLower)
+        return titleMatch || langMatch || codeMatch
+      })
       .map((s) => ({ ...s, type: 'snippet' }))
 
-    const projectResults = projects
-      .filter((p) => p.title.toLowerCase().includes(searchLower))
-      .map((p) => ({ ...p, type: 'project' }))
-
-    return [...projectResults, ...snippetResults].slice(0, 10) // Limit to 10 results
-  }, [search, snippets, projects])
+    return snippetResults.slice(0, 10) // Limit to 10 results
+  }, [search, snippets])
 
   // Reset selection when search changes
   useEffect(() => {
@@ -86,7 +82,11 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], projects = [], onSelec
     >
       <div
         className="w-full max-w-2xl rounded-xl shadow-2xl border overflow-hidden flex flex-col transform transition-all"
-        style={{ backgroundColor: 'var(--color-background-soft)', borderColor: 'var(--border-color)', color: 'var(--color-text)' }}
+        style={{
+          backgroundColor: 'var(--color-background-soft)',
+          borderColor: 'var(--border-color)',
+          color: 'var(--color-text)'
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Input */}
@@ -97,7 +97,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], projects = [], onSelec
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search files and commands..."
+            placeholder="Search snippets..."
             className="flex-1 bg-transparent border-none outline-none text-lg"
           />
           <div className="flex gap-2">
@@ -124,21 +124,13 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], projects = [], onSelec
                       : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
                   }`}
                 >
-                  <div
-                    className={`p-2 rounded-lg ${
-                      item.type === 'project'
-                        ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
-                        : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'
-                    }`}
-                  >
-                    {item.type === 'project' ? <Folder size={18} /> : <FileCode size={18} />}
+                  <div className="p-2 rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
+                    <FileCode size={18} />
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-0.5">
-                      <span className="font-medium truncate">
-                        {item.title}
-                      </span>
+                      <span className="font-medium truncate">{item.title}</span>
                       {index === selectedIndex && (
                         <ArrowRight size={14} className="text-primary-500" />
                       )}
@@ -186,7 +178,6 @@ CommandPalette.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   snippets: PropTypes.array,
-  projects: PropTypes.array,
   onSelect: PropTypes.func.isRequired
 }
 

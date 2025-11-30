@@ -15,9 +15,6 @@ const api = {
   getSnippets: () => electronAPI.ipcRenderer.invoke('db:getSnippets'),
   saveSnippet: (snippet) => electronAPI.ipcRenderer.invoke('db:saveSnippet', snippet),
   deleteSnippet: (id) => electronAPI.ipcRenderer.invoke('db:deleteSnippet', id),
-  getProjects: () => electronAPI.ipcRenderer.invoke('db:getProjects'),
-  saveProject: (project) => electronAPI.ipcRenderer.invoke('db:saveProject', project),
-  deleteProject: (id) => electronAPI.ipcRenderer.invoke('db:deleteProject', id),
   getSetting: (key) => electronAPI.ipcRenderer.invoke('db:getSetting', key),
   saveSetting: (key, value) => electronAPI.ipcRenderer.invoke('db:saveSetting', key, value),
   getTheme: () => electronAPI.ipcRenderer.invoke('db:getTheme'),
@@ -25,8 +22,7 @@ const api = {
   // Drafts
   saveSnippetDraft: (payload) => electronAPI.ipcRenderer.invoke('db:saveSnippetDraft', payload),
   commitSnippetDraft: (id) => electronAPI.ipcRenderer.invoke('db:commitSnippetDraft', id),
-  saveProjectDraft: (payload) => electronAPI.ipcRenderer.invoke('db:saveProjectDraft', payload),
-  commitProjectDraft: (id) => electronAPI.ipcRenderer.invoke('db:commitProjectDraft', id)
+  
 }
 
 if (process.contextIsolated) {

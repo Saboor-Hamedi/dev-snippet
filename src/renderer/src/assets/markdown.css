@@ -1,0 +1,62 @@
+/* UIW Markdown Editor theme alignment */
+.w-md-editor {
+  background-color: var(--editor-bg) !important;
+  color: var(--text-main) !important;
+  border-color: var(--border-color) !important;
+  height: 100% !important;
+  overflow: auto !important;
+}
+.w-md-editor-toolbar {
+  display: none !important;
+}
+.w-md-editor-preview {
+  background-color: var(--editor-bg) !important;
+  height: 100% !important;
+  overflow: visible !important;
+}
+.w-md-editor-content {
+  font-family: var(--editor-font-family) !important;
+  font-size: var(--editor-font-size) !important;
+  line-height: var(--editor-line-height) !important;
+  height: 100% !important;
+  display: flex !important;
+  overflow: visible !important;
+}
+.w-md-editor-content > div {
+  height: 100% !important;
+  min-height: 100% !important;
+  overflow: visible !important;
+}
+.w-md-editor-text-pre > code,
+.w-md-editor-preview .wmde-markdown pre code {
+  font-family: 'Consolas','Monaco','Courier New',monospace !important;
+}
+.w-md-editor-preview,
+.wmde-markdown {
+  color: var(--text-main) !important;
+  background-color: var(--editor-bg) !important;
+}
+.wmde-markdown h1,
+.wmde-markdown h2,
+.wmde-markdown h3 {
+  margin-top: 0.6em !important;
+  margin-bottom: 0.4em !important;
+}
+.wmde-markdown pre {
+  background-color: rgba(110, 118, 129, 0.08) !important;
+  border-left: 3px solid var(--accent) !important;
+  border-radius: 6px !important;
+}
+.wmde-markdown code,
+.wmde-markdown pre code,
+.wmde-markdown code.hljs {
+  background-color: transparent !important;
+}
+.md-editor-header {
+  background-color: var(--editor-bg) !important;
+}
+.w-md-editor-preview .wmde-markdown {
+  height: 100% !important;
+  min-height: 100% !important;
+  overflow: visible !important;
+}

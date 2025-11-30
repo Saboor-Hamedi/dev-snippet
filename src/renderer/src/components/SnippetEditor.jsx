@@ -1,39 +1,11 @@
 // Edit snippets with autosave functionality - Clean live editing experience
-import React, { useState, useEffect, useRef, useMemo } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import PropTypes from 'prop-types'
-import { useDebounce, useDebouncedCallback } from 'use-debounce'
 import { useKeyboardShortcuts } from '../hook/useKeyboardShortcuts'
-import useHighlight from '../hook/useHighlight'
-import MarkdownPreview from './MarkdownPreview.jsx'
-import ViewToolbar from './ViewToolbar'
 import WelcomePage from './WelcomePage'
 import StatusBar from './StatusBar.jsx'
-import Editor from 'react-simple-code-editor'
-import hljs from 'highlight.js/lib/core'
-import javascript from 'highlight.js/lib/languages/javascript'
-import python from 'highlight.js/lib/languages/python'
-import xml from 'highlight.js/lib/languages/xml'
-import css from 'highlight.js/lib/languages/css'
-import json from 'highlight.js/lib/languages/json'
-import markdown from 'highlight.js/lib/languages/markdown'
-import bash from 'highlight.js/lib/languages/bash'
-import sql from 'highlight.js/lib/languages/sql'
-import cpp from 'highlight.js/lib/languages/cpp'
-import java from 'highlight.js/lib/languages/java'
-import php from 'highlight.js/lib/languages/php'
-
-hljs.registerLanguage('javascript', javascript)
-hljs.registerLanguage('python', python)
-hljs.registerLanguage('html', xml)
-hljs.registerLanguage('xml', xml)
-hljs.registerLanguage('css', css)
-hljs.registerLanguage('json', json)
-hljs.registerLanguage('markdown', markdown)
-hljs.registerLanguage('bash', bash)
-hljs.registerLanguage('sql', sql)
-hljs.registerLanguage('cpp', cpp)
-hljs.registerLanguage('java', java)
-hljs.registerLanguage('php', php)
+import SplitPane from './SplitPane.jsx'
+import LivePreview from './LivePreview.jsx'
 
 const SnippetEditor = ({
   onSave,
@@ -41,53 +13,51 @@ const SnippetEditor = ({
   onCancel,
   onNew,
   onDelete,
-  onNewProject,
   isCreateMode,
-  activeView,
-  snippets,
-  projects,
-  onSnippetMentionClick
+  activeView
 }) => {
   const [code, setCode] = useState(initialSnippet?.code || '')
-  const textareaRef = useRef(null) // Keep ref for compatibility if needed, though Editor manages its own
   const [language, setLanguage] = React.useState(initialSnippet?.language || 'txt')
 
-  // Debounce the code value - wait 1000ms after user stops typing
-  const [debouncedCode] = useDebounce(code, 1000)
-  const [debouncedLanguage] = useDebounce(language, 1000)
-  const [debouncedPreviewCode] = useDebounce(code, 400)
+  const saveTimerRef = useRef(null)
+
   const isDeletingRef = useRef(false)
 
-  const debouncedSave = useDebouncedCallback(() => {
-    const id = initialSnippet?.id
-    if (!id) return
-    if (isDeletingRef.current) return
-    if (window.__deletedIds && window.__deletedIds.has(id)) return
-    // Guard: skip autosave for drafts without title
-    if (initialSnippet?.is_draft && (!initialSnippet?.title || !initialSnippet.title.trim())) return
-    const updatedSnippet = {
-      id: id,
-      title: initialSnippet.title,
-      code: code,
-      language: language,
-      timestamp: Date.now(),
-      type: initialSnippet.type || 'snippet',
-      tags: extractTags(code)
-    }
-    onSave(updatedSnippet)
-  }, 1000)
+  const scheduleSave = () => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    saveTimerRef.current = setTimeout(() => {
+      const id = initialSnippet?.id
+      if (!id) return
+      if (isDeletingRef.current) return
+      if (window.__deletedIds && window.__deletedIds.has(id)) return
+      if (initialSnippet?.is_draft && (!initialSnippet?.title || !initialSnippet.title.trim()))
+        return
+      const updatedSnippet = {
+        id: id,
+        title: initialSnippet.title,
+        code: code,
+        language: language,
+        timestamp: Date.now(),
+        type: initialSnippet.type || 'snippet',
+        tags: extractTags(code)
+      }
+      onSave(updatedSnippet)
+    }, 1000)
+  }
 
   useEffect(() => {
     // Register canceler globally keyed by snippet id
     const id = initialSnippet?.id
     if (id) {
       if (!window.__autosaveCancel) window.__autosaveCancel = new Map()
-      window.__autosaveCancel.set(id, debouncedSave.cancel)
+      window.__autosaveCancel.set(id, () => {
+        if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+      })
     }
     return () => {
       const id2 = initialSnippet?.id
       try {
-        debouncedSave.cancel()
+        if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
         if (id2 && window.__autosaveCancel) window.__autosaveCancel.delete(id2)
       } catch {}
     }
@@ -121,143 +91,36 @@ const SnippetEditor = ({
     else if (has(/#include\s+<|std::|int\s+main\s*\(/)) detected = 'cpp'
     else if (has(/\bpublic\s+class\b|System\.out\.println|package\s+\w+/)) detected = 'java'
     else if (has(/^#!.*(bash|sh)|\becho\b|\bcd\b|\bfi\b/)) detected = 'sh'
-    else if (has(/^(# |## |### |> |\* |\d+\. )/m)) detected = 'md'
+    // Improved markdown detection - check for any markdown syntax
+    else if (has(/^(#{1,6}\s|>\s|-\s|\*\s|\d+\.\s|```|\*\*|\[.+\]\(.+\))/m)) detected = 'md'
 
-    // Only switch language if we detected something specific (not txt)
-    // This prevents flickering back to 'txt' while typing
-    if (detected !== 'txt' && detected !== language) {
+    // Always update language if detected (including txt)
+    if (detected !== language) {
       setLanguage(detected)
     }
   }, [code, language])
 
-  // Markdown preview
-  const renderMarkdown = (text) => {
-    const esc = (t) =>
-      t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
-    let html = esc(text)
-    html = html.replace(/^###\s?(.*)$/gm, '<h3>$1</h3>')
-    html = html.replace(/^##\s?(.*)$/gm, '<h2>$1</h2>')
-    html = html.replace(/^#\s?(.*)$/gm, '<h1>$1</h1>')
-    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>')
-    html = html.replace(/`([^`]+)`/g, '<code>$1</code>')
-    html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
-    html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank">$1</a>')
-    html = html.replace(/\n/g, '<br/>')
-    return html
-  }
-  const [previewSelectionLocked, setPreviewSelectionLocked] = useState(false)
-  const [lockedPreviewCode, setLockedPreviewCode] = useState(initialSnippet?.code || '')
-  useEffect(() => {
-    if (!previewSelectionLocked) {
-      setLockedPreviewCode(debouncedPreviewCode || '')
-    }
-  }, [debouncedPreviewCode, previewSelectionLocked])
-  const previewHtml = useMemo(() => renderMarkdown(lockedPreviewCode || ''), [lockedPreviewCode])
-  const highlightedHtml = useHighlight(lockedPreviewCode || '', language)
-  const enhanceMentionsHtml = (html) => {
-    const safe = String(html || '')
-    return safe.replace(/@([a-zA-Z0-9_.-]+)/g, (m, p1) => {
-      const slug = String(p1 || '').toLowerCase()
-      return `<a href=\"#\" class=\"md-mention\" data-slug=\"${slug}\">@${p1}</a>`
-    })
-  }
-  const enhancedHtml = useMemo(() => enhanceMentionsHtml(highlightedHtml), [highlightedHtml])
-  const handleMentionClickInPreview = (e) => {
-    const el = e.target.closest && e.target.closest('.md-mention')
-    if (!el) return
-    e.preventDefault()
-    const slug = (el.getAttribute('data-slug') || '').toLowerCase()
-    const list = [...(snippets || []), ...(projects || [])]
-    const getExt = (lang) => {
-      const m = {
-        javascript: '.js',
-        js: '.js',
-        jsx: '.js',
-        python: '.py',
-        py: '.py',
-        html: '.html',
-        xml: '.xml',
-        css: '.css',
-        sql: '.sql',
-        bash: '.sh',
-        sh: '.sh',
-        java: '.java',
-        cpp: '.cpp',
-        markdown: '.md',
-        md: '.md'
-      }
-      return m[(lang || '').toLowerCase()] || ''
-    }
-    const matched = list.find((s) => {
-      const title = (s.title || '').toLowerCase()
-      const hyph = title.replace(/\s+/g, '-')
-      const fname = title.includes('.') ? title : `${title}${getExt(s.language)}`
-      return slug === hyph || slug === title || slug === fname
-    })
-    if (matched && typeof onSnippetMentionClick === 'function') {
-      onSnippetMentionClick(matched)
-    }
-  }
-  const isMarkdownHeuristic =
-    /^(# |## |### |> |\* |\d+\. )/m.test(code || '') || /@\w+/.test(code || '')
-  const isMarkdownLike =
-    (language === 'txt' && isMarkdownHeuristic) || language === 'md' || language === 'markdown'
-  const showMarkdown = isMarkdownLike
-  const showCodePreview = !showMarkdown && language !== 'txt'
-  const canPreview = showMarkdown || showCodePreview
-  const [layoutMode, setLayoutMode] = useState('editor')
-  const [previewPosition, setPreviewPosition] = useState('right')
-  const [splitRatio, setSplitRatio] = useState(0.5)
-  const containerRef = useRef(null)
-  const previewRef = useRef(null)
-  const resizingRef = useRef(false)
-  const syncingRef = useRef(false)
-  const dividerWidth = 6
-  const outerRef = useRef(null)
   const [nameOpen, setNameOpen] = useState(false)
   const [nameInput, setNameInput] = useState('')
-
-  useEffect(() => {
-    if (!canPreview && layoutMode !== 'editor') {
-      setLayoutMode('editor')
-    }
-  }, [canPreview, layoutMode])
-
-  const startResize = (ev) => {
-    ev.preventDefault()
-    resizingRef.current = true
-    document.body.style.cursor = 'col-resize'
-    const onMove = (ev) => {
-      if (!resizingRef.current || !containerRef.current) return
-      const rect = containerRef.current.getBoundingClientRect()
-      let leftFr = (ev.clientX - rect.left) / rect.width
-      if (leftFr < 0.1) leftFr = 0.1
-      if (leftFr > 0.9) leftFr = 0.9
-      const r = previewPosition === 'left' ? leftFr : 1 - leftFr
-      setSplitRatio(r)
-    }
-    const onUp = () => {
-      resizingRef.current = false
-      document.body.style.cursor = ''
-      window.removeEventListener('mousemove', onMove)
-      window.removeEventListener('mouseup', onUp)
-    }
-    window.addEventListener('mousemove', onMove)
-    window.addEventListener('mouseup', onUp)
-  }
 
   // Trigger debounced save on content or language change
   useEffect(() => {
     if (!initialSnippet?.title) return
-    debouncedSave()
+    scheduleSave()
   }, [code, language])
 
-  // Handle keyboard shortcuts (only Escape now)
+  // Handle keyboard shortcuts
   useKeyboardShortcuts({
     onEscape: () => {
-      if (mentionOpen) setMentionOpen(false)
-      else onCancel && onCancel()
+      onCancel && onCancel()
+    },
+    onSave: () => {
+      // Ctrl+S: Open save prompt if no title, otherwise trigger autosave
+      const title = initialSnippet?.title || ''
+      if (!title || title.toLowerCase() === 'untitled') {
+        setNameInput('')
+        setNameOpen(true)
+      }
     }
   })
 
@@ -289,16 +152,15 @@ const SnippetEditor = ({
     if (hasExt) {
       const ext = title.split('.').pop().toLowerCase()
       lang = extMap[ext] || lang
-    } else {
-      lang = 'txt'
     }
+    // If no extension, keep the auto-detected language from code content
     const payload = {
       id: initialSnippet?.id || Date.now().toString(),
       title,
       code: code,
       language: lang,
       timestamp: Date.now(),
-      type: initialSnippet?.type || (activeView === 'projects' ? 'project' : 'snippet'),
+      type: 'snippet',
       tags: extractTags(code),
       is_draft: false
     }
@@ -310,306 +172,43 @@ const SnippetEditor = ({
       {
         // Guard: if not in create mode and there's no valid snippet, show Welcome
         !isCreateMode && (!initialSnippet || !initialSnippet.id) ? (
-          <WelcomePage onNewSnippet={onNew} onNewProject={onNewProject} />
+          <WelcomePage onNewSnippet={onNew} />
         ) : (
-          <div
-            ref={outerRef}
-            className="h-full flex flex-col items-stretch bg-slate-50 dark:bg-[#0d1117] transition-colors duration-200 relative"
-          >
-            <ViewToolbar
-              onNew={onNew}
-              layoutMode={layoutMode}
-              setLayoutMode={setLayoutMode}
-              previewPosition={previewPosition}
-              setPreviewPosition={setPreviewPosition}
-              resetSplit={() => setSplitRatio(0.5)}
-            />
-            {layoutMode === 'split' && (
-              <div
-                ref={containerRef}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns:
-                    previewPosition === 'left'
-                      ? `${Math.round(splitRatio * 100)}% ${dividerWidth}px ${Math.round((1 - splitRatio) * 100)}%`
-                      : `${Math.round((1 - splitRatio) * 100)}% ${dividerWidth}px ${Math.round(splitRatio * 100)}%`,
-                  minHeight: 0,
-                  userSelect: resizingRef.current ? 'none' : 'auto',
-                  overflow: 'hidden',
-                  alignItems: 'stretch'
-                }}
-                className="flex-1 min-h-0"
-              >
-                {previewPosition === 'left' ? (
-                  <div
-                    ref={previewRef}
-                    onMouseDown={() => setPreviewSelectionLocked(true)}
-                    onMouseUp={() => setTimeout(() => setPreviewSelectionLocked(false), 600)}
-                    className="h-full min-h-0 overflow-auto bg-transparent preview-container"
-                    style={{ maxHeight: '100%' }}
-                  >
-                    {showMarkdown ? (
-                      <MarkdownPreview
-                        content={lockedPreviewCode || ''}
-                        snippets={[
-                          ...(snippets || []),
-                          ...(projects || []),
-                          ...(initialSnippet?.id ? [initialSnippet] : [])
-                        ]}
-                        language={language}
-                        onSnippetClick={onSnippetMentionClick}
-                      />
-                    ) : (
-                      <div className="p-4">
-                        <pre
-                          className="m-0"
-                          style={{
-                            fontFamily: 'var(--preview-font-family)',
-                            fontSize: 'var(--preview-font-size)',
-                            lineHeight: 'var(--editor-line-height)',
-                            paddingBottom:
-                              'calc(var(--preview-font-size) * var(--editor-line-height))'
-                          }}
-                        >
-                          <code
-                            onClick={handleMentionClickInPreview}
-                            style={{ userSelect: 'text', cursor: 'text' }}
-                            className="hljs block text-slate-700 dark:text-slate-300"
-                            dangerouslySetInnerHTML={{ __html: enhancedHtml }}
-                          />
-                        </pre>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div
-                    className="h-full min-h-0 overflow-hidden editor-container relative"
-                    style={{ maxHeight: '100%', backgroundColor: 'var(--editor-bg)' }}
-                  >
-                    <div className="h-full w-full overflow-auto custom-scrollbar">
-                      <Editor
-                        value={code}
-                        onValueChange={setCode}
-                        highlight={(code) => {
-                          const languageMap = {
-                            js: 'javascript',
-                            py: 'python',
-                            sh: 'bash',
-                            md: 'markdown',
-                            txt: 'txt',
-                            php: 'php'
-                          }
-                          const mappedLanguage = languageMap[language] || language
-                          if (mappedLanguage === 'txt') return code
-                          try {
-                            return hljs.highlight(code, { language: mappedLanguage }).value
-                          } catch {
-                            return code
-                          }
-                        }}
-                        padding={16}
-                        style={{
-                          fontFamily: 'var(--editor-font-family)',
-                          fontSize: 'var(--editor-font-size)',
-                          lineHeight: 'var(--editor-line-height)',
-                          backgroundColor: 'transparent',
-                          minHeight: '100%'
-                        }}
-                        textareaClassName="focus:outline-none"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {canPreview ? (
-                  <div
-                    onMouseDown={startResize}
-                    onDoubleClick={() => setSplitRatio(0.5)}
-                    style={{ width: `${dividerWidth}px` }}
-                    className="cursor-col-resize bg-slate-200 dark:bg-slate-700"
-                  />
-                ) : null}
-
-                {canPreview ? (
-                  previewPosition === 'right' ? (
-                    <div
-                      ref={previewRef}
-                      onMouseDown={() => setPreviewSelectionLocked(true)}
-                      onMouseUp={() => setTimeout(() => setPreviewSelectionLocked(false), 600)}
-                      className="h-full min-h-0 overflow-auto bg-transparent preview-container"
-                      style={{ maxHeight: '100%' }}
-                    >
-                      {showMarkdown ? (
-                        <MarkdownPreview
-                          content={lockedPreviewCode || ''}
-                          snippets={[
-                            ...(snippets || []),
-                            ...(projects || []),
-                            ...(initialSnippet?.id ? [initialSnippet] : [])
-                          ]}
-                          language={language}
-                          onSnippetClick={onSnippetMentionClick}
-                        />
-                      ) : (
-                        <div className="p-4">
-                          <pre
-                            className="m-0"
-                            style={{
-                              fontFamily: 'var(--preview-font-family)',
-                              fontSize: 'var(--preview-font-size)',
-                              lineHeight: 'var(--editor-line-height)',
-                              paddingBottom:
-                                'calc(var(--preview-font-size) * var(--editor-line-height))'
-                            }}
-                          >
-                            <code
-                              onClick={handleMentionClickInPreview}
-                              style={{ userSelect: 'text', cursor: 'text' }}
-                              className="hljs block text-slate-700 dark:text-slate-300"
-                              dangerouslySetInnerHTML={{ __html: enhancedHtml }}
-                            />
-                          </pre>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div
-                      className="h-full min-h-0 overflow-hidden editor-container relative"
-                      style={{ maxHeight: '100%', backgroundColor: 'var(--editor-bg)' }}
-                    >
-                      <div className="h-full w-full overflow-auto custom-scrollbar">
-                        <Editor
-                          value={code}
-                          onValueChange={setCode}
-                          highlight={(code) => {
-                            const languageMap = {
-                              js: 'javascript',
-                              py: 'python',
-                              sh: 'bash',
-                              md: 'markdown',
-                              txt: 'txt',
-                              php: 'php'
-                            }
-                            const mappedLanguage = languageMap[language] || language
-                            if (mappedLanguage === 'txt') return code
-                            try {
-                              return hljs.highlight(code, { language: mappedLanguage }).value
-                            } catch {
-                              return code
-                            }
-                          }}
-                          padding={16}
-                          style={{
-                            fontFamily: 'var(--editor-font-family)',
-                            fontSize: 'var(--editor-font-size)',
-                            lineHeight: 'var(--editor-line-height)',
-                            backgroundColor: 'transparent',
-                            minHeight: '100%'
-                          }}
-                          textareaClassName="focus:outline-none"
-                        />
-                      </div>
-                    </div>
-                  )
-                ) : null}
-              </div>
-            )}
-
-            {layoutMode === 'editor' && (
-              <div
-                className="flex-1 min-h-0 overflow-hidden editor-container relative"
-                style={{ backgroundColor: 'var(--editor-bg)' }}
-              >
-                <div className="h-full w-full overflow-auto custom-scrollbar">
-                  <Editor
-                    value={code}
-                    onValueChange={setCode}
-                    highlight={(code) => {
-                      const languageMap = {
-                        js: 'javascript',
-                        py: 'python',
-                        sh: 'bash',
-                        md: 'markdown',
-                        txt: 'txt',
-                        php: 'php'
-                      }
-                      const mappedLanguage = languageMap[language] || language
-                      if (mappedLanguage === 'txt') return code
-                      try {
-                        return hljs.highlight(code, { language: mappedLanguage }).value
-                      } catch {
-                        return code
-                      }
-                    }}
-                    padding={16}
+          <div className="h-full overflow-hidden flex flex-col items-stretch bg-slate-50 dark:bg-[#0d1117] transition-colors duration-200 relative">
+            <div
+              className="flex-1 min-h-0 overflow-hidden editor-container relative"
+              style={{ backgroundColor: 'var(--editor-bg)', display: 'flex' }}
+              data-color-mode={
+                document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+              }
+            >
+              <SplitPane
+                left={
+                  <textarea
+                    value={code || ''}
+                    onChange={(e) => setCode(e.target.value || '')}
+                    className="w-full h-full"
                     style={{
-                      fontFamily: 'var(--editor-font-family)',
-                      fontSize: 'var(--editor-font-size)',
-                      lineHeight: 'var(--editor-line-height)',
+                      fontSize: 16,
+                      lineHeight: '1.5',
+                      color: 'var(--text-main)',
                       backgroundColor: 'transparent',
-                      minHeight: '100%'
+                      border: 'none',
+                      outline: 'none',
+                      padding: 12,
+                      resize: 'none'
                     }}
-                    textareaClassName="focus:outline-none"
                   />
-                </div>
-              </div>
-            )}
+                }
+                right={
+                  <div className="p-3">
+                    <LivePreview code={code || ''} language={language} />
+                  </div>
+                }
+              />
+            </div>
 
-            {layoutMode === 'preview' && canPreview && (
-              <div className="flex-1 min-h-0 overflow-hidden preview-container">
-                <div
-                  ref={previewRef}
-                  onMouseDown={() => setPreviewSelectionLocked(true)}
-                  onMouseUp={() => setTimeout(() => setPreviewSelectionLocked(false), 600)}
-                  className="h-full min-h-0 overflow-auto bg-transparent"
-                  style={{ maxHeight: '100%' }}
-                >
-                  {showMarkdown ? (
-                    <MarkdownPreview
-                      content={lockedPreviewCode || ''}
-                      snippets={[
-                        ...(snippets || []),
-                        ...(projects || []),
-                        ...(initialSnippet?.id ? [initialSnippet] : [])
-                      ]}
-                      language={language}
-                      onSnippetClick={onSnippetMentionClick}
-                    />
-                  ) : (
-                    <div className="p-4">
-                      <pre
-                        className="m-0"
-                        style={{
-                          fontFamily: 'var(--preview-font-family)',
-                          fontSize: 'var(--preview-font-size)',
-                          lineHeight: 'var(--editor-line-height)',
-                          paddingBottom:
-                            'calc(var(--preview-font-size) * var(--editor-line-height))'
-                        }}
-                      >
-                        <code
-                          onClick={handleMentionClickInPreview}
-                          style={{ userSelect: 'text', cursor: 'text' }}
-                          className="hljs block text-slate-700 dark:text-slate-300"
-                          dangerouslySetInnerHTML={{ __html: enhancedHtml }}
-                        />
-                      </pre>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {!initialSnippet?.title && initialSnippet?.type !== 'project' && (
-              <div className="absolute bottom-4 right-4">
-                <button
-                  onClick={handleSave}
-                  className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded shadow-lg text-sm font-medium transition-colors"
-                >
-                  Save
-                </button>
-              </div>
-            )}
+            {false && <div />}
 
             {nameOpen && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/40">
@@ -656,18 +255,15 @@ const SnippetEditor = ({
                         if (hasExt) {
                           const ext = t.split('.').pop().toLowerCase()
                           lang = extMap[ext] || lang
-                        } else {
-                          lang = 'txt'
                         }
+                        // If no extension, keep the auto-detected language from code content
                         const payload = {
                           id: initialSnippet?.id || Date.now().toString(),
                           title: t,
                           code: code,
                           language: lang,
                           timestamp: Date.now(),
-                          type:
-                            initialSnippet?.type ||
-                            (activeView === 'projects' ? 'project' : 'snippet'),
+                          type: 'snippet',
                           is_draft: false
                         }
                         setNameOpen(false)
@@ -700,11 +296,8 @@ SnippetEditor.propTypes = {
   }),
   onCancel: PropTypes.func,
   onDelete: PropTypes.func,
-  onNewProject: PropTypes.func,
   isCreateMode: PropTypes.bool,
-  activeView: PropTypes.string,
-  snippets: PropTypes.array,
-  onSnippetMentionClick: PropTypes.func
+  activeView: PropTypes.string
 }
 
 export default SnippetEditor

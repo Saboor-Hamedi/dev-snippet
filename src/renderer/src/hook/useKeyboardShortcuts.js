@@ -10,10 +10,17 @@ export const useKeyboardShortcuts = (shortcuts) => {
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Escpe close
+      // Escape close
       if (e.key === 'Escape') {
         if (shortcutsRef.current.onEscape) {
           shortcutsRef.current.onEscape()
+        }
+      }
+      // Ctrl+S save
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        if (shortcutsRef.current.onSave) {
+          e.preventDefault()
+          shortcutsRef.current.onSave()
         }
       }
     }

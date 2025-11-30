@@ -31,18 +31,6 @@ function initDB() {
       sort_index INTEGER
     );
 
-    CREATE TABLE IF NOT EXISTS projects (
-      id TEXT PRIMARY KEY,
-      title TEXT,
-      code TEXT,
-      code_draft TEXT,
-      language TEXT,
-      timestamp INTEGER,
-      type TEXT,
-      is_draft INTEGER,
-      sort_index INTEGER
-    );
-
     CREATE TABLE IF NOT EXISTS settings (
       key TEXT PRIMARY KEY,
       value TEXT
@@ -54,6 +42,10 @@ function initDB() {
       colors TEXT
     );
   `)
+
+  try {
+    db.exec('DROP TABLE IF EXISTS projects')
+  } catch {}
 
   // Ensure optional columns exist (migrations)
   try {
@@ -67,15 +59,7 @@ function initDB() {
     ensureCol('sort_index', 'ALTER TABLE snippets ADD COLUMN sort_index INTEGER')
   } catch {}
 
-  try {
-    const colsProjects = db.prepare('PRAGMA table_info(projects)').all()
-    const ensureColP = (name, ddl) => {
-      if (!colsProjects.some((c) => c.name === name)) db.exec(ddl)
-    }
-    ensureColP('code_draft', 'ALTER TABLE projects ADD COLUMN code_draft TEXT')
-    ensureColP('is_draft', 'ALTER TABLE projects ADD COLUMN is_draft INTEGER')
-    ensureColP('sort_index', 'ALTER TABLE projects ADD COLUMN sort_index INTEGER')
-  } catch {}
+  // Projects removed
 
   return db
 }
@@ -247,20 +231,6 @@ app.whenReady().then(() => {
     return true
   })
 
-  // Projects
-  ipcMain.handle('db:getProjects', () => {
-    return db
-      .prepare('SELECT * FROM projects ORDER BY COALESCE(sort_index, 0) ASC, title ASC')
-      .all()
-  })
-
-  ipcMain.handle('db:saveProject', (event, project) => {
-    const stmt = db.prepare(
-      'INSERT OR REPLACE INTO projects (id, title, code, language, timestamp, type, is_draft, sort_index) VALUES (@id, @title, @code, @language, @timestamp, @type, @is_draft, @sort_index)'
-    )
-    stmt.run({ ...project, is_draft: project.is_draft ? 1 : 0 })
-    return true
-  })
 
   // Batch order update
   // Order update handlers removed per request
@@ -286,30 +256,7 @@ app.whenReady().then(() => {
     return true
   })
 
-  ipcMain.handle('db:saveProjectDraft', (event, payload) => {
-    const { id, code_draft, language } = payload
-    const stmt = db.prepare(
-      'UPDATE projects SET code_draft = ?, is_draft = 1, language = COALESCE(?, language) WHERE id = ?'
-    )
-    stmt.run(code_draft, language || null, id)
-    return true
-  })
-
-  ipcMain.handle('db:commitProjectDraft', (event, id) => {
-    const row = db.prepare('SELECT code_draft FROM projects WHERE id = ?').get(id)
-    if (row && row.code_draft != null) {
-      const stmt = db.prepare(
-        'UPDATE projects SET code = code_draft, code_draft = NULL, is_draft = 0, timestamp = ? WHERE id = ?'
-      )
-      stmt.run(Date.now(), id)
-    }
-    return true
-  })
-
-  ipcMain.handle('db:deleteProject', (event, id) => {
-    db.prepare('DELETE FROM projects WHERE id = ?').run(id)
-    return true
-  })
+  // Projects removed
 
   // Settings (Theme)
   ipcMain.handle('db:getSetting', (event, key) => {
