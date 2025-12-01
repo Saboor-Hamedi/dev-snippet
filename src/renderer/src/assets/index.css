@@ -581,6 +581,40 @@ code ::selection,
   transform: translateZ(0);
 }
 
+/* Hide scrollbar but allow scrolling in textarea */
+textarea::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+textarea::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+textarea::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+textarea {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Hide scrollbars in SplitPane and overflow containers */
+.split-pane::-webkit-scrollbar,
+[class*="pane"]::-webkit-scrollbar,
+.overflow-auto::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.split-pane,
+[class*="pane"],
+.overflow-auto {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 
 
 
