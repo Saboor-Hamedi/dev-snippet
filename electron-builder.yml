@@ -1,5 +1,5 @@
-appId: com.electron.app
-productName: model-dictionary
+appId: com.devsnippet.app
+productName: dev-snippet
 icon: build/icon
 directories:
   buildResources: build
@@ -13,7 +13,7 @@ asarUnpack:
   - resources/**
 win:
   icon: build/icon.ico
-  executableName: model-dictionary
+  executableName: dev-snippet
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
