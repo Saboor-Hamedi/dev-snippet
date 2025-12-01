@@ -46,16 +46,15 @@ const LivePreview = ({ code = '' }) => {
                     )}
                   </button>
                 </div>
-                <SyntaxHighlighter 
-                  PreTag="div" 
-                  language={match[1]} 
+                <SyntaxHighlighter
+                  PreTag="div"
+                  language={match[1]}
                   style={dark}
                   customStyle={{
                     margin: 0,
                     width: '100%',
                     background: 'rgba(0, 0, 0, 0.5)',
                     borderRadius: '5px',
-                    fontSize: '14px',
                     border: 'none',
                     outline: 'none',
                     boxShadow: 'none'

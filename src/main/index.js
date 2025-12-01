@@ -80,11 +80,22 @@ function createWindow() {
       : join(__dirname, '../renderer/public/icon.png')
   
   const mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: 800,
+    height: 600,
+    minWidth: 600,
+    minHeight: 400,
+    // Set the window icon based on the platform
     icon: iconPath,
     show: false,
+
+    // remove frame for a cleaner look 
+    frame: false,  // Here we remove the frame 
+    transparent: true,  // Make the window background transparent
+
     autoHideMenuBar: true,
+    alwaysOnTop: true, 
+    focusable: true,
+    skipTaskbar: true,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,

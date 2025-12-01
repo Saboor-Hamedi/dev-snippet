@@ -6,6 +6,7 @@ import WelcomePage from './WelcomePage'
 import StatusBar from './StatusBar.jsx'
 import SplitPane from './SplitPane.jsx'
 import LivePreview from './LivePreview.jsx'
+import Header from '../components/layout/Header.jsx'
 
 const SnippetEditor = ({
   onSave,
@@ -153,6 +154,7 @@ const SnippetEditor = ({
           <WelcomePage onNewSnippet={onNew} />
         ) : (
           <div className="h-full overflow-hidden flex flex-col items-stretch bg-slate-50 dark:bg-[#0d1117] transition-colors duration-200 relative">
+            <Header />
             <div
               className="flex-1 min-h-0 overflow-hidden editor-container relative"
               style={{ backgroundColor: 'var(--editor-bg)', display: 'flex' }}
@@ -162,16 +164,15 @@ const SnippetEditor = ({
             >
               <SplitPane
                 left={
-                  <textarea 
+                  <textarea
                     ref={textareaRef}
                     value={code || ''}
                     onChange={(e) => setCode(e.target.value || '')}
-                    className="w-full h-full dark:bg-slate-900 dark:text-slate-200 font-mono text-sm leading-6"
+                    className="w-full h-full dark:bg-slate-900 dark:text-slate-200 font-mono text-xsmall leading-6"
                     style={{
                       fontFamily:
                         "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
-                      fontSize: 16,
-                      lineHeight: '1.7',
+                      fontSize: 'var(--xsmall)',
                       color: 'var(--text-main)',
                       backgroundColor: 'transparent',
                       border: 'none',
@@ -186,7 +187,7 @@ const SnippetEditor = ({
                 }
                 right={
                   <div
-                    className="h-full overflow-auto p-4"
+                    className="h-full p-4"
                     style={{ backgroundColor: 'transparent' }}
                   >
                     <LivePreview code={code} />
