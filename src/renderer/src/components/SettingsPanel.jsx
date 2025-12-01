@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react'
-import { useToast } from '../hook/useToast'
 
 import ThemeModal from './ThemeModal'
 import { SunMoon, FileDown, Settings } from 'lucide-react'
 import { useFontSettings } from '../hook/useFontSettings'
-
-const SettingsPanel = () => {
+import { useToast } from '../hook/useToast'
+import ToastNotification from '../utils/ToastNotification'
+const SettingsPanel = ({ onClose }) => {
   const { showToast } = useToast()
 
   // Local state for settings
@@ -29,7 +29,11 @@ const SettingsPanel = () => {
 
   // Modal State
   const [isThemeModalOpen, setIsThemeModalOpen] = useState(false)
-
+  const handleGoBack = () => {
+    if (onClose) {
+      onClose()
+    }
+  }
   // Handle Export Data
   const handleExportData = async () => {
     try {
@@ -72,6 +76,15 @@ const SettingsPanel = () => {
           <div className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3 px-3">
             Configuration
           </div>
+
+          {/* Go back */}
+          <button
+            onClick={handleGoBack}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
+          >
+            <FileDown size={18} />
+            <span>Go Back</span>
+          </button>
 
           <button
             onClick={() => setActiveTab('general')}

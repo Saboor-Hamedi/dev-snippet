@@ -13,7 +13,6 @@ const RenameModal = ({ isOpen, item, onClose, onRename }) => {
   const handleSubmit = () => {
     if (newName.trim()) {
       onRename(newName)
-      setNewName('')
     }
   }
 

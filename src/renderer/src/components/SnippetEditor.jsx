@@ -14,7 +14,8 @@ const SnippetEditor = ({
   onNew,
   onDelete,
   isCreateMode,
-  activeView
+  activeView,
+  onSettingsClick
 }) => {
   const [code, setCode] = useState(initialSnippet?.code || '')
   const [language, setLanguage] = React.useState(initialSnippet?.language || 'text')
@@ -22,6 +23,25 @@ const SnippetEditor = ({
   const saveTimerRef = useRef(null)
 
   const isDeletingRef = useRef(false)
+  const textareaRef = useRef(null)
+
+  // Focus the textarea when initialSnippet changes (when opening a snippet)
+  useEffect(() => {
+    if (initialSnippet && textareaRef.current) {
+      setTimeout(() => {
+        textareaRef.current.focus()
+      }, 50)
+    }
+  }, [initialSnippet?.id]) // Re-run when snippet ID changes
+
+  // Focus the textarea when in create mode 
+  useEffect(() => {
+    if (isCreateMode && textareaRef.current) {
+      setTimeout(() => {
+        textareaRef.current?.focus()
+      }, 100)
+    }
+  }, [isCreateMode])
 
   const scheduleSave = () => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
@@ -142,12 +162,14 @@ const SnippetEditor = ({
             >
               <SplitPane
                 left={
-                  <textarea
+                  <textarea 
+                    ref={textareaRef}
                     value={code || ''}
                     onChange={(e) => setCode(e.target.value || '')}
                     className="w-full h-full dark:bg-slate-900 dark:text-slate-200 font-mono text-sm leading-6"
                     style={{
-                      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
+                      fontFamily:
+                        "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
                       fontSize: 16,
                       lineHeight: '1.7',
                       color: 'var(--text-main)',
@@ -163,7 +185,10 @@ const SnippetEditor = ({
                   />
                 }
                 right={
-                  <div className="h-full overflow-auto p-4" style={{ backgroundColor: 'transparent' }}>
+                  <div
+                    className="h-full overflow-auto p-4"
+                    style={{ backgroundColor: 'transparent' }}
+                  >
                     <LivePreview code={code} />
                   </div>
                 }
@@ -216,7 +241,7 @@ const SnippetEditor = ({
                 </div>
               </div>
             )}
-            <StatusBar language={language} title={initialSnippet?.title} />
+            <StatusBar onSettingsClick={onSettingsClick} />
           </div>
         )
       }

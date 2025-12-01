@@ -12,18 +12,27 @@ const Workbench = ({
   onCancelEditor,
   onDeleteRequest,
   onNewSnippet,
-  currentContext
+  currentContext,
+  onOpenSettings,
+  onCloseSettings
 }) => {
   const handleSave = (snippet) => {
     onSave(snippet)
   }
 
-  // Priority 1: Settings
-  if (activeView === 'settings') {
-    return <SettingsPanel />
+  const handleSettingsClick = () => {
+    if (onOpenSettings) {
+      onOpenSettings()
+    }
   }
 
-  // Priority 2: Editor mode (creating new snippet)
+  // Priority 0: Settings
+  if (activeView === 'settings') {
+    console.log('Rendering SettingsPanel')
+    return <SettingsPanel onClose={onCloseSettings} />
+  }
+
+  // Priority 1: Editor mode (creating new snippet)
   if (activeView === 'editor') {
     return (
       <SnippetEditor
@@ -33,6 +42,7 @@ const Workbench = ({
         onNew={onNewSnippet}
         activeView={currentContext}
         isCreateMode
+        onSettingsClick={handleSettingsClick}
       />
     )
   }
@@ -49,6 +59,7 @@ const Workbench = ({
         onNew={onNewSnippet}
         onCancel={onCloseSnippet}
         onDelete={onDeleteRequest}
+        onSettingsClick={handleSettingsClick}
       />
     )
   }

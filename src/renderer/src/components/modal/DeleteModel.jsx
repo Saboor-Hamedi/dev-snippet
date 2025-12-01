@@ -1,13 +1,27 @@
 import PropTypes from 'prop-types'
 import { Trash } from 'lucide-react'
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 const DeleteModel = ({ isOpen, onClose, onConfirm, snippetTitle }) => {
+  const deleteBtnRef = useRef(null)
+
+  useEffect(() => {
+    if (isOpen && deleteBtnRef.current) {
+      // focus the delete button when modal opens
+      deleteBtnRef.current.focus()
+    }
+  }, [isOpen])
+
   if (!isOpen) return null
 
   return (
     <div
       className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
       onClick={onClose}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') onClose()
+        if (e.key === 'Enter') onConfirm()
+      }}
+      tabIndex={-1}
     >
       <div
         className="bg-slate-800 rounded-xl shadow-2xl border border-slate-700 w-full max-w-md animate-fade-in overflow-hidden"
@@ -34,8 +48,11 @@ const DeleteModel = ({ isOpen, onClose, onConfirm, snippetTitle }) => {
               Cancel
             </button>
             <button
+              ref={deleteBtnRef}
               onClick={onConfirm}
-              className="bg-red-500 hover:bg-red-400 text-white rounded text-tiny inline-flex items-center gap-2 p-2"
+              className="bg-red-500 hover:bg-red-400 text-white rounded
+                focus:outline-none focus:ring-none
+               text-tiny inline-flex items-center gap-2 p-2"
             >
               <Trash size={12} />
               Delete

@@ -8,15 +8,13 @@ import Workbench from './workbench/Workbench'
 import CommandPalette from './CommandPalette'
 import RenameModal from './modal/RenameModal'
 import DeleteModel from './modal/DeleteModel'
+import { useKeyboardShortcuts } from '../hook/useKeyboardShortcuts'
 const SnippetLibrary = () => {
   // 1. Logic & Data (From Hook)
   const { snippets, selectedSnippet, setSelectedSnippet, setSnippets, saveSnippet, deleteItem } =
     useSnippetData()
 
-  // 2. UI STATE (Local only)
-  const [activeView, setActiveView] = useState(() => {
-    return localStorage.getItem('activeView') || 'snippets'
-  })
+  const [activeView, setActiveView] = useState('snippets')
 
   // Modals
   const [isCreatingSnippet, setIsCreatingSnippet] = useState(false)
@@ -28,11 +26,8 @@ const SnippetLibrary = () => {
 
   // Delete Modal State
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, snippetId: null })
-  // Persist activeView to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('activeView', activeView)
-  }, [activeView])
 
+  const textareaRef = useRef(null)
   // Since sidebar is removed, filteredItems is just all snippets
   const filteredItems = useMemo(() => {
     return snippets
@@ -46,13 +41,23 @@ const SnippetLibrary = () => {
     }
   }, [activeView, activeSnippet, isCreatingSnippet])
 
+  const handleOpenSettings = () => {
+    // Ensure we are not in create/editor mode so Workbench won't override the view
+    if (isCreatingSnippet) setIsCreatingSnippet(false)
+    setActiveView('settings')
+  }
+
+  const handleCloseSettings = () => {
+    setActiveView('snippets')
+  }
+
   // Helper: create a new draft snippet and select it (extracted to avoid duplication)
   const createDraftSnippet = () => {
     const draft = {
       id: `draft-${Date.now()}`,
       title: '',
       code: '',
-      language: 'text',
+      language: 'md',
       timestamp: Date.now(),
       type: 'snippet',
       is_draft: true
@@ -63,6 +68,73 @@ const SnippetLibrary = () => {
     setActiveView('snippets')
     return draft
   }
+  // Adding focus management for our textarea after search found 
+  useEffect(() =>{
+    if (isCommandPaletteOpen) return
+    setTimeout(() => {
+      try {
+        const ta = document.querySelector('.editor-container textarea')
+        if (ta && typeof ta.focus === 'function') ta.focus()
+      } catch (err) {}
+    }, 100)
+  }, [isCommandPaletteOpen])
+
+  // Use the keyboard shortcuts hook here 
+  useKeyboardShortcuts({
+    onEscape: () => {
+      if (renameModal.isOpen) setRenameModal({ ...renameModal, isOpen: false })
+      if (deleteModal.isOpen) setDeleteModal({ isOpen: false, snippetId: null })
+      if (isCreatingSnippet) setIsCreatingSnippet(false)
+      if (isCommandPaletteOpen) setIsCommandPaletteOpen(false)
+    },
+
+    onCreateSnippet: () => {
+      setIsCreatingSnippet(true)
+      const draft = createDraftSnippet()
+    },
+
+    onGoToWelcome: () => {
+      setSelectedSnippet(null)
+      setIsCreatingSnippet(false)
+      setActiveView('welcome')
+    },
+
+    onToggleCommandPalette: () => {
+      setIsCommandPaletteOpen((prev) => !prev)
+    },
+
+    onCopyToClipboard: () => {
+      if (selectedSnippet && selectedSnippet.code) {
+        navigator.clipboard
+          .writeText(selectedSnippet.code)
+          .then(() => {
+            showToast('✓ Snippet copied to clipboard')
+          })
+          .catch(() => {
+            showToast('❌ Failed to copy snippet')
+          })
+      }
+    },
+
+    onRenameSnippet: () => {
+      if (selectedSnippet && activeView === 'snippets') {
+        setRenameModal({ isOpen: true, item: selectedSnippet })
+      }
+    },
+    onDeleteSnippet: () => {
+      if (activeView === 'snippets' && selectedSnippet) {
+        setDeleteModal({ isOpen: true, snippetId: selectedSnippet.id }) // ✅ show modal first
+      }
+    },
+    // You can also keep the Ctrl+S save if you want
+    onSave: (e) => {
+      if (selectedSnippet) {
+        e?.preventDefault() // The hook already does this
+        saveSnippet(selectedSnippet)
+        showToast('✓ Snippet saved')
+      }
+    }
+  })
 
   // 3. Global Actions (e.g. Opening a file from OS)
   const handleOpenFile = async () => {
@@ -88,65 +160,10 @@ const SnippetLibrary = () => {
         }
       }
     } catch (error) {
-      console.error('Error opening file:', error)
       showToast('❌ Failed to open file')
     }
   }
 
-  // 4. Keyboard Shortcuts
-  useEffect(() => {
-    const handleKeyPress = (e) => {
-      // Escape closes modals and editor
-      if (e.key === 'Escape') {
-        if (renameModal.isOpen) setRenameModal({ ...renameModal, isOpen: false })
-        if (isCreatingSnippet) setIsCreatingSnippet(false)
-        if (isCommandPaletteOpen) setIsCommandPaletteOpen(false)
-      }
-      // Ctrl+N creates new snippet and focuses the editor textarea
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'n' && !e.shiftKey) {
-        e.preventDefault()
-        setIsCreatingSnippet(true)
-        const draft = createDraftSnippet()
-
-        // Focus the editor textarea after a short delay so it exists in the DOM
-        setTimeout(() => {
-          try {
-            const ta = document.querySelector('.editor-container textarea')
-            if (ta && typeof ta.focus === 'function') ta.focus()
-          } catch (err) {}
-        }, 80)
-      }
-      // Ctrl+Shift+W goes to Welcome page
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'w') {
-        e.preventDefault()
-        setSelectedSnippet(null)
-        setIsCreatingSnippet(false)
-        setActiveView('welcome')
-      }
-      // Ctrl+P toggles Command Palette (normalize case and ignore Shift)
-      if ((e.ctrlKey || e.metaKey) && e.key?.toLowerCase() === 'p' && !e.shiftKey) {
-        e.preventDefault()
-        setIsCommandPaletteOpen((prev) => !prev)
-      }
-      // Ctrl+Shift+C copies selected snippet to clipboard
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'c') {
-        e.preventDefault()
-        if (selectedSnippet && selectedSnippet.code) {
-          navigator.clipboard
-            .writeText(selectedSnippet.code)
-            .then(() => {
-              showToast('✓ Snippet copied to clipboard')
-            })
-            .catch(() => {
-              showToast('❌ Failed to copy snippet')
-            })
-        }
-      }
-    }
-
-    document.addEventListener('keydown', handleKeyPress)
-    return () => document.removeEventListener('keydown', handleKeyPress)
-  }, [isCreatingSnippet, isCommandPaletteOpen, selectedSnippet, showToast, activeView, renameModal])
 
   // 5. Rename Logic
   const handleRename = async (newName) => {
@@ -159,51 +176,7 @@ const SnippetLibrary = () => {
       showToast
     })
   }
-  // 6. Rename keyboard shortcut
-  useEffect(() => {
-    let ctrlRPressed = false
-
-    const handleKeyDown = (e) => {
-      // Ctrl+R opens rename modal for selected snippet
-      if ((e.ctrlKey || e.metaKey) && e.key?.toLowerCase() === 'r' && !e.shiftKey) {
-        if (!ctrlRPressed) {
-          e.preventDefault()
-          ctrlRPressed = true
-          if (selectedSnippet && activeView === 'snippets') {
-            setRenameModal({ isOpen: true, item: selectedSnippet })
-          }
-        }
-      }
-    }
-
-    const handleKeyUp = (e) => {
-      // Reset flag when key is released
-      if ((e.ctrlKey || e.metaKey) && e.key?.toLowerCase() === 'r') {
-        ctrlRPressed = false
-      }
-    }
-
-    document.addEventListener('keydown', handleKeyDown)
-    document.addEventListener('keyup', handleKeyUp)
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown)
-      document.removeEventListener('keyup', handleKeyUp)
-    }
-  }, [selectedSnippet, activeView])
-
-  // 7. Delete Logic
-
-  // ✅ NEW: Safe delete with confirmation
-
-  const safeDeleteSnippet = (id) => {
-    const snippet = snippets.find((s) => s.id === id)
-    setDeleteModal({
-      isOpen: true,
-      snippetId: id,
-      title: snippet?.title || 'Untitled'
-    })
-  }
-
+ 
   const handleDeleteSnippet = async (id) => {
     try {
       // Cancel any pending autosave for this snippet
@@ -249,7 +222,7 @@ const SnippetLibrary = () => {
       if (e.key === 'Delete') {
         if (activeView === 'snippets' && selectedSnippet) {
           e.preventDefault()
-          safeDeleteSnippet(selectedSnippet.id) // ✅ show modal first
+          setDeleteModal({ isOpen: true, snippetId: selectedSnippet.id }) // ✅ show modal first
         }
       }
     }
@@ -284,6 +257,8 @@ const SnippetLibrary = () => {
             setIsCreatingSnippet(true)
             createDraftSnippet()
           }}
+          onOpenSettings={handleOpenSettings}
+          onCloseSettings={handleCloseSettings}
           onChange={(code) => {
             if (selectedSnippet) {
               const updated = { ...selectedSnippet, code }

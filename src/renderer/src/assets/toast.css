@@ -3,7 +3,7 @@
 /* Toast */
 .toast {
   position: fixed;
-  bottom: 2rem;
+  bottom: 4rem;
   right: 2rem;
   padding: 1rem 1.5rem;
   background-color: (--color-success);
@@ -24,6 +24,9 @@
 }
 .info-toast {
 background-color: (--color-error);
+}
+.success-toast {
+  background-color: (--color-success);
 }
 
 @keyframes slideUp {

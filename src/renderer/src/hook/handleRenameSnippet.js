@@ -35,9 +35,18 @@ export const handleRenameSnippet = async ({
   if (setSelectedSnippet) {
     setSelectedSnippet(updatedItem)
   }
+  // If nothing changed, skip saving and close modal
+  if (renameModal.item.title === baseName) {
+    if (showToast) showToast('No changes', 'info')
+    setRenameModal({ isOpen: false, item: null })
+    setIsCreatingSnippet(false)
+    return
+  }
+
   try {
     await saveSnippet(updatedItem)
-    if (showToast) showToast(`✓ Renamed to ${baseName}`, 'success')
+    if (showToast) showToast('✓ Snippet renamed successfully', 'success')
+  
   } catch (error) {
     console.error('Failed to save item after rename:', error)
     if (showToast) showToast('❌ Failed to rename snippet.', 'error')

@@ -3,7 +3,7 @@ import { join } from 'path'
 import fs from 'fs/promises'
 import Database from 'better-sqlite3'
 
-console.log('Process versions:', process.versions)
+// console.log('Process versions:', process.versions)
 
 let db
 
@@ -73,9 +73,16 @@ function getDB() {
 
 function createWindow() {
   // Create the browser window.
+    // Choose appropriate icon for the current platform.
+    // Use a .ico on Windows (preferred), fall back to the PNG for other platforms/dev.
+    const iconPath = process.platform === 'win32'
+      ? join(__dirname, '..', 'resources', 'icon.ico')
+      : join(__dirname, '../renderer/public/icon.png')
+  
   const mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+    icon: iconPath,
     show: false,
     autoHideMenuBar: true,
     webPreferences: {
@@ -122,7 +129,7 @@ function createWindow() {
 app.whenReady().then(() => {
   // Set app user model id for windows
   if (process.platform === 'win32') {
-    app.setAppUserModelId('com.electron')
+    app.setAppUserModelId('dev-dialect.quick-snippets')
   }
 
   // Default open or close DevTools by F12 in development
