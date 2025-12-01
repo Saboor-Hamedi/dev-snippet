@@ -29,7 +29,7 @@
     "terminal.background": "#181d27",
     "quickInput.background": "#181d27"
   },
-  "editor.find.autoFindInSelection": "always",
+  "editor.find.autoFindInSelection": "never",
   "editor.fontFamily": "'JetBrains Mono'",
   "editor.fontSize": 14,
   "editor.formatOnPaste": true

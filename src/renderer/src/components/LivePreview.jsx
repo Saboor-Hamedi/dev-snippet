@@ -11,7 +11,7 @@ import java from 'react-syntax-highlighter/dist/esm/languages/hljs/java'
 import php from 'react-syntax-highlighter/dist/esm/languages/hljs/php'
 import sql from 'react-syntax-highlighter/dist/esm/languages/hljs/sql'
 import { Light as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { atomOneDark, docco } from 'react-syntax-highlighter/dist/esm/styles/hljs'
+import { atomOneDark, docco, github} from 'react-syntax-highlighter/dist/esm/styles/hljs'
 
 SyntaxHighlighter.registerLanguage('javascript', js)
 SyntaxHighlighter.registerLanguage('python', py)
@@ -43,7 +43,7 @@ const languageMap = {
 
 const LivePreview = ({ code = '', language = 'text' }) => {
   const isDark = document.documentElement.classList.contains('dark')
-  // const style = isDark ? atomOneDark : docco
+  const style = github
   const mapped = languageMap[language] || language
 
   if (language === 'md' || mapped === 'markdown') {
@@ -89,8 +89,10 @@ const LivePreview = ({ code = '', language = 'text' }) => {
         const line = lines[i]
 
         // Fenced code block
+        // Fenced code block: render with SyntaxHighlighter for syntax highlighting
         if (line.startsWith('```')) {
-          const lang = line.slice(3).trim() || ''
+          // Extract language from fence, default to 'text' if unknown
+          const lang = line.slice(3).trim() || 'text'
           i++
           const codeLines = []
           while (i < lines.length && !lines[i].startsWith('```')) {
@@ -99,11 +101,25 @@ const LivePreview = ({ code = '', language = 'text' }) => {
           }
           // skip closing fence
           i++
+          // Map language to highlight.js supported value
+          const mappedLang = languageMap[lang] || 'text'
+          // Render code block with syntax highlighting
           out.push(
             React.createElement(
-              'pre',
-              { key: out.length, className: 'md-code-block' },
-              React.createElement('code', { className: `language-${lang}` }, codeLines.join('\n'))
+              SyntaxHighlighter,
+              {
+                key: out.length,
+                language: mappedLang,
+                style: github,
+                customStyle: {
+                  fontSize: 16,
+                  background: 'transparent',
+                  margin: 0
+                },
+                showLineNumbers: false,
+                wrapLongLines: true
+              },
+              codeLines.join('\n')
             )
           )
           continue
@@ -152,7 +168,7 @@ const LivePreview = ({ code = '', language = 'text' }) => {
   return (
     <SyntaxHighlighter
       language={mapped}
-      style={undefined}
+      style={style}
       useInlineStyles={false}
       customStyle={{
         fontSize: 16,

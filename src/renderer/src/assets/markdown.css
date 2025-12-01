@@ -1,61 +1,18 @@
-/* Custom CSS to style the Markdown Preview elements */
+/* Ensure the styles target the specific HTML elements inside your preview container */
 
-/* Target Headings for size and emphasis */
+/* H1 Style */
 .markdown-preview h1 {
-  font-size: 2.25rem; /* Large size */
-  font-weight: 700;
-  border-bottom: 1px solid var(--border-color, #30363d); /* Optional separator */
-  padding-bottom: 0.3em;
-  margin-top: 1.5rem;
-  margin-bottom: 0.75rem;
-  color: var(--heading-color, #e6edf3); /* Use a noticeable color */
+    /* Use !important temporarily if you suspect Tailwind/CSS reset interference */
+    font-size: 2.5rem !important;
+    font-weight: 700 !important;
+    margin-top: 1.5rem !important;
+    border-bottom: 1px solid var(--border-color); 
+    padding-bottom: 0.3em;
 }
 
-.markdown-preview h2 {
-  font-size: 1.75rem;
-  font-weight: 600;
-  margin-top: 1.25rem;
-  margin-bottom: 0.5rem;
-  color: var(--heading-color, #e6edf3);
-}
-
-.markdown-preview h3 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-top: 1rem;
-  margin-bottom: 0.5rem;
-  color: var(--heading-color, #e6edf3);
-}
-
-/* Ensure Paragraphs have correct spacing */
-.markdown-preview p {
-  margin-top: 0.75rem;
-  margin-bottom: 0.75rem;
-}
-
-/* Style Inline Code (backticks `code`) */
+/* Inline Code Style */
 .markdown-preview code {
-  font-family: 'Fira Code', monospace;
-  background-color: var(--inline-code-bg, rgba(110, 118, 129, 0.4));
-  padding: 0.2em 0.4em;
-  margin: 0;
-  border-radius: 6px;
-  font-size: 85%;
-}
-
-/* Style Blockquotes (if you add support later) */
-.markdown-preview blockquote {
-  padding: 0 1em;
-  color: var(--text-muted, #8b949e);
-  border-left: 0.25em solid var(--border-color-subtle, #484f58);
-  margin: 1rem 0;
-}
-
-/* Style Fenced Code Blocks (```) - Assuming the parser outputs <pre><code> */
-.markdown-preview pre {
-  padding: 0.75rem;
-  overflow-x: auto;
-  background-color: var(--code-block-bg, #0d1117);
-  border-radius: 6px;
-  margin: 1rem 0;
+    background-color: var(--inline-code-bg);
+    padding: 0.2em 0.4em;
+    border-radius: 6px;
 }

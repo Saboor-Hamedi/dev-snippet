@@ -60,8 +60,20 @@ const getLanguageName = (language) => {
   return names[l] || (language || '').toString()
 }
 
-const StatusBar = ({ language }) => {
-  const ext = getExtension(language)
+const StatusBar = ({ language, title }) => {
+  // Prefer extension from title if present
+  let ext = getExtension(language)
+  if (title && /\.[^\.\s]+$/.test(title)) {
+    const fileExt = title.split('.').pop().toLowerCase()
+    // Map known extensions to canonical
+    const extMap = {
+      js: '.js', jsx: '.jsx', ts: '.ts', tsx: '.tsx', py: '.py', html: '.html',
+      xml: '.xml', xhtml: '.xhtml', css: '.css', json: '.json', md: '.md', markdown: '.md',
+      bash: '.sh', sh: '.sh', sql: '.sql', java: '.java', cpp: '.cpp', php: '.php',
+      text: '.txt', txt: '.txt'
+    }
+    ext = extMap[fileExt] || `.${fileExt}`
+  }
   const canonical = getLanguageName(language)
   return (
     <div
