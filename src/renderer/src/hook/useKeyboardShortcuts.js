@@ -14,21 +14,17 @@ export const useKeyboardShortcuts = (shortcuts) => {
     
     const handleKeyDown = (e) => {
       
-
-
       /*
        * This will basically stop other handlers when a modal is open
        * For example, if a delete confirmation modal is open, we don't want
        * the global shortcuts to trigger actions in the background.
       */
+      // Handle Escape key - check if menus are open first
       if (e.key === 'Escape' || e.key === 'Esc') {
-        // Prefer a context-aware escape handler if provided. If it
-        // returns a truthy value we treat the event as handled and
-        // stop further processing so other components (e.g., editor)
-        // don't also react to Escape.
-        if (shortcutsRef.current.onEscapeWithContext) {
+        // Only close modals and menus with plain Escape, don't close editor
+        if (shortcutsRef.current.onEscapeMenusOnly) {
           try {
-            const handled = shortcutsRef.current.onEscapeWithContext(e)
+            const handled = shortcutsRef.current.onEscapeMenusOnly(e)
             if (handled) {
               try {
                 e.preventDefault()
@@ -38,11 +34,14 @@ export const useKeyboardShortcuts = (shortcuts) => {
             }
           } catch {}
         }
-
-        // Fallback: generic onEscape handler (non-contextual)
-        if (shortcutsRef.current.onEscape) {
+      }
+      
+      // Ctrl+Shift+W to close editor/go to welcome (like closing a tab)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'w') {
+        e.preventDefault()
+        if (shortcutsRef.current.onCloseEditor) {
           try {
-            shortcutsRef.current.onEscape(e)
+            shortcutsRef.current.onCloseEditor(e)
           } catch {}
         }
       }

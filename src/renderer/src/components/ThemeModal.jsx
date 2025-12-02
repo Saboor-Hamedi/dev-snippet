@@ -186,7 +186,6 @@ const ThemeModal = ({ isOpen, onClose }) => {
                   Object.entries(theme.colors).forEach(([key, value]) => {
                     if (key.startsWith('--')) {
                       root.style.setProperty(key, value)
-                      console.log('🎨 Setting CSS variable:', key, '=', value)
                     }
                   })
                   
@@ -195,7 +194,6 @@ const ThemeModal = ({ isOpen, onClose }) => {
                     root.style.setProperty('--sidebar-header-text', '#475569')
                     root.style.setProperty('--color-text-primary', '#0f172a')
                     root.style.setProperty('--color-text-secondary', '#475569')
-                    console.log('🌟 Applied Polaris theme overrides')
                   }
                   
                   // Apply legacy CSS variables for compatibility

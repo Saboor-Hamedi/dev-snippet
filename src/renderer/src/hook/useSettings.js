@@ -26,12 +26,8 @@ export const useSettings = (path = null) => {
   // Helper function to update a setting
   const updateSetting = async (settingPath, value) => {
     try {
-      console.log('🔧 updateSetting: Updating', settingPath, 'to', value)
-      console.log('🔧 updateSetting: Calling settingsManager.set...')
       await settingsManager.set(settingPath, value)
-      console.log('✅ updateSetting: Successfully updated', settingPath)
     } catch (error) {
-      console.error('❌ updateSetting: Failed to update setting:', error)
     }
   }
 
@@ -45,7 +41,6 @@ export const useSettings = (path = null) => {
     try {
       await settingsManager.reset()
     } catch (error) {
-      console.error('Failed to reset settings:', error)
     }
   }
 
@@ -68,14 +63,9 @@ export const useZoomLevel = () => {
   const zoomLevel = getSetting('editor.zoomLevel') || 1.0
   
   const setZoomLevel = async (level) => {
-    console.log('🔍 useZoomLevel: Setting zoom level to:', level)
-    console.log('🔍 useZoomLevel: Current settings before update:', settingsManager.getAll())
     try {
       await updateSetting('editor.zoomLevel', level)
-      console.log('✅ useZoomLevel: Zoom level updated successfully')
-      console.log('🔍 useZoomLevel: Settings after update:', settingsManager.getAll())
     } catch (error) {
-      console.error('❌ useZoomLevel: Failed to update zoom level:', error)
     }
   }
   

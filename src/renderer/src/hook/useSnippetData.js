@@ -11,7 +11,6 @@ export const useSnippetData = () => {
     try {
       setSelectedSnippetState(item)
     } catch (err) {
-      console.error('setSelectedSnippet error', err)
       setSelectedSnippetState(item)
     }
   }
@@ -25,7 +24,6 @@ export const useSnippetData = () => {
           setSnippets(loadedSnippets || [])
         }
       } catch (error) {
-        console.error('Failed to load data:', error)
         showToast('❌ Failed to load data')
       }
     }
@@ -68,7 +66,6 @@ export const useSnippetData = () => {
           }
         }      showToast('✓ Snippet saved successfully')
     } catch (error) {
-      console.error('Failed to save snippet:', error)
       showToast('❌ Failed to save snippet')
     }
   }
@@ -101,7 +98,6 @@ export const useSnippetData = () => {
         }
       }
     } catch (error) {
-      console.error('Failed to delete item:', error)
       showToast('❌ Failed to delete item')
     }
   }

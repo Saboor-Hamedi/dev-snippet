@@ -19,8 +19,6 @@ const Header = ({isCompact,
    gap: '8px',
   }
    const displayTitle = snippetTitle ? `${snippetTitle} - ${title}` : title;
-
-
     return (
       <header className="" style={headerStyle}>
         {/* Inner draggable area inset slightly from the edges so native
@@ -82,7 +80,6 @@ const Header = ({isCompact,
                 // also minimize the window as requested
                 window.api?.minimize?.()
               } catch (e) {
-                console.error('Failed to minimize window', e)
               }
             }}
             className="p-1 hover:bg-slate-100 focus:outline-none focus:ring-none rounded-md cursor-pointer transition-colors duration-150"
@@ -103,6 +100,4 @@ const Header = ({isCompact,
       </header>
     )
 }
-
-
 export default Header

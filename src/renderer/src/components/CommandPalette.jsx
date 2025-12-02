@@ -33,7 +33,6 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
   // Focus input when opened
   useEffect(() => {
     if (isOpen) {
-      console.log('🔍 Command Palette opened, setting up focus...')
       
       // Clear search first
       setSearch('')
@@ -53,9 +52,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
             inputRef.current.focus()
             inputRef.current.select()
             
-            console.log('✅ Command palette input focused and ready')
           } catch (err) {
-            console.error('❌ Failed to focus input:', err)
           }
         }
       }
@@ -131,8 +128,6 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            onFocus={() => console.log('🔍 Command palette input focused')}
-            onBlur={() => console.log('🔍 Command palette input blurred')}
             onClick={() => {
               // Ensure input stays focused on click
               if (inputRef.current) {

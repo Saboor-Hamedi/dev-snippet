@@ -65,10 +65,8 @@ const SettingsPanel = ({ onClose }) => {
           showToast('✓ Data exported successfully')
         }
       } else {
-        console.warn('API not available for exporting data')
       }
     } catch (error) {
-      console.error('Error exporting data:', error)
       showToast('❌ Failed to export data')
     }
   }
@@ -646,8 +644,6 @@ const SettingsPanel = ({ onClose }) => {
                   </div>
                 </div>
               </section>
-
-
             </div>
           )}
         </div>

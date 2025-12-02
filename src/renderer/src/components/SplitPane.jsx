@@ -167,9 +167,5 @@ const SplitPane = ({ left, right, minLeft = 200, minRight = 200, initialLeft = 5
     </div>
   )
 }
-
-
-
-
 export default SplitPane
 

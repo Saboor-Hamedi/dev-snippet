@@ -27,7 +27,6 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
     setLocalSettings(newSettings)
     onSettingsChange(newSettings) // Immediate live update
     
-    console.log('⚙️ Setting updated:', path, '=', value)
   }
 
   if (!isOpen) return null

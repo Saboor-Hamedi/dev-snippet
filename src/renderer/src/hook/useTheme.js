@@ -24,7 +24,6 @@ export const useTheme = () => {
     
     // Let ThemeModal handle all CSS variable setting
     // This function is mainly for state management and persistence
-    console.log('🎨 Theme set to:', themeId)
   }
 
   return { currentTheme, setTheme }

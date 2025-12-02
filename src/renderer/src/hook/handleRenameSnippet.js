@@ -44,11 +44,24 @@ export const handleRenameSnippet = async ({
   }
 
   try {
+    // Handle draft snippets that need proper IDs
+    const isNewDraft = String(updatedItem.id).startsWith('draft-')
+    if (isNewDraft) {
+      // For new drafts, create a proper ID
+      updatedItem.id = Date.now().toString()
+      updatedItem.is_draft = false
+    }
+    
     await saveSnippet(updatedItem)
+    
+    // Update selectedSnippet with the final saved item (important for drafts)
+    if (setSelectedSnippet && isNewDraft) {
+      setSelectedSnippet(updatedItem)
+    }
+    
     if (showToast) showToast('✓ Snippet renamed successfully', 'success')
   
   } catch (error) {
-    console.error('Failed to save item after rename:', error)
     if (showToast) showToast('❌ Failed to rename snippet.', 'error')
     // Revert the optimistic update if save failed
     if (setSelectedSnippet) {

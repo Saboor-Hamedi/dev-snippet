@@ -8,6 +8,7 @@ import Header from '../layout/Header'
 const Workbench = ({
   activeView,
   selectedSnippet,
+  snippets,
   showPreview,
   onTogglePreview,
   onSave,
@@ -15,6 +16,7 @@ const Workbench = ({
   onCancelEditor,
   onDeleteRequest,
   onNewSnippet,
+  onSelectSnippet,
   currentContext,
   onOpenSettings,
   onCloseSettings,
@@ -98,7 +100,16 @@ const Workbench = ({
     }
 
     // FINAL FALLBACK: Welcome page
-    return <WelcomePage onNewSnippet={onNewSnippet} activeView={activeView} />
+    return (
+      <WelcomePage 
+        onNewSnippet={onNewSnippet} 
+        onNewProject={() => {/* TODO: Implement project creation */}}
+        onOpenSettings={onOpenSettings}
+        onSelectSnippet={onSelectSnippet}
+        snippets={snippets || []}
+        activeView={activeView} 
+      />
+    )
   }
 
   return (
@@ -114,13 +125,16 @@ const Workbench = ({
 Workbench.propTypes = {
   activeView: PropTypes.string.isRequired,
   selectedSnippet: PropTypes.object,
+  snippets: PropTypes.array,
   onSave: PropTypes.func.isRequired,
   onCloseSnippet: PropTypes.func.isRequired,
   onCancelEditor: PropTypes.func,
   onDeleteRequest: PropTypes.func.isRequired,
   onNewSnippet: PropTypes.func.isRequired,
-  currentContext: PropTypes.string
-  ,
+  onSelectSnippet: PropTypes.func,
+  currentContext: PropTypes.string,
+  onOpenSettings: PropTypes.func,
+  onCloseSettings: PropTypes.func,
   showToast: PropTypes.func
 }
 

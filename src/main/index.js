@@ -2,9 +2,6 @@ import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import fs from 'fs/promises'
 import Database from 'better-sqlite3'
-
-// console.log('Process versions:', process.versions)
-
 let db
 
 function initDB() {
@@ -159,7 +156,6 @@ app.whenReady().then(() => {
   })
 
   // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
 
   // Window controls
   ipcMain.handle('window:minimize', (event) => {
@@ -210,7 +206,6 @@ app.whenReady().then(() => {
       win.setBounds(bounds)
       return true
     } catch (err) {
-      console.error('Failed to set window bounds', err)
       return false
     }
   })
@@ -229,7 +224,6 @@ app.whenReady().then(() => {
       } catch {}
       return true
     } catch (err) {
-      console.error('Failed to restore default window size', err)
       return false
     }
   })
@@ -274,7 +268,6 @@ app.whenReady().then(() => {
       const content = await fs.readFile(path, 'utf-8')
       return content
     } catch (err) {
-      console.error('Error reading file:', err)
       throw err
     }
   })
@@ -286,7 +279,6 @@ app.whenReady().then(() => {
       await fs.writeFile(path, content, 'utf-8')
       return true
     } catch (err) {
-      console.error('Error writing file:', err)
       throw err
     }
   })
@@ -301,30 +293,21 @@ app.whenReady().then(() => {
         path: join(path, file.name)
       }))
     } catch (err) {
-      console.error('Error reading directory:', err)
       throw err
     }
   })
 
-  // Settings file IPC handlers - temporarily save to project root for testing
-  const settingsPath = join(__dirname, '../../settings.json') // Project root
-  console.log('Settings file path (project root):', settingsPath)
-  console.log('App userData directory:', app.getPath('userData'))
-  
-  // Test: Create a test file to verify the project root is writable
+  // Settings file IPC handlers
+  const settingsPath = join(__dirname, '../../settings.json')
   const testDirectoryAccess = async () => {
     const testPath = join(__dirname, '../../test-project-root.txt')
     try {
       await fs.writeFile(testPath, 'This is a test file to verify project root access', 'utf-8')
-      console.log('Test file created successfully at:', testPath)
       // Check if it exists
       const testStats = await fs.stat(testPath)
-      console.log('Test file verified - size:', testStats.size, 'bytes')
       // Clean up
       await fs.unlink(testPath)
-      console.log('Test file cleaned up from project root')
     } catch (testErr) {
-      console.error('Test file creation failed in project root:', testErr)
     }
   }
   testDirectoryAccess()
@@ -338,7 +321,6 @@ app.whenReady().then(() => {
         // File doesn't exist, return null to use defaults
         return null
       }
-      console.error('Error reading settings file:', err)
       throw err
     }
   })
@@ -346,50 +328,39 @@ app.whenReady().then(() => {
   ipcMain.handle('settings:write', async (event, content) => {
     try {
       if (typeof content !== 'string') throw new Error('Invalid content')
-      console.log('Attempting to write settings to:', settingsPath)
-      console.log('Settings content:', content)
       
       // Ensure directory exists
       const dir = app.getPath('userData')
       await fs.mkdir(dir, { recursive: true })
-      console.log('Directory ensured:', dir)
       
       await fs.writeFile(settingsPath, content, 'utf-8')
-      console.log('Settings file written successfully')
       
       // Verify the file was created
       try {
         const stats = await fs.stat(settingsPath)
-        console.log('File verified - size:', stats.size, 'bytes, modified:', stats.mtime)
       } catch (verifyErr) {
-        console.error('File verification failed:', verifyErr)
       }
       
       return true
     } catch (err) {
-      console.error('Error writing settings file:', err)
-      console.error('Path attempted:', settingsPath)
       throw err
     }
   })
 
-  // Get the actual settings file path for debugging
+  // Get settings file path
   ipcMain.handle('settings:getPath', () => {
     return settingsPath
   })
 
-  // Force create a settings file for testing
+  // Create settings file
   ipcMain.handle('settings:forceCreate', async () => {
     const testSettings = {
-      editor: { zoomLevel: 1.5 },
-      test: "This is a test settings file created in project root"
+      editor: { zoomLevel: 1.5 }
     }
     try {
       await fs.writeFile(settingsPath, JSON.stringify(testSettings, null, 2), 'utf-8')
-      console.log('Force-created settings file at:', settingsPath)
       return true
     } catch (err) {
-      console.error('Failed to force-create settings:', err)
       return false
     }
   })
@@ -417,8 +388,6 @@ app.whenReady().then(() => {
     db.prepare('DELETE FROM snippets WHERE id = ?').run(id)
     return true
   })
-
-
   // Batch order update
   // Order update handlers removed per request
 

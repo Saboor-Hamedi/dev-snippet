@@ -60,8 +60,6 @@ const SnippetEditor = ({
       return false
     }
   })
-
-
   
   useEffect(() => {
     try {

@@ -5,3 +5,6 @@ out
 .eslintcache
 *.log*
 settings.json
+*.exe
+*.msi
+nsis-*

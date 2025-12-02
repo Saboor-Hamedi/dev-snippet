@@ -51,7 +51,6 @@ export const SettingsProvider = ({ children }) => {
 
   // Update a specific setting by path
   const updateSetting = (path, value) => {
-    console.log('🔧 Updating setting:', path, '=', value)
     
     const keys = path.split('.')
     const newSettings = { ...settings }
@@ -70,18 +69,15 @@ export const SettingsProvider = ({ children }) => {
     target[keys[keys.length - 1]] = value
     
     setSettings(newSettings)
-    console.log('✅ Settings updated:', newSettings)
   }
 
   // Update entire settings object
   const updateSettings = (newSettings) => {
-    console.log('🔄 Updating all settings:', newSettings)
     setSettings(newSettings)
   }
 
   // Reset to defaults
   const resetSettings = () => {
-    console.log('🔄 Resetting settings to defaults')
     setSettings(DEFAULT_SETTINGS)
   }
 
@@ -116,7 +112,6 @@ export const useZoomLevel = () => {
   const zoomLevel = getSetting('editor.zoomLevel') || 1.0
   
   const setZoomLevel = (level) => {
-    console.log('🔍 Setting zoom level to:', level)
     updateSetting('editor.zoomLevel', level)
   }
   

@@ -23,22 +23,16 @@ const CodeEditor = ({
 
   // Notify parent component of zoom changes
   useEffect(() => {
-    console.log('📊 Zoom level changed, notifying parent:', zoomLevel)
     if (onZoomChange) {
       onZoomChange(zoomLevel)
-      console.log('📊 Parent notified of zoom change:', zoomLevel)
     }
   }, [zoomLevel, onZoomChange])
 
   // Update font size directly to DOM for immediate live updates (like VS Code)
   useEffect(() => {
-    console.log('🎨 Zoom level changed, applying update:', zoomLevel)
-    
     // Find CodeMirror editor in the DOM directly (more reliable than view ref)
     const editorElement = document.querySelector('.cm-editor')
     if (editorElement && zoomLevel) {
-      console.log('📝 Found CodeMirror editor, applying zoom:', zoomLevel)
-      
       // Add smooth transition first
       editorElement.style.transition = 'font-size 0.2s ease-out'
       
@@ -64,10 +58,6 @@ const CodeEditor = ({
         scrollerElement.style.transition = 'font-size 0.2s ease-out'
         scrollerElement.style.fontSize = `calc(var(--xsmall) * ${zoomLevel})`
       }
-      
-      console.log('✅ Applied smooth zoom transition to DOM elements:', zoomLevel)
-    } else {
-      console.warn('⚠️ CodeMirror editor element not found or no zoom level')
     }
   }, [zoomLevel])
 
@@ -90,7 +80,6 @@ const CodeEditor = ({
           
           // Get current zoom level from React Context
           const currentZoom = zoomLevel || 1.0
-          console.log('🔄 Building extensions with zoom level:', currentZoom)
 
           // Get theme colors from CSS variables (set by your ThemeModal)
           const themeExt = EditorView.theme(
@@ -159,36 +148,29 @@ const CodeEditor = ({
                 key: 'Ctrl-=', // Ctrl + =
                 run: () => {
                   // Get current zoom level from React context
-                  console.log('🎯 Keyboard zoom in triggered, current zoom:', zoomLevel)
                   const newZoom = Math.min(zoomLevel + 0.1, 3)
                   setZoomLevel(newZoom)
-                  console.log('🎯 New zoom level set to:', newZoom)
                   return true
                 }
               },
               {
                 key: 'Ctrl-Minus', // Ctrl + -
                 run: () => {
-                  console.log('🎯 Keyboard zoom out triggered, current zoom:', zoomLevel)
                   const newZoom = Math.max(zoomLevel - 0.1, 0.5)
                   setZoomLevel(newZoom)
-                  console.log('🎯 New zoom level set to:', newZoom)
                   return true
                 }
               },
               {
                 key: 'Ctrl-0', // Ctrl + 0
                 run: () => {
-                  console.log('🎯 Keyboard zoom reset triggered')
                   setZoomLevel(1)
-                  console.log('🎯 Zoom reset to 1.0')
                   return true
                 }
               },
               {
                 key: 'Cmd-=', // Cmd + = (Mac)
                 run: () => {
-                  console.log('🎯 Mac keyboard zoom in triggered, current zoom:', zoomLevel)
                   const newZoom = Math.min(zoomLevel + 0.1, 3)
                   setZoomLevel(newZoom)
                   return true
@@ -197,7 +179,6 @@ const CodeEditor = ({
               {
                 key: 'Cmd-Minus', // Cmd + - (Mac)
                 run: () => {
-                  console.log('🎯 Mac keyboard zoom out triggered, current zoom:', zoomLevel)
                   const newZoom = Math.max(zoomLevel - 0.1, 0.5)
                   setZoomLevel(newZoom)
                   return true
@@ -206,7 +187,6 @@ const CodeEditor = ({
               {
                 key: 'Cmd-0', // Cmd + 0 (Mac)
                 run: () => {
-                  console.log('🎯 Mac keyboard zoom reset triggered')
                   setZoomLevel(1)
                   return true
                 }
@@ -214,7 +194,6 @@ const CodeEditor = ({
             ])
             exts.push(zoomKeymap)
           } catch (err) {
-            console.warn('Failed to load zoom keymap:', err)
           }
 
           // Add mouse wheel zoom extension
@@ -229,7 +208,6 @@ const CodeEditor = ({
                   const delta = event.deltaY < 0 ? 0.1 : -0.1 // Scroll up = zoom in, scroll down = zoom out
                   const newZoom = Math.max(0.5, Math.min(3.0, zoomLevel + delta))
                   
-                  console.log('🖱️ Mouse wheel zoom triggered, current:', zoomLevel, 'new:', newZoom)
                   
                   // Save zoom level for smooth update via transaction
                   setZoomLevel(newZoom)
@@ -240,9 +218,7 @@ const CodeEditor = ({
               }
             })
             exts.push(mouseWheelZoomExtension)
-            console.log('✅ Mouse wheel zoom extension added')
           } catch (err) {
-            console.warn('Failed to load mouse wheel zoom:', err)
           }
           
           // Load language extension
@@ -297,17 +273,14 @@ const CodeEditor = ({
           // Try multiple ways to get the CodeMirror view
           if (editorRef) {
             viewRef.current = editorRef.view || editorRef
-            console.log('📝 CodeMirror editor reference captured:', editorRef)
             
             // Also try to get the DOM element directly
             setTimeout(() => {
               const editorDOM = document.querySelector('.cm-editor')
               if (editorDOM) {
-                console.log('📝 Found CodeMirror DOM element:', editorDOM)
                 // Apply current zoom immediately
                 if (zoomLevel && zoomLevel !== 1) {
                   editorDOM.style.fontSize = `calc(var(--xsmall) * ${zoomLevel})`
-                  console.log('🎨 Applied initial zoom to DOM:', zoomLevel)
                 }
               }
             }, 100)

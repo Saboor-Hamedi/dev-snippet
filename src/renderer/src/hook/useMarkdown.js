@@ -44,7 +44,7 @@ class MarkdownFormatter {
       { pattern: /^___$/gm, replacement: '<hr>' },
 
       // Line breaks
-      { pattern: /  $/gm, replacement: '<br>' },
+      { pattern: / {2}$/gm, replacement: '<br>' },
 
       // Tables (basic support)
       { pattern: /\|(.+)\|/g, replacement: '<table><tr><td>$1</td></tr></table>' },
@@ -253,7 +253,7 @@ class MarkdownFormatter {
         return markdownText
       case 'pdf':
         // This would typically involve a PDF generation library
-        console.log('PDF export would be implemented here')
+        // PDF export feature placeholder
         return this.toHTML(markdownText)
       default:
         return markdownText
@@ -350,13 +350,10 @@ const formatter = new MarkdownFormatter();
 // Convert markdown to HTML
 const markdown = "# Hello World\nThis is **bold** and *italic* text.";
 const html = formatter.toHTML(markdown);
-console.log(html);
 
 // Validate markdown
 const validation = formatter.validateMarkdown(markdown);
-console.log(validation);
 
 // Get all supported symbols
 const symbols = formatter.getSupportedSymbols();
-console.log(symbols);
 */

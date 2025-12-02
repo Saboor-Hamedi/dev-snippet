@@ -49,7 +49,6 @@ class SettingsManager {
         }
       }
     } catch (error) {
-      console.warn('Failed to load settings, using defaults:', error)
       this.settings = { ...DEFAULT_SETTINGS }
     }
   }
@@ -57,19 +56,12 @@ class SettingsManager {
   // Save settings to JSON file
   async save() {
     try {
-      console.log('💾 SettingsManager.save: Starting save process')
-      console.log('💾 SettingsManager.save: Current settings:', this.settings)
       if (window.api?.writeSettingsFile) {
-        console.log('💾 SettingsManager.save: Calling window.api.writeSettingsFile...')
         const settingsJson = JSON.stringify(this.settings, null, 2)
-        console.log('💾 SettingsManager.save: JSON to write:', settingsJson)
         const result = await window.api.writeSettingsFile(settingsJson)
-        console.log('✅ SettingsManager.save: Settings saved successfully:', result)
       } else {
-        console.warn('⚠️ SettingsManager.save: writeSettingsFile API not available')
       }
     } catch (error) {
-      console.error('❌ SettingsManager.save: Failed to save settings:', error)
     }
   }
 
@@ -86,7 +78,6 @@ class SettingsManager {
 
   // Set a setting value
   async set(path, value) {
-    console.log('🎯 SettingsManager.set: Setting', path, 'to', value)
     const keys = path.split('.')
     let target = this.settings
     
@@ -101,13 +92,10 @@ class SettingsManager {
     
     // Set the final value
     target[keys[keys.length - 1]] = value
-    console.log('🎯 SettingsManager.set: Value set in memory, calling save...')
     
     // Save and notify
     await this.save()
-    console.log('🎯 SettingsManager.set: Save completed, notifying listeners...')
     this.notifyListeners()
-    console.log('🎯 SettingsManager.set: All done!')
   }
 
   // Subscribe to setting changes
@@ -122,7 +110,6 @@ class SettingsManager {
       try {
         callback(this.settings)
       } catch (error) {
-        console.error('Settings listener error:', error)
       }
     })
   }
@@ -144,18 +131,14 @@ class SettingsManager {
 const settingsManager = new SettingsManager()
 
 // Initialize settings on first import
-console.log('Initializing settings manager...')
 settingsManager.load().then(() => {
-  console.log('Settings loaded:', settingsManager.getAll())
   // Show the actual settings path
   if (window.api?.getSettingsPath) {
     window.api.getSettingsPath().then(path => {
-      console.log('Settings file is located at:', path)
       alert(`Settings file location: ${path}`)
     })
   }
 }).catch(err => {
-  console.error('Failed to load settings:', err)
 })
 
 export { settingsManager, DEFAULT_SETTINGS }

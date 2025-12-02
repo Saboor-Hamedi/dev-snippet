@@ -34,8 +34,6 @@ const SnippetLibrary = () => {
 
   // Delete Modal State
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, snippetId: null })
-
-
   const [isCompact, setIsCompact] = useState(() => {
     try {
       return localStorage.getItem('compactMode') === 'true'
@@ -112,21 +110,18 @@ const SnippetLibrary = () => {
       try {
         const ta = document.querySelector('.editor-container textarea')
         if (ta && typeof ta.focus === 'function') {
-          console.log('🎯 Focusing editor textarea after command palette closed')
           ta.focus()
         }
       } catch (err) {
-        console.warn('Failed to focus textarea:', err)
       }
     }, 150) // Slightly longer delay to ensure command palette is fully closed
   }, [isCommandPaletteOpen, activeView, isCreatingSnippet])
 
   // Use the keyboard shortcuts hook here 
   useKeyboardShortcuts({
-    onEscapeWithContext: () => {
-      // Close ephemeral UI first (modals, palette). Return true if
-      // we handled the event so other listeners (like editor) don't
-      // also close the editor.
+    onEscapeMenusOnly: () => {
+      // Close ephemeral UI first (modals, palette) with plain Escape.
+      // Return true if we handled something so other components don't react.
       let handled = false
       if (renameModal.isOpen) {
         setRenameModal({ ...renameModal, isOpen: false })
@@ -144,18 +139,17 @@ const SnippetLibrary = () => {
         setIsSettingsOpen(false)
         handled = true
       }
-      if (isCreatingSnippet) {
-        setIsCreatingSnippet(false)
-        handled = true
-      }
       return handled
     },
-    onEscape: () => {
-      // Fallback escape: if nothing contextual is open, toggle selection/view state
-      if (renameModal.isOpen) setRenameModal({ ...renameModal, isOpen: false })
-      if (deleteModal.isOpen) setDeleteModal({ isOpen: false, snippetId: null })
-      if (isCreatingSnippet) setIsCreatingSnippet(false)
-      if (isCommandPaletteOpen) setIsCommandPaletteOpen(false)
+    onCloseEditor: () => {
+      // Ctrl+Shift+W: Close editor and go to welcome
+      if (isCreatingSnippet) {
+        setIsCreatingSnippet(false)
+        setActiveView('welcome')
+      } else if (activeView === 'editor' || selectedSnippet) {
+        setSelectedSnippet(null)
+        setActiveView('welcome')
+      }
     },
     onToggleCompact: () => {
       setIsCompact((prev) => !prev)
@@ -196,7 +190,7 @@ const SnippetLibrary = () => {
     },
 
     onRenameSnippet: () => {
-      if (selectedSnippet && activeView === 'snippets') {
+      if (selectedSnippet && (activeView === 'snippets' || activeView === 'editor')) {
         setRenameModal({ isOpen: true, item: selectedSnippet })
       }
     },
@@ -266,8 +260,6 @@ const SnippetLibrary = () => {
       showToast('❌ Failed to open file')
     }
   }
-
-
   // 5. Rename Logic
   const handleRename = async (newName) => {
     await handleRenameSnippet({
@@ -315,7 +307,7 @@ const SnippetLibrary = () => {
         }
       }
     } catch (error) {
-      console.error('Failed to delete item:', error)
+      // Delete failed silently
     }
   }
 
@@ -375,6 +367,10 @@ const SnippetLibrary = () => {
           onNewSnippet={() => {
             setIsCreatingSnippet(true)
             createDraftSnippet()
+          }}
+          onSelectSnippet={(snippet) => {
+            setSelectedSnippet(snippet)
+            setActiveView('editor')
           }}
           onOpenSettings={handleOpenSettings}
           onCloseSettings={handleCloseSettings}
