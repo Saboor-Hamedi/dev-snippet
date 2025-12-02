@@ -38,7 +38,7 @@ const SplitPane = ({ left, right, minLeft = 200, minRight = 200, initialLeft = 5
   return (
     <div
       ref={containerRef}
-      className="flex h-full w-full overflow-hidden"
+      className="flex h-full w-full overflow-hidden "
       style={{ backgroundColor: 'var(--editor-bg)' }}
     >
       <div

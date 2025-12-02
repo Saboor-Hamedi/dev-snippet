@@ -93,9 +93,9 @@ function createWindow() {
     transparent: true,  // Make the window background transparent
 
     autoHideMenuBar: true,
-    alwaysOnTop: true, 
+    // alwaysOnTop: true, 
     focusable: true,
-    skipTaskbar: true,
+    // skipTaskbar: true,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -152,6 +152,40 @@ app.whenReady().then(() => {
 
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
+
+  // Window controls
+  ipcMain.handle('window:minimize', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win) win.minimize()
+    return true
+  })
+
+  ipcMain.handle('window:maximize', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win && !win.isMaximized()) win.maximize()
+    return true
+  })
+
+  ipcMain.handle('window:unmaximize', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win && win.isMaximized()) win.unmaximize()
+    return true
+  })
+
+  ipcMain.handle('window:toggle-maximize', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win) {
+      if (win.isMaximized()) win.unmaximize()
+      else win.maximize()
+    }
+    return true
+  })
+
+  ipcMain.handle('window:close', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win) win.close()
+    return true
+  })
 
   // File System IPC Handlers
   ipcMain.handle('dialog:openFile', async () => {

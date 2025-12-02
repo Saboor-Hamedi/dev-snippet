@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import SnippetLibrary from './components/SnippetLibrary'
+import SnippetLibrary from './components/workbench/SnippetLibrary'
 import { useTheme } from './hook/useTheme'
 import { useFontSettings } from './hook/useFontSettings'
 

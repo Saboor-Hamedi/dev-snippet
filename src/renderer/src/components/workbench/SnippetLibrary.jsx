@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
-import { useToast } from '../hook/useToast'
-import ToastNotification from '../utils/ToastNotification'
-import { useSnippetData } from '../hook/useSnippetData'
-import { handleRenameSnippet } from '../hook/handleRenameSnippet'
+import { useToast } from '../../hook/useToast'
+import ToastNotification from '../../utils/ToastNotification'
+import { useSnippetData } from '../../hook/useSnippetData'
+import { handleRenameSnippet } from '../../hook/handleRenameSnippet'
 // Components
-import Workbench from './workbench/Workbench'
-import CommandPalette from './CommandPalette'
-import RenameModal from './modal/RenameModal'
-import DeleteModel from './modal/DeleteModel'
-import { useKeyboardShortcuts } from '../hook/useKeyboardShortcuts'
+import Workbench from './Workbench'
+import CommandPalette from '../CommandPalette'
+import RenameModal from '../modal/RenameModal'
+import DeleteModel from '../modal/DeleteModel'
+import { useKeyboardShortcuts } from '../../hook/useKeyboardShortcuts'
 const SnippetLibrary = () => {
   // 1. Logic & Data (From Hook)
   const { snippets, selectedSnippet, setSelectedSnippet, setSnippets, saveSnippet, deleteItem } =
@@ -27,7 +27,21 @@ const SnippetLibrary = () => {
   // Delete Modal State
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, snippetId: null })
 
-  const textareaRef = useRef(null)
+
+  const [isCompact, setIsCompact] = useState(() => {
+    try {
+      return localStorage.getItem('compactMode') === 'true'
+    } catch (e) {
+      return false
+    }
+  }) // Compact mode state Header 
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('compactMode', isCompact)
+    } catch (e) {}
+  }, [isCompact])
+
   // Since sidebar is removed, filteredItems is just all snippets
   const filteredItems = useMemo(() => {
     return snippets
@@ -35,7 +49,11 @@ const SnippetLibrary = () => {
 
   // Ensure only items of current view are open
   useEffect(() => {
-    if (isCreatingSnippet) return
+    // If we're actively creating and still in the editor, don't override selection.
+    // But if the view changes (for example user selects a search result and
+    // activeView becomes 'snippets'), we should allow replacing the selection
+    // so the search result opens the editor instead of keeping the draft.
+    if (isCreatingSnippet && activeView === 'editor') return
     if (activeView === 'snippets' || activeView === 'markdown') {
       setSelectedSnippet(activeSnippet || null)
     }
@@ -62,10 +80,13 @@ const SnippetLibrary = () => {
       type: 'snippet',
       is_draft: true
     }
+    // Keep draft in memory and open editor directly so it isn't accidentally
+    // autosaved from the snippets list. We still add it to local state so UI
+    // can show it while editing, but open the editor view immediately.
     setSnippets((prev) => [draft, ...prev])
     setActiveSnippet(draft)
     setSelectedSnippet(draft)
-    setActiveView('snippets')
+    setActiveView('editor')
     return draft
   }
   // Adding focus management for our textarea after search found 
@@ -87,7 +108,9 @@ const SnippetLibrary = () => {
       if (isCreatingSnippet) setIsCreatingSnippet(false)
       if (isCommandPaletteOpen) setIsCommandPaletteOpen(false)
     },
-
+    onToggleCompact: () => {
+      setIsCompact((prev) => !prev)
+    },
     onCreateSnippet: () => {
       setIsCreatingSnippet(true)
       const draft = createDraftSnippet()
@@ -130,6 +153,14 @@ const SnippetLibrary = () => {
     onSave: (e) => {
       if (selectedSnippet) {
         e?.preventDefault() // The hook already does this
+        // Prevent saving unnamed drafts from the global handler.
+        const title = selectedSnippet.title || ''
+        if (!title || !title.trim()) {
+          // Switch to editor so user can name the snippet, and show a helpful toast
+          setActiveView('editor')
+          // showToast('Please name the snippet before saving')
+          return
+        }
         saveSnippet(selectedSnippet)
         showToast('✓ Snippet saved')
       }
@@ -236,6 +267,7 @@ const SnippetLibrary = () => {
       <ToastNotification toast={toast} />
       {/* Main Workbench */}
       <div className="flex-1 flex flex-col items-stretch min-h-0 overflow-hidden bg-slate-50 dark:bg-slate-900 transition-colors duration-200">
+      
         <Workbench
           activeView={isCreatingSnippet ? 'editor' : activeView}
           currentContext={activeView}
@@ -243,6 +275,8 @@ const SnippetLibrary = () => {
           snippets={snippets}
           onCloseSnippet={() => setSelectedSnippet(null)}
           onCancelEditor={() => setIsCreatingSnippet(false)}
+          isCompact={isCompact}
+          onToggleCompact={() => setIsCompact(!isCompact)}
           onSave={(item) => {
             saveSnippet(item)
             setActiveSnippet(item)
@@ -295,9 +329,12 @@ const SnippetLibrary = () => {
         onClose={() => setIsCommandPaletteOpen(false)}
         snippets={snippets} // Pass raw snippets array directly
         onSelect={(item) => {
+          // If user selects from search/palette, cancel create-mode so the
+          // selected snippet replaces any open draft/editor.
           setSelectedSnippet(item)
           setActiveSnippet(item)
           setIsCommandPaletteOpen(false)
+          setIsCreatingSnippet(false)
           setActiveView('snippets')
         }}
       />

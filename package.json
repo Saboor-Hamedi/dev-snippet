@@ -16,8 +16,8 @@
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win",
     "build:mac": "npm run build && electron-builder --mac",
-    "build:linux": "npm run build && electron-builder --linux"
-    ,"make:icons": "npx electron-icon-maker --input renderer/public/icon.png --output build"
+    "build:linux": "npm run build && electron-builder --linux",
+    "make:icons": "npx electron-icon-maker --input renderer/public/icon.png --output build"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
@@ -40,7 +40,7 @@
     "@vitejs/plugin-react": "^5.0.3",
     "autoprefixer": "^10.4.22",
     "electron": "^39.2.4",
-    "electron-builder": "^26.2.0",
+    "electron-builder": "^26.0.12",
     "electron-vite": "^4.0.1",
     "eslint": "^9.36.0",
     "eslint-plugin-react": "^7.37.5",
@@ -52,5 +52,8 @@
     "react-dom": "^19.1.1",
     "tailwindcss": "^3.4.17",
     "vite": "^7.1.6"
+  },
+  "win": {
+    "icon": "build/icon.ico"
   }
 }

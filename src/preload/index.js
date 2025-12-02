@@ -22,6 +22,12 @@ const api = {
   // Drafts
   saveSnippetDraft: (payload) => electronAPI.ipcRenderer.invoke('db:saveSnippetDraft', payload),
   commitSnippetDraft: (id) => electronAPI.ipcRenderer.invoke('db:commitSnippetDraft', id),
+  // Window controls
+  minimize: () => electronAPI.ipcRenderer.invoke('window:minimize'),
+  maximize: () => electronAPI.ipcRenderer.invoke('window:maximize'),
+  unmaximize: () => electronAPI.ipcRenderer.invoke('window:unmaximize'),
+  toggleMaximize: () => electronAPI.ipcRenderer.invoke('window:toggle-maximize'),
+  closeWindow: () => electronAPI.ipcRenderer.invoke('window:close'),
   
 }
 

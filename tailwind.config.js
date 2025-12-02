@@ -23,6 +23,18 @@ module.exports = {
           100: 'var(--color-background-mute)',
           800: 'var(--color-background-mute)',
           900: 'var(--color-background)'
+        },
+        red: {
+          50: '#ff938a',
+          100: '#ff7f75',
+          200: '#ff6a60',
+          300: '#ff554c',
+          400: '#ff4037',
+          500: '#ff2b23',
+          600: '#e6241f',
+          700: '#b31c18',
+          800: '#801210',
+          900: '#4c0808'
         }
       },
       fontSize: {

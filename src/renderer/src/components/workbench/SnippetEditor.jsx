@@ -1,12 +1,11 @@
   // Edit snippets with autosave functionality - Clean live editing experience
 import React, { useState, useEffect, useRef } from 'react'
 import PropTypes from 'prop-types'
-import { useKeyboardShortcuts } from '../hook/useKeyboardShortcuts'
-import WelcomePage from './WelcomePage'
-import StatusBar from './StatusBar.jsx'
-import SplitPane from './SplitPane.jsx'
-import LivePreview from './LivePreview.jsx'
-import Header from '../components/layout/Header.jsx'
+import { useKeyboardShortcuts } from '../../hook/useKeyboardShortcuts.js'
+import WelcomePage from '../WelcomePage.jsx'
+import StatusBar from '../StatusBar.jsx'
+import SplitPane from '../SplitPane.jsx'
+import LivePreview from '../LivePreview.jsx'
 
 const SnippetEditor = ({
   onSave,
@@ -16,7 +15,8 @@ const SnippetEditor = ({
   onDelete,
   isCreateMode,
   activeView,
-  onSettingsClick
+  onSettingsClick, 
+  
 }) => {
   const [code, setCode] = useState(initialSnippet?.code || '')
   const [language, setLanguage] = React.useState(initialSnippet?.language || 'text')
@@ -25,6 +25,40 @@ const SnippetEditor = ({
 
   const isDeletingRef = useRef(false)
   const textareaRef = useRef(null)
+  // Local compact mode (used only if parent doesn't control it)
+  const [localCompact, setLocalCompact] = useState(() => {
+    try {
+      return localStorage.getItem('compactMode') === 'true'
+    } catch (e) {
+      return false
+    }
+  })
+
+
+  
+  useEffect(() => {
+    try {
+      localStorage.setItem('compactMode', localCompact)
+    } catch (e) {}
+  }, [localCompact])
+
+  // If parent passes `isCompact` and `onToggleCompact`, we treat compact as controlled
+  const controlledCompact = typeof isCompact !== 'undefined'
+  const compact = controlledCompact ? isCompact : localCompact
+  const onToggleCompactHandler = () => {
+    if (typeof onToggleCompact === 'function') {
+      onToggleCompact()
+    } else {
+      setLocalCompact((s) => !s)
+    }
+  }
+
+  useKeyboardShortcuts({
+    onToggleCompact: () => {
+      setIsCompact((prev) => !prev)
+    }
+  })
+  // End local compact mode
 
   // Focus the textarea when initialSnippet changes (when opening a snippet)
   useEffect(() => {
@@ -126,6 +160,11 @@ const SnippetEditor = ({
     }
   })
 
+  // Ensure keyboard shortcut for toggle uses parent handler when present
+  useKeyboardShortcuts({
+    onToggleCompact: onToggleCompactHandler
+  })
+
   const handleSave = () => {
     let title = initialSnippet?.title || ''
     if (!title || title.toLowerCase() === 'untitled') {
@@ -154,7 +193,7 @@ const SnippetEditor = ({
           <WelcomePage onNewSnippet={onNew} />
         ) : (
           <div className="h-full overflow-hidden flex flex-col items-stretch bg-slate-50 dark:bg-[#0d1117] transition-colors duration-200 relative">
-            <Header />
+            {/* Header is rendered at the top-level (SnippetLibrary). Do not render it here to avoid duplicates. */}
             <div
               className="flex-1 min-h-0 overflow-hidden editor-container relative"
               style={{ backgroundColor: 'var(--editor-bg)', display: 'flex' }}
@@ -186,10 +225,7 @@ const SnippetEditor = ({
                   />
                 }
                 right={
-                  <div
-                    className="h-full p-4"
-                    style={{ backgroundColor: 'transparent' }}
-                  >
+                  <div className="h-full p-4" style={{ backgroundColor: 'transparent' }}>
                     <LivePreview code={code} />
                   </div>
                 }
@@ -242,7 +278,11 @@ const SnippetEditor = ({
                 </div>
               </div>
             )}
-            <StatusBar onSettingsClick={onSettingsClick} />
+            <StatusBar
+              onSettingsClick={onSettingsClick}
+              isCompact={compact}
+              onToggleCompact={onToggleCompactHandler}
+            />
           </div>
         )
       }
