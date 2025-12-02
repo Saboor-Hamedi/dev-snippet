@@ -89,8 +89,16 @@ function createWindow() {
     show: false,
 
     // remove frame for a cleaner look 
-    frame: false,  // Here we remove the frame 
-    transparent: true,  // Make the window background transparent
+    frame: false,  // Remove the frame for a custom title bar
+    // NOTE: Transparent windows on some platforms (Windows) can interfere
+    // with native resizing/restore behavior. Keep `transparent: false`
+    // to allow OS resizing and reliable minimize/maximize/restore.
+    transparent: false,
+    // Allow resizing and maximizing so the user can restore size
+    // after minimize/compact actions.
+    resizable: true,
+    maximizable: true,
+    minimizable: true,
 
     autoHideMenuBar: true,
     // alwaysOnTop: true, 
@@ -185,6 +193,45 @@ app.whenReady().then(() => {
     const win = BrowserWindow.fromWebContents(event.sender)
     if (win) win.close()
     return true
+  })
+
+  // Window bounds helpers for custom resize handles
+  ipcMain.handle('window:getBounds', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (!win) return null
+    return win.getBounds()
+  })
+
+  ipcMain.handle('window:setBounds', (event, bounds) => {
+    try {
+      const win = BrowserWindow.fromWebContents(event.sender)
+      if (!win) return false
+      // bounds: { x, y, width, height }
+      win.setBounds(bounds)
+      return true
+    } catch (err) {
+      console.error('Failed to set window bounds', err)
+      return false
+    }
+  })
+
+  ipcMain.handle('window:restore-default-size', (event) => {
+    try {
+      const win = BrowserWindow.fromWebContents(event.sender)
+      if (!win) return false
+      if (win.isMaximized()) win.unmaximize()
+      // Restore default/min sizes
+      win.setMinimumSize(600, 400)
+      win.setSize(800, 600)
+      // Center for a predictable restore position
+      try {
+        win.center()
+      } catch {}
+      return true
+    } catch (err) {
+      console.error('Failed to restore default window size', err)
+      return false
+    }
   })
 
   // File System IPC Handlers

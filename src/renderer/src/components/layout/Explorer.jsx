@@ -28,7 +28,7 @@ const Explorer = ({
   // Helper function to filter items based on search term
   const getFileIcon = (item) => {
     if (item.type === 'project')
-      return <Briefcase size={14} className="text-slate-600 dark:text-slate-300" />
+      return <Briefcase size={12} className="text-slate-600 dark:text-slate-300" />
     const title = String(item.title || '')
     const ext = title.includes('.') ? title.split('.').pop().toLowerCase() : ''
     const lang = (item.language || '').toLowerCase()
@@ -36,24 +36,24 @@ const Explorer = ({
     switch (pick) {
       case 'js':
       case 'jsx':
-        return <FileCode size={14} className="text-yellow-500" />
+        return <FileCode size={12} className="text-yellow-500" />
       case 'ts':
       case 'tsx':
-        return <FileCode size={14} className="text-blue-500" />
+        return <FileCode size={12} className="text-blue-500" />
       case 'py':
-        return <FileCode size={14} className="text-blue-600" />
+        return <FileCode size={12} className="text-blue-600" />
       case 'php':
-        return <FileCode size={14} className="text-violet-600" />
+        return <FileCode size={12} className="text-violet-600" />
       case 'html':
-        return <Globe size={14} className="text-orange-500" />
+        return <Globe size={12} className="text-orange-500" />
       case 'css':
-        return <CodeXml size={14} className="text-teal-500" />
+        return <CodeXml size={12} className="text-teal-500" />
       case 'md':
       case 'markdown':
       case 'txt':
-        return <FileText size={14} className="text-slate-500" />
+        return <FileText size={12} className="text-slate-500" />
       default:
-        return <FileCode size={14} className="text-slate-600 dark:text-slate-300" />
+        return <FileCode size={12} className="text-slate-600 dark:text-slate-300" />
     }
   }
 
@@ -112,7 +112,7 @@ const Explorer = ({
       <div className="px-3 pb-2 pt-1">
         <div className="relative group">
           <Search
-            size={13}
+            size={12}
             className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-slate-400 group-focus-within:text-primary-500 transition-colors"
           />
           <input

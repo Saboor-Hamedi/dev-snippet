@@ -44,6 +44,23 @@ const SnippetLibrary = () => {
     } catch (e) {}
   }, [isCompact])
 
+  // Live preview visibility (default: closed)
+  const [showPreview, setShowPreview] = useState(() => {
+    try {
+      const v = localStorage.getItem('showPreview')
+      if (v === null) return false
+      return v === 'true'
+    } catch (e) {
+      return false
+    }
+  })
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('showPreview', showPreview)
+    } catch (e) {}
+  }, [showPreview])
+
   // Since sidebar is removed, filteredItems is just all snippets
   const filteredItems = useMemo(() => {
     return snippets
@@ -104,7 +121,31 @@ const SnippetLibrary = () => {
 
   // Use the keyboard shortcuts hook here 
   useKeyboardShortcuts({
+    onEscapeWithContext: () => {
+      // Close ephemeral UI first (modals, palette). Return true if
+      // we handled the event so other listeners (like editor) don't
+      // also close the editor.
+      let handled = false
+      if (renameModal.isOpen) {
+        setRenameModal({ ...renameModal, isOpen: false })
+        handled = true
+      }
+      if (deleteModal.isOpen) {
+        setDeleteModal({ isOpen: false, snippetId: null })
+        handled = true
+      }
+      if (isCommandPaletteOpen) {
+        setIsCommandPaletteOpen(false)
+        handled = true
+      }
+      if (isCreatingSnippet) {
+        setIsCreatingSnippet(false)
+        handled = true
+      }
+      return handled
+    },
     onEscape: () => {
+      // Fallback escape: if nothing contextual is open, toggle selection/view state
       if (renameModal.isOpen) setRenameModal({ ...renameModal, isOpen: false })
       if (deleteModal.isOpen) setDeleteModal({ isOpen: false, snippetId: null })
       if (isCreatingSnippet) setIsCreatingSnippet(false)
@@ -112,6 +153,9 @@ const SnippetLibrary = () => {
     },
     onToggleCompact: () => {
       setIsCompact((prev) => !prev)
+    },
+    onTogglePreview: () => {
+      setShowPreview((s) => !s)
     },
     onCreateSnippet: () => {
       setIsCreatingSnippet(true)
@@ -280,6 +324,8 @@ const SnippetLibrary = () => {
           onCancelEditor={() => setIsCreatingSnippet(false)}
           isCompact={isCompact}
           onToggleCompact={() => setIsCompact(!isCompact)}
+          showPreview={showPreview}
+          onTogglePreview={() => setShowPreview((s) => !s)}
           showToast={showToast}
           onSave={async (item) => {
                   try {

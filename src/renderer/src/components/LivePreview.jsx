@@ -33,14 +33,14 @@ const LivePreview = ({ code = '' }) => {
                     onClick={() => copyToClipboard(String(children).replace(/\n$/, ''), className)}
                     title="Copy code"
                   >
-                    {copiedIndex === className ? (
+                      {copiedIndex === className ? (
                       <>
-                        <Check className="w-4 h-4" />
+                        <Check className="w-3 h-3" />
                         <span>Copied</span>
                       </>
                     ) : (
                       <>
-                        <Copy className="w-4 h-4" />
+                        <Copy className="w-3 h-3" />
                         <span>Copy</span>
                       </>
                     )}

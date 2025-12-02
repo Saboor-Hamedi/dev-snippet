@@ -24,10 +24,19 @@ const SnippetEditor = ({
   // layout control forwarded from parent
   isCompact,
   onToggleCompact
+  ,
+  showPreview = false
 }) => {
   const [code, setCode] = useState(initialSnippet?.code || '')
   const [language, setLanguage] = React.useState(initialSnippet?.language || 'md')
   const [isDirty, setIsDirty] = useState(false)
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(() => {
+    try {
+      return localStorage.getItem('autoSave') === 'true'
+    } catch (e) {
+      return false
+    }
+  })
 
   const saveTimerRef = useRef(null)
   const lastPendingRef = useRef(0)
@@ -82,6 +91,8 @@ const SnippetEditor = ({
   }, [isCreateMode])
 
   const scheduleSave = () => {
+    // If autosave is disabled, skip scheduling
+    if (!autoSaveEnabled) return
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
     // Debounce autosave: 5000ms to reduce frequent writes for large snippets
     // Emit a rate-limited 'pending' status so header shows "Saving..."
@@ -144,6 +155,25 @@ const SnippetEditor = ({
     }
   }, [initialSnippet?.id])
 
+  // Listen for autosave toggle events from SettingsPanel
+  useEffect(() => {
+    const onToggle = (e) => {
+      try {
+        const enabled = !!(e && e.detail && e.detail.enabled)
+        setAutoSaveEnabled(enabled)
+        if (!enabled) {
+          // cancel any pending autosave
+          if (saveTimerRef.current) {
+            clearTimeout(saveTimerRef.current)
+            saveTimerRef.current = null
+          }
+        }
+      } catch {}
+    }
+    window.addEventListener('autosave:toggle', onToggle)
+    return () => window.removeEventListener('autosave:toggle', onToggle)
+  }, [])
+
   // Track if this is the initial mount to prevent autosave on first render
   const isInitialMount = useRef(true)
   const lastSnippetId = useRef(initialSnippet?.id)
@@ -177,6 +207,7 @@ const SnippetEditor = ({
     }
     // Only schedule autosave when user actually changed content
     if (!isDirty) return
+    if (!autoSaveEnabled) return
     scheduleSave()
   }, [code, language])
 
@@ -299,6 +330,7 @@ const SnippetEditor = ({
               }
             >
               <SplitPane
+                rightHidden={!showPreview}
                 left={
                   <textarea
                     ref={textareaRef}

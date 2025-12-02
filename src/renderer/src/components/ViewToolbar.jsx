@@ -11,7 +11,7 @@ const ViewToolbar = ({ onNew }) => {
           className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-[#333] dark:text-slate-200"
           title="New"
         >
-          <Plus className="w-4 h-4" />
+          <Plus size={12} />
         </button>
       )}
     </div>

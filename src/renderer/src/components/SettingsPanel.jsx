@@ -24,7 +24,13 @@ const SettingsPanel = ({ onClose }) => {
     updateCaretStyle
   } = useFontSettings()
   const [wordWrap, setWordWrap] = useState('on')
-  const [autoSave, setAutoSave] = useState(false)
+  const [autoSave, setAutoSave] = useState(() => {
+    try {
+      return localStorage.getItem('autoSave') === 'true'
+    } catch (e) {
+      return false
+    }
+  })
   const [activeTab, setActiveTab] = useState('general')
 
   // Modal State
@@ -86,7 +92,7 @@ const SettingsPanel = ({ onClose }) => {
             onClick={handleGoBack}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
           >
-            <ChevronLeft size={14} />
+            <ChevronLeft size={12} />
             <span>Go Back</span>
           </button>
 
@@ -98,7 +104,7 @@ const SettingsPanel = ({ onClose }) => {
                 : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <Settings size={14} />
+            <Settings size={12} />
             <span>General</span>
           </button>
         </nav>
@@ -146,7 +152,7 @@ const SettingsPanel = ({ onClose }) => {
                       onClick={() => setIsThemeModalOpen(true)}
                       className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm"
                     >
-                      <SunMoon size={14} />
+                      <SunMoon size={12} />
                       Change Theme
                     </button>
                   </div>
@@ -386,7 +392,19 @@ const SettingsPanel = ({ onClose }) => {
                       </p>
                     </div>
                     <button
-                      onClick={() => setAutoSave(!autoSave)}
+                      onClick={() => {
+                        try {
+                          const next = !autoSave
+                          setAutoSave(next)
+                          localStorage.setItem('autoSave', next ? 'true' : 'false')
+                          // notify other components (editor) about change
+                          try {
+                            window.dispatchEvent(new CustomEvent('autosave:toggle', { detail: { enabled: next } }))
+                          } catch {}
+                        } catch (e) {
+                          setAutoSave((s) => !s)
+                        }
+                      }}
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${
                         autoSave ? 'bg-primary-600' : 'bg-slate-300 dark:bg-slate-700'
                       }`}
@@ -420,7 +438,7 @@ const SettingsPanel = ({ onClose }) => {
                       onClick={handleExportData}
                       className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
                     >
-                      <FileDown size={14} />
+                      <FileDown size={12} />
                       Export Data
                     </button>
                   </div>
