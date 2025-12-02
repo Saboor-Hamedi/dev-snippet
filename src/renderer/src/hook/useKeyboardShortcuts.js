@@ -75,7 +75,7 @@ export const useKeyboardShortcuts = (shortcuts) => {
         }
       }
       // Ctrl+delete delete selected snippet
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Delete') {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'd') {
         e.preventDefault()
         if (shortcutsRef.current.onDeleteSnippet) {
           shortcutsRef.current.onDeleteSnippet()

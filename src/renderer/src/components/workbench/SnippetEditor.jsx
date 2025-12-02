@@ -16,6 +16,7 @@ const SnippetEditor = ({
   isCreateMode,
   activeView,
   onSettingsClick, 
+  onAutosave,
   
 }) => {
   const [code, setCode] = useState(initialSnippet?.code || '')
@@ -80,7 +81,12 @@ const SnippetEditor = ({
 
   const scheduleSave = () => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
-    saveTimerRef.current = setTimeout(() => {
+    // Notify parent that a save is pending
+    try {
+      onAutosave && onAutosave('pending')
+    } catch {}
+
+    saveTimerRef.current = setTimeout(async () => {
       const id = initialSnippet?.id
       if (!id) return
       if (isDeletingRef.current) return
@@ -96,7 +102,16 @@ const SnippetEditor = ({
         type: initialSnippet.type || 'snippet',
         tags: extractTags(code)
       }
-      onSave(updatedSnippet)
+      try {
+        onAutosave && onAutosave('saving')
+      } catch {}
+      try {
+        // Allow onSave to be async and wait for completion
+        await onSave(updatedSnippet)
+        onAutosave && onAutosave('saved')
+      } catch (err) {
+        onAutosave && onAutosave(null)
+      }
     }, 1000)
   }
 

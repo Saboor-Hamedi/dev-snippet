@@ -17,7 +17,9 @@ const Workbench = ({
   onOpenSettings,
   onCloseSettings,
   isCompact,
-  onToggleCompact
+  onToggleCompact,
+  autosaveStatus,
+  onAutosave
 }) => {
   const handleSave = (snippet) => {
     onSave(snippet)
@@ -64,6 +66,7 @@ const Workbench = ({
           onSettingsClick={handleSettingsClick}
           isCompact={isCompact}
           onToggleCompact={onToggleCompact}
+          onAutosave={onAutosave}
         />
       )
     }
@@ -81,6 +84,7 @@ const Workbench = ({
           onSettingsClick={handleSettingsClick}
           isCompact={isCompact}
           onToggleCompact={onToggleCompact}
+          onAutosave={onAutosave}
         />
       )
     }
@@ -91,7 +95,7 @@ const Workbench = ({
 
   return (
     <div className="h-full flex flex-col">
-      <Header title={getHeaderTitle()} isCompact={isCompact} onToggleCompact={onToggleCompact} />
+      <Header title={getHeaderTitle()} isCompact={isCompact} onToggleCompact={onToggleCompact} autosaveStatus={autosaveStatus} />
       <div className="flex-1 min-h-0 overflow-hidden">
         {renderContent()}
       </div>

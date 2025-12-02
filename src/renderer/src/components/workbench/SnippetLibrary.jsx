@@ -21,6 +21,8 @@ const SnippetLibrary = () => {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
   const { toast, showToast } = useToast()
   const [activeSnippet, setActiveSnippet] = useState(null)
+  // Autosave status: null | 'pending' | 'saving' | 'saved'
+  const [autosaveStatus, setAutosaveStatus] = useState(null)
   // Rename Modal State
   const [renameModal, setRenameModal] = useState({ isOpen: false, item: null })
 
@@ -246,22 +248,7 @@ const SnippetLibrary = () => {
       console.error('Failed to delete item:', error)
     }
   }
-  // 7. Delete
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      // Delete key deletes selected snippet if in snippets view
-      if (e.key === 'Delete') {
-        if (activeView === 'snippets' && selectedSnippet) {
-          e.preventDefault()
-          setDeleteModal({ isOpen: true, snippetId: selectedSnippet.id }) // ✅ show modal first
-        }
-      }
-    }
 
-    // Attach listener
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [selectedSnippet, activeView])
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white overflow-hidden transition-colors duration-200">
       <ToastNotification toast={toast} />
@@ -277,14 +264,27 @@ const SnippetLibrary = () => {
           onCancelEditor={() => setIsCreatingSnippet(false)}
           isCompact={isCompact}
           onToggleCompact={() => setIsCompact(!isCompact)}
-          onSave={(item) => {
-            saveSnippet(item)
-            setActiveSnippet(item)
-            // If we were creating a new snippet, switch to viewing/editing it
-            if (isCreatingSnippet) {
-              setSelectedSnippet(item)
-              setIsCreatingSnippet(false)
-            }
+          onSave={async (item) => {
+              try {
+                setAutosaveStatus('saving')
+                await saveSnippet(item)
+                setActiveSnippet(item)
+                // If we were creating a new snippet, switch to viewing/editing it
+                if (isCreatingSnippet) {
+                  setSelectedSnippet(item)
+                  setIsCreatingSnippet(false)
+                }
+                setAutosaveStatus('saved')
+                // clear the saved state after a short delay
+                setTimeout(() => setAutosaveStatus(null), 1200)
+              } catch (err) {
+                setAutosaveStatus(null)
+              }
+            }}
+          autosaveStatus={autosaveStatus}
+          onAutosave={(s) => {
+            setAutosaveStatus(s)
+            if (s === 'saved') setTimeout(() => setAutosaveStatus(null), 1200)
           }}
           onDeleteRequest={handleDeleteSnippet}
           onNewSnippet={() => {

@@ -1,7 +1,10 @@
 
 import React from 'react'
 import { X, Minimize, Minimize2 } from 'lucide-react'
-const Header = ({isCompact, onToggleCompact, title, snippetTitle}) => {
+const Header = ({isCompact, 
+  onToggleCompact, 
+  title, snippetTitle, autosaveStatus
+}) => {
   const headerStyle = { 
     background: 'rgba(255, 255, 255, 0.2)',
     height: '36px',
@@ -24,9 +27,18 @@ const Header = ({isCompact, onToggleCompact, title, snippetTitle}) => {
             aria-hidden
             style={{ width: 18, height: 18, background: 'var(--accent)', borderRadius: 4 }}
           />
-          <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--header-fg)' }}>
-            {displayTitle}
+          <span style={{ fontWeight: 600, fontSize: 12, color: 'var(--header-fg)' }}>
+            {displayTitle} 
           </span>
+            {/* Autosave indicator */}
+            {autosaveStatus ? (
+              <small style={{ marginRight: 8, fontSize: 8, color: 'var(--header-fg)' }}>
+                {/* <span className=''> | </span> */}
+                {autosaveStatus === 'pending' && 'Saving...'}
+                {autosaveStatus === 'saving' && 'Saving'}
+                {autosaveStatus === 'saved' && 'Saved ✓'}
+              </small>
+            ) : null}
         </div>
 
         <div
