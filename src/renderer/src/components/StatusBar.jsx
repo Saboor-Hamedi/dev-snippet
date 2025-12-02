@@ -1,16 +1,27 @@
 import React from 'react'
 import { Settings } from 'lucide-react'
+import { getLanguage } from './codemirror/EditorLanguage.jsx'
 
-// Always return .md for markdown snippets
-const getExtension = () => '.md'
+// Get extension based on selected language
+const getExtension = (language) => {
+  if (!language) return '.md'
+  const langDef = getLanguage(language)
+  return langDef && langDef.extensions && langDef.extensions[0] 
+    ? `.${langDef.extensions[0]}` 
+    : '.txt'
+}
 
-// Always return 'Markdown' for language name
-const getLanguageName = () => 'Markdown'
+// Get language name based on selected language
+const getLanguageName = (language) => {
+  if (!language) return 'Markdown'
+  const langDef = getLanguage(language)
+  return langDef ? langDef.name : 'Plain Text'
+}
 
-const StatusBar = ({ onSettingsClick }) => {
-  // Only show Markdown extension and name
-  const ext = getExtension()
-  const canonical = getLanguageName()
+const StatusBar = ({ onSettingsClick, language, zoomLevel = 1 }) => {
+  // Show extension and name based on selected language
+  const ext = getExtension(language)
+  const canonical = getLanguageName(language)
   return (
     <div
       className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 flex-shrink-0"
@@ -22,6 +33,16 @@ const StatusBar = ({ onSettingsClick }) => {
       >
         {ext ? ext : ''}
       </span>
+      
+      {/* Show zoom level */}
+      {zoomLevel !== 1 && (
+        <span
+          className="px-1 py-0.5 rounded text-xs text-slate-500 dark:text-slate-400"
+          title="Zoom Level (Ctrl/Cmd + +/- to adjust, Ctrl/Cmd + 0 to reset)"
+        >
+          {Math.round(zoomLevel * 100)}%
+        </span>
+      )}
       
       <button
         onClick={onSettingsClick}

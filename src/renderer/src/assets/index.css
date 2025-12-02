@@ -2,50 +2,43 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom CSS Variables */
+/* Comprehensive Theme System - All components use these variables */
 :root {
-  /* Color Palette */
-  --ev-c-white: #ffffff;
-  --ev-c-white-soft: #f8fafc;
-  --ev-c-white-mute: #f1f5f9;
-
-  --ev-c-black: #0d1117; /* GitHub Dark */
-  --ev-c-black-soft: #161b22; /* Sidebar surface */
-  --ev-c-black-mute: #30363d; /* Border/selected */
-
-  --ev-c-gray-1: #94a3b8;
-  --ev-c-gray-2: #64748b;
-  --ev-c-gray-3: #475569;
-
-  --ev-c-accent: var(--ev-c-black-soft);
-  --ev-c-accent-hover: var(--ev-c-black-mute);
-
-  /* Default to Dark Theme */
-  --color-background: var(--ev-c-black);
-  --color-background-soft: var(--ev-c-black-soft);
-  --color-background-mute: var(--ev-c-black-mute);
-  --color-text: var(--ev-c-white-soft);
-
-  /* Map generic names for easier usage */
-  --primary: var(--ev-c-accent);
-  --background: var(--color-background);
-  --surface: var(--color-background-soft);
-
+  /* Layout dimensions */
   --activity-bar-width: 60px;
   --sidebar-width: 300px;
+  --toolbar-height: 40px;
 
-  /* GitHub UI semantic variables */
-  --editor-bg: #0d1117;
-  --workbench-bg: #161b22;
-  --text-main: #c9d1d9;
-  --border-color: #30363d;
-  --accent: #58a6ff;
-  --selection-bg: rgba(88, 166, 255, 0.15);
-  --selected-bg: #30363d;
-  --selected-text: #ffffff;
+  /* Theme variables - will be overridden by ThemeModal */
+  --color-bg-primary: #0d1117;
+  --color-bg-secondary: #161b22;
+  --color-bg-tertiary: #21262d;
+  --color-text-primary: #c9d1d9;
+  --color-text-secondary: #8b949e;
+  --color-text-tertiary: #6e7681;
+  --color-accent-primary: #58a6ff;
+  --color-border: #30363d;
   --hover-bg: #21262d;
   --hover-text: #ffffff;
-  --toolbar-height: 40px;
+  --selected-bg: #30363d;
+  --selected-text: #ffffff;
+  --sidebar-text: #c9d1d9;
+  --sidebar-header-text: #8b949e;
+
+  /* Legacy compatibility variables */
+  --color-background: var(--color-bg-primary);
+  --color-background-soft: var(--color-bg-secondary);
+  --color-background-mute: var(--color-bg-tertiary);
+  --color-text: var(--color-text-primary);
+  --editor-bg: var(--color-bg-primary);
+  --workbench-bg: var(--color-bg-secondary);
+  --text-main: var(--color-text-primary);
+  --border-color: var(--color-border);
+  --accent: var(--color-accent-primary);
+  --selection-bg: rgba(88, 166, 255, 0.15);
+  --primary: var(--color-accent-primary);
+  --background: var(--color-bg-primary);
+  --surface: var(--color-bg-secondary);
 
   /* Live font preview variables */
   --editor-font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', monospace;
@@ -105,6 +98,356 @@
   --hover-bg: #21262d;
   --hover-text: #ffffff;
   --current-line-bg: rgba(88, 166, 255, 0.12);
+}
+
+/* ===== COMPREHENSIVE COMPONENT THEMING ===== */
+
+/* Base elements that should always respect theme */
+body, html, #root {
+  background-color: var(--color-bg-primary) !important;
+  color: var(--color-text-primary) !important;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* All modals, dialogs, and overlays */
+.modal, .dialog, [role="dialog"], .overlay {
+  background-color: var(--color-bg-primary) !important;
+  color: var(--color-text-primary) !important;
+  border-color: var(--color-border) !important;
+}
+
+/* All buttons */
+button:not(.theme-exempt) {
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+  transition: all 0.2s ease;
+}
+
+button:not(.theme-exempt):hover {
+  background-color: var(--hover-bg, var(--color-bg-tertiary));
+  color: var(--hover-text, var(--color-text-primary));
+}
+
+/* All inputs and textareas */
+input:not(.theme-exempt), textarea:not(.theme-exempt), select:not(.theme-exempt) {
+  background-color: var(--color-bg-secondary) !important;
+  color: var(--color-text-primary) !important;
+  border-color: var(--color-border) !important;
+}
+
+input:not(.theme-exempt):focus, textarea:not(.theme-exempt):focus, select:not(.theme-exempt):focus {
+  background-color: var(--color-bg-tertiary) !important;
+  border-color: var(--color-accent-primary) !important;
+}
+
+/* Scrollbars for all elements */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) var(--color-bg-secondary);
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-tertiary);
+}
+
+/* Sidebar and navigation elements */
+.sidebar, .nav, .menu, [role="navigation"] {
+  background-color: var(--color-bg-secondary) !important;
+  color: var(--sidebar-text, var(--color-text-primary)) !important;
+  border-color: var(--color-border) !important;
+}
+
+/* Cards and containers */
+.card, .container, .panel, .section {
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+}
+
+/* Text selection - theme appropriate colors */
+::selection {
+  background-color: var(--selected-bg, var(--color-accent-primary));
+  color: var(--selected-text, var(--color-text-primary));
+}
+
+::-moz-selection {
+  background-color: var(--selected-bg, var(--color-accent-primary));
+  color: var(--selected-text, var(--color-text-primary));
+}
+
+/* CodeMirror specific selection colors */
+.cm-editor .cm-selectionBackground {
+  background-color: var(--selected-bg, rgba(88, 166, 255, 0.25)) !important;
+}
+
+.cm-editor .cm-focused .cm-selectionBackground {
+  background-color: var(--selected-bg, rgba(88, 166, 255, 0.25)) !important;
+}
+
+.cm-editor .cm-line::selection {
+  background-color: var(--selected-bg, rgba(88, 166, 255, 0.25)) !important;
+  color: var(--selected-text, inherit) !important;
+}
+
+/* Loading states and animations */
+.loading, .spinner, .skeleton {
+  background-color: var(--color-bg-tertiary) !important;
+}
+
+/* Error and success states */
+.error {
+  color: #ef4444 !important;
+  background-color: rgba(239, 68, 68, 0.1) !important;
+}
+
+.success {
+  color: #22c55e !important;
+  background-color: rgba(34, 197, 94, 0.1) !important;
+}
+
+/* Tooltips and popovers */
+.tooltip, .popover, [role="tooltip"] {
+  background-color: var(--color-bg-tertiary) !important;
+  color: var(--color-text-primary) !important;
+  border-color: var(--color-border) !important;
+}
+
+/* ===== SETTINGS PANEL SPECIFIC OVERRIDES ===== */
+
+/* Force SettingsPanel to use theme colors */
+.settings-panel,
+.settings-panel * {
+  /* Override any hardcoded Tailwind colors */
+}
+
+/* Settings Panel main container */
+.settings-panel .bg-white {
+  background-color: var(--color-bg-primary) !important;
+}
+
+.settings-panel .bg-slate-50\/50,
+.settings-panel .bg-slate-900\/80 {
+  background-color: var(--color-bg-secondary) !important;
+}
+
+.settings-panel .text-slate-900,
+.settings-panel .text-slate-300 {
+  color: var(--color-text-primary) !important;
+}
+
+.settings-panel .text-slate-400,
+.settings-panel .text-slate-500 {
+  color: var(--color-text-tertiary) !important;
+}
+
+.settings-panel .text-slate-600 {
+  color: var(--color-text-secondary) !important;
+}
+
+.settings-panel .border-slate-200,
+.settings-panel .border-slate-800,
+.settings-panel .border-slate-700\/50 {
+  border-color: var(--color-border) !important;
+}
+
+.settings-panel .bg-slate-50,
+.settings-panel .bg-slate-800\/40 {
+  background-color: var(--color-bg-secondary) !important;
+}
+
+.settings-panel .hover\\:bg-slate-200:hover,
+.settings-panel .hover\\:bg-slate-800:hover {
+  background-color: var(--hover-bg) !important;
+}
+
+.settings-panel .hover\\:text-slate-900:hover,
+.settings-panel .hover\\:text-white:hover {
+  color: var(--hover-text) !important;
+}
+
+/* Settings forms and inputs */
+.settings-panel input,
+.settings-panel select,
+.settings-panel textarea {
+  background-color: var(--color-bg-secondary) !important;
+  color: var(--color-text-primary) !important;
+  border-color: var(--color-border) !important;
+}
+
+.settings-panel input:focus,
+.settings-panel select:focus,
+.settings-panel textarea:focus {
+  background-color: var(--color-bg-tertiary) !important;
+  border-color: var(--color-accent-primary) !important;
+}
+
+/* Settings cards and sections */
+.settings-panel .bg-slate-800,
+.settings-panel .bg-slate-900 {
+  background-color: var(--color-bg-secondary) !important;
+}
+
+/* Keyboard shortcut badges */
+.settings-panel kbd {
+  background-color: var(--color-bg-tertiary) !important;
+  color: var(--color-text-secondary) !important;
+  border: 1px solid var(--color-border) !important;
+}
+
+/* ===== SMOOTH SELECT DROPDOWNS ===== */
+
+/* Remove dropdown borders and create smooth appearance */
+.settings-panel select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 8px center !important;
+  background-size: 12px !important;
+  border: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  transition: all 0.2s ease !important;
+}
+
+.settings-panel select:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Smooth input styling */
+.settings-panel input[type="number"] {
+  border: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  transition: all 0.2s ease !important;
+}
+
+.settings-panel input[type="number"]:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Remove focus outline completely */
+.settings-panel select:focus,
+.settings-panel input:focus {
+  outline: none !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* ===== HEADER AND NAVIGATION FIXES ===== */
+
+/* Force all headers to use proper theme colors */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--color-text-primary) !important;
+}
+
+/* Activity bar and sidebar headers */
+.activity-bar, .sidebar, .sidebar-header, .header {
+  background-color: var(--color-bg-secondary) !important;
+  color: var(--color-text-primary) !important;
+}
+
+/* Navigation and menu items */
+.nav, .menu, .navigation {
+  background-color: var(--color-bg-secondary) !important;
+  color: var(--color-text-primary) !important;
+}
+
+.nav *, .menu *, .navigation * {
+  color: var(--sidebar-text, var(--color-text-primary)) !important;
+}
+
+/* Workbench and layout components */
+.workbench, .layout, .main-content {
+  background-color: var(--color-bg-primary) !important;
+  color: var(--color-text-primary) !important;
+}
+
+/* Status bar and toolbar */
+.status-bar, .toolbar, .header-toolbar {
+  background-color: var(--color-bg-secondary) !important;
+  color: var(--color-text-primary) !important;
+  border-color: var(--color-border) !important;
+}
+
+/* Force white theme specific fixes */
+[data-theme="polaris"] h1,
+[data-theme="polaris"] h2, 
+[data-theme="polaris"] h3,
+[data-theme="polaris"] h4,
+[data-theme="polaris"] h5,
+[data-theme="polaris"] h6 {
+  color: var(--color-text-primary, #0f172a) !important;
+}
+
+[data-theme="polaris"] .sidebar,
+[data-theme="polaris"] .nav,
+[data-theme="polaris"] .header {
+  color: var(--sidebar-text, #334155) !important;
+}
+
+/* Override any remaining white text in light theme */
+[data-theme="polaris"] .text-white,
+[data-theme="polaris"] .text-slate-50,
+[data-theme="polaris"] .text-slate-100,
+[data-theme="polaris"] .text-gray-50,
+[data-theme="polaris"] .text-neutral-50 {
+  color: var(--color-text-primary, #0f172a) !important;
+}
+
+/* Force sidebar header text to be dark in light theme */
+[data-theme="polaris"] * {
+  --sidebar-header-text: #475569 !important;
+  --color-text-primary: #0f172a !important;
+  --color-text-secondary: #475569 !important;
+  --color-text-tertiary: #64748b !important;
+}
+
+/* Ensure all elements that might have light text get dark text in light theme */
+[data-theme="polaris"] h1,
+[data-theme="polaris"] h2,
+[data-theme="polaris"] h3,
+[data-theme="polaris"] h4,
+[data-theme="polaris"] h5,
+[data-theme="polaris"] h6,
+[data-theme="polaris"] p,
+[data-theme="polaris"] span,
+[data-theme="polaris"] div,
+[data-theme="polaris"] button,
+[data-theme="polaris"] label {
+  color: var(--color-text-primary, #0f172a) !important;
+}
+
+/* Specific sidebar header fix */
+[data-theme="polaris"] .sidebar-header h1,
+[data-theme="polaris"] .sidebar-header p,
+[data-theme="polaris"] .sidebar-header span {
+  color: #475569 !important;
+}
+
+/* Ensure buttons and interactive elements work in all themes */
+button:not(.theme-exempt) {
+  color: var(--color-text-primary) !important;
+}
+
+button:not(.theme-exempt):hover {
+  background-color: var(--hover-bg) !important;
+  color: var(--hover-text) !important;
 }
 
 /* Midnight Theme (neutralized to black scheme) */

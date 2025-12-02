@@ -8,6 +8,7 @@ import { useKeyboardShortcuts } from '../../hook/useKeyboardShortcuts.js'
 import { useEditorFocus } from '../../hook/useEditorFocus.js'
 import extractTags from '../../hook/extractTags.js'
 import { getAllLanguages } from '../codemirror/EditorLanguage.jsx'
+import { useZoomLevel } from '../../hook/useSettingsContext.jsx'
 import WelcomePage from '../WelcomePage.jsx'
 import StatusBar from '../StatusBar.jsx'
 import SplitPane from '../SplitPane.jsx'
@@ -35,6 +36,7 @@ const SnippetEditor = ({
   const [code, setCode] = useState(initialSnippet?.code || '')
   const [language, setLanguage] = React.useState(initialSnippet?.language || 'markdown')
   const [isDirty, setIsDirty] = useState(false)
+  const [zoomLevel] = useZoomLevel() // Use React Context for zoom level
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(() => {
     try {
       const saved = localStorage.getItem('autoSave')
@@ -222,10 +224,10 @@ const SnippetEditor = ({
     onToggleCompact: onToggleCompactHandler
   })
 
-  // Special handler for Ctrl+Shift+Escape to close editor
+  // Standard Ctrl+W to close editor (like browser tabs)
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'Escape') {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'w' && !e.shiftKey) {
         e.preventDefault()
         onCancel && onCancel()
       }
@@ -367,6 +369,7 @@ const SnippetEditor = ({
                       style={{ backgroundColor: 'transparent' }}
                       language={language}
                       textareaRef={textareaRef}
+                      onZoomChange={() => {}} // No need for callback, using React Context
                     />
                   </div>
                 }
@@ -423,6 +426,8 @@ const SnippetEditor = ({
                 onSettingsClick={onSettingsClick}
                 isCompact={compact}
                 onToggleCompact={onToggleCompactHandler}
+                language={language}
+                zoomLevel={zoomLevel}
               />
             </div>
           </div>

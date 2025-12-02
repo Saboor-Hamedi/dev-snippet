@@ -74,6 +74,13 @@ export const useKeyboardShortcuts = (shortcuts) => {
           shortcutsRef.current.onToggleCommandPalette()
         }
       }
+      // Ctrl+, toggles Settings
+      if ((e.ctrlKey || e.metaKey) && e.key === ',') {
+        e.preventDefault()
+        if (shortcutsRef.current.onToggleSettings) {
+          shortcutsRef.current.onToggleSettings()
+        }
+      }
       // Ctrl+Shift+C copies selected snippet to clipboard
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'c') {
         e.preventDefault()

@@ -33,14 +33,39 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
   // Focus input when opened
   useEffect(() => {
     if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 50)
-      // We don't want to clear search on open anymore,
-      // so the list can be populated initially.
-      // setSearch('')
+      console.log('🔍 Command Palette opened, setting up focus...')
+      
+      // Clear search first
+      setSearch('')
+      
+      // Focus with a single, reliable attempt
+      const focusInput = () => {
+        if (inputRef.current) {
+          try {
+            // Ensure input is enabled and focusable
+            inputRef.current.disabled = false
+            inputRef.current.readOnly = false
+            
+            // Clear any existing selection/focus
+            inputRef.current.blur()
+            
+            // Focus and select
+            inputRef.current.focus()
+            inputRef.current.select()
+            
+            console.log('✅ Command palette input focused and ready')
+          } catch (err) {
+            console.error('❌ Failed to focus input:', err)
+          }
+        }
+      }
+      
+      // Single attempt with proper delay
+      setTimeout(focusInput, 200)
     }
   }, [isOpen])
 
-  // Handle keyboard navigation
+  // Handle keyboard navigation and focus management
   useEffect(() => {
     if (!isOpen) return
 
@@ -63,7 +88,10 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
     }
 
     window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
   }, [isOpen, filteredItems, selectedIndex, onSelect, onClose])
 
   // Scroll selected item into view
@@ -80,6 +108,10 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
   return (
     <div
       className="fixed inset-0 z-[100] flex items-start justify-center pt-[20vh] bg-black/40 backdrop-blur-sm animate-fade-in"
+      style={{ 
+        fontSize: '14px', // Fixed font size, not affected by editor zoom
+        '--editor-zoom-level': 1 // Override any parent zoom
+      }}
       onClick={onClose}
     >
       <div
@@ -99,8 +131,19 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            onFocus={() => console.log('🔍 Command palette input focused')}
+            onBlur={() => console.log('🔍 Command palette input blurred')}
+            onClick={() => {
+              // Ensure input stays focused on click
+              if (inputRef.current) {
+                inputRef.current.focus()
+              }
+            }}
             placeholder="Search snippets..."
             className="flex-1 bg-transparent border-none outline-none text-lg"
+            autoComplete="off"
+            spellCheck={false}
+            tabIndex={0}
           />
           <div className="flex gap-2">
             <kbd className="hidden sm:inline-block px-2 py-1 text-xs font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700">

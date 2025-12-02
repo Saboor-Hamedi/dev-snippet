@@ -12,6 +12,12 @@ const api = {
   writeFile: (path, content) => electronAPI.ipcRenderer.invoke('fs:writeFile', path, content),
   readDirectory: (path) => electronAPI.ipcRenderer.invoke('fs:readDirectory', path),
 
+  // Settings JSON file
+  readSettingsFile: () => electronAPI.ipcRenderer.invoke('settings:read'),
+  writeSettingsFile: (content) => electronAPI.ipcRenderer.invoke('settings:write', content),
+  getSettingsPath: () => electronAPI.ipcRenderer.invoke('settings:getPath'),
+  forceCreateSettings: () => electronAPI.ipcRenderer.invoke('settings:forceCreate'),
+
   // Database
   getSnippets: () => electronAPI.ipcRenderer.invoke('db:getSnippets'),
   saveSnippet: (snippet) => electronAPI.ipcRenderer.invoke('db:saveSnippet', snippet),

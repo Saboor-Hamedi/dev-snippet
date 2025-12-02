@@ -1,105 +1,105 @@
 import React from 'react'
 
-// Simple language definitions using only available packages
+// Language definitions with proper syntax highlighting
 export const EditorLanguages = {
-  // Markup (available)
+  // Markup
   markdown: {
     name: 'Markdown',
     extensions: ['md', 'markdown'],
     import: () => import('@codemirror/lang-markdown').then(m => m.markdown()).catch(() => null)
   },
   
-  // Web Technologies (basic support)
+  // Web Technologies
   javascript: {
     name: 'JavaScript',
     extensions: ['js', 'jsx', 'mjs'],
-    import: () => null // Will use basic highlighting from theme
+    import: () => import('@codemirror/lang-javascript').then(m => m.javascript()).catch(() => null)
   },
   typescript: {
     name: 'TypeScript', 
     extensions: ['ts', 'tsx'],
-    import: () => null
+    import: () => import('@codemirror/lang-javascript').then(m => m.javascript({ typescript: true })).catch(() => null)
   },
   html: {
     name: 'HTML',
     extensions: ['html', 'htm'],
-    import: () => null
+    import: () => import('@codemirror/lang-html').then(m => m.html()).catch(() => null)
   },
   css: {
     name: 'CSS',
     extensions: ['css'],
-    import: () => null
+    import: () => import('@codemirror/lang-css').then(m => m.css()).catch(() => null)
   },
   json: {
     name: 'JSON',
     extensions: ['json'],
-    import: () => null
+    import: () => import('@codemirror/lang-json').then(m => m.json()).catch(() => null)
   },
   xml: {
     name: 'XML',
     extensions: ['xml', 'svg'],
-    import: () => null
+    import: () => import('@codemirror/lang-xml').then(m => m.xml()).catch(() => null)
   },
 
   // Programming Languages
   python: {
     name: 'Python',
     extensions: ['py', 'pyw'],
-    import: () => null
+    import: () => import('@codemirror/lang-python').then(m => m.python()).catch(() => null)
   },
   java: {
     name: 'Java',
     extensions: ['java'],
-    import: () => null
+    import: () => null // No official package, will use basic highlighting
   },
   cpp: {
     name: 'C++',
     extensions: ['cpp', 'cxx', 'cc', 'c'],
-    import: () => null
+    import: () => null // No official package, will use basic highlighting
   },
   csharp: {
     name: 'C#',
     extensions: ['cs'],
-    import: () => null
+    import: () => null // No official package, will use basic highlighting
   },
   php: {
     name: 'PHP',
     extensions: ['php'],
-    import: () => null
+    import: () => null // No official package, will use basic highlighting
   },
   rust: {
     name: 'Rust',
     extensions: ['rs'],
-    import: () => null
+    import: () => null // No official package, will use basic highlighting
   },
   go: {
     name: 'Go',
     extensions: ['go'],
-    import: () => null
+    import: () => null // No official package, will use basic highlighting
   },
 
   // Shell & Config
   bash: {
     name: 'Bash',
     extensions: ['sh', 'bash'],
-    import: () => null
+    import: () => null // No official package, will use basic highlighting
   },
   powershell: {
     name: 'PowerShell',
     extensions: ['ps1', 'psm1'],
-    import: () => null
+    import: () => null // No official package, will use basic highlighting
   },
   yaml: {
     name: 'YAML',
     extensions: ['yml', 'yaml'],
-    import: () => null
+    import: () => null // No official package, will use basic highlighting
   },
 
   // Data & Query
   sql: {
     name: 'SQL',
     extensions: ['sql'],
-    import: () => null
+    import: () => import('@codemirror/lang-sql').then(m => m.sql()).catch(() => null)
   },
   
   // Default

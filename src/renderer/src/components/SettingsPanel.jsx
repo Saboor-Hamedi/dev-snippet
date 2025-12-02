@@ -80,18 +80,38 @@ const SettingsPanel = ({ onClose }) => {
   const modKey = isMac ? '⌘' : 'Ctrl'
 
   return (
-    <div className="h-full flex flex-col md:flex-row bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-300 overflow-hidden transition-colors duration-200">
+    <div className="settings-panel h-full flex flex-col md:flex-row overflow-hidden transition-colors duration-200" style={{
+      backgroundColor: 'var(--color-bg-primary)',
+      color: 'var(--color-text-primary)'
+    }}>
       {/* Sidebar Navigation */}
-      <div className="w-full md:w-64 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/80 backdrop-blur-sm flex flex-col">
-        <nav className="flex-1 p-4 space-y-2">
-          <div className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3 px-3">
+      <div className="w-full md:w-56 border-b md:border-b-0 md:border-r flex flex-col" style={{
+        borderColor: 'var(--color-border)',
+        backgroundColor: 'var(--color-bg-secondary)'
+      }}>
+        <nav className="flex-1 p-3 space-y-1">
+          <div className="text-[10px] font-medium uppercase tracking-wider mb-2 px-3" style={{
+            color: 'var(--color-text-tertiary)'
+          }}>
             Configuration
           </div>
 
           {/* Go back */}
           <button
             onClick={handleGoBack}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200"
+            style={{
+              color: 'var(--color-text-secondary)',
+              backgroundColor: 'transparent'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = 'var(--hover-bg)'
+              e.target.style.color = 'var(--hover-text)'
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = 'transparent'
+              e.target.style.color = 'var(--color-text-secondary)'
+            }}
           >
             <ChevronLeft size={12} />
             <span>Go Back</span>
@@ -99,11 +119,23 @@ const SettingsPanel = ({ onClose }) => {
 
           <button
             onClick={() => setActiveTab('general')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-              activeTab === 'general'
-                ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
-            }`}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200"
+            style={{
+              backgroundColor: activeTab === 'general' ? 'var(--color-accent-primary)' : 'transparent',
+              color: activeTab === 'general' ? 'var(--color-bg-primary)' : 'var(--color-text-secondary)'
+            }}
+            onMouseEnter={(e) => {
+              if (activeTab !== 'general') {
+                e.target.style.backgroundColor = 'var(--hover-bg)'
+                e.target.style.color = 'var(--hover-text)'
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (activeTab !== 'general') {
+                e.target.style.backgroundColor = 'transparent'
+                e.target.style.color = 'var(--color-text-secondary)'
+              }
+            }}
           >
             <Settings size={12} />
             <span>General</span>
@@ -111,8 +143,8 @@ const SettingsPanel = ({ onClose }) => {
         </nav>
 
         {/* Footer Info */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-800">
-          <div className="text-xs text-slate-500 dark:text-slate-400">
+        <div className="p-3 border-t" style={{ borderColor: 'var(--color-border)' }}>
+          <div className="text-[10px]" style={{ color: 'var(--color-text-tertiary)' }}>
             <div className="flex items-center justify-between mb-1">
               <span>Version</span>
               <span className="font-mono">1.2.0</span>
@@ -132,44 +164,73 @@ const SettingsPanel = ({ onClose }) => {
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto">
           {activeTab === 'general' && (
-            <div className="p-6 space-y-8 max-w-4xl mx-auto">
+            <div className="p-4 space-y-6 max-w-4xl mx-auto">
               {/* APPEARANCE SECTION */}
               <section>
-                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{
+                  color: 'var(--color-text-tertiary)'
+                }}>
                   Appearance
                 </h3>
-                <div className="bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-700/50 overflow-hidden">
+                <div className="rounded-lg border overflow-hidden" style={{
+                  backgroundColor: 'var(--color-bg-secondary)',
+                  borderColor: 'var(--color-border)'
+                }}>
                   {/* Theme Select */}
-                  <div className="p-5 flex items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-700/50">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-900 dark:text-white">
+                  <div className="p-4 border-b" style={{
+                    borderColor: 'var(--color-border)'
+                  }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-xs font-medium" style={{
+                        color: 'var(--color-text-primary)'
+                      }}>
                         Color Theme
                       </label>
-                      <p className="text-xs text-slate-500 mt-1">
-                        Select your preferred visual theme.
-                      </p>
+                      <button
+                        onClick={() => setIsThemeModalOpen(true)}
+                        className="flex items-center gap-2 px-3 py-1.5 border rounded-md text-xs font-medium transition-all"
+                        style={{
+                          backgroundColor: 'var(--color-bg-primary)',
+                          borderColor: 'var(--color-border)',
+                          color: 'var(--color-text-primary)'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = 'var(--hover-bg)'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = 'var(--color-bg-primary)'
+                        }}
+                      >
+                        <SunMoon size={11} />
+                        Change Theme
+                      </button>
                     </div>
-                    <button
-                      onClick={() => setIsThemeModalOpen(true)}
-                      className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm"
-                    >
-                      <SunMoon size={12} />
-                      Change Theme
-                    </button>
+                    <p className="text-[10px]" style={{
+                      color: 'var(--color-text-tertiary)'
+                    }}>
+                      Select your preferred visual theme.
+                    </p>
                   </div>
 
                   {/* Editor Font Family */}
-                  <div className="p-5 flex items-center justify-between gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-900 dark:text-white">
-                        Editor Font Family
-                      </label>
-                      <p className="text-xs text-slate-500 mt-1">Monospace fonts recommended.</p>
-                    </div>
+                  <div className="p-4">
+                    <label className="block text-xs font-medium mb-1" style={{
+                      color: 'var(--color-text-primary)'
+                    }}>
+                      Editor Font Family
+                    </label>
+                    <p className="text-[10px] mb-2" style={{
+                      color: 'var(--color-text-tertiary)'
+                    }}>Monospace fonts recommended.</p>
                     <select
                       value={editorFontFamily}
                       onChange={(e) => updateEditorFontFamily(e.target.value)}
-                      className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
+                      className="w-full rounded-md px-3 py-2 text-xs outline-none transition-all"
+                      style={{
+                        backgroundColor: 'var(--color-bg-primary)',
+                        color: 'var(--color-text-primary)'
+                      }}
+                      onFocus={(e) => e.target.blur()}
                     >
                       <option>JetBrains Mono</option>
                       <option>Fira Code</option>
@@ -180,36 +241,54 @@ const SettingsPanel = ({ onClose }) => {
                   </div>
 
                   {/* Editor Font Size */}
-                  <div className="p-5 flex items-center justify-between gap-4 border-t border-slate-200 dark:border-slate-700/50">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-900 dark:text-white">
-                        Editor Font Size
-                      </label>
-                      <p className="text-xs text-slate-500 mt-1">Controls the editor font size.</p>
-                    </div>
+                  <div className="p-4 border-t" style={{
+                    borderColor: 'var(--color-border)'
+                  }}>
+                    <label className="block text-xs font-medium mb-1" style={{
+                      color: 'var(--color-text-primary)'
+                    }}>
+                      Editor Font Size
+                    </label>
+                    <p className="text-[10px] mb-2" style={{
+                      color: 'var(--color-text-tertiary)'
+                    }}>Controls the editor font size.</p>
                     <div className="flex items-center gap-2">
                       <input
                         type="number"
                         value={editorFontSize}
                         onChange={(e) => updateEditorFontSize(e.target.value)}
-                        className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg w-20 px-3 py-2 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
+                        className="flex-1 rounded-md px-3 py-2 text-xs outline-none transition-all"
+                        style={{
+                          backgroundColor: 'var(--color-bg-primary)',
+                          color: 'var(--color-text-primary)'
+                        }}
+                        onFocus={(e) => e.target.blur()}
                       />
-                      <span className="text-sm text-slate-500">px</span>
+                      <span className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>px</span>
                     </div>
                   </div>
 
                   {/* Preview Font Family */}
-                  <div className="p-5 flex items-center justify-between gap-4 border-t border-slate-200 dark:border-slate-700/50">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-900 dark:text-white">
-                        Preview Font Family
-                      </label>
-                      <p className="text-xs text-slate-500 mt-1">Applies to code preview blocks.</p>
-                    </div>
+                  <div className="p-4 border-t" style={{
+                    borderColor: 'var(--color-border)'
+                  }}>
+                    <label className="block text-xs font-medium mb-1" style={{
+                      color: 'var(--color-text-primary)'
+                    }}>
+                      Preview Font Family
+                    </label>
+                    <p className="text-[10px] mb-2" style={{
+                      color: 'var(--color-text-tertiary)'
+                    }}>Applies to code preview blocks.</p>
                     <select
                       value={previewFontFamily}
                       onChange={(e) => updatePreviewFontFamily(e.target.value)}
-                      className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
+                      className="w-full rounded-md px-3 py-2 text-xs outline-none transition-all"
+                      style={{
+                        backgroundColor: 'var(--color-bg-primary)',
+                        color: 'var(--color-text-primary)'
+                      }}
+                      onFocus={(e) => e.target.blur()}
                     >
                       <option>JetBrains Mono</option>
                       <option>Fira Code</option>
@@ -220,57 +299,84 @@ const SettingsPanel = ({ onClose }) => {
                   </div>
 
                   {/* Preview Font Size */}
-                  <div className="p-5 flex items-center justify-between gap-4 border-t border-slate-200 dark:border-slate-700/50">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-900 dark:text-white">
-                        Preview Font Size
-                      </label>
-                      <p className="text-xs text-slate-500 mt-1">Controls code preview size.</p>
-                    </div>
+                  <div className="p-4 border-t" style={{
+                    borderColor: 'var(--color-border)'
+                  }}>
+                    <label className="block text-xs font-medium mb-1" style={{
+                      color: 'var(--color-text-primary)'
+                    }}>
+                      Preview Font Size
+                    </label>
+                    <p className="text-[10px] mb-2" style={{
+                      color: 'var(--color-text-tertiary)'
+                    }}>Controls code preview size.</p>
                     <div className="flex items-center gap-2">
                       <input
                         type="number"
                         value={previewFontSize}
                         onChange={(e) => updatePreviewFontSize(e.target.value)}
-                        className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg w-20 px-3 py-2 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
+                        className="flex-1 rounded-md px-3 py-2 text-xs outline-none transition-all"
+                        style={{
+                          backgroundColor: 'var(--color-bg-primary)',
+                          color: 'var(--color-text-primary)'
+                        }}
+                        onFocus={(e) => e.target.blur()}
                       />
-                      <span className="text-sm text-slate-500">px</span>
+                      <span className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>px</span>
                     </div>
                   </div>
 
                   {/* Caret Width */}
-                  <div className="p-5 flex items-center justify-between gap-4 border-t border-slate-200 dark:border-slate-700/50">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-900 dark:text-white">
-                        Caret Width
-                      </label>
-                      <p className="text-xs text-slate-500 mt-1">Thickness of the text cursor.</p>
-                    </div>
+                  <div className="p-4 border-t" style={{
+                    borderColor: 'var(--color-border)'
+                  }}>
+                    <label className="block text-xs font-medium mb-1" style={{
+                      color: 'var(--color-text-primary)'
+                    }}>
+                      Caret Width
+                    </label>
+                    <p className="text-[10px] mb-2" style={{
+                      color: 'var(--color-text-tertiary)'
+                    }}>Thickness of the text cursor.</p>
                     <div className="flex items-center gap-2">
                       <input
                         type="number"
                         value={parseInt((caretWidth || '3px').replace('px', ''))}
                         onChange={(e) => updateCaretWidth(e.target.value)}
-                        className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg w-20 px-3 py-2 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
+                        className="flex-1 rounded-md px-3 py-2 text-xs outline-none transition-all"
+                        style={{
+                          backgroundColor: 'var(--color-bg-primary)',
+                          color: 'var(--color-text-primary)'
+                        }}
+                        onFocus={(e) => e.target.blur()}
                       />
-                      <span className="text-sm text-slate-500">px</span>
+                      <span className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>px</span>
                     </div>
                   </div>
 
                   {/* Caret Style */}
-                  <div className="p-5 flex items-center justify-between gap-4 border-t border-slate-200 dark:border-slate-700/50">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-900 dark:text-white">
-                        Caret Style
-                      </label>
-                      <p className="text-xs text-slate-500 mt-1">
-                        Choose bar, block, or underline.
-                      </p>
-                    </div>
+                  <div className="p-4 border-t" style={{
+                    borderColor: 'var(--color-border)'
+                  }}>
+                    <label className="block text-xs font-medium mb-1" style={{
+                      color: 'var(--color-text-primary)'
+                    }}>
+                      Caret Style
+                    </label>
+                    <p className="text-[10px] mb-2" style={{
+                      color: 'var(--color-text-tertiary)'
+                    }}>
+                      Choose bar, block, or underline.
+                    </p>
                     <select
                       value={caretStyle}
                       onChange={(e) => updateCaretStyle(e.target.value)}
-                      className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
+                      className="w-full rounded-md px-3 py-2 text-xs outline-none transition-all"
+                      style={{
+                        backgroundColor: 'var(--color-bg-primary)',
+                        color: 'var(--color-text-primary)'
+                      }}
+                      onFocus={(e) => e.target.blur()}
                     >
                       <option value="bar">Bar</option>
                       <option value="block">Block</option>
@@ -282,75 +388,134 @@ const SettingsPanel = ({ onClose }) => {
 
               {/* KEYBOARD SHORTCUTS */}
               <section>
-                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{
+                  color: 'var(--color-text-tertiary)'
+                }}>
                   Keyboard Shortcuts
                 </h3>
-                <div className="bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-700/50 overflow-hidden">
-                  <div className="p-5">
-                    <p className="text-xs text-slate-500 mb-3">Common keyboard shortcuts used across the app.</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-slate-900 rounded">
+                <div className="rounded-lg border overflow-hidden" style={{
+                  backgroundColor: 'var(--color-bg-secondary)',
+                  borderColor: 'var(--color-border)'
+                }}>
+                  <div className="p-4">
+                    <p className="text-[10px] mb-3" style={{
+                      color: 'var(--color-text-tertiary)'
+                    }}>Common keyboard shortcuts used across the app.</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div className="flex items-center justify-between px-2 py-1.5 rounded" style={{
+                        backgroundColor: 'var(--color-bg-primary)'
+                      }}>
                         <div>
-                          <div className="text-sm font-medium">Create new snippet</div>
-                          <div className="text-xs text-slate-500">Open a new draft</div>
+                          <div className="text-xs font-medium" style={{
+                            color: 'var(--color-text-primary)'
+                          }}>Create new snippet</div>
+                          <div className="text-[10px]" style={{
+                            color: 'var(--color-text-tertiary)'
+                          }}>Open a new draft</div>
                         </div>
-                        <kbd className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-sm">{modKey} + N</kbd>
+                        <kbd className="px-1.5 py-0.5 rounded text-[10px]" style={{
+                          backgroundColor: 'var(--color-bg-tertiary)',
+                          color: 'var(--color-text-secondary)',
+                          border: '1px solid var(--color-border)'
+                        }}>{modKey} + N</kbd>
                       </div>
 
-                      <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-slate-900 rounded">
+                      <div className="flex items-center justify-between px-2 py-1.5 rounded" style={{
+                        backgroundColor: 'var(--color-bg-primary)'
+                      }}>
                         <div>
-                          <div className="text-sm font-medium">Save (force)</div>
-                          <div className="text-xs text-slate-500">Trigger editor save (Ctrl+S)</div>
+                          <div className="text-xs font-medium" style={{ color: 'var(--color-text-primary)' }}>Save (force)</div>
+                          <div className="text-[10px]" style={{ color: 'var(--color-text-tertiary)' }}>Trigger editor save (Ctrl+S)</div>
                         </div>
-                        <kbd className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-sm">{modKey} + S</kbd>
+                        <kbd className="px-1.5 py-0.5 rounded text-[10px]" style={{
+                          backgroundColor: 'var(--color-bg-tertiary)',
+                          color: 'var(--color-text-secondary)',
+                          border: '1px solid var(--color-border)'
+                        }}>{modKey} + S</kbd>
                       </div>
 
-                      <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-slate-900 rounded">
+                      <div className="flex items-center justify-between px-2 py-1.5 rounded" style={{
+                        backgroundColor: 'var(--color-bg-primary)'
+                      }}>
                         <div>
-                          <div className="text-sm font-medium">Command Palette</div>
-                          <div className="text-xs text-slate-500">Open quick search / commands</div>
+                          <div className="text-xs font-medium" style={{ color: 'var(--color-text-primary)' }}>Command Palette</div>
+                          <div className="text-[10px]" style={{ color: 'var(--color-text-tertiary)' }}>Open quick search / commands</div>
                         </div>
-                        <kbd className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-sm">{modKey} + P</kbd>
+                        <kbd className="px-1.5 py-0.5 rounded text-[10px]" style={{
+                          backgroundColor: 'var(--color-bg-tertiary)',
+                          color: 'var(--color-text-secondary)',
+                          border: '1px solid var(--color-border)'
+                        }}>{modKey} + P</kbd>
                       </div>
 
-                      <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-slate-900 rounded">
+                      <div className="flex items-center justify-between px-2 py-1.5 rounded" style={{
+                        backgroundColor: 'var(--color-bg-primary)'
+                      }}>
                         <div>
-                          <div className="text-sm font-medium">Go to Welcome</div>
-                          <div className="text-xs text-slate-500">Show the welcome page</div>
+                          <div className="text-xs font-medium" style={{ color: 'var(--color-text-primary)' }}>Go to Welcome</div>
+                          <div className="text-[10px]" style={{ color: 'var(--color-text-tertiary)' }}>Show the welcome page</div>
                         </div>
-                        <kbd className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-sm">{modKey} + Shift + W</kbd>
+                        <kbd className="px-1.5 py-0.5 rounded text-[10px]" style={{
+                          backgroundColor: 'var(--color-bg-tertiary)',
+                          color: 'var(--color-text-secondary)',
+                          border: '1px solid var(--color-border)'
+                        }}>{modKey} + Shift + W</kbd>
                       </div>
 
-                      <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-slate-900 rounded">
+                      <div className="flex items-center justify-between px-2 py-1.5 rounded" style={{
+                        backgroundColor: 'var(--color-bg-primary)'
+                      }}>
                         <div>
-                          <div className="text-sm font-medium">Copy to clipboard</div>
-                          <div className="text-xs text-slate-500">Copy selected snippet code</div>
+                          <div className="text-xs font-medium" style={{ color: 'var(--color-text-primary)' }}>Copy to clipboard</div>
+                          <div className="text-[10px]" style={{ color: 'var(--color-text-tertiary)' }}>Copy selected snippet code</div>
                         </div>
-                        <kbd className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-sm">{modKey} + Shift + C</kbd>
+                        <kbd className="px-1.5 py-0.5 rounded text-[10px]" style={{
+                          backgroundColor: 'var(--color-bg-tertiary)',
+                          color: 'var(--color-text-secondary)',
+                          border: '1px solid var(--color-border)'
+                        }}>{modKey} + Shift + C</kbd>
                       </div>
 
-                      <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-slate-900 rounded">
+                      <div className="flex items-center justify-between px-2 py-1.5 rounded" style={{
+                        backgroundColor: 'var(--color-bg-primary)'
+                      }}>
                         <div>
-                          <div className="text-sm font-medium">Rename snippet</div>
-                          <div className="text-xs text-slate-500">Open rename modal</div>
+                          <div className="text-xs font-medium" style={{ color: 'var(--color-text-primary)' }}>Rename snippet</div>
+                          <div className="text-[10px]" style={{ color: 'var(--color-text-tertiary)' }}>Open rename modal</div>
                         </div>
-                        <kbd className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-sm">{modKey} + R</kbd>
+                        <kbd className="px-1.5 py-0.5 rounded text-[10px]" style={{
+                          backgroundColor: 'var(--color-bg-tertiary)',
+                          color: 'var(--color-text-secondary)',
+                          border: '1px solid var(--color-border)'
+                        }}>{modKey} + R</kbd>
                       </div>
 
-                      <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-slate-900 rounded">
+                      <div className="flex items-center justify-between px-2 py-1.5 rounded" style={{
+                        backgroundColor: 'var(--color-bg-primary)'
+                      }}>
                         <div>
-                          <div className="text-sm font-medium">Delete snippet</div>
-                          <div className="text-xs text-slate-500">Open delete confirmation</div>
+                          <div className="text-xs font-medium" style={{ color: 'var(--color-text-primary)' }}>Delete snippet</div>
+                          <div className="text-[10px]" style={{ color: 'var(--color-text-tertiary)' }}>Open delete confirmation</div>
                         </div>
-                        <kbd className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-sm">{modKey} + Shift + D</kbd>
+                        <kbd className="px-1.5 py-0.5 rounded text-[10px]" style={{
+                          backgroundColor: 'var(--color-bg-tertiary)',
+                          color: 'var(--color-text-secondary)',
+                          border: '1px solid var(--color-border)'
+                        }}>{modKey} + Shift + D</kbd>
                       </div>
 
-                      <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-slate-900 rounded">
+                      <div className="flex items-center justify-between px-2 py-1.5 rounded" style={{
+                        backgroundColor: 'var(--color-bg-primary)'
+                      }}>
                         <div>
-                          <div className="text-sm font-medium">Toggle compact</div>
-                          <div className="text-xs text-slate-500">Toggle compact header / status bar</div>
+                          <div className="text-xs font-medium" style={{ color: 'var(--color-text-primary)' }}>Toggle compact</div>
+                          <div className="text-[10px]" style={{ color: 'var(--color-text-tertiary)' }}>Toggle compact header / status bar</div>
                         </div>
-                        <kbd className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-sm">{modKey} + ,</kbd>
+                        <kbd className="px-1.5 py-0.5 rounded text-[10px]" style={{
+                          backgroundColor: 'var(--color-bg-tertiary)',
+                          color: 'var(--color-text-secondary)',
+                          border: '1px solid var(--color-border)'
+                        }}>{modKey} + ,</kbd>
                       </div>
                     </div>
                   </div>
@@ -359,22 +524,38 @@ const SettingsPanel = ({ onClose }) => {
 
               {/* EDITOR SECTION */}
               <section>
-                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{
+                  color: 'var(--color-text-tertiary)'
+                }}>
                   Text Editor
                 </h3>
-                <div className="bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-700/50 overflow-hidden">
+                <div className="rounded-lg border overflow-hidden" style={{
+                  backgroundColor: 'var(--color-bg-secondary)',
+                  borderColor: 'var(--color-border)'
+                }}>
                   {/* Word Wrap */}
-                  <div className="p-5 flex items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-700/50">
+                  <div className="p-4 flex items-center justify-between gap-4 border-b" style={{
+                    borderColor: 'var(--color-border)'
+                  }}>
                     <div>
-                      <label className="block text-sm font-medium text-slate-900 dark:text-white">
+                      <label className="block text-xs font-medium" style={{
+                        color: 'var(--color-text-primary)'
+                      }}>
                         Word Wrap
                       </label>
-                      <p className="text-xs text-slate-500 mt-1">Controls how lines should wrap.</p>
+                      <p className="text-[10px] mt-1" style={{
+                        color: 'var(--color-text-tertiary)'
+                      }}>Controls how lines should wrap.</p>
                     </div>
                     <select
                       value={wordWrap}
                       onChange={(e) => setWordWrap(e.target.value)}
-                      className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
+                      className="rounded-md px-2 py-1 text-xs outline-none transition-all"
+                      style={{
+                        backgroundColor: 'var(--color-bg-primary)',
+                        color: 'var(--color-text-primary)'
+                      }}
+                      onFocus={(e) => e.target.blur()}
                     >
                       <option value="off">Off</option>
                       <option value="on">On</option>
@@ -422,24 +603,44 @@ const SettingsPanel = ({ onClose }) => {
 
               {/* DATA & SYSTEM SECTION */}
               <section>
-                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{
+                  color: 'var(--color-text-tertiary)'
+                }}>
                   System & Data
                 </h3>
-                <div className="bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-700/50 overflow-hidden">
-                  <div className="p-5 flex items-center justify-between gap-4">
+                <div className="rounded-lg border overflow-hidden" style={{
+                  backgroundColor: 'var(--color-bg-secondary)',
+                  borderColor: 'var(--color-border)'
+                }}>
+                  <div className="p-4 flex items-center justify-between gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-slate-900 dark:text-white">
+                      <label className="block text-xs font-medium" style={{
+                        color: 'var(--color-text-primary)'
+                      }}>
                         Export Library
                       </label>
-                      <p className="text-xs text-slate-500 mt-1 max-w-sm">
+                      <p className="text-[10px] mt-1 max-w-sm" style={{
+                        color: 'var(--color-text-tertiary)'
+                      }}>
                         Create a JSON backup of all your snippets and projects.
                       </p>
                     </div>
                     <button
                       onClick={handleExportData}
-                      className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+                      className="flex items-center gap-2 px-3 py-1.5 border rounded-md text-xs font-medium transition-colors"
+                      style={{
+                        backgroundColor: 'var(--color-bg-primary)',
+                        borderColor: 'var(--color-border)',
+                        color: 'var(--color-text-primary)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.backgroundColor = 'var(--hover-bg)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = 'var(--color-bg-primary)'
+                      }}
                     >
-                      <FileDown size={12} />
+                      <FileDown size={11} />
                       Export Data
                     </button>
                   </div>

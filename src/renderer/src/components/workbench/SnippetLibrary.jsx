@@ -8,7 +8,9 @@ import Workbench from './Workbench'
 import CommandPalette from '../CommandPalette'
 import RenameModal from '../modal/RenameModal'
 import DeleteModel from '../modal/DeleteModel'
+import SettingsModal from '../SettingsModal'
 import { useKeyboardShortcuts } from '../../hook/useKeyboardShortcuts'
+import { useSettings } from '../../hook/useSettingsContext.jsx'
 const SnippetLibrary = () => {
   // 1. Logic & Data (From Hook)
   const { snippets, selectedSnippet, setSelectedSnippet, setSnippets, saveSnippet, deleteItem } =
@@ -16,9 +18,13 @@ const SnippetLibrary = () => {
 
   const [activeView, setActiveView] = useState('snippets')
 
+  // Settings Context
+  const { settings, updateSettings } = useSettings()
+
   // Modals
   const [isCreatingSnippet, setIsCreatingSnippet] = useState(false)
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const { toast, showToast } = useToast()
   const [activeSnippet, setActiveSnippet] = useState(null)
   // Autosave status: null | 'pending' | 'saving' | 'saved'
@@ -94,16 +100,26 @@ const SnippetLibrary = () => {
     setActiveView('editor')
     return draft
   }
-  // Adding focus management for our textarea after search found 
-  useEffect(() =>{
+  // Adding focus management for textarea - only when command palette closes and editor is active
+  useEffect(() => {
+    // Only try to focus editor when command palette closes (not when it opens)
     if (isCommandPaletteOpen) return
+    
+    // Only focus if we're in editor view
+    if (activeView !== 'editor' && !isCreatingSnippet) return
+    
     setTimeout(() => {
       try {
         const ta = document.querySelector('.editor-container textarea')
-        if (ta && typeof ta.focus === 'function') ta.focus()
-      } catch (err) {}
-    }, 100)
-  }, [isCommandPaletteOpen])
+        if (ta && typeof ta.focus === 'function') {
+          console.log('🎯 Focusing editor textarea after command palette closed')
+          ta.focus()
+        }
+      } catch (err) {
+        console.warn('Failed to focus textarea:', err)
+      }
+    }, 150) // Slightly longer delay to ensure command palette is fully closed
+  }, [isCommandPaletteOpen, activeView, isCreatingSnippet])
 
   // Use the keyboard shortcuts hook here 
   useKeyboardShortcuts({
@@ -122,6 +138,10 @@ const SnippetLibrary = () => {
       }
       if (isCommandPaletteOpen) {
         setIsCommandPaletteOpen(false)
+        handled = true
+      }
+      if (isSettingsOpen) {
+        setIsSettingsOpen(false)
         handled = true
       }
       if (isCreatingSnippet) {
@@ -156,6 +176,10 @@ const SnippetLibrary = () => {
 
     onToggleCommandPalette: () => {
       setIsCommandPaletteOpen((prev) => !prev)
+    },
+
+    onToggleSettings: () => {
+      setIsSettingsOpen((prev) => !prev)
     },
 
     onCopyToClipboard: () => {
@@ -398,6 +422,14 @@ const SnippetLibrary = () => {
           setIsCreatingSnippet(false)
           setActiveView('snippets')
         }}
+      />
+
+      {/* Settings Modal */}
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        currentSettings={settings}
+        onSettingsChange={updateSettings}
       />
     </div>
   )
