@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 
 import ThemeModal from './ThemeModal'
-import { SunMoon, FileDown, Settings } from 'lucide-react'
+import { Monitor, Download, ChevronLeft, Settings, SunMoon, FileDown } from 'lucide-react'
 import { useFontSettings } from '../hook/useFontSettings'
 import { useToast } from '../hook/useToast'
 import ToastNotification from '../utils/ToastNotification'
@@ -68,10 +68,14 @@ const SettingsPanel = ({ onClose }) => {
 
   // Theme handled by ThemeModal only
 
+  // Detect platform to show correct modifier key in shortcut labels
+  const isMac = typeof navigator !== 'undefined' && /mac|iphone|ipod|ipad/i.test(navigator.platform)
+  const modKey = isMac ? '⌘' : 'Ctrl'
+
   return (
-    <div className="h-full flex bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-300 overflow-hidden transition-colors duration-200">
+    <div className="h-full flex flex-col md:flex-row bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-300 overflow-hidden transition-colors duration-200">
       {/* Sidebar Navigation */}
-      <div className="w-64 border-r border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/80 backdrop-blur-sm flex flex-col">
+      <div className="w-full md:w-64 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/80 backdrop-blur-sm flex flex-col">
         <nav className="flex-1 p-4 space-y-2">
           <div className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3 px-3">
             Configuration
@@ -82,7 +86,7 @@ const SettingsPanel = ({ onClose }) => {
             onClick={handleGoBack}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
           >
-            <FileDown size={18} />
+            <ChevronLeft size={14} />
             <span>Go Back</span>
           </button>
 
@@ -94,7 +98,7 @@ const SettingsPanel = ({ onClose }) => {
                 : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <Settings size={18} />
+            <Settings size={14} />
             <span>General</span>
           </button>
         </nav>
@@ -121,7 +125,7 @@ const SettingsPanel = ({ onClose }) => {
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto">
           {activeTab === 'general' && (
-            <div className="p-6 space-y-8 max-w-3xl">
+            <div className="p-6 space-y-8 max-w-4xl mx-auto">
               {/* APPEARANCE SECTION */}
               <section>
                 <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">
@@ -265,6 +269,83 @@ const SettingsPanel = ({ onClose }) => {
                       <option value="block">Block</option>
                       <option value="underline">Underline</option>
                     </select>
+                  </div>
+                </div>
+              </section>
+
+              {/* KEYBOARD SHORTCUTS */}
+              <section>
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">
+                  Keyboard Shortcuts
+                </h3>
+                <div className="bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-700/50 overflow-hidden">
+                  <div className="p-5">
+                    <p className="text-xs text-slate-500 mb-3">Common keyboard shortcuts used across the app.</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-slate-900 rounded">
+                        <div>
+                          <div className="text-sm font-medium">Create new snippet</div>
+                          <div className="text-xs text-slate-500">Open a new draft</div>
+                        </div>
+                        <kbd className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-sm">{modKey} + N</kbd>
+                      </div>
+
+                      <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-slate-900 rounded">
+                        <div>
+                          <div className="text-sm font-medium">Save (force)</div>
+                          <div className="text-xs text-slate-500">Trigger editor save (Ctrl+S)</div>
+                        </div>
+                        <kbd className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-sm">{modKey} + S</kbd>
+                      </div>
+
+                      <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-slate-900 rounded">
+                        <div>
+                          <div className="text-sm font-medium">Command Palette</div>
+                          <div className="text-xs text-slate-500">Open quick search / commands</div>
+                        </div>
+                        <kbd className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-sm">{modKey} + P</kbd>
+                      </div>
+
+                      <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-slate-900 rounded">
+                        <div>
+                          <div className="text-sm font-medium">Go to Welcome</div>
+                          <div className="text-xs text-slate-500">Show the welcome page</div>
+                        </div>
+                        <kbd className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-sm">{modKey} + Shift + W</kbd>
+                      </div>
+
+                      <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-slate-900 rounded">
+                        <div>
+                          <div className="text-sm font-medium">Copy to clipboard</div>
+                          <div className="text-xs text-slate-500">Copy selected snippet code</div>
+                        </div>
+                        <kbd className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-sm">{modKey} + Shift + C</kbd>
+                      </div>
+
+                      <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-slate-900 rounded">
+                        <div>
+                          <div className="text-sm font-medium">Rename snippet</div>
+                          <div className="text-xs text-slate-500">Open rename modal</div>
+                        </div>
+                        <kbd className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-sm">{modKey} + R</kbd>
+                      </div>
+
+                      <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-slate-900 rounded">
+                        <div>
+                          <div className="text-sm font-medium">Delete snippet</div>
+                          <div className="text-xs text-slate-500">Open delete confirmation</div>
+                        </div>
+                        <kbd className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-sm">{modKey} + Shift + D</kbd>
+                      </div>
+
+                      <div className="flex items-center justify-between px-3 py-2 bg-white dark:bg-slate-900 rounded">
+                        <div>
+                          <div className="text-sm font-medium">Toggle compact</div>
+                          <div className="text-xs text-slate-500">Toggle compact header / status bar</div>
+                        </div>
+                        <kbd className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-sm">{modKey} + ,</kbd>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </section>

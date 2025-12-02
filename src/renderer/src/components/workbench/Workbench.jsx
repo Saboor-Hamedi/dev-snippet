@@ -19,7 +19,8 @@ const Workbench = ({
   isCompact,
   onToggleCompact,
   autosaveStatus,
-  onAutosave
+  onAutosave,
+  showToast
 }) => {
   const handleSave = (snippet) => {
     onSave(snippet)
@@ -57,7 +58,8 @@ const Workbench = ({
     if (activeView === 'editor') {
       return (
         <SnippetEditor
-          key="create-mode-editor"
+          key={selectedSnippet?.id || 'create-mode-editor'}
+          initialSnippet={selectedSnippet}
           onSave={onSave}
           onCancel={onCancelEditor}
           onNew={onNewSnippet}
@@ -67,6 +69,7 @@ const Workbench = ({
           isCompact={isCompact}
           onToggleCompact={onToggleCompact}
           onAutosave={onAutosave}
+          showToast={showToast}
         />
       )
     }
@@ -85,6 +88,7 @@ const Workbench = ({
           isCompact={isCompact}
           onToggleCompact={onToggleCompact}
           onAutosave={onAutosave}
+          showToast={showToast}
         />
       )
     }
@@ -112,6 +116,8 @@ Workbench.propTypes = {
   onDeleteRequest: PropTypes.func.isRequired,
   onNewSnippet: PropTypes.func.isRequired,
   currentContext: PropTypes.string
+  ,
+  showToast: PropTypes.func
 }
 
 export default Workbench

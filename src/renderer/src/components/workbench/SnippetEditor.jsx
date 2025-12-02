@@ -1,5 +1,8 @@
-  // Edit snippets with autosave functionality - Clean live editing experience
-import React, { useState, useEffect, useRef } from 'react'
+  // SnippetEditor
+  // - Responsible for editing a single snippet (draft or existing)
+  // - Provides debounced autosave, forced-save (Ctrl+S) and name/save modal
+  // - Receives `showToast` from parent to display user-facing toasts
+  import React, { useState, useEffect, useRef } from 'react'
 import PropTypes from 'prop-types'
 import { useKeyboardShortcuts } from '../../hook/useKeyboardShortcuts.js'
 import WelcomePage from '../WelcomePage.jsx'
@@ -15,14 +18,19 @@ const SnippetEditor = ({
   onDelete,
   isCreateMode,
   activeView,
-  onSettingsClick, 
+  onSettingsClick,
   onAutosave,
-  
+  showToast,
+  // layout control forwarded from parent
+  isCompact,
+  onToggleCompact
 }) => {
   const [code, setCode] = useState(initialSnippet?.code || '')
-  const [language, setLanguage] = React.useState(initialSnippet?.language || 'text')
+  const [language, setLanguage] = React.useState(initialSnippet?.language || 'md')
+  const [isDirty, setIsDirty] = useState(false)
 
   const saveTimerRef = useRef(null)
+  const lastPendingRef = useRef(0)
 
   const isDeletingRef = useRef(false)
   const textareaRef = useRef(null)
@@ -43,7 +51,8 @@ const SnippetEditor = ({
     } catch (e) {}
   }, [localCompact])
 
-  // If parent passes `isCompact` and `onToggleCompact`, we treat compact as controlled
+  // If parent passes `isCompact` and `onToggleCompact`, treat compact as controlled.
+  // Otherwise fall back to local compact state `localCompact`.
   const controlledCompact = typeof isCompact !== 'undefined'
   const compact = controlledCompact ? isCompact : localCompact
   const onToggleCompactHandler = () => {
@@ -53,13 +62,6 @@ const SnippetEditor = ({
       setLocalCompact((s) => !s)
     }
   }
-
-  useKeyboardShortcuts({
-    onToggleCompact: () => {
-      setIsCompact((prev) => !prev)
-    }
-  })
-  // End local compact mode
 
   // Focus the textarea when initialSnippet changes (when opening a snippet)
   useEffect(() => {
@@ -81,11 +83,16 @@ const SnippetEditor = ({
 
   const scheduleSave = () => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
-    // Notify parent that a save is pending
+    // Debounce autosave: 5000ms to reduce frequent writes for large snippets
+    // Emit a rate-limited 'pending' status so header shows "Saving..."
+    // without updating on every keystroke. Limit to once per 800ms.
     try {
-      onAutosave && onAutosave('pending')
+      const now = Date.now()
+      if (!lastPendingRef.current || now - lastPendingRef.current > 800) {
+        onAutosave && onAutosave('pending')
+        lastPendingRef.current = now
+      }
     } catch {}
-
     saveTimerRef.current = setTimeout(async () => {
       const id = initialSnippet?.id
       if (!id) return
@@ -109,10 +116,14 @@ const SnippetEditor = ({
         // Allow onSave to be async and wait for completion
         await onSave(updatedSnippet)
         onAutosave && onAutosave('saved')
+        // Clear dirty flag after a successful autosave
+        try {
+          setIsDirty(false)
+        } catch {}
       } catch (err) {
         onAutosave && onAutosave(null)
       }
-    }, 1000)
+    }, 5000)
   }
 
   useEffect(() => {
@@ -140,16 +151,18 @@ const SnippetEditor = ({
   // Update language/code if initialSnippet changes (only on ID change to prevent autosave loops)
   React.useEffect(() => {
     if (initialSnippet && initialSnippet.id !== lastSnippetId.current) {
-      setLanguage(initialSnippet.language)
-      setCode(initialSnippet.code)
+      setLanguage(initialSnippet.language || 'md')
+      setCode(initialSnippet.code || '')
+      // Loading a new snippet is not a user edit — reset dirty and skip autosave once
+      try {
+        setIsDirty(false)
+      } catch {}
+      try {
+        isInitialMount.current = true
+      } catch {}
       lastSnippetId.current = initialSnippet.id
     }
   }, [initialSnippet?.id])
-
-  // Always set language to 'md' for markdown snippets, ignore file extension and code content
-  React.useEffect(() => {
-    if (language !== 'md') setLanguage('md')
-  }, [language])
 
   const [nameOpen, setNameOpen] = useState(false)
   const [nameInput, setNameInput] = useState('')
@@ -157,6 +170,13 @@ const SnippetEditor = ({
   // Trigger debounced save on content or language change
   useEffect(() => {
     if (!initialSnippet?.title) return
+    // Skip autosave on initial mount/load
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+      return
+    }
+    // Only schedule autosave when user actually changed content
+    if (!isDirty) return
     scheduleSave()
   }, [code, language])
 
@@ -181,24 +201,86 @@ const SnippetEditor = ({
   })
 
   const handleSave = () => {
-    let title = initialSnippet?.title || ''
-    if (!title || title.toLowerCase() === 'untitled') {
-      setNameInput('')
-      setNameOpen(true)
-      return
-    }
-    const payload = {
-      id: initialSnippet?.id || Date.now().toString(),
-      title,
-      code: code,
-      language: 'md',
-      timestamp: Date.now(),
-      type: 'snippet',
-      tags: extractTags(code),
-      is_draft: false
-    }
-    onSave(payload)
+    ;(async () => {
+      let title = initialSnippet?.title || ''
+      // If nothing changed (title, code, language), do nothing — avoid
+      // showing a "Saved" indicator when there are no edits.
+      try {
+        const prevCode = initialSnippet?.code || ''
+        const prevLang = initialSnippet?.language || 'md'
+        const prevTitle = initialSnippet?.title || ''
+        const unchanged = prevCode === (code || '') && prevLang === (language || 'md') && prevTitle === title
+        if (unchanged) {
+          // Nothing changed — show subtle feedback and return early.
+          try {
+            if (typeof showToast === 'function') showToast('No changes to save', 'info')
+          } catch {}
+          return
+        }
+      } catch (e) {}
+      if (!title || title.toLowerCase() === 'untitled') {
+        setNameInput('')
+        setNameOpen(true)
+        return
+      }
+      const payload = {
+        id: initialSnippet?.id || Date.now().toString(),
+        title,
+        code: code,
+        language: 'md',
+        timestamp: Date.now(),
+        type: 'snippet',
+        tags: extractTags(code),
+        is_draft: false
+      }
+      // If there is a pending autosave timer, cancel it so we don't run
+      // the debounced save afterwards (avoid duplicate saves/state flips).
+      try {
+        const id = initialSnippet?.id
+        if (id && window.__autosaveCancel && window.__autosaveCancel.get(id)) {
+          try {
+            window.__autosaveCancel.get(id)()
+          } catch {}
+        }
+        if (saveTimerRef.current) {
+          clearTimeout(saveTimerRef.current)
+          saveTimerRef.current = null
+        }
+      } catch {}
+
+      // Optimistic UI: show 'saved' immediately for a snappier feel when
+      // the user presses Ctrl+S. If the async save fails, emit an error
+      // state so the UI can show failure.
+      try {
+        onAutosave && onAutosave('saved')
+      } catch {}
+      try {
+        await onSave(payload)
+        // notify parent that a forced save completed so they can show toast
+        try {
+          window.dispatchEvent(new CustomEvent('autosave:complete', { detail: { id: payload.id } }))
+        } catch {}
+        // keep 'saved' state; parent may clear it after a short delay
+      } catch (err) {
+        // indicate failure
+        try {
+          onAutosave && onAutosave('error')
+          window.dispatchEvent(new CustomEvent('autosave:error', { detail: { id: payload.id } }))
+        } catch {}
+      }
+    })()
   }
+
+  // Listen for an external 'force-save' event (e.g., Ctrl+S from global handler)
+  useEffect(() => {
+    const fn = (e) => {
+      try {
+        handleSave()
+      } catch {}
+    }
+    window.addEventListener('force-save', fn)
+    return () => window.removeEventListener('force-save', fn)
+  }, [code, initialSnippet])
 
   return (
     <>
@@ -221,7 +303,10 @@ const SnippetEditor = ({
                   <textarea
                     ref={textareaRef}
                     value={code || ''}
-                    onChange={(e) => setCode(e.target.value || '')}
+                    onChange={(e) => {
+                      setCode(e.target.value || '')
+                      setIsDirty(true)
+                    }}
                     className="w-full h-full dark:bg-slate-900 dark:text-slate-200 font-mono text-xsmall leading-6"
                     style={{
                       fontFamily:
@@ -307,17 +392,15 @@ const SnippetEditor = ({
 
 SnippetEditor.propTypes = {
   onSave: PropTypes.func.isRequired,
-  initialSnippet: PropTypes.shape({
-    id: PropTypes.string,
-    title: PropTypes.string,
-    code: PropTypes.string,
-    language: PropTypes.string,
-    timestamp: PropTypes.number
-  }),
+  initialSnippet: PropTypes.object,
   onCancel: PropTypes.func,
   onDelete: PropTypes.func,
   isCreateMode: PropTypes.bool,
-  activeView: PropTypes.string
+  activeView: PropTypes.string,
+  onAutosave: PropTypes.func,
+  showToast: PropTypes.func,
+  isCompact: PropTypes.bool,
+  onToggleCompact: PropTypes.func
 }
 
 export default SnippetEditor

@@ -28,17 +28,17 @@ const Header = ({isCompact,
             style={{ width: 18, height: 18, background: 'var(--accent)', borderRadius: 4 }}
           />
           <span style={{ fontWeight: 600, fontSize: 12, color: 'var(--header-fg)' }}>
-            {displayTitle} 
+            {displayTitle}
           </span>
-            {/* Autosave indicator */}
-            {autosaveStatus ? (
-              <small style={{ marginRight: 8, fontSize: 8, color: 'var(--header-fg)' }}>
-                {/* <span className=''> | </span> */}
-                {autosaveStatus === 'pending' && 'Saving...'}
-                {autosaveStatus === 'saving' && 'Saving'}
-                {autosaveStatus === 'saved' && 'Saved ✓'}
-              </small>
-            ) : null}
+          {/* Autosave indicator */}
+          {autosaveStatus ? (
+            <small style={{ marginRight: 8, fontSize: 8, color: 'var(--header-fg)', opacity: 0.9 }}>
+              {/* <span className=''> | </span> */}
+              {autosaveStatus === 'pending' && 'Saving...'}
+              {autosaveStatus === 'saving' && 'Saving'}
+              {autosaveStatus === 'saved' && 'Saved ✓'}
+            </small>
+          ) : null}
         </div>
 
         <div
@@ -52,7 +52,9 @@ const Header = ({isCompact,
         >
           <button
             onClick={() => window.api?.toggleMaximize?.()}
-            className="p-2 hover:bg-slate-100 rounded-md cursor-pointer transition-colors duration-150"
+            className="p-2 hover:bg-slate-100 
+            focus:outline-none focus:ring-none
+            rounded-md cursor-pointer transition-colors duration-150"
             title="Toggle maximize"
           >
             <Minimize size={12} />
@@ -68,7 +70,7 @@ const Header = ({isCompact,
                 console.error('Failed to minimize window', e)
               }
             }}
-            className="p-2 hover:bg-slate-100 rounded-md cursor-pointer transition-colors duration-150"
+            className="p-2 hover:bg-slate-100 focus:outline-none focus:ring-none rounded-md cursor-pointer transition-colors duration-150"
             title={
               isCompact ? 'Expand to full mode and minimize' : 'Switch to compact mode and minimize'
             }
@@ -77,7 +79,7 @@ const Header = ({isCompact,
           </button>
           <button
             onClick={() => window.api?.closeWindow?.()}
-            className="p-2 hover:bg-slate-100 rounded-md cursor-pointer transition-colors duration-150"
+            className="p-2 hover:bg-slate-100 focus:outline-none focus:ring-none rounded-md cursor-pointer transition-colors duration-150"
             title="Close"
           >
             <X size={12} />

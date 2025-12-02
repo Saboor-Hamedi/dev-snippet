@@ -155,19 +155,35 @@ const SnippetLibrary = () => {
     onSave: (e) => {
       if (selectedSnippet) {
         e?.preventDefault() // The hook already does this
-        // Prevent saving unnamed drafts from the global handler.
+        // If an editor textarea is present (covers create-mode and when
+        // viewing an existing snippet in the editor), dispatch 'force-save'
+        // so the editor flushes its local state and performs the change
+        // detection. This avoids saving from the parent when nothing changed.
+        const editorPresent = !!document.querySelector('.editor-container textarea')
+        if (editorPresent || activeView === 'editor' || isCreatingSnippet) {
+          try {
+            window.__forceSave = true
+          } catch {}
+          try {
+            setAutosaveStatus('saved')
+            window.dispatchEvent(new Event('force-save'))
+          } catch {}
+          return
+        }
+
+        // Prevent saving unnamed drafts from the global handler when not in editor.
         const title = selectedSnippet.title || ''
         if (!title || !title.trim()) {
-          // Switch to editor so user can name the snippet, and show a helpful toast
+          // Switch to editor so user can name the snippet
           setActiveView('editor')
-          // showToast('Please name the snippet before saving')
           return
         }
         saveSnippet(selectedSnippet)
-        showToast('✓ Snippet saved')
       }
     }
   })
+
+  // Note: save-toasts are emitted by `useSnippetData.saveSnippet` to avoid duplicates.
 
   // 3. Global Actions (e.g. Opening a file from OS)
   const handleOpenFile = async () => {
@@ -264,22 +280,35 @@ const SnippetLibrary = () => {
           onCancelEditor={() => setIsCreatingSnippet(false)}
           isCompact={isCompact}
           onToggleCompact={() => setIsCompact(!isCompact)}
+          showToast={showToast}
           onSave={async (item) => {
-              try {
-                setAutosaveStatus('saving')
-                await saveSnippet(item)
-                setActiveSnippet(item)
-                // If we were creating a new snippet, switch to viewing/editing it
-                if (isCreatingSnippet) {
-                  setSelectedSnippet(item)
-                  setIsCreatingSnippet(false)
-                }
-                setAutosaveStatus('saved')
-                // clear the saved state after a short delay
-                setTimeout(() => setAutosaveStatus(null), 1200)
-              } catch (err) {
-                setAutosaveStatus(null)
-              }
+                  try {
+                    const wasForce = !!window.__forceSave
+                    if (!wasForce) setAutosaveStatus('saving')
+                    await saveSnippet(item)
+                    setActiveSnippet(item)
+                    // If we were creating a new snippet, switch to viewing/editing it
+                    if (isCreatingSnippet) {
+                      setSelectedSnippet(item)
+                      setIsCreatingSnippet(false)
+                    }
+                    // If this was a forced save, editor already set 'saved' optimistically.
+                    if (wasForce) {
+                      try {
+                        window.__forceSave = false
+                      } catch {}
+                      setAutosaveStatus('saved')
+                      setTimeout(() => setAutosaveStatus(null), 1200)
+                    } else {
+                      setAutosaveStatus('saved')
+                      setTimeout(() => setAutosaveStatus(null), 1200)
+                    }
+                  } catch (err) {
+                    try {
+                      window.__forceSave = false
+                    } catch {}
+                    setAutosaveStatus(null)
+                  }
             }}
           autosaveStatus={autosaveStatus}
           onAutosave={(s) => {
