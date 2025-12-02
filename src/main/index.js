@@ -306,6 +306,10 @@ app.whenReady().then(() => {
     }
   })
 
+
+
+
+
   // Database IPC Handlers
   const db = getDB()
 

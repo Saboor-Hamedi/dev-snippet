@@ -3,8 +3,18 @@ import { useToast } from './useToast'
 export const useSnippetData = () => {
   const [snippets, setSnippets] = useState([])
   const [projects, setProjects] = useState([])
-  const [selectedSnippet, setSelectedSnippet] = useState(null)
+  const [selectedSnippet, setSelectedSnippetState] = useState(null)
   const { showToast } = useToast()
+
+  // Simple setter - use DB content directly
+  const setSelectedSnippet = (item) => {
+    try {
+      setSelectedSnippetState(item)
+    } catch (err) {
+      console.error('setSelectedSnippet error', err)
+      setSelectedSnippetState(item)
+    }
+  }
 
   // Load initial data from the main process
   useEffect(() => {
@@ -26,26 +36,37 @@ export const useSnippetData = () => {
   // Save or update a snippet
   const saveSnippet = async (snippet, options = {}) => {
     try {
-      if (window.api?.saveSnippet) {
-        // Enforce type 'snippet'
-        const payload = { ...snippet, type: 'snippet', sort_index: snippet.sort_index ?? null }
-        await window.api.saveSnippet(payload)
-        // Update local list in-place to avoid flicker
-        setSnippets((prev) => {
-          const exists = prev.some((s) => s.id === payload.id)
-          return exists
-            ? prev.map((s) => (s.id === payload.id ? { ...s, ...payload } : s))
-            : [{ ...payload }, ...prev]
-        })
-        // C. IMPORTANT: Update the Active View Immediately!
-        // If the item we just saved is the one currently open, update the state.
-        if (!options.skipSelectedUpdate) {
-          if (selectedSnippet && selectedSnippet.id === payload.id) {
-            setSelectedSnippet(payload)
-          }
-        }
-        showToast('✓ Snippet saved successfully')
+      const isDraft = !!snippet?.is_draft || String(snippet?.id || '').startsWith('draft-')
+      const fullText = snippet?.code || ''
+
+      // Simple DB-only storage for all snippets
+      const payload = {
+        ...snippet,
+        type: 'snippet',
+        sort_index: snippet.sort_index ?? null,
+        code: fullText
       }
+
+      // Save to database
+      await window.api.saveSnippet(payload)
+      
+      // Update local list in-place to avoid flicker
+      setSnippets((prev) => {
+        const exists = prev.some((s) => s.id === snippet.id)
+        const updatedItem = { ...snippet, code: fullText } // Keep full content in local state
+        return exists
+          ? prev.map((s) => (s.id === snippet.id ? { ...s, ...updatedItem } : s))
+          : [updatedItem, ...prev]
+      })
+      
+        // Update the active view immediately to refresh snippet data for rename functionality
+        if (!options.skipSelectedUpdate) {
+          if (selectedSnippet && selectedSnippet.id === snippet.id) {
+            // Force refresh the selected snippet with updated data
+            const refreshedSnippet = { ...snippet, code: fullText }
+            setSelectedSnippetState(refreshedSnippet)
+          }
+        }      showToast('✓ Snippet saved successfully')
     } catch (error) {
       console.error('Failed to save snippet:', error)
       showToast('❌ Failed to save snippet')

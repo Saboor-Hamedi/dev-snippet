@@ -5,10 +5,15 @@
   import React, { useState, useEffect, useRef } from 'react'
 import PropTypes from 'prop-types'
 import { useKeyboardShortcuts } from '../../hook/useKeyboardShortcuts.js'
+import { useEditorFocus } from '../../hook/useEditorFocus.js'
+import extractTags from '../../hook/extractTags.js'
+import { getAllLanguages } from '../codemirror/EditorLanguage.jsx'
 import WelcomePage from '../WelcomePage.jsx'
 import StatusBar from '../StatusBar.jsx'
 import SplitPane from '../SplitPane.jsx'
+import CodeEditor from '../codemirror/CodeEditor.jsx'
 import LivePreview from '../LivePreview.jsx'
+import NamePrompt from '../modal/NamePrompt.jsx'
 
 const SnippetEditor = ({
   onSave,
@@ -25,16 +30,17 @@ const SnippetEditor = ({
   isCompact,
   onToggleCompact
   ,
-  showPreview = false
+  showPreview
 }) => {
   const [code, setCode] = useState(initialSnippet?.code || '')
-  const [language, setLanguage] = React.useState(initialSnippet?.language || 'md')
+  const [language, setLanguage] = React.useState(initialSnippet?.language || 'markdown')
   const [isDirty, setIsDirty] = useState(false)
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(() => {
     try {
-      return localStorage.getItem('autoSave') === 'true'
+      const saved = localStorage.getItem('autoSave')
+      return saved ? saved === 'true' : true // Default to enabled if not set
     } catch (e) {
-      return false
+      return true // Default to enabled
     }
   })
 
@@ -43,6 +49,7 @@ const SnippetEditor = ({
 
   const isDeletingRef = useRef(false)
   const textareaRef = useRef(null)
+  const editorContainerRef = useRef(null)
   // Local compact mode (used only if parent doesn't control it)
   const [localCompact, setLocalCompact] = useState(() => {
     try {
@@ -72,23 +79,10 @@ const SnippetEditor = ({
     }
   }
 
-  // Focus the textarea when initialSnippet changes (when opening a snippet)
-  useEffect(() => {
-    if (initialSnippet && textareaRef.current) {
-      setTimeout(() => {
-        textareaRef.current.focus()
-      }, 50)
-    }
-  }, [initialSnippet?.id]) // Re-run when snippet ID changes
+  // Focus management extracted into a hook
+  useEditorFocus({ initialSnippet, isCreateMode, editorContainerRef, textareaRef })
 
-  // Focus the textarea when in create mode 
-  useEffect(() => {
-    if (isCreateMode && textareaRef.current) {
-      setTimeout(() => {
-        textareaRef.current?.focus()
-      }, 100)
-    }
-  }, [isCreateMode])
+  // CodeMirror is encapsulated in CodeEditor now
 
   const scheduleSave = () => {
     // If autosave is disabled, skip scheduling
@@ -113,12 +107,13 @@ const SnippetEditor = ({
         return
       const updatedSnippet = {
         id: id,
-        title: initialSnippet.title,
-        code: code,
+        title: initialSnippet.title, // Keep original title during autosave
+        code: code, // Use current editor content
         language: language,
         timestamp: Date.now(),
         type: initialSnippet.type || 'snippet',
-        tags: extractTags(code)
+        tags: extractTags(code),
+        is_draft: initialSnippet?.is_draft || false
       }
       try {
         onAutosave && onAutosave('saving')
@@ -181,7 +176,7 @@ const SnippetEditor = ({
   // Update language/code if initialSnippet changes (only on ID change to prevent autosave loops)
   React.useEffect(() => {
     if (initialSnippet && initialSnippet.id !== lastSnippetId.current) {
-      setLanguage(initialSnippet.language || 'md')
+      setLanguage(initialSnippet.language || 'markdown')
       setCode(initialSnippet.code || '')
       // Loading a new snippet is not a user edit — reset dirty and skip autosave once
       try {
@@ -199,7 +194,6 @@ const SnippetEditor = ({
 
   // Trigger debounced save on content or language change
   useEffect(() => {
-    if (!initialSnippet?.title) return
     // Skip autosave on initial mount/load
     if (isInitialMount.current) {
       isInitialMount.current = false
@@ -208,28 +202,37 @@ const SnippetEditor = ({
     // Only schedule autosave when user actually changed content
     if (!isDirty) return
     if (!autoSaveEnabled) return
+    // Only autosave if snippet has a title (not untitled/draft)
+    if (!initialSnippet?.title || initialSnippet?.title.toLowerCase() === 'untitled') return
     scheduleSave()
   }, [code, language])
 
-  // Handle keyboard shortcuts
+  // Handle keyboard shortcuts (combined into single call)
   useKeyboardShortcuts({
-    onEscape: () => {
-      onCancel && onCancel()
-    },
     onSave: () => {
-      // Ctrl+S: Open save prompt if no title, otherwise trigger autosave
+      // Ctrl+S: Open save prompt if no title, otherwise trigger save
       const title = initialSnippet?.title || ''
       if (!title || title.toLowerCase() === 'untitled') {
         setNameInput('')
         setNameOpen(true)
+      } else {
+        handleSave()
       }
-    }
-  })
-
-  // Ensure keyboard shortcut for toggle uses parent handler when present
-  useKeyboardShortcuts({
+    },
     onToggleCompact: onToggleCompactHandler
   })
+
+  // Special handler for Ctrl+Shift+Escape to close editor
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'Escape') {
+        e.preventDefault()
+        onCancel && onCancel()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onCancel])
 
   const handleSave = () => {
     ;(async () => {
@@ -258,7 +261,7 @@ const SnippetEditor = ({
         id: initialSnippet?.id || Date.now().toString(),
         title,
         code: code,
-        language: 'md',
+        language: language,
         timestamp: Date.now(),
         type: 'snippet',
         tags: extractTags(code),
@@ -330,31 +333,42 @@ const SnippetEditor = ({
               }
             >
               <SplitPane
-                rightHidden={!showPreview}
+                rightHidden={!showPreview || showPreview === false}
                 left={
-                  <textarea
-                    ref={textareaRef}
-                    value={code || ''}
-                    onChange={(e) => {
-                      setCode(e.target.value || '')
-                      setIsDirty(true)
-                    }}
-                    className="w-full h-full dark:bg-slate-900 dark:text-slate-200 font-mono text-xsmall leading-6"
-                    style={{
-                      fontFamily:
-                        "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
-                      fontSize: 'var(--xsmall)',
-                      color: 'var(--text-main)',
-                      backgroundColor: 'transparent',
-                      border: 'none',
-                      outline: 'none',
-                      padding: 16,
-                      resize: 'none',
-                      overflow: 'auto',
-                      scrollbarWidth: 'none',
-                      msOverflowStyle: 'none'
-                    }}
-                  />
+                  <div ref={editorContainerRef} className="w-full h-full">
+                    <CodeEditor
+                      value={code || ''}
+                      onChange={(val) => {
+                        try {
+                          setCode(val || '')
+                          setIsDirty(true)
+                        } catch {}
+                      }}
+                      onKeyDown={(e) => {
+                        try {
+                          if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+                            e.preventDefault()
+                            handleSave()
+                            return
+                          }
+                          if (e.key === 'Escape') {
+                            onCancel && onCancel()
+                            return
+                          }
+                          if ((e.ctrlKey || e.metaKey) && e.key === ',') {
+                            e.preventDefault()
+                            onToggleCompactHandler()
+                            return
+                          }
+                        } catch {}
+                      }}
+                      height="100%"
+                      className="h-full"
+                      style={{ backgroundColor: 'transparent' }}
+                      language={language}
+                      textareaRef={textareaRef}
+                    />
+                  </div>
                 }
                 right={
                   <div className="h-full p-4" style={{ backgroundColor: 'transparent' }}>
@@ -366,55 +380,51 @@ const SnippetEditor = ({
 
             {false && <div />}
 
-            {nameOpen && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                <div className="bg-white dark:bg-[#0d1117] border border-slate-200 dark:border-[#30363d] rounded p-4 w-80">
-                  <div className="text-sm mb-2 text-slate-700 dark:text-slate-200">
-                    Enter a name (optionally with extension)
-                  </div>
-                  <input
-                    value={nameInput}
-                    onChange={(e) => setNameInput(e.target.value)}
-                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-[#30363d] rounded text-slate-800 dark:text-slate-200"
-                    placeholder="e.g. hello.js or notes"
-                    autoFocus
-                  />
-                  <div className="flex justify-end gap-2 mt-3">
-                    <button
-                      onClick={() => setNameOpen(false)}
-                      className="px-3 py-1.5 text-sm bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={() => {
-                        const t = nameInput.trim()
-                        if (!t) return
-                        const payload = {
-                          id: initialSnippet?.id || Date.now().toString(),
-                          title: t,
-                          code: code,
-                          language: 'md',
-                          timestamp: Date.now(),
-                          type: 'snippet',
-                          is_draft: false
-                        }
-                        setNameOpen(false)
-                        onSave(payload)
-                      }}
-                      className="px-3 py-1.5 text-sm bg-primary-600 hover:bg-primary-700 text-white rounded"
-                    >
-                      Save
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-            <StatusBar
-              onSettingsClick={onSettingsClick}
-              isCompact={compact}
-              onToggleCompact={onToggleCompactHandler}
+            <NamePrompt
+              open={nameOpen}
+              value={nameInput}
+              onChange={setNameInput}
+              onCancel={() => setNameOpen(false)}
+              onConfirm={() => {
+                const t = (nameInput || '').trim()
+                if (!t) return
+                const payload = {
+                  id: initialSnippet?.id || Date.now().toString(),
+                  title: t,
+                  code: code,
+                  language: language,
+                  timestamp: Date.now(),
+                  type: 'snippet',
+                  is_draft: false
+                }
+                setNameOpen(false)
+                onSave(payload)
+              }}
             />
+            <div className="flex items-center justify-between px-2 py-1" style={{ backgroundColor: 'var(--header-bg)', borderTop: '1px solid var(--border-color)' }}>
+              <div className="flex items-center gap-2">
+                <select
+                  value={language}
+                  onChange={(e) => {
+                    setLanguage(e.target.value)
+                    setIsDirty(true)
+                  }}
+                  className="text-xs bg-transparent border-none outline-none px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-300 cursor-pointer"
+                  title="Select Language"
+                >
+                  {getAllLanguages().map(lang => (
+                    <option key={lang.key} value={lang.key} className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                      {lang.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <StatusBar
+                onSettingsClick={onSettingsClick}
+                isCompact={compact}
+                onToggleCompact={onToggleCompactHandler}
+              />
+            </div>
           </div>
         )
       }
@@ -436,13 +446,3 @@ SnippetEditor.propTypes = {
 }
 
 export default SnippetEditor
-const extractTags = (text) => {
-  const t = String(text || '')
-  const tags = new Set()
-  const re = /(^|\s)#([a-zA-Z0-9_-]+)/g
-  let m
-  while ((m = re.exec(t))) {
-    tags.add(m[2].toLowerCase())
-  }
-  return Array.from(tags).join(',')
-}

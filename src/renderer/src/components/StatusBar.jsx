@@ -13,24 +13,19 @@ const StatusBar = ({ onSettingsClick }) => {
   const canonical = getLanguageName()
   return (
     <div
-      className="h-8 px-2 flex items-center justify-between text-xs text-slate-600 dark:text-slate-300 flex-shrink-0 z-50 relative"
-      style={{
-        backgroundColor: 'var(--header-bg)',
-        borderTop: '1px solid var(--border-color)'
-      }}
+      className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 flex-shrink-0"
     >
-      <div className="flex items-center gap-2">
-        {/* Show extension with same hover behavior as header buttons */}
-        <span
-          className="px-1 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          title={canonical}
-        >
-          {ext ? ext : ''}
-        </span>
-      </div>
+      {/* Show extension with same hover behavior as header buttons */}
+      <span
+        className="px-1 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+        title={canonical}
+      >
+        {ext ? ext : ''}
+      </span>
+      
       <button
         onClick={onSettingsClick}
-        className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors cursor-pointer z-50 relative"
+        className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors cursor-pointer"
         title="Settings"
       >
         <Settings className="w-3 h-3" />

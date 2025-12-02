@@ -11,6 +11,7 @@ const api = {
   readFile: (path) => electronAPI.ipcRenderer.invoke('fs:readFile', path),
   writeFile: (path, content) => electronAPI.ipcRenderer.invoke('fs:writeFile', path, content),
   readDirectory: (path) => electronAPI.ipcRenderer.invoke('fs:readDirectory', path),
+
   // Database
   getSnippets: () => electronAPI.ipcRenderer.invoke('db:getSnippets'),
   saveSnippet: (snippet) => electronAPI.ipcRenderer.invoke('db:saveSnippet', snippet),

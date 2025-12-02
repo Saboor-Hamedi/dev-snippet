@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { Copy, Check } from 'lucide-react'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
@@ -7,6 +7,13 @@ import { dark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 const LivePreview = ({ code = '' }) => {
   const [copiedIndex, setCopiedIndex] = useState(null)
+  const [displayCode, setDisplayCode] = useState(code)
+  // Debounce preview rendering to reduce work while typing
+  useEffect(() => {
+    // Short debounce (150ms) keeps preview responsive but reduces frequent re-renders
+    const t = setTimeout(() => setDisplayCode(code), 150)
+    return () => clearTimeout(t)
+  }, [code])
 
   const copyToClipboard = async (text, index) => {
     try {
@@ -73,7 +80,7 @@ const LivePreview = ({ code = '' }) => {
           }
         }}
       >
-        {code}
+        {displayCode}
       </ReactMarkdown>
     </div>
   )

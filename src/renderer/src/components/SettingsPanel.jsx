@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 
 import ThemeModal from './ThemeModal'
-import { Monitor, Download, ChevronLeft, Settings, SunMoon, FileDown } from 'lucide-react'
+import { Monitor, Download, ChevronLeft, Settings, SunMoon, FileDown, Database } from 'lucide-react'
 import { useFontSettings } from '../hook/useFontSettings'
 import { useToast } from '../hook/useToast'
 import ToastNotification from '../utils/ToastNotification'
@@ -26,9 +26,10 @@ const SettingsPanel = ({ onClose }) => {
   const [wordWrap, setWordWrap] = useState('on')
   const [autoSave, setAutoSave] = useState(() => {
     try {
-      return localStorage.getItem('autoSave') === 'true'
+      const saved = localStorage.getItem('autoSave')
+      return saved ? saved === 'true' : true // Default to enabled if not set
     } catch (e) {
-      return false
+      return true // Default to enabled
     }
   })
   const [activeTab, setActiveTab] = useState('general')
@@ -114,7 +115,7 @@ const SettingsPanel = ({ onClose }) => {
           <div className="text-xs text-slate-500 dark:text-slate-400">
             <div className="flex items-center justify-between mb-1">
               <span>Version</span>
-              <span className="font-mono">1.0.0</span>
+              <span className="font-mono">1.2.0</span>
             </div>
             <div className="flex items-center justify-between">
               <span>Theme</span>
@@ -444,6 +445,8 @@ const SettingsPanel = ({ onClose }) => {
                   </div>
                 </div>
               </section>
+
+
             </div>
           )}
         </div>
@@ -451,6 +454,8 @@ const SettingsPanel = ({ onClose }) => {
 
       {/* Theme Modal */}
       <ThemeModal isOpen={isThemeModalOpen} onClose={() => setIsThemeModalOpen(false)} />
+      
+
     </div>
   )
 }

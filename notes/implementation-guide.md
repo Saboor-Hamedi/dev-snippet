@@ -57,7 +57,7 @@
 ## Notes
 
 - If any hook is called outside a component/hook, React throws “Invalid hook call”. Keep hooks inside function components or custom hooks.
-- UI colors and cursor customizations live in `d:/electron/model-dictionary/.vscode/settings.json`.
+- UI colors and cursor customizations live in `d:/electron/div-dailevt/.vscode/settings.json`.
 
 ## Next Steps
 

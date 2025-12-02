@@ -506,3 +506,10 @@
     transition: none;
   }
 }
+
+/* Remove extra top margin on the first rendered element so preview aligns
+   with the editor's internal padding (editor uses 16px padding). */
+.markdown-body > :first-child {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}

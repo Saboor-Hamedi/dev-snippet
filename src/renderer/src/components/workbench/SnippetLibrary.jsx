@@ -44,22 +44,8 @@ const SnippetLibrary = () => {
     } catch (e) {}
   }, [isCompact])
 
-  // Live preview visibility (default: closed)
-  const [showPreview, setShowPreview] = useState(() => {
-    try {
-      const v = localStorage.getItem('showPreview')
-      if (v === null) return false
-      return v === 'true'
-    } catch (e) {
-      return false
-    }
-  })
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('showPreview', showPreview)
-    } catch (e) {}
-  }, [showPreview])
+  // Live preview visibility (default: closed, no persistence)
+  const [showPreview, setShowPreview] = useState(false)
 
   // Since sidebar is removed, filteredItems is just all snippets
   const filteredItems = useMemo(() => {
