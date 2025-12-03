@@ -14,11 +14,11 @@
     "rebuild": "electron-rebuild -f -w better-sqlite3",
     "postinstall": "electron-builder install-app-deps && electron-rebuild -f -w better-sqlite3",
     "build:unpack": "npm run build && electron-builder --dir",
-    "build:win": "npm run make:icons && npm run build && electron-builder --win",
+    "build:win": "npm run build && electron-builder --win",
     "build:mac": "npm run build && electron-builder --mac",
     "build:linux": "npm run build && electron-builder --linux",
     "dist": "electron-builder",
-    "make:icons": "npx electron-icon-maker --input renderer/public/icon.png --output build"
+    "make:icons": "npx electron-icon-maker --input src/renderer/public/icon.png --output build"
   },
   "dependencies": {
     "@codemirror/fold": "^0.19.4",
@@ -66,14 +66,19 @@
     "tailwindcss": "^3.4.17",
     "vite": "^7.1.6"
   },
- "win": {
-  "target": "nsis",
-  "icon": "build/icons/win/icon.ico" 
-},
-  "nsis": {
-    "oneClick": false, 
-    "allowToChangeInstallationDirectory": true,
-      "perMachine": true,
-      "installerIcon": "build/icons/win/icon.ico"
+  "files": [
+    "dist/**/*",
+    "package.json"
+  ],
+  "build": {
+    "appId": "com.devsnippet.app",
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false
+    }
   }
 }

@@ -1,0 +1,18 @@
+appId: com.devsnippet.app
+productName: dev-snippet
+asar: true
+asarUnpack:
+  - "**/node_modules/better-sqlite3/**/*"
+win:
+  executableName: dev-snippet
+  target:
+    - target: nsis
+      arch: [x64]
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  artifactName: ${name}-${version}-setup.${ext}
+directories:
+  output: dist-simple

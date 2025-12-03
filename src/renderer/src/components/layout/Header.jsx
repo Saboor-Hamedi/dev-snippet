@@ -1,6 +1,6 @@
 
 import React from 'react'
-import { X, Minimize, Minimize2 } from 'lucide-react'
+import { X, Minimize, Minimize2, Code2 } from 'lucide-react'
 import iconUrl from '../../assets/icon.png'
 
 const Header = ({isCompact, 
@@ -39,7 +39,7 @@ const Header = ({isCompact,
               width: '100%'
             }}
           >
-            <div
+            {/* <Code2
               aria-hidden
               style={{
                 width: 14,
@@ -50,8 +50,18 @@ const Header = ({isCompact,
                 backgroundPosition: 'center',
                 borderRadius: 4
               }}
+            /> */}
+            <Code2
+              style={{
+                width: 14,
+                height: 14,
+                backgroundImage: `url(${iconUrl})`,
+                backgroundSize: 'contain',
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'center',
+                borderRadius: 4
+              }}
             />
-
             <span style={{ fontWeight: 600, fontSize: 12, color: 'var(--header-fg)' }}>
               {displayTitle}
             </span>
