@@ -1,6 +1,8 @@
 
 import React from 'react'
 import { X, Minimize, Minimize2 } from 'lucide-react'
+import iconUrl from '../../assets/icon.png'
+
 const Header = ({isCompact, 
   onToggleCompact, 
   title, snippetTitle, autosaveStatus
@@ -39,21 +41,31 @@ const Header = ({isCompact,
           >
             <div
               aria-hidden
-              style={{ width: 14, height: 14, background: 'var(--accent)', borderRadius: 4 }}
+              style={{
+                width: 14,
+                height: 14,
+                backgroundImage: `url(${iconUrl})`,
+                backgroundSize: 'contain',
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'center',
+                borderRadius: 4
+              }}
             />
+
             <span style={{ fontWeight: 600, fontSize: 12, color: 'var(--header-fg)' }}>
               {displayTitle}
             </span>
             {/* Autosave indicator */}
             {autosaveStatus ? (
-              <small style={{ marginRight: 8, fontSize: 8, color: 'var(--header-fg)', opacity: 0.9 }}>
+              <small
+                style={{ marginRight: 8, fontSize: 8, color: 'var(--header-fg)', opacity: 0.9 }}
+              >
                 {autosaveStatus === 'pending' && 'Saving...'}
                 {autosaveStatus === 'saving' && 'Saving'}
                 {autosaveStatus === 'saved' && 'Saved ✓'}
               </small>
             ) : null}
           </div>
-
         </div>
 
         <div
@@ -79,8 +91,7 @@ const Header = ({isCompact,
                 if (typeof onToggleCompact === 'function') onToggleCompact()
                 // also minimize the window as requested
                 window.api?.minimize?.()
-              } catch (e) {
-              }
+              } catch (e) {}
             }}
             className="p-1 hover:bg-slate-100 focus:outline-none focus:ring-none rounded-md cursor-pointer transition-colors duration-150"
             title={

@@ -72,10 +72,52 @@ function createWindow() {
   // Create the browser window.
     // Choose appropriate icon for the current platform.
     // Use a .ico on Windows (preferred), fall back to the PNG for other platforms/dev.
-    const iconPath = process.platform === 'win32'
-      ? join(__dirname, '..', 'resources', 'icon.ico')
-      : join(__dirname, '../renderer/public/icon.png')
-  
+    let iconPath
+
+    if (app.isPackaged) {
+      // In production, resources are in the app.asar or next to it
+      iconPath =
+        process.platform === 'win32'
+          ? join(process.resourcesPath, 'icon.ico')
+          : join(process.resourcesPath, 'icon.png')
+    } else {
+      // In development, use the resources folder
+      iconPath =
+        process.platform === 'win32'
+          ? join(__dirname, '../../resources/icon.ico')
+          : join(__dirname, '../../resources/icon.png')
+    }
+
+    // console.log(`Platform: ${process.platform}`)
+    // console.log(`App packaged: ${app.isPackaged}`)
+    // console.log(`Loading icon from: ${iconPath}`)
+
+    // Check if icon exists
+    const fs = require('fs')
+    try {
+      if (fs.existsSync(iconPath)) {
+        // console.log(`✅ Icon file exists at: ${iconPath}`)
+      } else {
+        // console.log(`❌ Icon file NOT found at: ${iconPath}`)
+        // Fallback paths
+        const fallbacks = [
+          join(__dirname, '../../build/icon.ico'),
+          join(__dirname, '../../build/icon.png'),
+          join(__dirname, '../../resources/icon.ico'),
+          join(__dirname, '../../resources/icon.png')
+        ]
+
+        for (const fallback of fallbacks) {
+          if (fs.existsSync(fallback)) {
+            console.log(`✅ Using fallback icon: ${fallback}`)
+            iconPath = fallback
+            break
+          }
+        }
+      }
+    } catch (err) {
+      console.log(`Error checking icon: ${err.message}`)
+    }
   const mainWindow = new BrowserWindow({
     width: 800,
     height: 600,

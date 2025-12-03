@@ -8,10 +8,23 @@ import {
   Settings,
   Terminal,
   FolderOpen,
-  ChevronRight
+  ChevronRight,
+  Github,
+  User
 } from 'lucide-react'
+import { GitHubProfile, GitHubSettings } from './github'
 
 const WelcomePage = ({ onNewSnippet, onNewProject, onOpenSettings, onSelectSnippet, snippets = [] }) => {
+  // GitHub profile state
+  const [showGitHubProfile, setShowGitHubProfile] = useState(false)
+  const [showGitHubSettings, setShowGitHubSettings] = useState(false)
+  const [githubUsername, setGitHubUsername] = useState(() => {
+    try {
+      return localStorage.getItem('githubUsername') || 'Saboor-Hamedi'
+    } catch (e) {
+      return 'Saboor-Hamedi'
+    }
+  })
 
   // Get recent files (last 5 snippets by timestamp)
   const recentFiles = snippets
@@ -19,9 +32,22 @@ const WelcomePage = ({ onNewSnippet, onNewProject, onOpenSettings, onSelectSnipp
     .sort((a, b) => b.timestamp - a.timestamp)
     .slice(0, 5)
 
+  // Save GitHub username to localStorage
+  const handleSaveGitHubUsername = (username) => {
+    try {
+      localStorage.setItem('githubUsername', username)
+      setGitHubUsername(username)
+      setShowGitHubSettings(false)
+      setShowGitHubProfile(true)
+    } catch (e) {
+      console.error('Failed to save GitHub username')
+    }
+  }
+
 
   return (
-    <div className="h-full overflow-hidden bg-[var(--color-bg)]">
+    <>
+    <div className="h-full overflow-y-auto bg-[var(--color-bg)]">
       <div className="h-full flex flex-col">
         
         {/* Minimal Header */}
@@ -64,7 +90,7 @@ const WelcomePage = ({ onNewSnippet, onNewProject, onOpenSettings, onSelectSnipp
           <div className="h-full grid grid-cols-2">
 
             {/* Left Column - Actions */}
-            <div className="p-10 flex flex-col">
+            <div className="p-10 flex flex-col overflow-y-auto">
               <div className="mb-10">
                 <h2 className="text-2xl font-light text-[var(--color-text-primary)] mb-2">Quick Actions</h2>
                 <p className="text-sm text-[var(--color-text-secondary)] opacity-70">Create • Organize • Deploy</p>
@@ -109,6 +135,34 @@ const WelcomePage = ({ onNewSnippet, onNewProject, onOpenSettings, onSelectSnipp
                     <div className="text-base font-medium text-[var(--color-text-primary)] mb-1">Palette</div>
                     <div className="text-xs text-[var(--color-text-secondary)] opacity-60">Ctrl+P</div>
                   </button>
+                  
+                  <button 
+                    onClick={() => {
+                      if (githubUsername) {
+                        setShowGitHubProfile(true)
+                      } else {
+                        setShowGitHubSettings(true)
+                      }
+                    }}
+                    className="group p-6 rounded-xl bg-gradient-to-br from-[#24292e]/10 to-[#24292e]/5 hover:from-[#24292e]/20 hover:to-[#24292e]/10 border border-[#24292e]/20 hover:border-[#24292e]/40 transition-all duration-300 text-left"
+                  >
+                    <Github size={18} className="text-[var(--color-text-secondary)] group-hover:text-[#24292e] transition-colors mb-3" />
+                    <div className="text-base font-medium text-[var(--color-text-primary)] mb-1">
+                      {githubUsername ? '@' + githubUsername : 'GitHub'}
+                    </div>
+                    <div className="text-xs text-[var(--color-text-secondary)] opacity-60">
+                      {githubUsername ? 'View Profile' : 'Connect'}
+                    </div>
+                  </button>
+                  
+                  <button 
+                    onClick={onOpenSettings}
+                    className="group p-6 rounded-xl bg-[var(--color-bg-secondary)]/20 hover:bg-[var(--color-bg-secondary)]/40 transition-all duration-300 text-left"
+                  >
+                    <Settings size={18} className="text-[var(--color-text-secondary)] group-hover:text-[var(--color-accent)] transition-colors mb-3" />
+                    <div className="text-base font-medium text-[var(--color-text-primary)] mb-1">Settings</div>
+                    <div className="text-xs text-[var(--color-text-secondary)] opacity-60">⌘,</div>
+                  </button>
                 </div>
 
                 {/* System Actions */}
@@ -140,7 +194,7 @@ const WelcomePage = ({ onNewSnippet, onNewProject, onOpenSettings, onSelectSnipp
             </div>
 
             {/* Right Column - Recent & Overview */}
-            <div className="p-10 flex flex-col">
+            <div className="p-10 flex flex-col overflow-y-auto">
               <div className="mb-10">
                 <h2 className="text-2xl font-light text-[var(--color-text-primary)] mb-2">Recent Activity</h2>
                 <p className="text-sm text-[var(--color-text-secondary)] opacity-70">Last modified snippets</p>
@@ -229,6 +283,24 @@ const WelcomePage = ({ onNewSnippet, onNewProject, onOpenSettings, onSelectSnipp
         </div>
       </div>
     </div>
+    
+    {/* GitHub Profile Modal */}
+    {showGitHubProfile && githubUsername && (
+      <GitHubProfile 
+        username={githubUsername}
+        onClose={() => setShowGitHubProfile(false)}
+      />
+    )}
+    
+    {/* GitHub Settings Modal */}
+    {showGitHubSettings && (
+      <GitHubSettings 
+        currentUsername={githubUsername}
+        onSave={handleSaveGitHubUsername}
+        onCancel={() => setShowGitHubSettings(false)}
+      />
+    )}
+    </>
   )
 }
 

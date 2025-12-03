@@ -373,7 +373,7 @@ const SnippetEditor = ({
                 }
                 right={
                   <div className="h-full p-4" style={{ backgroundColor: 'transparent' }}>
-                    <LivePreview code={code} />
+                    <LivePreview code={code} language={language} />
                   </div>
                 }
               />
