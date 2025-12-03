@@ -6,7 +6,14 @@ const SettingsContext = createContext()
 
 // Settings Provider Component
 export const SettingsProvider = ({ children }) => {
-  const [settings, setSettings] = useState(settingsManager.getAll())
+  const [settings, setSettings] = useState(() => {
+    try {
+      return settingsManager.getAll() || DEFAULT_SETTINGS
+    } catch (err) {
+      console.error('Failed to get initial settings:', err)
+      return DEFAULT_SETTINGS
+    }
+  })
 
   // Sync with SettingsManager on mount
   useEffect(() => {
@@ -49,32 +56,34 @@ export const SettingsProvider = ({ children }) => {
   }
 
   // Update a specific setting by path
-  const updateSetting = (path, value) => {
-    // Update via manager (which handles saving and notifying listeners)
-    settingsManager.set(path, value)
+  const updateSetting = async (path, value) => {
+    await settingsManager.set(path, value)
   }
 
-  // Update entire settings object
-  const updateSettings = (newSettings) => {
-    setSettings(newSettings)
-  }
-
-  // Reset to defaults
-  const resetSettings = () => {
-    settingsManager.reset()
-  }
-
-  const contextValue = {
-    settings,
-    getSetting,
-    updateSetting,
-    updateSettings,
-    resetSettings,
-    DEFAULT_SETTINGS
+  // Update multiple settings at once
+  const updateSettings = async (newSettings) => {
+    // Update each setting individually to ensure proper persistence
+    for (const [key, value] of Object.entries(newSettings)) {
+      if (typeof value === 'object' && !Array.isArray(value)) {
+        // Handle nested objects
+        for (const [nestedKey, nestedValue] of Object.entries(value)) {
+          await settingsManager.set(`${key}.${nestedKey}`, nestedValue)
+        }
+      } else {
+        await settingsManager.set(key, value)
+      }
+    }
   }
 
   return (
-    <SettingsContext.Provider value={contextValue}>
+    <SettingsContext.Provider
+      value={{
+        settings,
+        getSetting,
+        updateSetting,
+        updateSettings
+      }}
+    >
       {children}
     </SettingsContext.Provider>
   )

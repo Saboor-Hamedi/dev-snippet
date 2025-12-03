@@ -41,6 +41,8 @@ const SplitPane = ({ left, right, minLeft = 200, minRight = 200, initialLeft = 5
   }
 
   const userSplitRef = useRef(initialLeft)
+  const isAnimatingRef = useRef(false)
+  const lastToggleTimeRef = useRef(0)
 
   useEffect(() => {
     const scheduleUpdate = (pct) => {
@@ -119,14 +121,34 @@ const SplitPane = ({ left, right, minLeft = 200, minRight = 200, initialLeft = 5
 
   useEffect(() => {
     try {
+      // Debounce rapid toggles (prevent toggling faster than 300ms)
+      const now = Date.now()
+      if (now - lastToggleTimeRef.current < 300) {
+        return
+      }
+      lastToggleTimeRef.current = now
+
+      // Prevent new animations if one is already running
+      if (isAnimatingRef.current) {
+        cancelPendingRaf()
+      }
+
       if (rightHidden) {
-        animatePercent(leftPercent, 100, 200, () => setRenderRight(false))
+        // Hide: animate from current position to 100%
+        isAnimatingRef.current = true
+        animatePercent(leftPercent, 100, 200, () => {
+          setRenderRight(false)
+          isAnimatingRef.current = false
+        })
       } else {
-        // Restore to last user-selected split, or initial
+        // Show: restore to last user-selected split
         const target = userSplitRef.current || initialLeft
         setRenderRight(true)
-        setLeftPercent(100)
-        animatePercent(100, target, 200)
+        isAnimatingRef.current = true
+        // Start animation from current leftPercent (which should be 100 or close to it)
+        animatePercent(leftPercent, target, 200, () => {
+          isAnimatingRef.current = false
+        })
       }
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
