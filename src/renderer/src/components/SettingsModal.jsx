@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { X, Settings, Monitor, Keyboard, Sliders } from 'lucide-react'
+import { MIN_ZOOM, MAX_ZOOM } from '../hook/useZoomLevel'
 
 const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) => {
   const [localSettings, setLocalSettings] = useState(currentSettings)
@@ -62,8 +63,6 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
           <button
             onClick={onClose}
             className="p-1 hover:bg-slate-100 focus:outline-none focus:ring-0 rounded-md cursor-pointer transition-colors duration-150"
-            // onMouseEnter={(e) => (e.target.style.backgroundColor = 'var(--hover-bg)')}
-            // onMouseLeave={(e) => (e.target.style.backgroundColor = 'transparent')}
           >
             <X size={18} />
           </button>
@@ -94,8 +93,8 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
                 </label>
                 <input
                   type="range"
-                  min="0.5"
-                  max="3.0"
+                  min={MIN_ZOOM}
+                  max={MAX_ZOOM}
                   step="0.1"
                   value={localSettings.editor?.zoomLevel || 1.0}
                   onChange={(e) => updateSetting('editor.zoomLevel', parseFloat(e.target.value))}
@@ -109,9 +108,9 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
                   className="flex justify-between text-xs"
                   style={{ color: 'var(--color-text-tertiary)' }}
                 >
-                  <span>50%</span>
+                  <span>{Math.round(MIN_ZOOM * 100)}%</span>
                   <span>100%</span>
-                  <span>300%</span>
+                  <span>{Math.round(MAX_ZOOM * 100)}%</span>
                 </div>
               </div>
 
@@ -352,10 +351,6 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
               onSettingsChange(defaults)
             }}
             className="px-4 py-2 transition-colors rounded-md"
-            // style={{
-            //   color: 'var(--color-text-tertiary)',
-            //   backgroundColor: 'transparent'
-            // }}
             onMouseEnter={(e) => (e.target.style.color = 'var(--color-text-primary)')}
             onMouseLeave={(e) => (e.target.style.color = 'var(--color-text-tertiary)')}
           >

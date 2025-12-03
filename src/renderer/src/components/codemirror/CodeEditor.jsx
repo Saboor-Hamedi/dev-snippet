@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { getLanguage } from './EditorLanguage'
-import { useZoomLevel } from '../../hook/useZoomLevel'
+import { useZoomLevel, MIN_ZOOM, MAX_ZOOM } from '../../hook/useZoomLevel'
 
 // A self-contained editor that prefers CodeMirror 6 if available, with
 // a textarea fallback. All theming and CM wiring lives here.
@@ -177,7 +177,7 @@ const CodeEditor = ({
                 key: 'Ctrl-=', // Ctrl + =
                 run: () => {
                   const current = zoomLevelRef.current || 1.0
-                  const newZoom = Math.min(current + 0.1, 3)
+                  const newZoom = Math.min(current + 0.1, MAX_ZOOM)
                   setZoomLevel(newZoom)
                   return true
                 }
@@ -186,7 +186,7 @@ const CodeEditor = ({
                 key: 'Ctrl-Minus', // Ctrl + -
                 run: () => {
                   const current = zoomLevelRef.current || 1.0
-                  const newZoom = Math.max(current - 0.1, 0.5)
+                  const newZoom = Math.max(current - 0.1, MIN_ZOOM)
                   setZoomLevel(newZoom)
                   return true
                 }
@@ -202,7 +202,7 @@ const CodeEditor = ({
                 key: 'Cmd-=', // Cmd + = (Mac)
                 run: () => {
                   const current = zoomLevelRef.current || 1.0
-                  const newZoom = Math.min(current + 0.1, 3)
+                  const newZoom = Math.min(current + 0.1, MAX_ZOOM)
                   setZoomLevel(newZoom)
                   return true
                 }
@@ -211,7 +211,7 @@ const CodeEditor = ({
                 key: 'Cmd-Minus', // Cmd + - (Mac)
                 run: () => {
                   const current = zoomLevelRef.current || 1.0
-                  const newZoom = Math.max(current - 0.1, 0.5)
+                  const newZoom = Math.max(current - 0.1, MIN_ZOOM)
                   setZoomLevel(newZoom)
                   return true
                 }
@@ -239,7 +239,7 @@ const CodeEditor = ({
                   
                   const current = zoomLevelRef.current || 1.0
                   const delta = event.deltaY < 0 ? 0.1 : -0.1 // Scroll up = zoom in, scroll down = zoom out
-                  const newZoom = Math.max(0.5, Math.min(3.0, current + delta))
+                  const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, current + delta))
                   
                   // Mark as mousewheel zoom to disable transition
                   isMouseWheelZoomRef.current = true
