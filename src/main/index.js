@@ -70,54 +70,49 @@ function getDB() {
 
 function createWindow() {
   // Create the browser window.
-    // Choose appropriate icon for the current platform.
-    // Use a .ico on Windows (preferred), fall back to the PNG for other platforms/dev.
-    let iconPath
+  // Choose appropriate icon for the current platform.
+  // Use a .ico on Windows (preferred), fall back to the PNG for other platforms/dev.
+  let iconPath
 
-    if (app.isPackaged) {
-      // In production, resources are in the app.asar or next to it
-      iconPath =
-        process.platform === 'win32'
-          ? join(process.resourcesPath, 'icon.ico')
-          : join(process.resourcesPath, 'icon.png')
+  if (app.isPackaged) {
+    // In production, resources are in the app.asar or next to it
+    iconPath =
+      process.platform === 'win32'
+        ? join(process.resourcesPath, 'icon.ico')
+        : join(process.resourcesPath, 'icon.png')
+  } else {
+    // In development, use the resources folder
+    iconPath =
+      process.platform === 'win32'
+        ? join(__dirname, '../../resources/icon.ico')
+        : join(__dirname, '../../resources/icon.png')
+  }
+
+  // Check if icon exists
+  const fs = require('fs')
+  try {
+    if (fs.existsSync(iconPath)) {
+      // Icon exists
     } else {
-      // In development, use the resources folder
-      iconPath =
-        process.platform === 'win32'
-          ? join(__dirname, '../../resources/icon.ico')
-          : join(__dirname, '../../resources/icon.png')
-    }
+      // Icon not found, try fallbacks
+      const fallbacks = [
+        join(__dirname, '../../build/icon.ico'),
+        join(__dirname, '../../build/icon.png'),
+        join(__dirname, '../../resources/icon.ico'),
+        join(__dirname, '../../resources/icon.png')
+      ]
 
-    // console.log(`Platform: ${process.platform}`)
-    // console.log(`App packaged: ${app.isPackaged}`)
-    // console.log(`Loading icon from: ${iconPath}`)
-
-    // Check if icon exists
-    const fs = require('fs')
-    try {
-      if (fs.existsSync(iconPath)) {
-        // console.log(`✅ Icon file exists at: ${iconPath}`)
-      } else {
-        // console.log(`❌ Icon file NOT found at: ${iconPath}`)
-        // Fallback paths
-        const fallbacks = [
-          join(__dirname, '../../build/icon.ico'),
-          join(__dirname, '../../build/icon.png'),
-          join(__dirname, '../../resources/icon.ico'),
-          join(__dirname, '../../resources/icon.png')
-        ]
-
-        for (const fallback of fallbacks) {
-          if (fs.existsSync(fallback)) {
-            console.log(`✅ Using fallback icon: ${fallback}`)
-            iconPath = fallback
-            break
-          }
+      for (const fallback of fallbacks) {
+        if (fs.existsSync(fallback)) {
+          console.log(`✅ Using fallback icon: ${fallback}`)
+          iconPath = fallback
+          break
         }
       }
-    } catch (err) {
-      console.log(`Error checking icon: ${err.message}`)
     }
+  } catch (err) {
+    console.log(`Error checking icon: ${err.message}`)
+  }
   const mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
@@ -127,8 +122,8 @@ function createWindow() {
     icon: iconPath,
     show: false,
 
-    // remove frame for a cleaner look 
-    frame: false,  // Remove the frame for a custom title bar
+    // remove frame for a cleaner look
+    frame: false, // Remove the frame for a custom title bar
     // NOTE: Transparent windows on some platforms (Windows) can interfere
     // with native resizing/restore behavior. Keep `transparent: false`
     // to allow OS resizing and reliable minimize/maximize/restore.
@@ -140,7 +135,7 @@ function createWindow() {
     minimizable: true,
 
     autoHideMenuBar: true,
-    // alwaysOnTop: true, 
+    // alwaysOnTop: true,
     focusable: true,
     // skipTaskbar: true,
     webPreferences: {
@@ -340,23 +335,50 @@ app.whenReady().then(() => {
   })
 
   // Settings file IPC handlers
-  const settingsPath = join(__dirname, '../../settings.json')
-  const testDirectoryAccess = async () => {
-    const testPath = join(__dirname, '../../test-project-root.txt')
+  const settingsPath = join(app.getPath('userData'), 'settings.json')
+
+  // Watch settings file for external changes (like VS Code)
+  let settingsWatcher = null
+  let lastSettingsContent = null
+
+  const startSettingsWatcher = () => {
     try {
-      await fs.writeFile(testPath, 'This is a test file to verify project root access', 'utf-8')
-      // Check if it exists
-      const testStats = await fs.stat(testPath)
-      // Clean up
-      await fs.unlink(testPath)
-    } catch (testErr) {
+      const fsSync = require('fs')
+
+      // Only watch if file exists
+      if (fsSync.existsSync(settingsPath)) {
+        settingsWatcher = fsSync.watch(settingsPath, async (eventType) => {
+          if (eventType === 'change') {
+            try {
+              const newContent = await fs.readFile(settingsPath, 'utf-8')
+
+              // Only notify if content actually changed (avoid duplicate events)
+              if (newContent !== lastSettingsContent) {
+                lastSettingsContent = newContent
+
+                // Notify all renderer windows
+                BrowserWindow.getAllWindows().forEach((win) => {
+                  win.webContents.send('settings:changed', newContent)
+                })
+              }
+            } catch (err) {
+              // File might be temporarily unavailable during write
+            }
+          }
+        })
+      }
+    } catch (err) {
+      // Watcher failed to start, not critical
     }
   }
-  testDirectoryAccess()
-  
+
+  // Start watcher after a short delay to ensure file exists
+  setTimeout(startSettingsWatcher, 1000)
+
   ipcMain.handle('settings:read', async () => {
     try {
       const data = await fs.readFile(settingsPath, 'utf-8')
+      lastSettingsContent = data
       return data
     } catch (err) {
       if (err.code === 'ENOENT') {
@@ -370,19 +392,24 @@ app.whenReady().then(() => {
   ipcMain.handle('settings:write', async (event, content) => {
     try {
       if (typeof content !== 'string') throw new Error('Invalid content')
-      
+
       // Ensure directory exists
       const dir = app.getPath('userData')
       await fs.mkdir(dir, { recursive: true })
-      
+
       await fs.writeFile(settingsPath, content, 'utf-8')
-      
+      lastSettingsContent = content
+
       // Verify the file was created
       try {
         const stats = await fs.stat(settingsPath)
-      } catch (verifyErr) {
+      } catch (verifyErr) {}
+
+      // Start watcher if not already running
+      if (!settingsWatcher) {
+        startSettingsWatcher()
       }
-      
+
       return true
     } catch (err) {
       throw err

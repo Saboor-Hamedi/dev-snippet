@@ -1,42 +1,25 @@
 import React, { useState, useEffect, createContext, useContext } from 'react'
-
-// Default settings structure
-const DEFAULT_SETTINGS = {
-  editor: {
-    zoomLevel: 1.0,
-    fontSize: 14,
-    fontFamily: 'JetBrains Mono',
-    lineNumbers: true,
-    wordWrap: 'on',
-    tabSize: 2,
-    theme: 'dark'
-  },
-  ui: {
-    compactMode: false,
-    showPreview: false,
-    sidebarWidth: 250,
-    previewPosition: 'right'
-  },
-  behavior: {
-    autoSave: true,
-    autoSaveDelay: 2000,
-    confirmDelete: true,
-    restoreSession: true
-  },
-  advanced: {
-    enableCodeFolding: true,
-    enableAutoComplete: true,
-    enableLinting: false,
-    maxFileSize: 1048576
-  }
-}
+import { settingsManager, DEFAULT_SETTINGS } from '../components/settings/Settings'
 
 // Settings Context
 const SettingsContext = createContext()
 
 // Settings Provider Component
 export const SettingsProvider = ({ children }) => {
-  const [settings, setSettings] = useState(DEFAULT_SETTINGS)
+  const [settings, setSettings] = useState(settingsManager.getAll())
+
+  // Sync with SettingsManager on mount
+  useEffect(() => {
+    // Initial load
+    setSettings(settingsManager.getAll())
+
+    // Subscribe to changes
+    const unsubscribe = settingsManager.subscribe((newSettings) => {
+      setSettings({ ...newSettings })
+    })
+
+    return unsubscribe
+  }, [])
 
   // Get a specific setting by path (e.g., 'editor.zoomLevel')
   const getSetting = (path) => {
@@ -51,24 +34,8 @@ export const SettingsProvider = ({ children }) => {
 
   // Update a specific setting by path
   const updateSetting = (path, value) => {
-    
-    const keys = path.split('.')
-    const newSettings = { ...settings }
-    
-    // Navigate to the parent object
-    let target = newSettings
-    for (let i = 0; i < keys.length - 1; i++) {
-      const key = keys[i]
-      if (!target[key] || typeof target[key] !== 'object') {
-        target[key] = {}
-      }
-      target = target[key]
-    }
-    
-    // Set the final value
-    target[keys[keys.length - 1]] = value
-    
-    setSettings(newSettings)
+    // Update via manager (which handles saving and notifying listeners)
+    settingsManager.set(path, value)
   }
 
   // Update entire settings object
@@ -78,7 +45,7 @@ export const SettingsProvider = ({ children }) => {
 
   // Reset to defaults
   const resetSettings = () => {
-    setSettings(DEFAULT_SETTINGS)
+    settingsManager.reset()
   }
 
   const contextValue = {
@@ -104,18 +71,6 @@ export const useSettings = () => {
     throw new Error('useSettings must be used within a SettingsProvider')
   }
   return context
-}
-
-// Specific hooks for common settings
-export const useZoomLevel = () => {
-  const { getSetting, updateSetting } = useSettings()
-  const zoomLevel = getSetting('editor.zoomLevel') || 1.0
-  
-  const setZoomLevel = (level) => {
-    updateSetting('editor.zoomLevel', level)
-  }
-  
-  return [zoomLevel, setZoomLevel]
 }
 
 export const useAutoSave = () => {

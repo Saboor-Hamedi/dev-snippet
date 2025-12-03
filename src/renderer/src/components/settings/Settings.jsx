@@ -131,14 +131,7 @@ class SettingsManager {
 const settingsManager = new SettingsManager()
 
 // Initialize settings on first import
-settingsManager.load().then(() => {
-  // Show the actual settings path
-  if (window.api?.getSettingsPath) {
-    window.api.getSettingsPath().then(path => {
-      alert(`Settings file location: ${path}`)
-    })
-  }
-}).catch(err => {
+settingsManager.load().catch(err => {
 })
 
 export { settingsManager, DEFAULT_SETTINGS }

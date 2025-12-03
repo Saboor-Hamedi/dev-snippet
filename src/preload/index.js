@@ -17,6 +17,12 @@ const api = {
   writeSettingsFile: (content) => electronAPI.ipcRenderer.invoke('settings:write', content),
   getSettingsPath: () => electronAPI.ipcRenderer.invoke('settings:getPath'),
   forceCreateSettings: () => electronAPI.ipcRenderer.invoke('settings:forceCreate'),
+  onSettingsChanged: (callback) => {
+    const subscription = (event, content) => callback(content)
+    electronAPI.ipcRenderer.on('settings:changed', subscription)
+    // Return unsubscribe function
+    return () => electronAPI.ipcRenderer.removeListener('settings:changed', subscription)
+  },
 
   // Database
   getSnippets: () => electronAPI.ipcRenderer.invoke('db:getSnippets'),
@@ -38,16 +44,14 @@ const api = {
   // Bounds helpers for custom resize handles (renderer will call these)
   getWindowBounds: () => electronAPI.ipcRenderer.invoke('window:getBounds'),
   setWindowBounds: (bounds) => electronAPI.ipcRenderer.invoke('window:setBounds', bounds),
-  restoreDefaultSize: () => electronAPI.ipcRenderer.invoke('window:restore-default-size'),
-  
+  restoreDefaultSize: () => electronAPI.ipcRenderer.invoke('window:restore-default-size')
 }
 
 if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)
     contextBridge.exposeInMainWorld('api', api)
-  } catch (error) {
-  }
+  } catch (error) {}
 } else {
   window.electron = electronAPI
   window.api = api

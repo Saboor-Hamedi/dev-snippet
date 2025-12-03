@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { getLanguage } from './EditorLanguage'
-import { useZoomLevel } from '../../hook/useSettingsContext.jsx'
+import { useZoomLevel } from '../../hook/useZoomLevel'
 
 // A self-contained editor that prefers CodeMirror 6 if available, with
 // a textarea fallback. All theming and CM wiring lives here.
@@ -18,8 +18,14 @@ const CodeEditor = ({
   const [CodeMirrorComponent, setCodeMirrorComponent] = useState(null)
   const [cmExtensions, setCmExtensions] = useState(null)
   const [zoomLevel, setZoomLevel] = useZoomLevel() // Persistent zoom level from settings
+  const zoomLevelRef = useRef(zoomLevel) // Ref to access current zoom in callbacks without re-running effects
   const editorRef = useRef(null)
   const viewRef = useRef(null) // Reference to CodeMirror EditorView
+
+  // Keep ref in sync
+  useEffect(() => {
+    zoomLevelRef.current = zoomLevel
+  }, [zoomLevel])
 
   // Notify parent component of zoom changes
   useEffect(() => {
@@ -34,29 +40,34 @@ const CodeEditor = ({
     const editorElement = document.querySelector('.cm-editor')
     if (editorElement && zoomLevel) {
       // Add smooth transition first
-      editorElement.style.transition = 'font-size 0.2s ease-out'
+      editorElement.style.transition = 'font-size 0.1s ease-out'
       
-      // Apply font size to the main editor
-      editorElement.style.fontSize = `calc(var(--xsmall) * ${zoomLevel})`
+      // Apply font size to the main editor using the CSS variable
+      // We use calc to combine the base font size with the zoom level
+      editorElement.style.fontSize = `calc(var(--editor-font-size, 14px) * ${zoomLevel})`
+      editorElement.style.fontFamily = 'var(--editor-font-family, "JetBrains Mono")'
       
       // Also update specific elements for complete coverage
       const contentElement = editorElement.querySelector('.cm-content')
       if (contentElement) {
-        contentElement.style.transition = 'font-size 0.2s ease-out'
-        contentElement.style.fontSize = `calc(var(--xsmall) * ${zoomLevel})`
+        contentElement.style.transition = 'font-size 0.1s ease-out'
+        contentElement.style.fontSize = `calc(var(--editor-font-size, 14px) * ${zoomLevel})`
+        contentElement.style.fontFamily = 'var(--editor-font-family, "JetBrains Mono")'
       }
       
       const gutterElement = editorElement.querySelector('.cm-gutters')
       if (gutterElement) {
-        gutterElement.style.transition = 'font-size 0.2s ease-out'
-        gutterElement.style.fontSize = `calc(var(--xsmall) * ${zoomLevel})`
+        gutterElement.style.transition = 'font-size 0.1s ease-out'
+        gutterElement.style.fontSize = `calc(var(--editor-font-size, 14px) * ${zoomLevel})`
+        gutterElement.style.fontFamily = 'var(--editor-font-family, "JetBrains Mono")'
       }
       
       // Update scroller element
       const scrollerElement = editorElement.querySelector('.cm-scroller')
       if (scrollerElement) {
-        scrollerElement.style.transition = 'font-size 0.2s ease-out'
-        scrollerElement.style.fontSize = `calc(var(--xsmall) * ${zoomLevel})`
+        scrollerElement.style.transition = 'font-size 0.1s ease-out'
+        scrollerElement.style.fontSize = `calc(var(--editor-font-size, 14px) * ${zoomLevel})`
+        scrollerElement.style.fontFamily = 'var(--editor-font-family, "JetBrains Mono")'
       }
     }
   }, [zoomLevel])
@@ -78,24 +89,23 @@ const CodeEditor = ({
           const isDark = document.documentElement.classList.contains('dark') ||
             document.documentElement.getAttribute('data-theme') === 'dark'
           
-          // Get current zoom level from React Context
-          const currentZoom = zoomLevel || 1.0
-
           // Get theme colors from CSS variables (set by your ThemeModal)
           const themeExt = EditorView.theme(
             {
               '&': {
                 backgroundColor: 'var(--color-bg-primary, #ffffff)',
                 color: 'var(--color-text-primary, #0f172a)',
-                fontFamily:
-                  "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
-                fontSize: `calc(var(--xsmall) * ${currentZoom})`,
+                // Use CSS variables for font settings
+                fontFamily: 'var(--editor-font-family, "JetBrains Mono")',
+                // We let the DOM style handle font size so we don't need to rebuild extensions on zoom
+                fontSize: 'inherit', 
                 height: '100%',
-                transition: 'font-size 0.2s ease-out'
+                transition: 'font-size 0.1s ease-out'
               },
               '.cm-scroller': { 
                 backgroundColor: 'var(--color-bg-primary, #ffffff)',
-                height: '100%'
+                height: '100%',
+                fontFamily: 'inherit'
               },
               '.cm-content': {
                 color: 'var(--color-text-primary, #0f172a)',
@@ -105,12 +115,14 @@ const CodeEditor = ({
                 paddingLeft: '12px',
                 paddingRight: '12px',
                 minHeight: '100%',
-                transition: 'font-size 0.2s ease-out'
+                transition: 'font-size 0.1s ease-out',
+                fontFamily: 'inherit'
               },
               '.cm-gutters': {
                 backgroundColor: 'var(--color-bg-secondary, #f8fafc)',
                 color: 'var(--color-text-secondary, #64748b)',
-                borderRight: 'none'
+                borderRight: 'none',
+                fontFamily: 'inherit'
               },
               '.cm-cursor': { 
                 borderLeftColor: 'var(--color-text-primary, #0f172a)'
@@ -147,8 +159,8 @@ const CodeEditor = ({
               {
                 key: 'Ctrl-=', // Ctrl + =
                 run: () => {
-                  // Get current zoom level from React context
-                  const newZoom = Math.min(zoomLevel + 0.1, 3)
+                  const current = zoomLevelRef.current || 1.0
+                  const newZoom = Math.min(current + 0.1, 3)
                   setZoomLevel(newZoom)
                   return true
                 }
@@ -156,7 +168,8 @@ const CodeEditor = ({
               {
                 key: 'Ctrl-Minus', // Ctrl + -
                 run: () => {
-                  const newZoom = Math.max(zoomLevel - 0.1, 0.5)
+                  const current = zoomLevelRef.current || 1.0
+                  const newZoom = Math.max(current - 0.1, 0.5)
                   setZoomLevel(newZoom)
                   return true
                 }
@@ -171,7 +184,8 @@ const CodeEditor = ({
               {
                 key: 'Cmd-=', // Cmd + = (Mac)
                 run: () => {
-                  const newZoom = Math.min(zoomLevel + 0.1, 3)
+                  const current = zoomLevelRef.current || 1.0
+                  const newZoom = Math.min(current + 0.1, 3)
                   setZoomLevel(newZoom)
                   return true
                 }
@@ -179,7 +193,8 @@ const CodeEditor = ({
               {
                 key: 'Cmd-Minus', // Cmd + - (Mac)
                 run: () => {
-                  const newZoom = Math.max(zoomLevel - 0.1, 0.5)
+                  const current = zoomLevelRef.current || 1.0
+                  const newZoom = Math.max(current - 0.1, 0.5)
                   setZoomLevel(newZoom)
                   return true
                 }
@@ -205,9 +220,9 @@ const CodeEditor = ({
                 if (event.ctrlKey || event.metaKey) {
                   event.preventDefault() // Prevent default scrolling
                   
+                  const current = zoomLevelRef.current || 1.0
                   const delta = event.deltaY < 0 ? 0.1 : -0.1 // Scroll up = zoom in, scroll down = zoom out
-                  const newZoom = Math.max(0.5, Math.min(3.0, zoomLevel + delta))
-                  
+                  const newZoom = Math.max(0.5, Math.min(3.0, current + delta))
                   
                   // Save zoom level for smooth update via transaction
                   setZoomLevel(newZoom)
@@ -241,8 +256,6 @@ const CodeEditor = ({
           if (mounted) setCmExtensions([])
         })
 
-        // Zoom shortcuts are now handled by CodeMirror keymap
-
         const obs = new MutationObserver(() => {
           buildExtensions().then(exts => {
             if (mounted) setCmExtensions(exts)
@@ -263,7 +276,7 @@ const CodeEditor = ({
         try { delete window.__cmThemeObserver } catch {}
       } catch {}
     }
-  }, [language, zoomLevel])
+  }, [language]) // Removed zoomLevel from dependency to prevent rebuilds
 
   if (CodeMirrorComponent && cmExtensions) {
     const CM = CodeMirrorComponent
@@ -280,7 +293,8 @@ const CodeEditor = ({
               if (editorDOM) {
                 // Apply current zoom immediately
                 if (zoomLevel && zoomLevel !== 1) {
-                  editorDOM.style.fontSize = `calc(var(--xsmall) * ${zoomLevel})`
+                  editorDOM.style.fontSize = `calc(var(--editor-font-size, 14px) * ${zoomLevel})`
+                  editorDOM.style.fontFamily = 'var(--editor-font-family, "JetBrains Mono")'
                 }
               }
             }, 100)
@@ -320,9 +334,8 @@ const CodeEditor = ({
       onKeyDown={onKeyDown}
       className={`w-full h-full dark:bg-slate-900 dark:text-slate-200 font-mono text-xsmall leading-6 ${className || ''}`}
       style={{
-        fontFamily:
-          "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
-        fontSize: 'var(--xsmall)',
+        fontFamily: 'var(--editor-font-family, "JetBrains Mono")',
+        fontSize: 'calc(var(--editor-font-size, 14px) * var(--zoom-level, 1))',
         color: 'var(--text-main)',
         backgroundColor: 'transparent',
         border: 'none',
