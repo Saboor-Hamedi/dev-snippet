@@ -1,3 +1,5 @@
+// This is the Setting Modal component for managing application settings with live updates.
+// LiveUpdates
 import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { X, Settings, Monitor, Keyboard, Sliders } from 'lucide-react'
@@ -33,8 +35,8 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div 
-        className="w-full max-w-4xl max-h-[90vh] bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-xl shadow-2xl flex flex-col"
+      <div
+        className="w-full max-w-2xl max-h-[90vh] bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-xl shadow-2xl flex flex-col"
         onClick={(e) => e.stopPropagation()}
         style={{
           backgroundColor: 'var(--color-bg-primary)',
@@ -43,20 +45,25 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b" style={{ borderBottomColor: 'var(--color-border)' }}>
+        <div
+          className="flex items-center justify-between p-6 border-b"
+          style={{ borderBottomColor: 'var(--color-border)' }}
+        >
+          {/* Header setting */}
           <div className="flex items-center gap-3">
-            <Settings size={20} style={{ color: 'var(--color-text-secondary)' }} />
-            <h2 className="text-xl font-semibold" style={{ color: 'var(--color-text-primary)' }}>Settings</h2>
+            <Settings size={12} style={{ color: 'var(--color-text-secondary)' }} />
+            <h2
+              className="text-xsmall font-semibold"
+              style={{ color: 'var(--color-text-primary)' }}
+            >
+              Settings
+            </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg transition-colors"
-            style={{
-              color: 'var(--color-text-tertiary)',
-              backgroundColor: 'transparent'
-            }}
-            onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--hover-bg)'}
-            onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+            className="p-1 hover:bg-slate-100 focus:outline-none focus:ring-0 rounded-md cursor-pointer transition-colors duration-150"
+            // onMouseEnter={(e) => (e.target.style.backgroundColor = 'var(--hover-bg)')}
+            // onMouseLeave={(e) => (e.target.style.backgroundColor = 'transparent')}
           >
             <X size={18} />
           </button>
@@ -65,17 +72,24 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            
             {/* Editor Settings */}
             <div className="space-y-6">
               <div className="flex items-center gap-2 mb-4">
-                <Monitor size={16} style={{ color: 'var(--color-text-tertiary)' }} />
-                <h3 className="text-lg font-medium" style={{ color: 'var(--color-text-primary)' }}>Editor</h3>
+                <Monitor size={12} style={{ color: 'var(--color-text-tertiary)' }} />
+                <h3
+                  className="text-xsmall font-medium"
+                  style={{ color: 'var(--color-text-primary)' }}
+                >
+                  Editor
+                </h3>
               </div>
 
               {/* Zoom Level */}
               <div className="space-y-2">
-                <label className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>
+                <label
+                  className="text-xsmall font-medium"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                >
                   Zoom Level: {localSettings.editor?.zoomLevel || 1.0}x
                 </label>
                 <input
@@ -91,7 +105,10 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
                     accentColor: 'var(--color-accent-primary)'
                   }}
                 />
-                <div className="flex justify-between text-xs" style={{ color: 'var(--color-text-tertiary)' }}>
+                <div
+                  className="flex justify-between text-xs"
+                  style={{ color: 'var(--color-text-tertiary)' }}
+                >
                   <span>50%</span>
                   <span>100%</span>
                   <span>300%</span>
@@ -100,7 +117,10 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
 
               {/* Font Size */}
               <div className="space-y-2">
-                <label className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>
+                <label
+                  className="text-xsmall font-medium"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                >
                   Font Size: {localSettings.editor?.fontSize || 14}px
                 </label>
                 <input
@@ -120,7 +140,12 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
 
               {/* Font Family */}
               <div className="space-y-2">
-                <label className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>Font Family</label>
+                <label
+                  className="text-xsmall font-medium"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                >
+                  Font Family
+                </label>
                 <select
                   value={localSettings.editor?.fontFamily || 'JetBrains Mono'}
                   onChange={(e) => updateSetting('editor.fontFamily', e.target.value)}
@@ -141,7 +166,7 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
 
               {/* Tab Size */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-300">
+                <label className="text-xsmall font-medium text-slate-300">
                   Tab Size: {localSettings.editor?.tabSize || 2} spaces
                 </label>
                 <select
@@ -157,18 +182,20 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
 
               {/* Word Wrap */}
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-slate-300">Word Wrap</label>
+                <label className="text-xsmall font-medium text-slate-300">Word Wrap</label>
                 <input
                   type="checkbox"
                   checked={localSettings.editor?.wordWrap === 'on'}
-                  onChange={(e) => updateSetting('editor.wordWrap', e.target.checked ? 'on' : 'off')}
+                  onChange={(e) =>
+                    updateSetting('editor.wordWrap', e.target.checked ? 'on' : 'off')
+                  }
                   className="rounded bg-slate-700 border-slate-600"
                 />
               </div>
 
               {/* Line Numbers */}
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-slate-300">Line Numbers</label>
+                <label className="text-xsmall font-medium text-slate-300">Line Numbers</label>
                 <input
                   type="checkbox"
                   checked={localSettings.editor?.lineNumbers || true}
@@ -181,13 +208,20 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
             {/* UI & Behavior Settings */}
             <div className="space-y-6">
               <div className="flex items-center gap-2 mb-4">
-                <Sliders size={16} style={{ color: 'var(--color-text-tertiary)' }} />
-                <h3 className="text-lg font-medium" style={{ color: 'var(--color-text-primary)' }}>Interface</h3>
+                <Sliders size={12} style={{ color: 'var(--color-text-tertiary)' }} />
+                <h3 className="text-lg font-medium" style={{ color: 'var(--color-text-primary)' }}>
+                  Interface
+                </h3>
               </div>
 
               {/* Compact Mode */}
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>Compact Mode</label>
+                <label
+                  className="text-xsmall font-medium"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                >
+                  Compact Mode
+                </label>
                 <input
                   type="checkbox"
                   checked={localSettings.ui?.compactMode || false}
@@ -198,7 +232,7 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
 
               {/* Auto Save */}
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-slate-300">Auto Save</label>
+                <label className="text-xsmall font-medium text-slate-300">Auto Save</label>
                 <input
                   type="checkbox"
                   checked={localSettings.behavior?.autoSave || true}
@@ -210,7 +244,7 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
               {/* Auto Save Delay */}
               {localSettings.behavior?.autoSave && (
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-300">
+                  <label className="text-xsmall font-medium text-slate-300">
                     Auto Save Delay: {localSettings.behavior?.autoSaveDelay || 2000}ms
                   </label>
                   <input
@@ -219,7 +253,9 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
                     max="5000"
                     step="500"
                     value={localSettings.behavior?.autoSaveDelay || 2000}
-                    onChange={(e) => updateSetting('behavior.autoSaveDelay', parseInt(e.target.value))}
+                    onChange={(e) =>
+                      updateSetting('behavior.autoSaveDelay', parseInt(e.target.value))
+                    }
                     className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer"
                   />
                 </div>
@@ -227,7 +263,7 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
 
               {/* Code Folding */}
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-slate-300">Code Folding</label>
+                <label className="text-xsmall font-medium text-slate-300">Code Folding</label>
                 <input
                   type="checkbox"
                   checked={localSettings.advanced?.enableCodeFolding || true}
@@ -238,7 +274,7 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
 
               {/* Auto Complete */}
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-slate-300">Auto Complete</label>
+                <label className="text-xsmall font-medium text-slate-300">Auto Complete</label>
                 <input
                   type="checkbox"
                   checked={localSettings.advanced?.enableAutoComplete || true}
@@ -250,47 +286,85 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
           </div>
 
           {/* Live Settings Preview */}
-          <div className="mt-8 p-4 rounded-lg border" style={{
-            backgroundColor: 'var(--color-bg-secondary)',
-            borderColor: 'var(--color-border)'
-          }}>
+          <div
+            className="mt-8 p-4 rounded-lg border"
+            style={{
+              backgroundColor: 'var(--color-bg-secondary)',
+              borderColor: 'var(--color-border)'
+            }}
+          >
             <div className="flex items-center gap-2 mb-3">
-              <Keyboard size={16} style={{ color: 'var(--color-text-tertiary)' }} />
-              <h4 className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>Live Settings JSON</h4>
+              <Keyboard size={12} style={{ color: 'var(--color-text-tertiary)' }} />
+              <h4
+                className="text-xsmall font-medium"
+                style={{ color: 'var(--color-text-secondary)' }}
+              >
+                Live Settings JSON
+              </h4>
             </div>
-            <pre className="text-xs overflow-x-auto" style={{ color: 'var(--color-text-tertiary)' }}>
+            <pre
+              className="text-xs overflow-x-auto"
+              style={{ color: 'var(--color-text-tertiary)' }}
+            >
               {JSON.stringify(localSettings, null, 2)}
             </pre>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t flex justify-between" style={{ borderTopColor: 'var(--color-border)' }}>
+        <div
+          className="p-6 border-t flex justify-between"
+          style={{ borderTopColor: 'var(--color-border)' }}
+        >
           <button
             onClick={() => {
               // Reset to defaults
               const defaults = {
-                editor: { zoomLevel: 1.0, fontSize: 14, fontFamily: 'JetBrains Mono', lineNumbers: true, wordWrap: 'on', tabSize: 2, theme: 'dark' },
-                ui: { compactMode: false, showPreview: false, sidebarWidth: 250, previewPosition: 'right' },
-                behavior: { autoSave: true, autoSaveDelay: 2000, confirmDelete: true, restoreSession: true },
-                advanced: { enableCodeFolding: true, enableAutoComplete: true, enableLinting: false, maxFileSize: 1048576 }
+                editor: {
+                  zoomLevel: 1.0,
+                  fontSize: 14,
+                  fontFamily: 'JetBrains Mono',
+                  lineNumbers: true,
+                  wordWrap: 'on',
+                  tabSize: 2,
+                  theme: 'dark'
+                },
+                ui: {
+                  compactMode: false,
+                  showPreview: false,
+                  sidebarWidth: 250,
+                  previewPosition: 'right'
+                },
+                behavior: {
+                  autoSave: true,
+                  autoSaveDelay: 2000,
+                  confirmDelete: true,
+                  restoreSession: true
+                },
+                advanced: {
+                  enableCodeFolding: true,
+                  enableAutoComplete: true,
+                  enableLinting: false,
+                  maxFileSize: 1048576
+                }
               }
               setLocalSettings(defaults)
               onSettingsChange(defaults)
             }}
-            className="px-4 py-2 transition-colors"
-            style={{
-              color: 'var(--color-text-tertiary)',
-              backgroundColor: 'transparent'
-            }}
-            onMouseEnter={(e) => e.target.style.color = 'var(--color-text-primary)'}
-            onMouseLeave={(e) => e.target.style.color = 'var(--color-text-tertiary)'}
+            className="px-4 py-2 transition-colors rounded-md"
+            // style={{
+            //   color: 'var(--color-text-tertiary)',
+            //   backgroundColor: 'transparent'
+            // }}
+            onMouseEnter={(e) => (e.target.style.color = 'var(--color-text-primary)')}
+            onMouseLeave={(e) => (e.target.style.color = 'var(--color-text-tertiary)')}
           >
             Reset to Defaults
           </button>
-          
+
+            {/* Footer close button */}
           <div className="flex gap-3">
-            <button
+            {/* <button
               onClick={onClose}
               className="px-4 py-2 rounded-lg transition-colors"
               style={{
@@ -299,11 +373,11 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
                 borderColor: 'var(--color-border)',
                 border: '1px solid'
               }}
-              onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--hover-bg)'}
-              onMouseLeave={(e) => e.target.style.backgroundColor = 'var(--color-bg-secondary)'}
+              onMouseEnter={(e) => (e.target.style.backgroundColor = 'var(--hover-bg)')}
+              onMouseLeave={(e) => (e.target.style.backgroundColor = 'var(--color-bg-secondary)')}
             >
               Close
-            </button>
+            </button> */}
           </div>
         </div>
       </div>

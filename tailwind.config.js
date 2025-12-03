@@ -42,7 +42,8 @@ module.exports = {
         medium: '1rem', // 16px example
         small: '0.875rem', // 14px example
         xsmall: '0.75rem', // 12px example
-        tiny: '0.625rem' // 10px example
+        tiny: '0.625rem', // 10px example
+        xtiny: '0.5rem' // 8px example
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-in-out',

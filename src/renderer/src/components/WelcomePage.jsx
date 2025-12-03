@@ -259,7 +259,7 @@ const WelcomePage = ({ onNewSnippet, onNewProject, onOpenSettings, onSelectSnipp
                 <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
                 <span className="text-[var(--color-text-secondary)]">System Ready</span>
               </div>
-              <div className="text-[var(--color-text-secondary)] font-mono opacity-60">v1.0.0</div>
+              <div className="text-[var(--color-text-secondary)] font-mono opacity-60">v1.2.0</div>
             </div>
             <div className="flex items-center gap-6 text-[var(--color-text-secondary)]">
               <div className="flex items-center gap-1">
