@@ -11,7 +11,12 @@ import DeleteModel from '../modal/DeleteModel'
 import SettingsModal from '../SettingsModal'
 import { useKeyboardShortcuts } from '../../hook/useKeyboardShortcuts'
 import { useSettings } from '../../hook/useSettingsContext.jsx'
+import { useFontSettings } from '../../hook/useFontSettings'
+
 const SnippetLibrary = () => {
+  // Apply font settings globally
+  useFontSettings()
+
   // 1. Logic & Data (From Hook)
   const { snippets, selectedSnippet, setSelectedSnippet, setSnippets, saveSnippet, deleteItem } =
     useSnippetData()
@@ -156,6 +161,7 @@ const SnippetLibrary = () => {
     },
     onTogglePreview: () => {
       setShowPreview((s) => !s)
+
     },
     onCreateSnippet: () => {
       setIsCreatingSnippet(true)

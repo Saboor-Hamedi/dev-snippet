@@ -1,12 +1,10 @@
 import React, { useEffect, useRef } from 'react'
 import SnippetLibrary from './components/workbench/SnippetLibrary'
 import { useTheme } from './hook/useTheme'
-import { useFontSettings } from './hook/useFontSettings'
 import { SettingsProvider } from './hook/useSettingsContext.jsx'
 
 function App() {
   const { setTheme } = useTheme()
-  useFontSettings()
   
   // Apply comprehensive theme system on app start
   useEffect(() => {

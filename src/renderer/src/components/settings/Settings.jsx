@@ -36,6 +36,57 @@ class SettingsManager {
   constructor() {
     this.settings = { ...DEFAULT_SETTINGS }
     this.listeners = new Set()
+    this.watchingEnabled = false
+    this.unsubscribeWatcher = null
+  }
+
+  // Start watching settings file
+  async startWatching() {
+    if (this.watchingEnabled) return
+    try {
+      // Listen for file changes using the correct API
+      if (window.api?.onSettingsChanged) {
+        this.unsubscribeWatcher = window.api.onSettingsChanged((data) => {
+          try {
+            const newSettings = JSON.parse(data)
+            // Merge with defaults to ensure structure
+            this.settings = { 
+              ...DEFAULT_SETTINGS, 
+              ...newSettings,
+              editor: { ...DEFAULT_SETTINGS.editor, ...newSettings.editor },
+              ui: { ...DEFAULT_SETTINGS.ui, ...newSettings.ui },
+              behavior: { ...DEFAULT_SETTINGS.behavior, ...newSettings.behavior },
+              advanced: { ...DEFAULT_SETTINGS.advanced, ...newSettings.advanced }
+            }
+            console.log('🔄 Settings updated from file:', this.settings)
+            this.notifyListeners()
+          } catch (err) {
+            console.warn('Failed to parse settings from file:', err)
+          }
+        })
+        
+        this.watchingEnabled = true
+        console.log('✅ Settings file watching enabled')
+      }
+    } catch (err) {
+      console.error('Failed to start watching settings file:', err)
+    }
+  }
+
+  // Stop watching
+  async stopWatching() {
+    if (!this.watchingEnabled) return
+
+    try {
+      if (this.unsubscribeWatcher) {
+        this.unsubscribeWatcher()
+        this.unsubscribeWatcher = null
+      }
+      this.watchingEnabled = false
+      console.log('⏹️ Settings file watching disabled')
+    } catch (err) {
+      console.warn('Failed to stop settings watching:', err)
+    }
   }
 
   // Load settings from JSON file
@@ -44,12 +95,24 @@ class SettingsManager {
       if (window.api?.readSettingsFile) {
         const data = await window.api.readSettingsFile()
         if (data) {
-          this.settings = { ...DEFAULT_SETTINGS, ...JSON.parse(data) }
+          const newSettings = JSON.parse(data)
+          this.settings = { 
+            ...DEFAULT_SETTINGS, 
+            ...newSettings,
+            editor: { ...DEFAULT_SETTINGS.editor, ...newSettings.editor },
+            ui: { ...DEFAULT_SETTINGS.ui, ...newSettings.ui },
+            behavior: { ...DEFAULT_SETTINGS.behavior, ...newSettings.behavior },
+            advanced: { ...DEFAULT_SETTINGS.advanced, ...newSettings.advanced }
+          }
           this.notifyListeners()
         }
       }
+      // Start watching after load
+      this.startWatching()
     } catch (error) {
       this.settings = { ...DEFAULT_SETTINGS }
+      // Start watching even if load failed (file might be created later)
+      this.startWatching()
     }
   }
 
@@ -58,10 +121,10 @@ class SettingsManager {
     try {
       if (window.api?.writeSettingsFile) {
         const settingsJson = JSON.stringify(this.settings, null, 2)
-        const result = await window.api.writeSettingsFile(settingsJson)
-      } else {
+        await window.api.writeSettingsFile(settingsJson)
       }
     } catch (error) {
+      console.error('Failed to save settings:', error)
     }
   }
 
@@ -110,6 +173,7 @@ class SettingsManager {
       try {
         callback(this.settings)
       } catch (error) {
+        console.error('Error in settings listener:', error)
       }
     })
   }
@@ -132,6 +196,7 @@ const settingsManager = new SettingsManager()
 
 // Initialize settings on first import
 settingsManager.load().catch(err => {
+  console.error('Failed to initialize settings:', err)
 })
 
 export { settingsManager, DEFAULT_SETTINGS }

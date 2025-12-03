@@ -17,9 +17,25 @@ export const SettingsProvider = ({ children }) => {
     const unsubscribe = settingsManager.subscribe((newSettings) => {
       setSettings({ ...newSettings })
     })
-
-    return unsubscribe
+    
+    return () => {
+      unsubscribe()
+    }
   }, [])
+
+  // Apply font settings to CSS variables whenever settings change
+  useEffect(() => {
+    if (settings.editor) {
+      const root = document.documentElement
+      const fontSize = settings.editor.fontSize || 14
+      const fontFamily = settings.editor.fontFamily || 'JetBrains Mono'
+      
+      const sizeVal = typeof fontSize === 'number' ? `${fontSize / 16}rem` : fontSize
+      
+      root.style.setProperty('--editor-font-size', sizeVal)
+      root.style.setProperty('--editor-font-family', fontFamily)
+    }
+  }, [settings])
 
   // Get a specific setting by path (e.g., 'editor.zoomLevel')
   const getSetting = (path) => {

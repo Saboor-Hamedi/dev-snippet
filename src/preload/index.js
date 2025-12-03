@@ -13,6 +13,9 @@ const api = {
   readDirectory: (path) => electronAPI.ipcRenderer.invoke('fs:readDirectory', path),
 
   // Settings JSON file
+  //  This take are of life watch setttings.json file changes from outside the app
+
+  // Settings JSON file
   readSettingsFile: () => electronAPI.ipcRenderer.invoke('settings:read'),
   writeSettingsFile: (content) => electronAPI.ipcRenderer.invoke('settings:write', content),
   getSettingsPath: () => electronAPI.ipcRenderer.invoke('settings:getPath'),

@@ -40,6 +40,8 @@ const SplitPane = ({ left, right, minLeft = 200, minRight = 200, initialLeft = 5
     rafRef.current = requestAnimationFrame(step)
   }
 
+  const userSplitRef = useRef(initialLeft)
+
   useEffect(() => {
     const scheduleUpdate = (pct) => {
       cancelPendingRaf()
@@ -57,6 +59,10 @@ const SplitPane = ({ left, right, minLeft = 200, minRight = 200, initialLeft = 5
       const minRightPx = Math.max(minRight, 0)
       const clampedX = Math.min(Math.max(x, minLeftPx), rect.width - minRightPx)
       const pct = (clampedX / rect.width) * 100
+      
+      // Update user preference
+      userSplitRef.current = pct
+      
       scheduleUpdate(pct)
       try {
         e.preventDefault()
@@ -114,15 +120,13 @@ const SplitPane = ({ left, right, minLeft = 200, minRight = 200, initialLeft = 5
   useEffect(() => {
     try {
       if (rightHidden) {
-        prevLeftRef.current = leftPercent
         animatePercent(leftPercent, 100, 200, () => setRenderRight(false))
       } else {
-        const target = prevLeftRef.current != null ? prevLeftRef.current : initialLeft
+        // Restore to last user-selected split, or initial
+        const target = userSplitRef.current || initialLeft
         setRenderRight(true)
         setLeftPercent(100)
-        animatePercent(100, target, 200, () => {
-          prevLeftRef.current = null
-        })
+        animatePercent(100, target, 200)
       }
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
