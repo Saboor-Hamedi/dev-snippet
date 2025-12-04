@@ -42,7 +42,8 @@ export const useSnippetData = () => {
         ...snippet,
         type: 'snippet',
         sort_index: snippet.sort_index ?? null,
-        code: fullText
+        code: fullText,
+        is_draft: false // Explicitly mark as saved (not draft)
       }
 
       // Save to database
@@ -51,7 +52,7 @@ export const useSnippetData = () => {
       // Update local list in-place to avoid flicker
       setSnippets((prev) => {
         const exists = prev.some((s) => s.id === snippet.id)
-        const updatedItem = { ...snippet, code: fullText } // Keep full content in local state
+        const updatedItem = { ...snippet, code: fullText, is_draft: false } // Keep full content in local state and mark as saved
         return exists
           ? prev.map((s) => (s.id === snippet.id ? { ...s, ...updatedItem } : s))
           : [updatedItem, ...prev]
@@ -61,7 +62,7 @@ export const useSnippetData = () => {
         if (!options.skipSelectedUpdate) {
           if (selectedSnippet && selectedSnippet.id === snippet.id) {
             // Force refresh the selected snippet with updated data
-            const refreshedSnippet = { ...snippet, code: fullText }
+            const refreshedSnippet = { ...snippet, code: fullText, is_draft: false }
             setSelectedSnippetState(refreshedSnippet)
           }
         }      showToast('✓ Snippet saved successfully')

@@ -8,6 +8,17 @@ const NamePrompt = ({
   onCancel,
   onConfirm
 }) => {
+  // Handle keyboard shortcuts
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && value?.trim()) {
+      e.preventDefault()
+      onConfirm && onConfirm()
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      onCancel && onCancel()
+    }
+  }
+
   if (!open) return null
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-black/40">
@@ -18,6 +29,7 @@ const NamePrompt = ({
         <input
           value={value}
           onChange={(e) => onChange && onChange(e.target.value)}
+          onKeyDown={handleKeyDown}
           className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-[#30363d] rounded text-slate-800 dark:text-slate-200"
           placeholder="e.g. hello.js or notes"
           autoFocus
@@ -31,7 +43,8 @@ const NamePrompt = ({
           </button>
           <button
             onClick={onConfirm}
-            className="px-3 py-1.5 text-sm bg-primary-600 hover:bg-primary-700 text-white rounded"
+            disabled={!value?.trim()}
+            className="px-3 py-1.5 text-sm bg-primary-600 hover:bg-primary-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Save
           </button>

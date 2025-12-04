@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { getLanguage } from './EditorLanguage'
 import { useZoomLevel, MIN_ZOOM, MAX_ZOOM } from '../../hook/useZoomLevel'
-
+import settingManager from '../../config/settings.js'
 // A self-contained editor that prefers CodeMirror 6 if available, with
 // a textarea fallback. All theming and CM wiring lives here.
 const CodeEditor = ({
@@ -180,7 +180,7 @@ const CodeEditor = ({
 
           const exts = [themeExt]
           // wrap lines
-          if (wordWrap === 'on') {
+          if (settingManager.get('editor.wordWrap') === 'on' || wordWrap === 'on') {
             exts.push(EditorView.lineWrapping)
           }
           // Add zoom keymap - get current zoom dynamically to avoid closure issues

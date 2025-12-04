@@ -4,6 +4,9 @@ import fs from 'fs/promises'
 import Database from 'better-sqlite3'
 let db
 
+
+
+
 function initDB() {
   const dbPath = join(app.getPath('userData'), 'snippets.db')
   db = new Database(dbPath)

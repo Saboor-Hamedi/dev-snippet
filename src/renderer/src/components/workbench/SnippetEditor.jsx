@@ -193,8 +193,8 @@ const SnippetEditor = ({
     }
   }, [initialSnippet?.id])
 
-  const [nameOpen, setNameOpen] = useState(false)
-  const [nameInput, setNameInput] = useState('')
+  // Name prompt state for saving unsaved snippets
+  const [namePrompt, setNamePrompt] = useState({ isOpen: false, initialName: '' })
 
   // Trigger debounced save on content or language change
   useEffect(() => {
@@ -217,8 +217,7 @@ const SnippetEditor = ({
       // Ctrl+S: Open save prompt if no title, otherwise trigger save
       const title = initialSnippet?.title || ''
       if (!title || title.toLowerCase() === 'untitled') {
-        setNameInput('')
-        setNameOpen(true)
+        setNamePrompt({ isOpen: true, initialName: '' })
       } else {
         handleSave()
       }
@@ -241,25 +240,20 @@ const SnippetEditor = ({
   const handleSave = () => {
     ;(async () => {
       let title = initialSnippet?.title || ''
-      // If nothing changed (title, code, language), do nothing — avoid
-      // showing a "Saved" indicator when there are no edits.
-      try {
+      // Only show "No changes to save" for saved snippets with actual content
+      if (initialSnippet?.id && !initialSnippet?.is_draft && initialSnippet?.title && 
+          initialSnippet.title !== '' && !initialSnippet.id.startsWith('draft-')) {
         const prevCode = initialSnippet?.code || ''
         const prevLang = initialSnippet?.language || 'md'
         const prevTitle = initialSnippet?.title || ''
-        const unchanged =
-          prevCode === (code || '') && prevLang === (language || 'md') && prevTitle === title
+        const unchanged = prevCode === (code || '') && prevLang === (language || 'md') && prevTitle === title
         if (unchanged) {
-          // Nothing changed — show subtle feedback and return early.
-          try {
-            if (typeof showToast === 'function') showToast('No changes to save', 'info')
-          } catch {}
+          if (typeof showToast === 'function') showToast('No changes to save', 'info')
           return
         }
-      } catch (e) {}
+      }
       if (!title || title.toLowerCase() === 'untitled') {
-        setNameInput('')
-        setNameOpen(true)
+        setNamePrompt({ isOpen: true, initialName: '' })
         return
       }
       const payload = {
@@ -388,12 +382,12 @@ const SnippetEditor = ({
             {false && <div />}
 
             <NamePrompt
-              open={nameOpen}
-              value={nameInput}
-              onChange={setNameInput}
-              onCancel={() => setNameOpen(false)}
+              open={namePrompt.isOpen}
+              value={namePrompt.initialName}
+              onChange={(val) => setNamePrompt((prev) => ({ ...prev, initialName: val }))}
+              onCancel={() => setNamePrompt({ isOpen: false, initialName: '' })}
               onConfirm={() => {
-                const t = (nameInput || '').trim()
+                const t = (namePrompt.initialName || '').trim()
                 if (!t) return
                 const payload = {
                   id: initialSnippet?.id || Date.now().toString(),
@@ -404,7 +398,7 @@ const SnippetEditor = ({
                   type: 'snippet',
                   is_draft: false
                 }
-                setNameOpen(false)
+                setNamePrompt({ isOpen: false, initialName: '' })
                 onSave(payload)
               }}
             />

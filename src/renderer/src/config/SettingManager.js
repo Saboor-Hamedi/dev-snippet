@@ -1,45 +1,32 @@
-import React, { useState, useEffect } from 'react'
+// SettingManager.js
+// Manages application settings: load, save, watch for changes, notify subscribers
 
-// Default settings structure
-const DEFAULT_SETTINGS = {
-  editor: {
-    zoomLevel: 1.0,
-    fontSize: 14,
-    fontFamily: 'JetBrains Mono',
-    lineNumbers: true,
-    wordWrap: 'on',
-    tabSize: 2,
-    theme: 'dark'
-  },
-  ui: {
-    compactMode: false,
-    showPreview: false,
-    sidebarWidth: 250,
-    previewPosition: 'right'
-  },
-  behavior: {
-    autoSave: true,
-    autoSaveDelay: 2000,
-    confirmDelete: true,
-    restoreSession: true
-  },
-  advanced: {
-    enableCodeFolding: true,
-    enableAutoComplete: true,
-    enableLinting: false,
-    maxFileSize: 1048576 // 1MB
-  }
-}
-
-// Settings manager class
-class SettingsManager {
-  constructor() {
-    this.settings = { ...DEFAULT_SETTINGS }
+import { DEFAULT_SETTINGS } from "./defaults.js"
+class SettingManager {
+  constructor(defaultSettings) {
+    this.DEFAULT_SETTINGS = defaultSettings || DEFAULT_SETTINGS
+    this.settings = { ...this.DEFAULT_SETTINGS }
     this.listeners = new Set()
     this.watchingEnabled = false
     this.unsubscribeWatcher = null
   }
+  // 1. Schema validation
 
+  validateSettingsEarly(settings) {
+    const required = ['editor', 'ui', 'behavior', 'advanced']
+    return required.every((key) => settings && typeof settings[key] === 'object')
+  }
+
+  // 2. Sanitize and watch for changes
+  sanitizeValueEarly(value) {
+    if (typeof value === 'string') {
+      return value.slice(0, 1000) // Prevent extremely long strings
+    }
+    if (typeof value === 'number') {
+      return Math.max(-1000, Math.min(1000, value)) // Reasonable bounds
+    }
+    return value
+  }
   // Start watching settings file
   async startWatching() {
     if (this.watchingEnabled) return
@@ -48,6 +35,18 @@ class SettingsManager {
       if (window.api?.onSettingsChanged) {
         this.unsubscribeWatcher = window.api.onSettingsChanged((data) => {
           try {
+            // Validation on zoom level
+            // if (!data || data.trim() === ' ') {
+            //   console.warn('Empty settings data received, skipping update')
+
+            //   return
+            // }
+
+            if (!data || data.trim() === '') {
+              console.debug('[Settings] Skipping empty update')
+              return
+            }
+
             const newSettings = JSON.parse(data)
             // Merge with defaults to ensure structure
             this.settings = {
@@ -96,13 +95,20 @@ class SettingsManager {
         const data = await window.api.readSettingsFile()
         if (data) {
           const newSettings = JSON.parse(data)
-          this.settings = {
-            ...DEFAULT_SETTINGS,
-            ...newSettings,
-            editor: { ...DEFAULT_SETTINGS.editor, ...newSettings.editor },
-            ui: { ...DEFAULT_SETTINGS.ui, ...newSettings.ui },
-            behavior: { ...DEFAULT_SETTINGS.behavior, ...newSettings.behavior },
-            advanced: { ...DEFAULT_SETTINGS.advanced, ...newSettings.advanced }
+          
+          // Use proper validation method
+          if (!this.validateSettings(newSettings)) {
+            console.warn('Invalid settings structure in file, using defaults')
+            this.settings = { ...DEFAULT_SETTINGS }
+          } else {
+            this.settings = {
+              ...DEFAULT_SETTINGS,
+              ...newSettings,
+              editor: { ...DEFAULT_SETTINGS.editor, ...newSettings.editor },
+              ui: { ...DEFAULT_SETTINGS.ui, ...newSettings.ui },
+              behavior: { ...DEFAULT_SETTINGS.behavior, ...newSettings.behavior },
+              advanced: { ...DEFAULT_SETTINGS.advanced, ...newSettings.advanced }
+            }
           }
           this.notifyListeners()
         }
@@ -139,8 +145,13 @@ class SettingsManager {
     return value
   }
 
-  // Set a setting value
+  // Backup before changes
   async set(path, value) {
+    const backup = { ...this.settings }
+    
+    try {
+      // Sanitize the input value
+      const sanitizedValue = this.sanitizeValue(value)
     const keys = path.split('.')
     let target = this.settings
 
@@ -154,11 +165,22 @@ class SettingsManager {
     }
 
     // Set the final value
-    target[keys[keys.length - 1]] = value
+    target[keys[keys.length - 1]] = sanitizedValue
+
+    // Skip validation for zoom level updates (allow rapid changes)
+    if (!path.includes('zoomLevel') && !this.validateSettings(this.settings)) {
+      this.settings = backup // Restore backup
+      throw new Error('Invalid settings structure after update')
+    }
 
     // Save and notify
     await this.save()
     this.notifyListeners()
+    } catch (err) {
+      this.settings = backup // Restore backup on any error
+      console.error('Failed to set setting:', err)
+      throw err
+    }
   }
 
   // Subscribe to setting changes
@@ -189,15 +211,35 @@ class SettingsManager {
   getAll() {
     return { ...this.settings }
   }
+
+  // Validate settings structure
+  validateSettings(settings) {
+    if (!settings || typeof settings !== 'object') return false
+    
+    const required = ['editor', 'ui', 'behavior', 'advanced']
+    return required.every(key => 
+      settings[key] && typeof settings[key] === 'object'
+    )
+  }
+
+  // Sanitize input values
+  sanitizeValue(value) {
+    if (typeof value === 'string') {
+      return value.slice(0, 1000) // Prevent extremely long strings
+    }
+    if (typeof value === 'number') {
+      return Math.max(-1000, Math.min(1000, value)) // Reasonable bounds
+    }
+    if (typeof value === 'boolean') {
+      return value
+    }
+    if (Array.isArray(value)) {
+      return value.slice(0, 100) // Limit array size
+    }
+    if (typeof value === 'object' && value !== null) {
+      return value // Objects are allowed
+    }
+    return value
+  }
 }
-
-// Global settings manager instance
-const settingsManager = new SettingsManager()
-
-// Initialize settings on first import
-settingsManager.load().catch((err) => {
-  console.error('Failed to initialize settings:', err)
-})
-
-export { settingsManager, DEFAULT_SETTINGS }
-export default settingsManager
+export default SettingManager
