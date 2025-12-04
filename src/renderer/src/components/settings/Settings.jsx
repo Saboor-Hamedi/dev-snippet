@@ -50,8 +50,8 @@ class SettingsManager {
           try {
             const newSettings = JSON.parse(data)
             // Merge with defaults to ensure structure
-            this.settings = { 
-              ...DEFAULT_SETTINGS, 
+            this.settings = {
+              ...DEFAULT_SETTINGS,
               ...newSettings,
               editor: { ...DEFAULT_SETTINGS.editor, ...newSettings.editor },
               ui: { ...DEFAULT_SETTINGS.ui, ...newSettings.ui },
@@ -64,7 +64,7 @@ class SettingsManager {
             console.warn('Failed to parse settings from file:', err)
           }
         })
-        
+
         this.watchingEnabled = true
         console.log('✅ Settings file watching enabled')
       }
@@ -96,8 +96,8 @@ class SettingsManager {
         const data = await window.api.readSettingsFile()
         if (data) {
           const newSettings = JSON.parse(data)
-          this.settings = { 
-            ...DEFAULT_SETTINGS, 
+          this.settings = {
+            ...DEFAULT_SETTINGS,
             ...newSettings,
             editor: { ...DEFAULT_SETTINGS.editor, ...newSettings.editor },
             ui: { ...DEFAULT_SETTINGS.ui, ...newSettings.ui },
@@ -143,7 +143,7 @@ class SettingsManager {
   async set(path, value) {
     const keys = path.split('.')
     let target = this.settings
-    
+
     // Navigate to the parent object
     for (let i = 0; i < keys.length - 1; i++) {
       const key = keys[i]
@@ -152,10 +152,10 @@ class SettingsManager {
       }
       target = target[key]
     }
-    
+
     // Set the final value
     target[keys[keys.length - 1]] = value
-    
+
     // Save and notify
     await this.save()
     this.notifyListeners()
@@ -169,7 +169,7 @@ class SettingsManager {
 
   // Notify all listeners
   notifyListeners() {
-    this.listeners.forEach(callback => {
+    this.listeners.forEach((callback) => {
       try {
         callback(this.settings)
       } catch (error) {
@@ -195,7 +195,7 @@ class SettingsManager {
 const settingsManager = new SettingsManager()
 
 // Initialize settings on first import
-settingsManager.load().catch(err => {
+settingsManager.load().catch((err) => {
   console.error('Failed to initialize settings:', err)
 })
 

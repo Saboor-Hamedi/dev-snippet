@@ -1,8 +1,8 @@
-  // SnippetEditor
-  // - Responsible for editing a single snippet (draft or existing)
-  // - Provides debounced autosave, forced-save (Ctrl+S) and name/save modal
-  // - Receives `showToast` from parent to display user-facing toasts
-  import React, { useState, useEffect, useRef } from 'react'
+// SnippetEditor
+// - Responsible for editing a single snippet (draft or existing)
+// - Provides debounced autosave, forced-save (Ctrl+S) and name/save modal
+// - Receives `showToast` from parent to display user-facing toasts
+import React, { useState, useEffect, useRef } from 'react'
 import PropTypes from 'prop-types'
 import { useKeyboardShortcuts } from '../../hook/useKeyboardShortcuts.js'
 import { useEditorFocus } from '../../hook/useEditorFocus.js'
@@ -15,6 +15,7 @@ import SplitPane from '../SplitPane.jsx'
 import CodeEditor from '../codemirror/CodeEditor.jsx'
 import LivePreview from '../LivePreview.jsx'
 import NamePrompt from '../modal/NamePrompt.jsx'
+import { useSettings } from '../../hook/useSettingsContext'
 
 const SnippetEditor = ({
   onSave,
@@ -29,14 +30,14 @@ const SnippetEditor = ({
   showToast,
   // layout control forwarded from parent
   isCompact,
-  onToggleCompact
-  ,
+  onToggleCompact,
   showPreview
 }) => {
   const [code, setCode] = useState(initialSnippet?.code || '')
   const [language, setLanguage] = React.useState(initialSnippet?.language || 'markdown')
   const [isDirty, setIsDirty] = useState(false)
-  const [zoomLevel] = useZoomLevel() // Use React Context for zoom level
+  const [zoomLevel] = useZoomLevel() // Use useSettingsReact Context for zoom level
+  const { settings } = useSettings()
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(() => {
     try {
       const saved = localStorage.getItem('autoSave')
@@ -52,6 +53,9 @@ const SnippetEditor = ({
   const isDeletingRef = useRef(false)
   const textareaRef = useRef(null)
   const editorContainerRef = useRef(null)
+  // Line wrapped here from  CodeEditor.jsx
+  const wordWrap = settings?.editor?.wordWrap || 'off'
+
   // Local compact mode (used only if parent doesn't control it)
   const [localCompact, setLocalCompact] = useState(() => {
     try {
@@ -60,7 +64,7 @@ const SnippetEditor = ({
       return false
     }
   })
-  
+
   useEffect(() => {
     try {
       localStorage.setItem('compactMode', localCompact)
@@ -243,7 +247,8 @@ const SnippetEditor = ({
         const prevCode = initialSnippet?.code || ''
         const prevLang = initialSnippet?.language || 'md'
         const prevTitle = initialSnippet?.title || ''
-        const unchanged = prevCode === (code || '') && prevLang === (language || 'md') && prevTitle === title
+        const unchanged =
+          prevCode === (code || '') && prevLang === (language || 'md') && prevTitle === title
         if (unchanged) {
           // Nothing changed — show subtle feedback and return early.
           try {
@@ -323,7 +328,7 @@ const SnippetEditor = ({
         !isCreateMode && (!initialSnippet || !initialSnippet.id) ? (
           <WelcomePage onNewSnippet={onNew} />
         ) : (
-          <div className="h-full overflow-hidden flex flex-col items-stretch bg-slate-50 dark:bg-[#0d1117] transition-colors duration-200 relative">
+          <div className="h-full overflow-hidden flex flex-col items-stretch bg-slate-50 dark:bg-[#0d1117] relative">
             {/* Header is rendered at the top-level (SnippetLibrary). Do not render it here to avoid duplicates. */}
             <div
               className="flex-1 min-h-0 overflow-hidden editor-container relative"
@@ -338,6 +343,7 @@ const SnippetEditor = ({
                   <div ref={editorContainerRef} className="w-full h-full">
                     <CodeEditor
                       value={code || ''}
+                      wordWrap={wordWrap}
                       onChange={(val) => {
                         try {
                           setCode(val || '')
@@ -402,7 +408,13 @@ const SnippetEditor = ({
                 onSave(payload)
               }}
             />
-            <div className="flex items-center justify-between px-2 py-1" style={{ backgroundColor: 'var(--header-bg)', borderTop: '1px solid var(--border-color)' }}>
+            <div
+              className="flex items-center justify-between px-2 py-1"
+              style={{
+                backgroundColor: 'var(--header-bg)',
+                borderTop: '1px solid var(--border-color)'
+              }}
+            >
               <div className="flex items-center gap-2">
                 <select
                   value={language}
@@ -413,8 +425,12 @@ const SnippetEditor = ({
                   className="text-xs bg-transparent border-none outline-none px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-300 cursor-pointer"
                   title="Select Language"
                 >
-                  {getAllLanguages().map(lang => (
-                    <option key={lang.key} value={lang.key} className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                  {getAllLanguages().map((lang) => (
+                    <option
+                      key={lang.key}
+                      value={lang.key}
+                      className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                    >
                       {lang.name}
                     </option>
                   ))}
