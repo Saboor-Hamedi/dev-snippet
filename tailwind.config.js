@@ -1,7 +1,31 @@
 /** @type {import('tailwindcss').Config} */
+const Size = {
+  xtiny: ['0.625rem', { lineHeight: '1rem' }], // 10px
+  tiny: ['0.75rem', { lineHeight: '1rem' }], // 12px  ← most people call this "xs"
+
+  // Official modern scale (recommended)
+  xs: ['0.75rem', { lineHeight: '1rem' }], // 12px
+  sm: ['0.875rem', { lineHeight: '1.25rem' }], // 14px
+  base: ['1rem', { lineHeight: '1.5rem' }], // 16px ← default body
+  lg: ['1.125rem', { lineHeight: '1.75rem' }], // 18px
+  xl: ['1.25rem', { lineHeight: '1.75rem' }], // 20px
+  '2xl': ['1.5rem', { lineHeight: '2rem' }], // 24px
+  '3xl': ['1.875rem', { lineHeight: '2.25rem' }], // 30px
+  '4xl': ['2.25rem', { lineHeight: '2.5rem' }], // 36px
+  '5xl': ['3rem', { lineHeight: '1' }], // 48px (no leading)
+  '6xl': ['3.75rem', { lineHeight: '1' }], // 60px
+  '7xl': ['4.5rem', { lineHeight: '1' }], // 72px
+  '8xl': ['6rem', { lineHeight: '1' }], // 96px
+  '9xl': ['8rem', { lineHeight: '1' }], // 128px
+
+  // Extra ones many teams add
+  '2xs': ['0.6875rem', { lineHeight: '1rem' }], // 11px (for captions)
+  '3xs': ['0.625rem', { lineHeight: '1rem' }] // 10px
+}
 module.exports = {
   content: ['./src/renderer/index.html', './src/renderer/src/**/*.{js,jsx,ts,tsx}'],
   darkMode: 'class',
+
   theme: {
     extend: {
       colors: {
@@ -37,14 +61,9 @@ module.exports = {
           900: '#4c0808'
         }
       },
-      fontSize: {
-        large: '1.125rem', // 18px (or any value you want)
-        medium: '1rem', // 16px example
-        small: '0.875rem', // 14px example
-        xsmall: '0.75rem', // 12px example
-        tiny: '0.625rem', // 10px example
-        xtiny: '0.5rem' // 8px example
-      },
+      fontSize: Size,
+      spacing: Size,
+
       animation: {
         'fade-in': 'fadeIn 0.3s ease-in-out',
         'slide-in': 'slideIn 0.3s ease-out'

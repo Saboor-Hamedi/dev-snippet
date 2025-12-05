@@ -5,6 +5,7 @@ import { Monitor, Download, ChevronLeft, Settings, SunMoon, FileDown, Database }
 import { useFontSettings } from '../hook/useFontSettings'
 import { useToast } from '../hook/useToast'
 import ToastNotification from '../utils/ToastNotification'
+
 const SettingsPanel = ({ onClose }) => {
   const { showToast } = useToast()
 
@@ -24,12 +25,14 @@ const SettingsPanel = ({ onClose }) => {
     updateCaretStyle
   } = useFontSettings()
   const [wordWrap, setWordWrap] = useState('on')
-  const [autoSave, setAutoSave] = useState(() => {
+  const [autoSave, setAutoSave] = useState(false)
+   
+  const [overlayMode, setOverlayMode] = useState(() => {
     try {
-      const saved = localStorage.getItem('autoSave')
-      return saved ? saved === 'true' : true // Default to enabled if not set
+      const saved = localStorage.getItem('overlayMode')
+      return saved ? saved === 'true' : false // Default to disabled
     } catch (e) {
-      return true // Default to enabled
+      return false // Default to disabled
     }
   })
   const [activeTab, setActiveTab] = useState('general')
@@ -798,6 +801,7 @@ const SettingsPanel = ({ onClose }) => {
                       >
                         Word Wrap
                       </label>
+                     
                       <p
                         className="text-tiny mt-1"
                         style={{
@@ -824,7 +828,7 @@ const SettingsPanel = ({ onClose }) => {
                   </div>
 
                   {/* Auto Save */}
-                  <div className="p-5 flex items-center justify-between gap-4">
+                  <div className="p-5 flex items-center justify-between gap-4 border-b" style={{ borderColor: 'var(--color-border)' }}>
                     <div>
                       <label className="block text-sm font-medium text-slate-900 dark:text-white">
                         Auto Save
@@ -856,6 +860,44 @@ const SettingsPanel = ({ onClose }) => {
                       <span
                         className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                           autoSave ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Preview Overlay Mode */}
+                  <div className="p-5 flex items-center justify-between gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-900 dark:text-white">
+                        Preview Overlay Mode
+                      </label>
+                      <p className="text-xsmall text-slate-500 mt-1">
+                        Float preview over editor instead of side-by-side.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        try {
+                          const next = !overlayMode
+                          setOverlayMode(next)
+                          localStorage.setItem('overlayMode', next ? 'true' : 'false')
+                          // notify editor about change
+                          try {
+                            window.dispatchEvent(
+                              new CustomEvent('overlayMode:toggle', { detail: { enabled: next } })
+                            )
+                          } catch {}
+                        } catch (e) {
+                          setOverlayMode((s) => !s)
+                        }
+                      }}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${
+                        overlayMode ? 'bg-primary-600' : 'bg-slate-300 dark:bg-slate-700'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          overlayMode ? 'translate-x-6' : 'translate-x-1'
                         }`}
                       />
                     </button>

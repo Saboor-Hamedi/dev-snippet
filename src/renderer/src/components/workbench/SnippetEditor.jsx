@@ -55,6 +55,7 @@ const SnippetEditor = ({
   const editorContainerRef = useRef(null)
   // Line wrapped here from  CodeEditor.jsx
   const wordWrap = settings?.editor?.wordWrap || 'off'
+  const overflow = settings?.editor?.overflow || false
 
   // Local compact mode (used only if parent doesn't control it)
   const [localCompact, setLocalCompact] = useState(() => {
@@ -333,6 +334,8 @@ const SnippetEditor = ({
             >
               <SplitPane
                 rightHidden={!showPreview || showPreview === false}
+                unifiedScroll={true} // Add this prop to enable unified scrolling
+                overlayMode={settings?.editor?.overlayMode || false} // Use existing settings
                 left={
                   <div ref={editorContainerRef} className="w-full h-full">
                     <CodeEditor

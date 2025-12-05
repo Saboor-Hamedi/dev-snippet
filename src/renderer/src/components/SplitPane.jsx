@@ -1,11 +1,22 @@
 import React, { useRef, useEffect, useState } from 'react'
+import { GripVertical } from 'lucide-react'
 
 // SplitPane: left/right resizable panes with optional collapsing of the
 // right pane. Preserves previous split percent when hidden and restores it
 // when shown. Uses requestAnimationFrame for drag smoothing and a small
 // animated transition when collapsing/restoring.
 
-const SplitPane = ({ left, right, minLeft = 200, minRight = 200, initialLeft = 50, rightHidden = false }) => {
+const SplitPane = ({
+  left,
+  right,
+  unifiedScroll = false,
+  overlayMode = false,
+  minLeft = 200,
+  minRight = 200,
+  initialLeft = 50,
+  rightHidden = false,
+  ...props
+}) => {
   const containerRef = useRef(null)
   const [leftPercent, setLeftPercent] = useState(initialLeft)
   // Delay removing right pane from DOM until collapse animation completes
@@ -45,78 +56,60 @@ const SplitPane = ({ left, right, minLeft = 200, minRight = 200, initialLeft = 5
   const lastToggleTimeRef = useRef(0)
 
   useEffect(() => {
-    const scheduleUpdate = (pct) => {
-      cancelPendingRaf()
-      rafRef.current = requestAnimationFrame(() => {
-        setLeftPercent(Math.min(90, Math.max(10, pct)))
-      })
-    }
-
-    const onPointerMove = (e) => {
+    const handleMouseMove = (e) => {
       if (!draggingRef.current || !containerRef.current) return
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX
+      
+      e.preventDefault()
+      e.stopPropagation()
+      
       const rect = containerRef.current.getBoundingClientRect()
-      const x = clientX - rect.left
-      const minLeftPx = Math.max(minLeft, 0)
-      const minRightPx = Math.max(minRight, 0)
-      const clampedX = Math.min(Math.max(x, minLeftPx), rect.width - minRightPx)
-      const pct = (clampedX / rect.width) * 100
       
-      // Update user preference
-      userSplitRef.current = pct
-      
-      scheduleUpdate(pct)
-      try {
-        e.preventDefault()
-      } catch {}
+      if (overlayMode) {
+        // In overlay mode, adjust the width of the floating panel from the right edge
+        const x = e.clientX - rect.left
+        const rightWidth = rect.width - x
+        const rightPercent = Math.max(20, Math.min(80, (rightWidth / rect.width) * 100))
+        const newLeftPercent = 100 - rightPercent
+        
+        setLeftPercent(newLeftPercent)
+        userSplitRef.current = newLeftPercent
+      } else {
+        // Standard side-by-side mode
+        const x = e.clientX - rect.left
+        const minLeftPx = Math.max(minLeft, 0)
+        const minRightPx = Math.max(minRight, 0)
+        const clampedX = Math.min(Math.max(x, minLeftPx), rect.width - minRightPx)
+        const newPercent = Math.max(10, Math.min(90, (clampedX / rect.width) * 100))
+        
+        setLeftPercent(newPercent)
+        userSplitRef.current = newPercent
+      }
     }
 
-    const onPointerUp = () => {
-      draggingRef.current = false
-      document.body.style.cursor = ''
-      document.body.style.userSelect = ''
-      document.body.style.webkitUserSelect = ''
-      try {
-        if (containerRef.current && containerRef.current.children && containerRef.current.children[2]) {
-          containerRef.current.children[2].style.pointerEvents = ''
-          containerRef.current.children[2].style.userSelect = ''
-        }
-      } catch {}
-      cancelPendingRaf()
+    const handleMouseUp = () => {
+      if (draggingRef.current) {
+        console.log('Drag ended') // Debug log
+        draggingRef.current = false
+        document.body.style.cursor = ''
+        document.body.style.userSelect = ''
+      }
     }
 
-    window.addEventListener('mousemove', onPointerMove, { passive: false })
-    window.addEventListener('touchmove', onPointerMove, { passive: false })
-    window.addEventListener('mouseup', onPointerUp)
-    window.addEventListener('touchend', onPointerUp)
-    window.addEventListener('touchcancel', onPointerUp)
+    document.addEventListener('mousemove', handleMouseMove, { passive: false })
+    document.addEventListener('mouseup', handleMouseUp)
 
     return () => {
-      window.removeEventListener('mousemove', onPointerMove)
-      window.removeEventListener('touchmove', onPointerMove)
-      window.removeEventListener('mouseup', onPointerUp)
-      window.removeEventListener('touchend', onPointerUp)
-      window.removeEventListener('touchcancel', onPointerUp)
-      cancelPendingRaf()
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
     }
   }, [minLeft, minRight])
 
   const startDrag = (e) => {
-    try {
-      if (e && typeof e.preventDefault === 'function') e.preventDefault()
-    } catch {}
+    e.preventDefault()
     draggingRef.current = true
     document.body.style.cursor = 'col-resize'
     document.body.style.userSelect = 'none'
-    document.body.style.webkitUserSelect = 'none'
-    document.body.style.touchAction = 'none'
-    try {
-      if (containerRef.current && containerRef.current.children && containerRef.current.children[2]) {
-        containerRef.current.children[2].style.pointerEvents = 'none'
-        containerRef.current.children[2].style.userSelect = 'none'
-        containerRef.current.children[2].style.webkitUserSelect = 'none'
-      }
-    } catch {}
+    console.log('Drag started') // Debug log
   }
 
   useEffect(() => {
@@ -156,7 +149,11 @@ const SplitPane = ({ left, right, minLeft = 200, minRight = 200, initialLeft = 5
 
   if (!renderRight) {
     return (
-      <div ref={containerRef} className="flex h-full w-full overflow-hidden " style={{ backgroundColor: 'var(--editor-bg)' }}>
+      <div
+        ref={containerRef}
+        className="flex h-full w-full overflow-hidden "
+        style={{ backgroundColor: 'var(--editor-bg)' }}
+      >
         <div className="min-h-0 overflow-auto" style={{ width: '100%' }}>
           {left}
         </div>
@@ -164,31 +161,87 @@ const SplitPane = ({ left, right, minLeft = 200, minRight = 200, initialLeft = 5
     )
   }
 
+  // Overlay mode: LivePreview floats over editor
+  if (overlayMode) {
+    return (
+      <div
+        ref={containerRef}
+        className="relative h-full w-full overflow-hidden"
+        style={{ backgroundColor: 'var(--editor-bg)' }}
+      >
+        {/* Full-width editor (left pane) */}
+        <div className="absolute inset-0 w-full h-full">
+          {left}
+        </div>
+        
+        {/* Floating LivePreview overlay (right pane) */}
+        {!rightHidden && (
+          <div 
+            className="absolute top-4 right-4 bottom-4 bg-white dark:bg-slate-800 
+                       border border-slate-200 dark:border-slate-700 rounded-lg
+                       shadow-md overflow-hidden"
+            style={{ 
+              width: `${100 - leftPercent}%`,
+              minWidth: `${minRight}px`,
+              maxWidth: '80%'
+            }}
+          >
+            {/* Resize handle */}
+            <div className="absolute left-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-500/20 transition-colors flex items-center justify-center"
+                 onMouseDown={startDrag}>
+              <div className="w-1 h-8 bg-slate-400 dark:bg-slate-500 rounded-full"></div>
+            </div>
+            
+            {/* Content with padding for resize handle */}
+            <div className="h-full ml-2 overflow-auto">
+              {right}
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // Standard side-by-side mode
   return (
+    // Main Container for Live Preview and Editor
     <div
       ref={containerRef}
-      className="flex h-full w-full overflow-hidden bg-red-400"
+      className={`flex h-full w-full  ${unifiedScroll ? 'overflow-auto' : 'overflow-hidden'}`}
       style={{ backgroundColor: 'var(--editor-bg)' }}
     >
-      <div className="min-h-0 overflow-auto" style={{ width: `${leftPercent}%` }}>
+      <div
+        className={`min-h-0 ${unifiedScroll ? 'overflow-visible' : 'overflow-auto'}`}
+        style={{ width: `${leftPercent}%` }}
+      >
         {left}
       </div>
       {/* This is the knob of the splitPane */}
-      <div
-        role="separator"
-        aria-orientation="vertical"
-        onMouseDown={startDrag}
-        onTouchStart={startDrag}
-        className="shrink-0 "
-        style={{
-          width: 5,
-          cursor: 'col-resize',
-          backgroundColor: 'var(--border-color)',
-          userSelect: 'none',
-          touchAction: 'none'
-        }}
-      />
+      <div className="shrink-0 relative flex items-center justify-center">
+        {/* Visual knob */}
+        <div
+          className="w-base h-base flex items-center justify-center 
+             bg-slate-700/50 hover:bg-slate-600/70 
+             transition-all duration-200 
+             rounded-md
+             p-1 ml-1 cursor-col-resize select-none"
+            role="separator"
+            aria-orientation="vertical"
+            onMouseDown={startDrag}
+            onTouchStart={startDrag}
+            style={{
+              userSelect: 'none',
+              touchAction: 'none',
+              WebkitUserSelect: 'none',
+              msUserSelect: 'none',
+              MozUserSelect: 'none'
+            }}
+        >
+          <GripVertical className="text-slate-600 dark:text-slate-300 pointer-events-none" />
+        </div>
+      </div>
       <div className="min-h-0 overflow-auto" style={{ width: `${100 - leftPercent}%` }}>
+        {/* Display the LivePreview  */}
         {right}
       </div>
     </div>

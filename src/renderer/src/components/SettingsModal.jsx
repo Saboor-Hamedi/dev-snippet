@@ -7,7 +7,6 @@ import { MIN_ZOOM, MAX_ZOOM } from '../hook/useZoomLevel'
 
 const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) => {
   const [localSettings, setLocalSettings] = useState(currentSettings)
-
   // Update local settings when props change
   useEffect(() => {
     setLocalSettings(currentSettings)
@@ -54,7 +53,7 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
           <div className="flex items-center gap-3">
             <Settings size={12} style={{ color: 'var(--color-text-secondary)' }} />
             <h2
-              className="text-xsmall font-semibold"
+              className="text-tiny font-semibold"
               style={{ color: 'var(--color-text-primary)' }}
             >
               Settings
@@ -76,7 +75,7 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
               <div className="flex items-center gap-2 mb-4">
                 <Monitor size={12} style={{ color: 'var(--color-text-tertiary)' }} />
                 <h3
-                  className="text-xsmall font-medium"
+                className="text-tiny font-medium"
                   style={{ color: 'var(--color-text-primary)' }}
                 >
                   Editor
@@ -86,7 +85,7 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
               {/* Zoom Level */}
               <div className="space-y-2">
                 <label
-                  className="text-xsmall font-medium"
+                  className="text-tiny font-medium"
                   style={{ color: 'var(--color-text-secondary)' }}
                 >
                   Zoom Level: {localSettings.editor?.zoomLevel || 1.0}x
@@ -117,7 +116,7 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
               {/* Font Size */}
               <div className="space-y-2">
                 <label
-                  className="text-xsmall font-medium"
+                  className="text-tiny font-medium"
                   style={{ color: 'var(--color-text-secondary)' }}
                 >
                   Font Size: {localSettings.editor?.fontSize || 14}px
@@ -140,7 +139,7 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
               {/* Font Family */}
               <div className="space-y-2">
                 <label
-                  className="text-xsmall font-medium"
+                  className="text-tiny font-medium"
                   style={{ color: 'var(--color-text-secondary)' }}
                 >
                   Font Family
@@ -165,7 +164,7 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
 
               {/* Tab Size */}
               <div className="space-y-2">
-                <label className="text-xsmall font-medium text-slate-300">
+                <label className="text-tiny font-medium text-slate-300">
                   Tab Size: {localSettings.editor?.tabSize || 2} spaces
                 </label>
                 <select
@@ -181,7 +180,7 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
 
               {/* Word Wrap */}
               <div className="flex items-center justify-between">
-                <label className="text-xsmall font-medium text-slate-300">Word Wrap</label>
+                <label className="text-tiny font-medium text-slate-300">Word Wrap</label>
                 <input
                   type="checkbox"
                   checked={localSettings.editor?.wordWrap === 'on'}
@@ -191,10 +190,24 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
                   className="rounded bg-slate-700 border-slate-600"
                 />
               </div>
+              
+              {/* Overlay Mode */}
+              <div className="flex items-center justify-between">
+                <label className="text-tiny font-medium text-slate-300">Overlay Mode</label>
+                <input
+                  type="checkbox"
+                  checked={localSettings.editor?.overlayMode === true}
+                  onChange={(e) =>
+                    updateSetting('editor.overlayMode', e.target.checked ? true : false)
+                  }
+                  className="rounded bg-slate-700 border-slate-600"
+                />
+              </div>
+              
 
               {/* Line Numbers */}
               <div className="flex items-center justify-between">
-                <label className="text-xsmall font-medium text-slate-300">Line Numbers</label>
+                <label className="text-tiny font-medium text-slate-300">Line Numbers</label>
                 <input
                   type="checkbox"
                   checked={localSettings.editor?.lineNumbers || true}
@@ -208,7 +221,7 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
             <div className="space-y-6">
               <div className="flex items-center gap-2 mb-4">
                 <Sliders size={12} style={{ color: 'var(--color-text-tertiary)' }} />
-                <h3 className="text-lg font-medium" style={{ color: 'var(--color-text-primary)' }}>
+                <h3 className="text-tiny font-medium" style={{ color: 'var(--color-text-primary)' }}>
                   Interface
                 </h3>
               </div>
@@ -216,7 +229,7 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
               {/* Compact Mode */}
               <div className="flex items-center justify-between">
                 <label
-                  className="text-xsmall font-medium"
+                  className="text-tiny font-medium"
                   style={{ color: 'var(--color-text-secondary)' }}
                 >
                   Compact Mode
@@ -231,7 +244,7 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
 
               {/* Auto Save */}
               <div className="flex items-center justify-between">
-                <label className="text-xsmall font-medium text-slate-300">Auto Save</label>
+                <label className="text-tiny font-medium text-slate-300">Auto Save</label>
                 <input
                   type="checkbox"
                   checked={localSettings.behavior?.autoSave || true}
@@ -243,7 +256,7 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
               {/* Auto Save Delay */}
               {localSettings.behavior?.autoSave && (
                 <div className="space-y-2">
-                  <label className="text-xsmall font-medium text-slate-300">
+                  <label className="text-tiny font-medium text-slate-300">
                     Auto Save Delay: {localSettings.behavior?.autoSaveDelay || 2000}ms
                   </label>
                   <input
@@ -262,7 +275,7 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
 
               {/* Code Folding */}
               <div className="flex items-center justify-between">
-                <label className="text-xsmall font-medium text-slate-300">Code Folding</label>
+                <label className="text-tiny font-medium text-slate-300">Code Folding</label>
                 <input
                   type="checkbox"
                   checked={localSettings.advanced?.enableCodeFolding || true}
@@ -273,7 +286,7 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
 
               {/* Auto Complete */}
               <div className="flex items-center justify-between">
-                <label className="text-xsmall font-medium text-slate-300">Auto Complete</label>
+                <label className="text-tiny font-medium text-slate-300">Auto Complete</label>
                 <input
                   type="checkbox"
                   checked={localSettings.advanced?.enableAutoComplete || true}
@@ -295,7 +308,7 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
             <div className="flex items-center gap-2 mb-3">
               <Keyboard size={12} style={{ color: 'var(--color-text-tertiary)' }} />
               <h4
-                className="text-xsmall font-medium"
+                className="text-tiny font-medium"
                 style={{ color: 'var(--color-text-secondary)' }}
               >
                 Live Settings JSON
@@ -325,6 +338,7 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
                   fontFamily: 'JetBrains Mono',
                   lineNumbers: true,
                   wordWrap: 'on',
+                  overlayMode: false,
                   tabSize: 2,
                   theme: 'dark'
                 },
@@ -356,24 +370,8 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
           >
             Reset to Defaults
           </button>
-
-            {/* Footer close button */}
-          <div className="flex gap-3">
-            {/* <button
-              onClick={onClose}
-              className="px-4 py-2 rounded-lg transition-colors"
-              style={{
-                backgroundColor: 'var(--color-bg-secondary)',
-                color: 'var(--color-text-primary)',
-                borderColor: 'var(--color-border)',
-                border: '1px solid'
-              }}
-              onMouseEnter={(e) => (e.target.style.backgroundColor = 'var(--hover-bg)')}
-              onMouseLeave={(e) => (e.target.style.backgroundColor = 'var(--color-bg-secondary)')}
-            >
-              Close
-            </button> */}
-          </div>
+          {/* Footer close button */}
+          
         </div>
       </div>
     </div>

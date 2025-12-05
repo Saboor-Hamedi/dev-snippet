@@ -6,8 +6,9 @@ export const DEFAULT_SETTINGS = {
     fontFamily: 'JetBrains Mono',
     lineNumbers: true,
     wordWrap: 'on',
+    overlayMode: false,
     tabSize: 2,
-    theme: 'dark'
+    theme: 'dark',
   },
   ui: {
     compactMode: false,
