@@ -167,20 +167,21 @@ const SplitPane = ({ left, right, minLeft = 200, minRight = 200, initialLeft = 5
   return (
     <div
       ref={containerRef}
-      className="flex h-full w-full overflow-hidden "
+      className="flex h-full w-full overflow-hidden bg-red-400"
       style={{ backgroundColor: 'var(--editor-bg)' }}
     >
       <div className="min-h-0 overflow-auto" style={{ width: `${leftPercent}%` }}>
         {left}
       </div>
+      {/* This is the knob of the splitPane */}
       <div
         role="separator"
         aria-orientation="vertical"
         onMouseDown={startDrag}
         onTouchStart={startDrag}
-        className="shrink-0"
+        className="shrink-0 "
         style={{
-          width: 6,
+          width: 5,
           cursor: 'col-resize',
           backgroundColor: 'var(--border-color)',
           userSelect: 'none',

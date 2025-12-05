@@ -199,7 +199,7 @@ const SnippetLibrary = () => {
 
     onRenameSnippet: () => {
       if (selectedSnippet && (activeView === 'snippets' || activeView === 'editor')) {
-        handleRenameOrSave() // ✅ call the new unified handler
+        handleRenameOrSave() //  call the new unified handler
       }
     },
     onDeleteSnippet: () => {
