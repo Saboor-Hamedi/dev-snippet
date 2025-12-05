@@ -37,7 +37,7 @@ export const handleRenameSnippet = async ({
   }
   // If nothing changed, skip saving and close modal
   if (renameModal.item.title === baseName) {
-    if (showToast) showToast('No changes', 'info')
+    if (showToast) showToast(`Not renamed: '${baseName}'`, 'info')
     setRenameModal({ isOpen: false, item: null })
     setIsCreatingSnippet(false)
     return

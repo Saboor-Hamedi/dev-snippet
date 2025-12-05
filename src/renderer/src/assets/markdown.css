@@ -1,12 +1,14 @@
 /* ===== MARKDOWN PREVIEW THEME ===== */
-
+@import './variables.css';
 /* Code block wrapper - Clean, borderless design */
 .code-block-wrapper {
   display: block;
   overflow: hidden;
   box-shadow: none; /* Remove shadow for cleaner look */
   margin: 0 !important;
-  border-radius: 5px;
+  /* border-radius: 5px; */
+  border-top-right-radius: 5px;
+  border-top-left-radius: 5px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -217,25 +219,28 @@
   align-items: center;
   padding: 0;
   border: none !important;
-  font-size: 12px;
   font-weight: 600;
   color: var(--text-secondary);
+  /* background-color: var(--color-bg-primary); */
+  background-color: #1b232c;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
   opacity: 0.8;
   transition: opacity 0.2s ease;
   outline: none !important;
   box-shadow: none !important;
 }
 
-.code-block-wrapper:hover .code-block-header {
+/* .code-block-wrapper:hover .code-block-header {
   opacity: 1;
-}
+} */
 
 .code-language {
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
-  font-size: 11px;
+  font-size: var(--font-size-xtiny);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   opacity: 0.7;
+  margin-left: 10px;
 }
 
 /* Copy button - Minimal, integrated */
@@ -247,7 +252,7 @@
   border: none;
   border-radius: 4px;
   padding: 6px 12px;
-  font-size: 11px;
+   font-size: var(--font-size-xtiny);
   cursor: pointer;
   color: var(--text-secondary);
   transition: all 0.2s ease;

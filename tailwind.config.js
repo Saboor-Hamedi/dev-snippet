@@ -2,8 +2,6 @@
 const Size = {
   xtiny: ['0.625rem', { lineHeight: '1rem' }], // 10px
   tiny: ['0.75rem', { lineHeight: '1rem' }], // 12px  ← most people call this "xs"
-
-  // Official modern scale (recommended)
   xs: ['0.75rem', { lineHeight: '1rem' }], // 12px
   sm: ['0.875rem', { lineHeight: '1.25rem' }], // 14px
   base: ['1rem', { lineHeight: '1.5rem' }], // 16px ← default body
@@ -17,8 +15,6 @@ const Size = {
   '7xl': ['4.5rem', { lineHeight: '1' }], // 72px
   '8xl': ['6rem', { lineHeight: '1' }], // 96px
   '9xl': ['8rem', { lineHeight: '1' }], // 128px
-
-  // Extra ones many teams add
   '2xs': ['0.6875rem', { lineHeight: '1rem' }], // 11px (for captions)
   '3xs': ['0.625rem', { lineHeight: '1rem' }] // 10px
 }
@@ -63,6 +59,8 @@ module.exports = {
       },
       fontSize: Size,
       spacing: Size,
+      width: Size,
+      height: Size,
 
       animation: {
         'fade-in': 'fadeIn 0.3s ease-in-out',

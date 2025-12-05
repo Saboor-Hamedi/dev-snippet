@@ -11,11 +11,12 @@ import { getAllLanguages } from '../codemirror/EditorLanguage.jsx'
 import { useZoomLevel } from '../../hook/useZoomLevel'
 import WelcomePage from '../WelcomePage.jsx'
 import StatusBar from '../StatusBar.jsx'
-import SplitPane from '../SplitPane.jsx'
+import SplitPane from '../SplitPane/SplitPane.jsx'
 import CodeEditor from '../codemirror/CodeEditor.jsx'
 import LivePreview from '../LivePreview.jsx'
 import NamePrompt from '../modal/NamePrompt.jsx'
 import { useSettings } from '../../hook/useSettingsContext'
+import AdvancedSplitPane from '../AdvancedSplitPane/AdvancedSplitPane'
 
 const SnippetEditor = ({
   onSave,
@@ -332,7 +333,7 @@ const SnippetEditor = ({
                 document.documentElement.classList.contains('dark') ? 'dark' : 'light'
               }
             >
-              <SplitPane
+              <AdvancedSplitPane
                 rightHidden={!showPreview || showPreview === false}
                 unifiedScroll={true} // Add this prop to enable unified scrolling
                 overlayMode={settings?.editor?.overlayMode || false} // Use existing settings

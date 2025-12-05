@@ -36,17 +36,10 @@ class SettingManager {
         this.unsubscribeWatcher = window.api.onSettingsChanged((data) => {
           try {
             // Validation on zoom level
-            // if (!data || data.trim() === ' ') {
-            //   console.warn('Empty settings data received, skipping update')
-
-            //   return
-            // }
-
             if (!data || data.trim() === '') {
               console.debug('[Settings] Skipping empty update')
               return
             }
-
             const newSettings = JSON.parse(data)
             // Merge with defaults to ensure structure
             this.settings = {
@@ -63,7 +56,7 @@ class SettingManager {
             console.warn('Failed to parse settings from file:', err)
           }
         })
-
+        // Mark as watching
         this.watchingEnabled = true
         console.log('✅ Settings file watching enabled')
       }

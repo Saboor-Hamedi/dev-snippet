@@ -4,10 +4,10 @@
 /* Toast Base Styles */
 .toast {
   position: fixed;
-  bottom: 2rem;
-  right: 2rem;
+  bottom: 3rem;
+  right: 3rem;
   padding: 0.875rem 1.25rem;
-  background: rgba(15, 23, 42, 0.95);
+  background: var(--bg-primary);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(148, 163, 184, 0.2);
   color: #f8fafc;
@@ -18,12 +18,13 @@
   animation: slideIn 0.2s ease-out;
   z-index: 1000;
   display: flex;
+  justify-content: center;
   align-items: center;
   gap: 0.75rem;
-  font-size: 0.875rem;
-  font-weight: 500;
   min-width: 200px;
   max-width: 400px;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-tiny);
 }
 
 /* Toast Type Variants */

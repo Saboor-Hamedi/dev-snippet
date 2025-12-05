@@ -275,6 +275,8 @@ const SnippetLibrary = () => {
       showToast('💾 Please save the snippet first before renaming', 'info')
       return
     }
+
+    // Display the rename modal
     setRenameModal({ isOpen: true, item: selectedSnippet })
   }
   
