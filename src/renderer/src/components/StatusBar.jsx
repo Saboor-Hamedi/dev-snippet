@@ -1,10 +1,10 @@
 import React from 'react'
 import { Settings } from 'lucide-react'
-import { getLanguage } from './codemirror/EditorLanguage.jsx'
+import { getLanguage } from './language/languageRegistry.js'
 
 // Get extension based on selected language
 const getExtension = (language) => {
-  if (!language) return '.md'
+  if (!language) return '.txt'
   const langDef = getLanguage(language)
   return langDef && langDef.extensions && langDef.extensions[0] 
     ? `.${langDef.extensions[0]}` 

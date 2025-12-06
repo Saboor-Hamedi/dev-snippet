@@ -1,6 +1,6 @@
 // Singleton settings manager instance
 //config/settings.js
-import { DEFAULT_SETTINGS } from './defaults.js'
+import { DEFAULT_SETTINGS } from './defaultSettings.js'
 import SettingManager from './SettingManager.js'
 
 const settingManager = new SettingManager(DEFAULT_SETTINGS)

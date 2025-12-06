@@ -1,3 +1,4 @@
+import {getLanguageByExtension} from '../components/language/languageRegistry.js';
 export const handleRenameSnippet = async ({
   renameModal,
   saveSnippet,
@@ -11,6 +12,7 @@ export const handleRenameSnippet = async ({
     setRenameModal({ isOpen: false, item: null })
     return
   } // Prevent multiple renames at once
+  // Auto detect language based on new name's extension
   let baseName = (renameModal.newName || renameModal.item.title || '').trim() || 'Untitled'
   // Preserve extension logic for language update
   const hasExt = /\.[^\.\s]+$/.test(baseName)
@@ -18,13 +20,27 @@ export const handleRenameSnippet = async ({
     md: 'md'
     //  Add more extensions and their corresponding languages as needed
   }
-  let lang = renameModal.item.language
-  if (hasExt) {
-    const ext = baseName.split('.').pop().toLowerCase()
-    lang = extMap[ext] || lang
-  } else {
-    lang = 'md'
+  // This is a helper to auto-detect language from extension 
+  const getExtensionName = (name) => {
+      const m = name.match(/\.([^.\/\\\s]+)$/)
+      return m ? m[1].toLowerCase() : null
   }
+  // This perserve the original language if no extension change
+  let lang = renameModal.item.language
+
+  // if (hasExt) {
+  //   const ext = baseName.split('.').pop().toLowerCase()
+  //   lang = extMap[ext] || lang
+  // } else {
+  //   lang = 'md'
+  // }
+  const ext = getExtensionName(baseName)
+  if (ext) {
+    const langFromExt = getLanguageByExtension(baseName)
+    if (langFromExt) {
+      lang = langFromExt
+    }
+  } 
 
   const updatedItem = {
     ...renameModal.item,

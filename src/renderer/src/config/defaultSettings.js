@@ -1,8 +1,8 @@
-// src/config/defaults.js
+// src/config/defaultSettings.js
 export const DEFAULT_SETTINGS = {
   editor: {
     zoomLevel: 1.0,
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: 'JetBrains Mono',
     lineNumbers: true,
     wordWrap: 'on',

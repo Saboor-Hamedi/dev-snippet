@@ -7,12 +7,12 @@ import PropTypes from 'prop-types'
 import { useKeyboardShortcuts } from '../../hook/useKeyboardShortcuts.js'
 import { useEditorFocus } from '../../hook/useEditorFocus.js'
 import extractTags from '../../hook/extractTags.js'
-import { getAllLanguages } from '../codemirror/EditorLanguage.jsx'
+import { getAllLanguages } from '../language/languageRegistry.js'
 import { useZoomLevel } from '../../hook/useZoomLevel'
 import WelcomePage from '../WelcomePage.jsx'
 import StatusBar from '../StatusBar.jsx'
 import SplitPane from '../SplitPane/SplitPane.jsx'
-import CodeEditor from '../codemirror/CodeEditor.jsx'
+import CodeEditor from '../CodeEditor/CodeEditor.jsx'
 import LivePreview from '../LivePreview.jsx'
 import NamePrompt from '../modal/NamePrompt.jsx'
 import { useSettings } from '../../hook/useSettingsContext'
@@ -179,11 +179,15 @@ const SnippetEditor = ({
   const isInitialMount = useRef(true)
   const lastSnippetId = useRef(initialSnippet?.id)
 
+  // Live update language extension
   // Update language/code if initialSnippet changes (only on ID change to prevent autosave loops)
   React.useEffect(() => {
+    if (!initialSnippet) return
+    const incomingLang = initialSnippet.language || 'markdown'
     if (initialSnippet && initialSnippet.id !== lastSnippetId.current) {
-      setLanguage(initialSnippet.language || 'markdown')
+      setLanguage(incomingLang)
       setCode(initialSnippet.code || '')
+
       // Loading a new snippet is not a user edit — reset dirty and skip autosave once
       try {
         setIsDirty(false)
@@ -192,9 +196,14 @@ const SnippetEditor = ({
         isInitialMount.current = true
       } catch {}
       lastSnippetId.current = initialSnippet.id
+      return
     }
-  }, [initialSnippet?.id])
-
+    // Same snippet id but its language changed externally (e.g., rename)
+    // Only update editor language if user isn't actively editing and the incoming language differs.
+    if (incomingLang !== language && !isDirty) {
+      setLanguage(incomingLang)
+    }
+  }, [initialSnippet?.id, initialSnippet?.language, language, isDirty])
   // Name prompt state for saving unsaved snippets
   const [namePrompt, setNamePrompt] = useState({ isOpen: false, initialName: '' })
 

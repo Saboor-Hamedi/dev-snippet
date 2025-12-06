@@ -1,6 +1,6 @@
 import React, { useState, useEffect, createContext, useContext } from 'react'
-import settingsManager from '../config/settings.js'
-import { DEFAULT_SETTINGS } from '../config/defaults.js'
+import settingsManager from '../config/settingsManager.js'
+import { DEFAULT_SETTINGS } from '../config/defaultSettings.js'
 
 // Settings Context
 const SettingsContext = createContext()

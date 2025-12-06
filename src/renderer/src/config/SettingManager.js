@@ -1,7 +1,7 @@
-// SettingManager.js
+// settingManager.js
 // Manages application settings: load, save, watch for changes, notify subscribers
 
-import { DEFAULT_SETTINGS } from "./defaults.js"
+import { DEFAULT_SETTINGS } from "./defaultSettings.js"
 class SettingManager {
   constructor(defaultSettings) {
     this.DEFAULT_SETTINGS = defaultSettings || DEFAULT_SETTINGS
@@ -88,7 +88,7 @@ class SettingManager {
         const data = await window.api.readSettingsFile()
         if (data) {
           const newSettings = JSON.parse(data)
-          
+
           // Use proper validation method
           if (!this.validateSettings(newSettings)) {
             console.warn('Invalid settings structure in file, using defaults')
@@ -141,34 +141,34 @@ class SettingManager {
   // Backup before changes
   async set(path, value) {
     const backup = { ...this.settings }
-    
+
     try {
       // Sanitize the input value
       const sanitizedValue = this.sanitizeValue(value)
-    const keys = path.split('.')
-    let target = this.settings
+      const keys = path.split('.')
+      let target = this.settings
 
-    // Navigate to the parent object
-    for (let i = 0; i < keys.length - 1; i++) {
-      const key = keys[i]
-      if (!target[key] || typeof target[key] !== 'object') {
-        target[key] = {}
+      // Navigate to the parent object
+      for (let i = 0; i < keys.length - 1; i++) {
+        const key = keys[i]
+        if (!target[key] || typeof target[key] !== 'object') {
+          target[key] = {}
+        }
+        target = target[key]
       }
-      target = target[key]
-    }
 
-    // Set the final value
-    target[keys[keys.length - 1]] = sanitizedValue
+      // Set the final value
+      target[keys[keys.length - 1]] = sanitizedValue
 
-    // Skip validation for zoom level updates (allow rapid changes)
-    if (!path.includes('zoomLevel') && !this.validateSettings(this.settings)) {
-      this.settings = backup // Restore backup
-      throw new Error('Invalid settings structure after update')
-    }
+      // Skip validation for zoom level updates (allow rapid changes)
+      if (!path.includes('zoomLevel') && !this.validateSettings(this.settings)) {
+        this.settings = backup // Restore backup
+        throw new Error('Invalid settings structure after update')
+      }
 
-    // Save and notify
-    await this.save()
-    this.notifyListeners()
+      // Save and notify
+      await this.save()
+      this.notifyListeners()
     } catch (err) {
       this.settings = backup // Restore backup on any error
       console.error('Failed to set setting:', err)
@@ -208,11 +208,9 @@ class SettingManager {
   // Validate settings structure
   validateSettings(settings) {
     if (!settings || typeof settings !== 'object') return false
-    
+
     const required = ['editor', 'ui', 'behavior', 'advanced']
-    return required.every(key => 
-      settings[key] && typeof settings[key] === 'object'
-    )
+    return required.every((key) => settings[key] && typeof settings[key] === 'object')
   }
 
   // Sanitize input values
