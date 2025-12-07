@@ -109,7 +109,7 @@ class SettingManager {
           }
           this.notifyListeners();
           if (shouldSave) await this.save();
-                  console.log('Settings saved with cursorColor and cursorWidth:', this.settings.editor)
+                  // console.log('Settings saved with cursorColor and cursorWidth:', this.settings.editor)
         }
       }
       // Start watching after load

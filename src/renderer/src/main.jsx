@@ -64,7 +64,7 @@ const applyThemeFromDB = async () => {
 
 // await settingsManager.load()
 await settingsManager.save()
-console.log('Forced settings save:', settingsManager.settings.editor)
+// console.log('Forced settings save:', settingsManager.settings.editor)
   createRoot(document.getElementById('root')).render(
     <StrictMode>
       <App />

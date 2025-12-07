@@ -24,3 +24,9 @@
 .cm-gutterElement {
   background: transparent !important;
 }
+/*  bg */
+.cm-editor .cm-content::selection,
+.cm-editor .cm-content::-moz-selection,
+.cm-editor .cm-selectionBackground {
+  background: #252a3a !important;
+}

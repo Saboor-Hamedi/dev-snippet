@@ -1,3 +1,5 @@
+// Set this to true for development, false for production
+const ENABLE_DEVTOOLS = true; // <-- CHANGE THIS FOR YOUR NEEDS
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import fs from 'fs/promises'
@@ -147,7 +149,8 @@ function createWindow() {
       nodeIntegration: false,
       enableRemoteModule: false,
       webSecurity: true,
-      sandbox: false
+      sandbox: false,
+      devTools: ENABLE_DEVTOOLS // Simple: true for dev, false for prod
     }
   })
 
@@ -171,8 +174,7 @@ function createWindow() {
 
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.
-  const isDev = !app.isPackaged
-  if (isDev && process.env['ELECTRON_RENDERER_URL']) {
+  if (ENABLE_DEVTOOLS && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))

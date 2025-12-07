@@ -202,7 +202,7 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
               </div>
 
               {/* Caret Color */}
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <label
                   className="text-tiny font-medium"
                   style={{ color: 'var(--color-text-secondary)' }}
@@ -215,7 +215,7 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
                   onChange={(e) => updateSetting('editor.cursorColor', e.target.value)}
                   className="w-10 h-6 rounded"
                 />
-              </div>
+              </div> */}
 
               {/* Line Numbers */}
               <div className="flex items-center justify-between">

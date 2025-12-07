@@ -39,6 +39,7 @@ const CodeEditor = ({
 
   // IMMEDIATE SOURCE OF TRUTH
   const liveZoomRef = useRef(storedZoomLevel)
+  const selectionColor = '#074' // Your desired selection color
 
   // Debounced saver
   const debouncedSaveZoom = useCallback(
@@ -125,15 +126,17 @@ const CodeEditor = ({
                 padding: '12px',
                 fontSize: 'calc(var(--editor-font-size, 14px) * var(--content-zoom, 1))'
               },
+
               '.cm-gutters': {
                 fontSize: 'calc(var(--editor-font-size, 14px) * var(--content-zoom, 1))',
-                backgroundColor: 'var(--editor-gutter-bg, var(--color-bg-secondary)) !important',
+                backgroundColor: 'var(--color-bg-primary, #0f1117) !important',
                 color: 'var(--color-text-secondary, #64748b)',
                 borderRight: '1px solid var(--color-border, #e2e8f0)',
                 fontFamily: 'inherit',
                 minWidth: '40px',
                 lineHeight: '1.6'
               },
+
               '.cm-activeLine': {
                 backgroundColor: 'var(--color-bg-tertiary, rgba(248, 250, 252, 0.8))'
               }
@@ -142,6 +145,7 @@ const CodeEditor = ({
           )
 
           const exts = [themeExt]
+          
 
           const isWordWrap = settingsManager.get('editor.wordWrap') === 'on' || wordWrap === 'on'
           if (isWordWrap) {

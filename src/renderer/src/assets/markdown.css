@@ -293,7 +293,7 @@
 .markdown-preview-container h5,
 .markdown-preview-container h6 {
   margin: 28px 0 16px 0;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text-main);
   line-height: 1.25;
 }
