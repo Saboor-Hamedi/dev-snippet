@@ -7,7 +7,7 @@ import PropTypes from 'prop-types'
 import { useKeyboardShortcuts } from '../../hook/useKeyboardShortcuts.js'
 import { useEditorFocus } from '../../hook/useEditorFocus.js'
 import extractTags from '../../hook/extractTags.js'
-import { getAllLanguages } from '../language/languageRegistry.js'
+import { getAllLanguages,getLanguageByExtension } from '../language/languageRegistry.js'
 import { useZoomLevel } from '../../hook/useZoomLevel'
 import WelcomePage from '../WelcomePage.jsx'
 import StatusBar from '../StatusBar.jsx'
@@ -39,6 +39,8 @@ const SnippetEditor = ({
   const [isDirty, setIsDirty] = useState(false)
   const [zoomLevel] = useZoomLevel() // Use useSettingsReact Context for zoom level
   const { settings } = useSettings()
+
+ 
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(() => {
     try {
       const saved = localStorage.getItem('autoSave')
@@ -57,6 +59,14 @@ const SnippetEditor = ({
   // Line wrapped here from  CodeEditor.jsx
   const wordWrap = settings?.editor?.wordWrap || 'off'
   const overflow = settings?.editor?.overflow || false
+
+  // Modify the .txt to .md for markdown language
+  useEffect(() => {
+    if (language === 'markdown') {
+      const ext = getLanguageByExtension('.md')
+      if (ext) setLanguage(ext)
+    }
+  }, [language])
 
   // Local compact mode (used only if parent doesn't control it)
   const [localCompact, setLocalCompact] = useState(() => {
@@ -113,7 +123,7 @@ const SnippetEditor = ({
         return
       const updatedSnippet = {
         id: id,
-        title: initialSnippet.title, // Keep original title during autosave
+         // title: initialSnippet.title, // Keep original title during autosave
         code: code, // Use current editor content
         language: language,
         timestamp: Date.now(),
@@ -257,8 +267,8 @@ const SnippetEditor = ({
     ;(async () => {
       let title = initialSnippet?.title || ''
       // Only show "No changes to save" for saved snippets with actual content
-      if (initialSnippet?.id && !initialSnippet?.is_draft && initialSnippet?.title && 
-          initialSnippet.title !== '' && !initialSnippet.id.startsWith('draft-')) {
+        if (initialSnippet?.id && !initialSnippet?.is_draft && initialSnippet?.title && 
+          initialSnippet.title !== '') {
         const prevCode = initialSnippet?.code || ''
         const prevLang = initialSnippet?.language || 'md'
         const prevTitle = initialSnippet?.title || ''

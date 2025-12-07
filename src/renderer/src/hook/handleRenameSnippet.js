@@ -1,4 +1,4 @@
-import {getLanguageByExtension} from '../components/language/languageRegistry.js';
+import { getLanguageByExtension } from '../components/language/languageRegistry.js'
 export const handleRenameSnippet = async ({
   renameModal,
   saveSnippet,
@@ -20,32 +20,28 @@ export const handleRenameSnippet = async ({
     md: 'md'
     //  Add more extensions and their corresponding languages as needed
   }
-  // This is a helper to auto-detect language from extension 
+  // This is a helper to auto-detect language from extension
   const getExtensionName = (name) => {
-      const m = name.match(/\.([^.\/\\\s]+)$/)
-      return m ? m[1].toLowerCase() : null
+    const m = name.match(/\.([^.\/\\\s]+)$/)
+    return m ? m[1].toLowerCase() : null
   }
   // This perserve the original language if no extension change
   let lang = renameModal.item.language
 
-  // if (hasExt) {
-  //   const ext = baseName.split('.').pop().toLowerCase()
-  //   lang = extMap[ext] || lang
-  // } else {
-  //   lang = 'md'
-  // }
   const ext = getExtensionName(baseName)
   if (ext) {
     const langFromExt = getLanguageByExtension(baseName)
     if (langFromExt) {
       lang = langFromExt
     }
-  } 
+  }
 
+  // Set is_draft based on the original snippet
   const updatedItem = {
     ...renameModal.item,
     title: baseName,
-    language: lang
+    language: lang,
+    is_draft: false // Always set to false when renaming/finalizing
   }
   // Update the selected item immediately (optimistic update)
   if (setSelectedSnippet) {
@@ -60,26 +56,20 @@ export const handleRenameSnippet = async ({
   }
 
   try {
-    // Handle draft snippets that need proper IDs
-    const isNewDraft = String(updatedItem.id).startsWith('draft-')
-    if (isNewDraft) {
-      // For new drafts, create a proper ID
-      updatedItem.id = Date.now().toString()
-      updatedItem.is_draft = false
+    // Always set is_draft to false and update in place
+    if (typeof renameSnippet === 'function') {
+      renameSnippet(updatedItem.id, updatedItem);
+    } else {
+      await saveSnippet(updatedItem);
     }
-    
-    await saveSnippet(updatedItem)
-    
-    // Update selectedSnippet with the final saved item (important for drafts)
-    if (setSelectedSnippet && isNewDraft) {
-      setSelectedSnippet(updatedItem)
-    }
-    
+
     if (showToast) showToast('✓ Snippet renamed successfully', 'success')
-  
   } catch (error) {
+    console.error('Rename error:', error)
+
     if (showToast) showToast('❌ Failed to rename snippet.', 'error')
-    // Revert the optimistic update if save failed
+
+    // Rollback optimistic update
     if (setSelectedSnippet) {
       setSelectedSnippet(renameModal.item)
     }

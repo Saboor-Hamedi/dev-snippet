@@ -34,7 +34,6 @@ export const useSnippetData = () => {
   // Save or update a snippet
   const saveSnippet = async (snippet, options = {}) => {
     try {
-      const isDraft = !!snippet?.is_draft || String(snippet?.id || '').startsWith('draft-')
       const fullText = snippet?.code || ''
 
       // Simple DB-only storage for all snippets
@@ -58,14 +57,15 @@ export const useSnippetData = () => {
           : [updatedItem, ...prev]
       })
       
-        // Update the active view immediately to refresh snippet data for rename functionality
-        if (!options.skipSelectedUpdate) {
-          if (selectedSnippet && selectedSnippet.id === snippet.id) {
-            // Force refresh the selected snippet with updated data
-            const refreshedSnippet = { ...snippet, code: fullText, is_draft: false }
-            setSelectedSnippetState(refreshedSnippet)
-          }
-        }      showToast('✓ Snippet saved successfully')
+      // Update the active view immediately to refresh snippet data for rename functionality
+      if (!options.skipSelectedUpdate) {
+        if (selectedSnippet && selectedSnippet.id === snippet.id) {
+          // Force refresh the selected snippet with updated data
+          const refreshedSnippet = { ...snippet, code: fullText, is_draft: false }
+          setSelectedSnippetState(refreshedSnippet)
+        }
+      }
+      showToast('✓ Snippet saved successfully')
     } catch (error) {
       showToast('❌ Failed to save snippet')
     }

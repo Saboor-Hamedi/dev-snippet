@@ -105,7 +105,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
   return (
     <div
       className="fixed inset-0 z-[100] flex items-start justify-center pt-[20vh] bg-black/40 backdrop-blur-sm animate-fade-in"
-      style={{ 
+      style={{
         fontSize: '14px', // Fixed font size, not affected by editor zoom
         '--editor-zoom-level': 1 // Override any parent zoom
       }}
@@ -114,7 +114,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
       <div
         className="w-full max-w-2xl rounded-xl shadow-2xl border overflow-hidden flex flex-col transform transition-all"
         style={{
-          backgroundColor: 'var(--color-background-soft)',
+          backgroundColor: 'var(--color-bg-primary)',
           borderColor: 'var(--border-color)',
           color: 'var(--color-text)'
         }}
@@ -135,7 +135,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
               }
             }}
             placeholder="Search snippets..."
-            className="flex-1 bg-transparent border-none outline-none text-lg"
+            className="flex-1 bg-transparent border-none outline-none text-medium"
             autoComplete="off"
             spellCheck={false}
             tabIndex={0}
@@ -164,7 +164,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
                       : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
                   }`}
                 >
-                    <div className="p-2 rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
+                  <div className="p-2 rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
                     <FileCode size={12} />
                   </div>
 
@@ -176,11 +176,11 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
                       )}
                     </div>
                     <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                      <span className="capitalize">{item.type}</span>
-                      <span>•</span>
-                      <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
-                        {item.language}
-                      </span>
+                      {/* <span className="capitalize">{item.type}</span> */}
+                      <small className="font-mono    rounded">
+                        {item.language}{' '}
+                        {item.timestamp ? `• ${new Date(item.timestamp).toLocaleDateString()}` : ''}
+                      </small>
                     </div>
                   </div>
                 </div>

@@ -1,32 +1,41 @@
 import { useSettings } from './useSettingsContext'
 
-// Zoom Level Constants
-// Change these values to adjust the minimum and maximum zoom levels across the app
-export const MIN_ZOOM = 0.8 // 50%
-export const MAX_ZOOM = 2.0 // 200%
+// Zoom limits
+export const MIN_ZOOM = 0.8
+export const MAX_ZOOM = 2.0
+
+// Normalizer — ALWAYS force one decimal, then clamp
+const normalizeZoom = (value) => {
+  // const rounded = Number(value.toFixed(1))
+  const rounded = Math.round(value * 10) / 10
+  return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, rounded))
+}
 
 export const useZoomLevel = () => {
   const { getSetting, updateSetting } = useSettings()
 
-  const zoomLevel = getSetting('editor.zoomLevel') ?? 1.0
+  // STEP 1 — Load raw value
+  let zoom = getSetting('editor.zoomLevel') ?? 1.0
 
-  // Apply zoom to the document root so all UI (not just CodeMirror) updates immediately
-  if (typeof document !== 'undefined' && document.documentElement) {
-    document.documentElement.style.setProperty('--zoom-level', String(zoomLevel))
+  // STEP 2 — Normalize immediately
+  const cleanZoom = normalizeZoom(zoom)
+
+  // STEP 3 — Auto-heal and rewrite if needed
+  if (cleanZoom !== zoom) {
+    updateSetting('editor.zoomLevel', cleanZoom)
   }
 
-  const setZoomLevel = (level) => {
-    // Clamp to allowed range for safety
-    const clamped = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, level))
+  // STEP 4 — Apply to DOM
+  document.documentElement.style.setProperty('--zoom-level', cleanZoom)
 
-    if (typeof document !== 'undefined' && document.documentElement) {
-      document.documentElement.style.setProperty('--zoom-level', String(clamped))
-    }
-
-    updateSetting('editor.zoomLevel', clamped)
+  // STEP 5 — Setter ALWAYS normalizes before saving
+  const setZoomLevel = (value) => {
+    const clean = normalizeZoom(value)
+    document.documentElement.style.setProperty('--zoom-level', clean)
+    updateSetting('editor.zoomLevel', clean)
   }
 
-  return [zoomLevel, setZoomLevel]
+  return [cleanZoom, setZoomLevel]
 }
 
 export default useZoomLevel

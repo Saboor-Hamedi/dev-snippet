@@ -90,7 +90,7 @@ const SnippetLibrary = () => {
   // Helper: create a new draft snippet and select it (extracted to avoid duplication)
   const createDraftSnippet = () => {
     const draft = {
-      id: `draft-${Date.now()}`,
+      id: Date.now().toString(),
       title: '',
       code: '',
       language: 'md',
@@ -279,7 +279,12 @@ const SnippetLibrary = () => {
     // Display the rename modal
     setRenameModal({ isOpen: true, item: selectedSnippet })
   }
-
+function renameSnippet(oldId, updatedItem) {
+  setSnippets((prev) => [
+    ...prev.filter((snippet) => snippet.id !== oldId), // Remove old draft
+    updatedItem // Add updated snippet with new id
+  ])
+}
   // 5. Rename Logic
   const handleRename = async (newName) => {
     await handleRenameSnippet({
@@ -288,7 +293,8 @@ const SnippetLibrary = () => {
       setSelectedSnippet,
       setRenameModal,
       setIsCreatingSnippet,
-      showToast
+      renameSnippet,
+      showToast,
     })
   }
 
