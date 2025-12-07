@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useRef, useCallback,cursorColor  } from 'react'
+import useCaretWidth from '../../hook/useCaretWidth.js'
+import React, { useEffect, useState, useRef, useCallback, caretColor } from 'react'
 import { getLanguage } from '../language/languageRegistry.js'
 import { useZoomLevel, MIN_ZOOM, MAX_ZOOM } from '../../hook/useZoomLevel'
 import settingsManager from '../../config/settingsManager'
-import useCursorWidth from '../../hook/useCursorWidth.js'
 
 // Helper to debounce save operations
 const debounce = (func, wait) => {
@@ -30,9 +30,10 @@ const CodeEditor = ({
 
   const [storedZoomLevel, setStoredZoomLevel] = useZoomLevel()
   const editorDomRef = useRef(null) // 1. Caret settings applied here
-  const [cursorWidth] = useCursorWidth()
-  // Load caret/cursor settings from settingsManager, fallback to defaultSettings.js
-  const cursorColor = settingsManager.get('editor.cursorColor')
+  const [caretWidth] = useCaretWidth()
+
+  // Load caret settings from settingsManager, fallback to defaultSettings.js
+  const caretColor = settingsManager.get('editor.caretColor')
   // 1. Ref to hold the actual CodeMirror View instance
   const viewRef = useRef(null)
 
@@ -49,11 +50,9 @@ const CodeEditor = ({
   )
   useEffect(() => {
     if (!editorDomRef.current) return
-
-    editorDomRef.current.style.setProperty('--caret-width', `${cursorWidth}px`)
-    editorDomRef.current.style.setProperty('--caret-color', cursorColor)
-  }, [cursorWidth, cursorColor])
-
+    editorDomRef.current.style.setProperty('--caret-width', `${caretWidth}px`)
+    editorDomRef.current.style.setProperty('--caret-color', caretColor)
+  }, [caretWidth, caretColor])
   // Sync ref if settings change externally
   useEffect(() => {
     liveZoomRef.current = storedZoomLevel
@@ -261,8 +260,8 @@ const CodeEditor = ({
       <div
         className="cm-editor-wrapper"
         style={{
-          '--caret-width': `${cursorWidth}px`,
-          '--caret-color': cursorColor
+          '--caret-width': `${caretWidth}px`,
+          '--caret-color': caretColor
         }}
       >
         <CM

@@ -9,8 +9,8 @@ export const DEFAULT_SETTINGS = {
     overlayMode: false,
     tabSize: 2,
     theme: 'dark',
-    cursorWidth: 1, // in pixels
-    cursorColor: '#c9d1d9' // default cursor color
+    caretWidth: 1, // in pixels
+    caretColor: '#c9d1d9' // default caret color
   },
   ui: {
     compactMode: false,
