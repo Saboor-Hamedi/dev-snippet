@@ -1,9 +1,11 @@
 import './assets/index.css'
 import './assets/toast.css'
 import './assets/markdown.css'
-// import './components/CodeEditor/CodeEditor.css'
+import './components/CodeEditor/CodeEditor.css'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+  import settingsManager from './config/settingsManager'
+
 import App from './App'
 
 const applyThemeFromDB = async () => {
@@ -59,6 +61,10 @@ const applyThemeFromDB = async () => {
 
 ;(async () => {
   await applyThemeFromDB()
+
+// await settingsManager.load()
+await settingsManager.save()
+console.log('Forced settings save:', settingsManager.settings.editor)
   createRoot(document.getElementById('root')).render(
     <StrictMode>
       <App />

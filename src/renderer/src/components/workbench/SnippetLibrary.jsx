@@ -203,8 +203,8 @@ const SnippetLibrary = () => {
       }
     },
     onDeleteSnippet: () => {
-      if (activeView === 'snippets' && selectedSnippet) {
-        setDeleteModal({ isOpen: true, snippetId: selectedSnippet.id }) // ✅ show modal first
+      if ((activeView === 'snippets' || activeView === 'editor') && selectedSnippet) {
+        setDeleteModal({ isOpen: true, snippetId: selectedSnippet.id });
       }
     },
     // You can also keep the Ctrl+S save if you want
@@ -279,7 +279,7 @@ const SnippetLibrary = () => {
     // Display the rename modal
     setRenameModal({ isOpen: true, item: selectedSnippet })
   }
-  
+
   // 5. Rename Logic
   const handleRename = async (newName) => {
     await handleRenameSnippet({
@@ -382,7 +382,7 @@ const SnippetLibrary = () => {
             setAutosaveStatus(s)
             if (s === 'saved') setTimeout(() => setAutosaveStatus(null), 1200)
           }}
-          onDeleteRequest={handleDeleteSnippet}
+      onDeleteRequest={handleDeleteSnippet}
           onNewSnippet={() => {
             setIsCreatingSnippet(true)
             createDraftSnippet()

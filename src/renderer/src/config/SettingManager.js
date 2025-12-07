@@ -50,7 +50,7 @@ class SettingManager {
               behavior: { ...DEFAULT_SETTINGS.behavior, ...newSettings.behavior },
               advanced: { ...DEFAULT_SETTINGS.advanced, ...newSettings.advanced }
             }
-            console.log('🔄 Settings updated from file:', this.settings)
+            // console.log('🔄 Settings updated from file:', this.settings)
             this.notifyListeners()
           } catch (err) {
             console.warn('Failed to parse settings from file:', err)
@@ -58,7 +58,7 @@ class SettingManager {
         })
         // Mark as watching
         this.watchingEnabled = true
-        console.log('✅ Settings file watching enabled')
+        // console.log('✅ Settings file watching enabled')
       }
     } catch (err) {
       console.error('Failed to start watching settings file:', err)
@@ -84,16 +84,20 @@ class SettingManager {
   // Load settings from JSON file
   async load() {
     try {
-      if (window.api?.readSettingsFile) {
-        const data = await window.api.readSettingsFile()
-        if (data) {
-          const newSettings = JSON.parse(data)
+      let shouldSave = false;
 
+     
+      if (window.api?.readSettingsFile) {
+        const data = await window.api.readSettingsFile();
+        if (data) {
+          const newSettings = JSON.parse(data);
           // Use proper validation method
           if (!this.validateSettings(newSettings)) {
-            console.warn('Invalid settings structure in file, using defaults')
-            this.settings = { ...DEFAULT_SETTINGS }
+            console.warn('Invalid settings structure in file, using defaults');
+            this.settings = { ...DEFAULT_SETTINGS };
+            shouldSave = true;
           } else {
+            // Merge settings
             this.settings = {
               ...DEFAULT_SETTINGS,
               ...newSettings,
@@ -101,17 +105,20 @@ class SettingManager {
               ui: { ...DEFAULT_SETTINGS.ui, ...newSettings.ui },
               behavior: { ...DEFAULT_SETTINGS.behavior, ...newSettings.behavior },
               advanced: { ...DEFAULT_SETTINGS.advanced, ...newSettings.advanced }
-            }
+            };
           }
-          this.notifyListeners()
+          this.notifyListeners();
+          if (shouldSave) await this.save();
+                  console.log('Settings saved with cursorColor and cursorWidth:', this.settings.editor)
         }
       }
       // Start watching after load
-      this.startWatching()
+      this.startWatching();
     } catch (error) {
-      this.settings = { ...DEFAULT_SETTINGS }
+      this.settings = { ...DEFAULT_SETTINGS };
+      await this.save();
       // Start watching even if load failed (file might be created later)
-      this.startWatching()
+      this.startWatching();
     }
   }
 

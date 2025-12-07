@@ -52,10 +52,7 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
           {/* Header setting */}
           <div className="flex items-center gap-3">
             <Settings size={12} style={{ color: 'var(--color-text-secondary)' }} />
-            <h2
-              className="text-tiny font-semibold"
-              style={{ color: 'var(--color-text-primary)' }}
-            >
+            <h2 className="text-tiny font-semibold" style={{ color: 'var(--color-text-primary)' }}>
               Settings
             </h2>
           </div>
@@ -75,7 +72,7 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
               <div className="flex items-center gap-2 mb-4">
                 <Monitor size={12} style={{ color: 'var(--color-text-tertiary)' }} />
                 <h3
-                className="text-tiny font-medium"
+                  className="text-tiny font-medium"
                   style={{ color: 'var(--color-text-primary)' }}
                 >
                   Editor
@@ -190,7 +187,7 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
                   className="rounded bg-slate-700 border-slate-600"
                 />
               </div>
-              
+
               {/* Overlay Mode */}
               <div className="flex items-center justify-between">
                 <label className="text-tiny font-medium text-slate-300">Overlay Mode</label>
@@ -203,7 +200,22 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
                   className="rounded bg-slate-700 border-slate-600"
                 />
               </div>
-              
+
+              {/* Caret Color */}
+              <div className="space-y-2">
+                <label
+                  className="text-tiny font-medium"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                >
+                  Caret Color
+                </label>
+                <input
+                  type="color"
+                  value={localSettings.editor?.cursorColor || '#e9e8deff'}
+                  onChange={(e) => updateSetting('editor.cursorColor', e.target.value)}
+                  className="w-10 h-6 rounded"
+                />
+              </div>
 
               {/* Line Numbers */}
               <div className="flex items-center justify-between">
@@ -221,7 +233,10 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
             <div className="space-y-6">
               <div className="flex items-center gap-2 mb-4">
                 <Sliders size={12} style={{ color: 'var(--color-text-tertiary)' }} />
-                <h3 className="text-tiny font-medium" style={{ color: 'var(--color-text-primary)' }}>
+                <h3
+                  className="text-tiny font-medium"
+                  style={{ color: 'var(--color-text-primary)' }}
+                >
                   Interface
                 </h3>
               </div>
@@ -338,6 +353,7 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
                   fontFamily: 'JetBrains Mono',
                   lineNumbers: true,
                   wordWrap: 'on',
+                  cursorColor: '#e9e8deff',
                   overlayMode: false,
                   tabSize: 2,
                   theme: 'dark'
@@ -371,7 +387,6 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
             Reset to Defaults
           </button>
           {/* Footer close button */}
-          
         </div>
       </div>
     </div>

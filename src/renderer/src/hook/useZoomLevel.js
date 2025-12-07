@@ -2,7 +2,7 @@ import { useSettings } from './useSettingsContext'
 
 // Zoom Level Constants
 // Change these values to adjust the minimum and maximum zoom levels across the app
-export const MIN_ZOOM = 0.5 // 50%
+export const MIN_ZOOM = 0.8 // 50%
 export const MAX_ZOOM = 2.0 // 200%
 
 export const useZoomLevel = () => {

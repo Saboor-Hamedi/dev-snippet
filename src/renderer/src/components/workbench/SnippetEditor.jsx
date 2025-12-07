@@ -225,7 +225,6 @@ const SnippetEditor = ({
   // Handle keyboard shortcuts (combined into single call)
   useKeyboardShortcuts({
     onSave: () => {
-      // Ctrl+S: Open save prompt if no title, otherwise trigger save
       const title = initialSnippet?.title || ''
       if (!title || title.toLowerCase() === 'untitled') {
         setNamePrompt({ isOpen: true, initialName: '' })
@@ -233,7 +232,13 @@ const SnippetEditor = ({
         handleSave()
       }
     },
-    onToggleCompact: onToggleCompactHandler
+    onToggleCompact: onToggleCompactHandler,
+    onDeleteSnippet: () => {
+      if (onDelete) onDelete(initialSnippet?.id)
+    },
+    onCloseEditor: () => {
+      if (onCancel) onCancel()
+    }
   })
 
   // Standard Ctrl+W to close editor (like browser tabs)
