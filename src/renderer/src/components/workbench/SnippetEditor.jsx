@@ -43,6 +43,7 @@ const SnippetEditor = ({
   const [title, setTitle] = useState(initialSnippet?.title || '')
 
   const hideWelcomePage = getSetting('ui.hideWelcomePage') || false
+  const saveTimerRef = useRef(null)
 
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(() => {
     try {
@@ -53,8 +54,9 @@ const SnippetEditor = ({
     }
   })
 
-  const saveTimerRef = useRef(null)
-  const lastPendingRef = useRef(0)
+  const lastSavedCode = useRef(initialSnippet?.code || '')
+  const lastSavedLanguage = useRef(initialSnippet?.language || 'text')
+  const lastSavedTitle = useRef(initialSnippet?.title || '')
 
   const isDeletingRef = useRef(false)
   const textareaRef = useRef(null)
@@ -118,13 +120,6 @@ const SnippetEditor = ({
     // Debounce autosave: 5000ms to reduce frequent writes for large snippets
     // Emit a rate-limited 'pending' status so header shows "Saving..."
     // without updating on every keystroke. Limit to once per 800ms.
-    try {
-      const now = Date.now()
-      if (!lastPendingRef.current || now - lastPendingRef.current > 800) {
-        onAutosave && onAutosave('pending')
-        lastPendingRef.current = now
-      }
-    } catch {}
     saveTimerRef.current = setTimeout(async () => {
       const id = initialSnippet?.id
       if (!id) return
@@ -153,6 +148,10 @@ const SnippetEditor = ({
         try {
           setIsDirty(false)
         } catch {}
+        // Update last saved values
+        lastSavedCode.current = code
+        lastSavedLanguage.current = language
+        lastSavedTitle.current = title
       } catch (err) {
         onAutosave && onAutosave(null)
       }
@@ -277,16 +276,11 @@ const SnippetEditor = ({
     ;(async () => {
       const localTitle = title // Use local title state instead of initialSnippet.title
       // Only show "No changes to save" for saved snippets with actual content
-      // Only check for changes if not forcing save (manual save always saves)
-      if (!forceSave &&
-        initialSnippet?.id &&
-        !initialSnippet?.is_draft &&
-        initialSnippet?.title &&
-        initialSnippet.title !== ''
-      ) {
-        const prevCode = initialSnippet?.code || ''
-        const prevLang = initialSnippet?.language || 'md'
-        const prevTitle = initialSnippet?.title || ''
+      // Check for changes (for saved snippets or manual saves)
+      if ((initialSnippet?.id && !initialSnippet?.is_draft && initialSnippet?.title && initialSnippet.title !== '') || forceSave) {
+        const prevCode = lastSavedCode.current
+        const prevLang = lastSavedLanguage.current
+        const prevTitle = lastSavedTitle.current
         const unchanged =
           prevCode === (code || '') && prevLang === (language || 'md') && prevTitle === localTitle
         if (unchanged) {
@@ -335,6 +329,14 @@ const SnippetEditor = ({
         try {
           window.dispatchEvent(new CustomEvent('autosave:complete', { detail: { id: payload.id } }))
         } catch {}
+        // Clear dirty flag after successful manual save
+        try {
+          setIsDirty(false)
+        } catch {}
+        // Update last saved values
+        lastSavedCode.current = code
+        lastSavedLanguage.current = language
+        lastSavedTitle.current = localTitle
         // keep 'saved' state; parent may clear it after a short delay
       } catch (err) {
         // indicate failure
@@ -459,6 +461,7 @@ const SnippetEditor = ({
                   is_draft: false
                 }
                 setNamePrompt({ isOpen: false, initialName: '' })
+                setTitle(fullTitle) // Update local title state
                 onSave(payload)
               }}
             />
