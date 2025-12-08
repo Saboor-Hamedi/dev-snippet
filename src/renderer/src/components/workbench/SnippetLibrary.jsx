@@ -212,10 +212,6 @@ const SnippetLibrary = () => {
     },
     // You can also keep the Ctrl+S save if you want
     onSave: (e) => {
-      if (editorPresent) {
-        // Child handles it directly
-        return
-      }
       if (selectedSnippet) {
         e?.preventDefault() // The hook already does this
         // If an editor textarea is present (covers create-mode and when

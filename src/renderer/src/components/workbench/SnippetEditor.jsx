@@ -259,7 +259,7 @@ const SnippetEditor = ({
       if (!title || title.toLowerCase() === 'untitled') {
         setNamePrompt({ isOpen: true, initialName: '' })
       } else {
-        handleSave()
+        handleSave(true) // force save
       }
     },
     onToggleCompact: onToggleCompactHandler,
@@ -273,11 +273,12 @@ const SnippetEditor = ({
     }
   })
 
-  const handleSave = () => {
+  const handleSave = (forceSave = false) => {
     ;(async () => {
-      let title = title // Use local title state instead of initialSnippet.title
+      const localTitle = title // Use local title state instead of initialSnippet.title
       // Only show "No changes to save" for saved snippets with actual content
-      if (
+      // Only check for changes if not forcing save (manual save always saves)
+      if (!forceSave &&
         initialSnippet?.id &&
         !initialSnippet?.is_draft &&
         initialSnippet?.title &&
@@ -287,19 +288,19 @@ const SnippetEditor = ({
         const prevLang = initialSnippet?.language || 'md'
         const prevTitle = initialSnippet?.title || ''
         const unchanged =
-          prevCode === (code || '') && prevLang === (language || 'md') && prevTitle === title
+          prevCode === (code || '') && prevLang === (language || 'md') && prevTitle === localTitle
         if (unchanged) {
           if (typeof showToast === 'function') showToast('No changes to save', 'info')
           return
         }
       }
-      if (!title || title.toLowerCase() === 'untitled') {
+      if (!localTitle || localTitle.toLowerCase() === 'untitled') {
         setNamePrompt({ isOpen: true, initialName: '' })
         return
       }
       const payload = {
         id: initialSnippet?.id || Date.now().toString(),
-        title,
+        title: localTitle,
         code: code,
         language: language,
         timestamp: Date.now(),
