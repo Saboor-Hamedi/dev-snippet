@@ -42,6 +42,9 @@ const SnippetEditor = ({
 
   const [title, setTitle] = useState(initialSnippet?.title || '')
 
+  const [justRenamed, setJustRenamed] = useState(false)
+
+
   const hideWelcomePage = getSetting('ui.hideWelcomePage') || false
   const saveTimerRef = useRef(null)
 
@@ -109,7 +112,7 @@ const SnippetEditor = ({
   }
 
   // Focus management extracted into a hook
-  useEditorFocus({ initialSnippet, isCreateMode, editorContainerRef, textareaRef })
+  useEditorFocus({ initialSnippet, isCreateMode, textareaRef })
 
   // CodeMirror is encapsulated in CodeEditor now
 
@@ -359,6 +362,16 @@ const SnippetEditor = ({
     return () => window.removeEventListener('force-save', fn)
   }, [code, initialSnippet])
 
+  // Focus editor after renaming
+  useEffect(() => {
+    if (justRenamed && !namePrompt.isOpen) {
+      setTimeout(() => {
+        textareaRef.current?.focus()
+      }, 100)
+      setJustRenamed(false)
+    }
+  }, [justRenamed, namePrompt.isOpen])
+
   return (
     <>
       {
@@ -461,6 +474,7 @@ const SnippetEditor = ({
                   is_draft: false
                 }
                 setNamePrompt({ isOpen: false, initialName: '' })
+                setJustRenamed(true)
                 setTitle(fullTitle) // Update local title state
                 onSave(payload)
               }}

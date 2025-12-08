@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-export const useEditorFocus = ({ initialSnippet, isCreateMode, editorContainerRef, textareaRef }) => {
+export const useEditorFocus = ({ initialSnippet, isCreateMode, textareaRef }) => {
   useEffect(() => {
     const focusEditor = () => {
       try {
