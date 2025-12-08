@@ -1,8 +1,11 @@
 import useCaretWidth from '../../hook/useCaretWidth.js'
-import React, { useEffect, useState, useRef, useCallback, caretColor } from 'react'
-import { getLanguage } from '../language/languageRegistry.js'
-import { useZoomLevel, MIN_ZOOM, MAX_ZOOM } from '../../hook/useZoomLevel'
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
+import { useZoomLevel } from '../../hook/useZoomLevel'
 import settingsManager from '../../config/settingsManager'
+import CodeMirror from '@uiw/react-codemirror'
+import { EditorView } from '@codemirror/view'
+import buildTheme from './extensions/buildTheme'
+import buildExtensions from './extensions/buildExtensions'
 
 // Helper to debounce save operations
 const debounce = (func, wait) => {
@@ -16,238 +19,114 @@ const debounce = (func, wait) => {
 const CodeEditor = ({
   value,
   onChange,
-  onKeyDown,
   height = '100%',
   className = 'h-full',
-  style = { backgroundColor: 'var(--editor-bg, var(--color-bg-primary))' },
   language = 'markdown',
-  textareaRef,
   onZoomChange,
   wordWrap = 'on'
 }) => {
-  const [CodeMirrorComponent, setCodeMirrorComponent] = useState(null)
-  const [cmExtensions, setCmExtensions] = useState(null)
-
   const [storedZoomLevel, setStoredZoomLevel] = useZoomLevel()
-  const editorDomRef = useRef(null) // 1. Caret settings applied here
+  const editorDomRef = useRef(null)
   const [caretWidth] = useCaretWidth()
-
-  // Load caret settings from settingsManager, fallback to defaultSettings.js
   const caretColor = settingsManager.get('editor.caretColor')
-  // 1. Ref to hold the actual CodeMirror View instance
   const viewRef = useRef(null)
-
-  // IMMEDIATE SOURCE OF TRUTH
   const liveZoomRef = useRef(storedZoomLevel)
-  const selectionColor = '#074' // Your desired selection color
 
-  // Debounced saver
+  // Determine dark mode (initial check)
+  const isDark =
+    document.documentElement.classList.contains('dark') ||
+    document.documentElement.getAttribute('data-theme') === 'dark'
+
+  // Initial base extensions (Theme only) to prevent FOUC
+  const baseExtensions = useMemo(() => {
+    return [
+      buildTheme(EditorView, {
+        isDark,
+        caretColor,
+        fontSize: 'var(--editor-font-size, 14px)'
+      })
+    ]
+  }, [isDark, caretColor])
+
+  const [cmExtensions, setCmExtensions] = useState(baseExtensions)
+
+  // Save zoom to storage with debounce
   const debouncedSaveZoom = useCallback(
     debounce((newLevel) => {
-      setStoredZoomLevel(newLevel)
       if (onZoomChange) onZoomChange(newLevel)
+      settingsManager.set('editor.zoomLevel', newLevel)
     }, 500),
-    [setStoredZoomLevel, onZoomChange]
+    [onZoomChange]
   )
-  useEffect(() => {
-    if (!editorDomRef.current) return
-    editorDomRef.current.style.setProperty('--caret-width', `${caretWidth}px`)
-    editorDomRef.current.style.setProperty('--caret-color', caretColor)
-  }, [caretWidth, caretColor])
-  // Sync ref if settings change externally
+
+  // 1. Efficiently update DOM styles without triggering React re-renders
+  const applyZoomToDOM = (level) => {
+    const target = editorDomRef.current || document.documentElement
+    const zoomStr = level.toFixed(3)
+    target.style.setProperty('--zoom-level', zoomStr)
+    target.style.setProperty('--content-zoom', zoomStr)
+
+    if (viewRef.current) {
+      viewRef.current.requestMeasure()
+    }
+  }
+
+  // 2. Sync Ref and DOM when storedZoomLevel changes
   useEffect(() => {
     liveZoomRef.current = storedZoomLevel
     applyZoomToDOM(storedZoomLevel)
   }, [storedZoomLevel])
 
-  // Function to apply zoom directly to DOM
-  const applyZoomToDOM = (level) => {
-    // 2. Use viewRef to target specific editor, preventing global querySelector issues
-    const view = viewRef.current
-    if (!view) return
-    // Set variables on document root so both JS-created and CSS rules pick them up
-    document.documentElement.style.setProperty('--zoom-level', String(level))
-    document.documentElement.style.setProperty('--content-zoom', String(level))
+  // 3. Handle CSS Variables for Caret
+  useEffect(() => {
+    if (!editorDomRef.current) return
+    editorDomRef.current.style.setProperty('--caret-width', `${caretWidth}px`)
+    editorDomRef.current.style.setProperty('--caret-color', caretColor)
+  }, [caretWidth, caretColor])
 
-    // Adjust gutter width dynamically while keeping it responsive
-    const editorElement = view.dom
-    const gutterElement = editorElement.querySelector('.cm-gutters')
-    if (gutterElement) {
-      const minGutterWidth = level < 0.7 ? '50px' : '40px'
-      gutterElement.style.minWidth = minGutterWidth
-      gutterElement.style.height = '100%'
+  // Adjust scroller overflow
+  const adjustOverflow = useCallback(() => {
+    if (!viewRef.current) return
+    const scroller = viewRef.current.scrollDOM
+    const content = viewRef.current.contentDOM
+    if (scroller && content) {
+      const contentHeight = content.scrollHeight
+      const scrollerHeight = scroller.clientHeight
+      // scroller.style.overflowY = contentHeight <= scrollerHeight ? 'hidden' : 'auto'
+      // Keep auto to allow scroll if needed, or let CSS handle it
     }
+  }, [])
 
-    // Force CodeMirror to recompute layout and wrapping
-    view.requestMeasure()
-  }
+  useEffect(() => {
+    adjustOverflow()
+  }, [value, storedZoomLevel, adjustOverflow])
 
+  // 4. Load Full Extensions
   useEffect(() => {
     let mounted = true
     const load = async () => {
       try {
-        const [{ default: CM }, viewModule, keymapModule] = await Promise.all([
-          import('@uiw/react-codemirror'),
-          import('@codemirror/view'),
-          import('@codemirror/view')
-        ])
-        if (!mounted) return
-        setCodeMirrorComponent(() => CM)
-
-        const { EditorView, keymap } = viewModule
-
-        const buildExtensions = async () => {
-          const isDark =
+        const options = {
+          EditorView,
+          isDark:
             document.documentElement.classList.contains('dark') ||
-            document.documentElement.getAttribute('data-theme') === 'dark'
-
-          // THEME DEFINITION
-          const themeExt = EditorView.theme(
-            {
-              '&': {
-                // Use the app-level editor background so CodeMirror matches the UI theme
-                backgroundColor: 'var(--editor-bg, var(--color-bg-primary)) !important',
-                color: 'var(--color-text-primary, #0f172a)',
-                fontFamily: 'var(--editor-font-family, "JetBrains Mono")',
-                // font-size is applied to the content element using --content-zoom
-                lineHeight: '1.6',
-                height: '100vh',
-                transition: 'background-color 140ms ease, color 140ms ease'
-              },
-              // The scroller holds the visible background and should inherit the editor bg
-              '.cm-scroller': {
-                backgroundColor: 'var(--editor-bg, transparent) !important',
-                fontFamily: 'inherit',
-                overflowX: 'hidden'
-              },
-              '.cm-content': {
-                backgroundColor: 'transparent',
-                fontFamily: 'inherit',
-                padding: '12px',
-                fontSize: 'calc(var(--editor-font-size, 14px) * var(--content-zoom, 1))'
-              },
-
-              '.cm-gutters': {
-                fontSize: 'calc(var(--editor-font-size, 14px) * var(--content-zoom, 1))',
-                backgroundColor: 'var(--color-bg-primary, #0f1117) !important',
-                color: 'var(--color-text-secondary, #64748b)',
-                borderRight: '1px solid var(--color-border, #e2e8f0)',
-                fontFamily: 'inherit',
-                minWidth: '40px',
-                lineHeight: '1.6'
-              },
-
-              '.cm-activeLine': {
-                backgroundColor: 'var(--color-bg-tertiary, rgba(248, 250, 252, 0.8))'
-              }
-            },
-            { dark: isDark }
-          )
-
-          const exts = [themeExt]
-          
-
-          const isWordWrap = settingsManager.get('editor.wordWrap') === 'on' || wordWrap === 'on'
-          if (isWordWrap) {
-            exts.push(EditorView.lineWrapping)
-            try {
-              // Load and add visual-line numbering gutter (counts wrapped visual lines)
-              const mod = await import('./useVisualLineNumberMarker.js')
-              if (mod && mod.useVisualLineNumberMarker) {
-                const vs = mod.useVisualLineNumberMarker(viewModule)
-                if (vs && vs.length) exts.push(...vs)
-              }
-            } catch (e) {
-              // Non-fatal: keep editor working without visual-line gutter
-              console.error('Failed to load visual-line gutter', e)
-            }
-          } else {
-            // Fallback: always show default line numbers if not using visual-line gutter
-            try {
-              const { lineNumbers } = await import('@codemirror/view')
-              exts.push(lineNumbers())
-            } catch (e) {
-              console.error('Failed to load default line numbers', e)
-            }
-          }
-
-          // KEYBOARD SHORTCUTS
-          const zoomHandler = (change) => {
-            const current = liveZoomRef.current
-            const newZoom = Math.min(Math.max(current + change, MIN_ZOOM), MAX_ZOOM)
-
-            liveZoomRef.current = newZoom
-            applyZoomToDOM(newZoom)
-            debouncedSaveZoom(newZoom)
-            return true
-          }
-
-          const zoomKeymap = keymap.of([
-            { key: 'Ctrl-=', run: () => zoomHandler(0.1) },
-            { key: 'Ctrl-Minus', run: () => zoomHandler(-0.1) },
-            {
-              key: 'Ctrl-0',
-              run: () => {
-                liveZoomRef.current = 1.0
-                applyZoomToDOM(1.0)
-                debouncedSaveZoom(1.0)
-                return true
-              }
-            },
-            { key: 'Cmd-=', run: () => zoomHandler(0.1) },
-            { key: 'Cmd-Minus', run: () => zoomHandler(-0.1) },
-            {
-              key: 'Cmd-0',
-              run: () => {
-                liveZoomRef.current = 1.0
-                applyZoomToDOM(1.0)
-                debouncedSaveZoom(1.0)
-                return true
-              }
-            }
-          ])
-          exts.push(zoomKeymap)
-
-          // MOUSE WHEEL HANDLER
-          const mouseWheelZoomExtension = EditorView.domEventHandlers({
-            wheel: (event, view) => {
-              if (event.ctrlKey || event.metaKey) {
-                event.preventDefault()
-
-                const sensitivity = 0.001
-                const deltaY = event.deltaY
-                const step = event.deltaY < 0 ? 0.1 : -0.1
-
-                let newZoom = liveZoomRef.current + step
-                newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom))
-
-                if (Math.abs(newZoom - liveZoomRef.current) < 0.001) return true
-
-                liveZoomRef.current = newZoom
-                applyZoomToDOM(newZoom)
-                debouncedSaveZoom(newZoom)
-
-                return true
-              }
-              return false
-            }
-          })
-          exts.push(mouseWheelZoomExtension)
-
-          try {
-            const langDef = getLanguage(language)
-            if (langDef && langDef.import) {
-              const langExt = await langDef.import()
-              if (langExt) exts.push(langExt)
-            }
-          } catch (err) {}
-
-          return exts
+            document.documentElement.getAttribute('data-theme') === 'dark',
+          caretColor,
+          fontSize: 'var(--editor-font-size, 14px)',
+          wordWrap,
+          language
         }
 
-        buildExtensions().then((exts) => {
-          if (mounted) setCmExtensions(exts)
+        const exts = await buildExtensions(options, {
+          liveZoomRef,
+          applyZoomToDOM,
+          debouncedSaveZoom,
+          setStoredZoomLevel
         })
+
+        if (mounted) {
+          setCmExtensions(exts)
+        }
       } catch (e) {
         console.error(e)
       }
@@ -256,34 +135,30 @@ const CodeEditor = ({
     return () => {
       mounted = false
     }
-  }, [language, wordWrap])
+  }, [language, wordWrap, caretColor])
 
-  if (CodeMirrorComponent && cmExtensions) {
-    const CM = CodeMirrorComponent
-    return (
-      <div
-        className="cm-editor-wrapper"
-        style={{
-          '--caret-width': `${caretWidth}px`,
-          '--caret-color': caretColor
+  return (
+    <div
+      className="cm-editor-wrapper h-full"
+      ref={editorDomRef}
+      style={{
+        '--caret-width': `${caretWidth}px`,
+        '--caret-color': caretColor
+      }}
+    >
+      <CodeMirror
+        value={value || ''}
+        onChange={onChange}
+        extensions={cmExtensions}
+        className={`${className} h-full`}
+        onCreateEditor={(view) => {
+          viewRef.current = view
+          applyZoomToDOM(liveZoomRef.current)
+          adjustOverflow()
         }}
-      >
-        <CM
-          value={value || ''}
-          onChange={onChange}
-          extensions={cmExtensions}
-          className={`${className} h-full`}
-          onCreateEditor={(view) => {
-            // 5. Capture the view instance
-            viewRef.current = view
-            applyZoomToDOM(liveZoomRef.current)
-          }}
-        />
-      </div>
-    )
-  }
-
-  return <textarea />
+      />
+    </div>
+  )
 }
 
 export default CodeEditor

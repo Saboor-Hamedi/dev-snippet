@@ -107,7 +107,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
       className="fixed inset-0 z-[100] flex items-start justify-center pt-[20vh] bg-black/40 backdrop-blur-sm animate-fade-in"
       style={{
         fontSize: '14px', // Fixed font size, not affected by editor zoom
-        '--editor-zoom-level': 1 // Override any parent zoom
+        '--zoom-level': 1 // Override any parent zoom
       }}
       onClick={onClose}
     >
