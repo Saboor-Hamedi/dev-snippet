@@ -9,14 +9,17 @@ export const DEFAULT_SETTINGS = {
     overlayMode: false,
     tabSize: 2,
     theme: 'dark',
-    caretWidth: 1, // in pixels
-    caretColor: '#c9d1d9' // default caret color
+    caretWidth: '3px',
+    caretStyle: 'bar'
   },
   ui: {
     compactMode: false,
     showPreview: false,
     sidebarWidth: 250,
-    previewPosition: 'right'
+    previewPosition: 'right',
+    previewFontSize: 14,
+    hideWelcomePage: false,
+    theme: 'system'
   },
   behavior: {
     autoSave: true,

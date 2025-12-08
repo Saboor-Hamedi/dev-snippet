@@ -1,13 +1,10 @@
 // Set this to true for development, false for production
-const ENABLE_DEVTOOLS = true; // <-- CHANGE THIS FOR YOUR NEEDS
+const ENABLE_DEVTOOLS = true // <-- CHANGE THIS FOR YOUR NEEDS
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import fs from 'fs/promises'
 import Database from 'better-sqlite3'
 let db
-
-
-
 
 function initDB() {
   const dbPath = join(app.getPath('userData'), 'snippets.db')
@@ -151,7 +148,8 @@ function createWindow() {
       webSecurity: true,
       sandbox: false,
       devTools: ENABLE_DEVTOOLS // Simple: true for dev, false for prod
-    }
+    },
+    roundedCorners: false // Attempt to disable OS rounded corners
   })
 
   mainWindow.on('ready-to-show', () => {

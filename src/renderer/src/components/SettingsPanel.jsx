@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react'
 
 import ThemeModal from './ThemeModal'
 import { Monitor, Download, ChevronLeft, Settings, SunMoon, FileDown, Database } from 'lucide-react'
+import ToggleButton from './ToggleButton'
 import { useFontSettings } from '../hook/useFontSettings'
+import { useSettings } from '../hook/useSettingsContext'
 import { useToast } from '../hook/useToast'
 import ToastNotification from '../utils/ToastNotification'
 
@@ -26,7 +28,7 @@ const SettingsPanel = ({ onClose }) => {
   } = useFontSettings()
   const [wordWrap, setWordWrap] = useState('on')
   const [autoSave, setAutoSave] = useState(false)
-   
+
   const [overlayMode, setOverlayMode] = useState(() => {
     try {
       const saved = localStorage.getItem('overlayMode')
@@ -35,6 +37,8 @@ const SettingsPanel = ({ onClose }) => {
       return false // Default to disabled
     }
   })
+  const { getSetting, updateSetting } = useSettings()
+  const hideWelcomePage = getSetting('ui.hideWelcomePage') || false
   const [activeTab, setActiveTab] = useState('general')
 
   // Modal State
@@ -421,7 +425,7 @@ const SettingsPanel = ({ onClose }) => {
                     <div className="flex items-center gap-2">
                       <input
                         type="number"
-                        value={parseInt((caretWidth || '3px').replace('px', ''))}
+                        value={parseInt(String(caretWidth || '3px').replace('px', ''))}
                         onChange={(e) => updateCaretWidth(e.target.value)}
                         className="flex-1 rounded-md px-3 py-2 text-xsmall outline-none transition-all"
                         style={{
@@ -801,7 +805,7 @@ const SettingsPanel = ({ onClose }) => {
                       >
                         Word Wrap
                       </label>
-                     
+
                       <p
                         className="text-tiny mt-1"
                         style={{
@@ -828,7 +832,10 @@ const SettingsPanel = ({ onClose }) => {
                   </div>
 
                   {/* Auto Save */}
-                  <div className="p-5 flex items-center justify-between gap-4 border-b" style={{ borderColor: 'var(--color-border)' }}>
+                  <div
+                    className="p-5 flex items-center justify-between gap-4 border-b"
+                    style={{ borderColor: 'var(--color-border)' }}
+                  >
                     <div>
                       <label className="block text-sm font-medium text-slate-900 dark:text-white">
                         Auto Save
@@ -837,32 +844,23 @@ const SettingsPanel = ({ onClose }) => {
                         Automatically save changes after delay.
                       </p>
                     </div>
-                    <button
-                      onClick={() => {
+                    <ToggleButton
+                      checked={autoSave}
+                      onChange={(checked) => {
                         try {
-                          const next = !autoSave
-                          setAutoSave(next)
-                          localStorage.setItem('autoSave', next ? 'true' : 'false')
+                          setAutoSave(checked)
+                          localStorage.setItem('autoSave', checked ? 'true' : 'false')
                           // notify other components (editor) about change
                           try {
                             window.dispatchEvent(
-                              new CustomEvent('autosave:toggle', { detail: { enabled: next } })
+                              new CustomEvent('autosave:toggle', { detail: { enabled: checked } })
                             )
                           } catch {}
                         } catch (e) {
                           setAutoSave((s) => !s)
                         }
                       }}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${
-                        autoSave ? 'bg-primary-600' : 'bg-slate-300 dark:bg-slate-700'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          autoSave ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
+                    />
                   </div>
 
                   {/* Preview Overlay Mode */}
@@ -875,32 +873,25 @@ const SettingsPanel = ({ onClose }) => {
                         Float preview over editor instead of side-by-side.
                       </p>
                     </div>
-                    <button
-                      onClick={() => {
+                    <ToggleButton
+                      checked={overlayMode}
+                      onChange={(checked) => {
                         try {
-                          const next = !overlayMode
-                          setOverlayMode(next)
-                          localStorage.setItem('overlayMode', next ? 'true' : 'false')
+                          setOverlayMode(checked)
+                          localStorage.setItem('overlayMode', checked ? 'true' : 'false')
                           // notify editor about change
                           try {
                             window.dispatchEvent(
-                              new CustomEvent('overlayMode:toggle', { detail: { enabled: next } })
+                              new CustomEvent('overlayMode:toggle', {
+                                detail: { enabled: checked }
+                              })
                             )
                           } catch {}
                         } catch (e) {
                           setOverlayMode((s) => !s)
                         }
                       }}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${
-                        overlayMode ? 'bg-primary-600' : 'bg-slate-300 dark:bg-slate-700'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          overlayMode ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
+                    />
                   </div>
                 </div>
               </section>
@@ -922,6 +913,37 @@ const SettingsPanel = ({ onClose }) => {
                     borderColor: 'var(--color-border)'
                   }}
                 >
+                  {/* Show Welcome Page */}
+                  <div
+                    className="p-4 flex items-center justify-between gap-4 border-b"
+                    style={{ borderColor: 'var(--color-border)' }}
+                  >
+                    <div>
+                      <label
+                        className="block text-xsmall font-medium"
+                        style={{
+                          color: 'var(--color-text-primary)'
+                        }}
+                      >
+                        Show Welcome Page
+                      </label>
+                      <p
+                        className="text-xsmall mt-1 max-w-sm"
+                        style={{
+                          color: 'var(--color-text-tertiary)'
+                        }}
+                      >
+                        Show the welcome page when starting the application.
+                      </p>
+                    </div>
+                    <ToggleButton
+                      checked={!hideWelcomePage}
+                      onChange={(checked) => {
+                        updateSetting('ui.hideWelcomePage', !checked)
+                      }}
+                    />
+                  </div>
+
                   <div className="p-4 flex items-center justify-between gap-4 ">
                     <div>
                       <label

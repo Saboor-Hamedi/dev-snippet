@@ -8,3 +8,4 @@ settings.json
 *.exe
 *.msi
 nsis-*
+.agent

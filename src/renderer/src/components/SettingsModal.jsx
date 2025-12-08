@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { X, Settings, Monitor, Keyboard, Sliders } from 'lucide-react'
 import { MIN_ZOOM, MAX_ZOOM } from '../hook/useZoomLevel'
+import ToggleButton from './ToggleButton'
 
 const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) => {
   const [localSettings, setLocalSettings] = useState(currentSettings)
@@ -16,19 +17,18 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
   const updateSetting = (path, value) => {
     const pathArray = path.split('.')
     const newSettings = { ...localSettings }
-    
+
     // Navigate to the correct nested object
     let target = newSettings
     for (let i = 0; i < pathArray.length - 1; i++) {
       target = target[pathArray[i]]
     }
-    
+
     // Set the value
     target[pathArray[pathArray.length - 1]] = value
-    
+
     setLocalSettings(newSettings)
     onSettingsChange(newSettings) // Immediate live update
-    
   }
 
   if (!isOpen) return null
@@ -178,53 +178,27 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
               {/* Word Wrap */}
               <div className="flex items-center justify-between">
                 <label className="text-tiny font-medium text-slate-300">Word Wrap</label>
-                <input
-                  type="checkbox"
+                <ToggleButton
                   checked={localSettings.editor?.wordWrap === 'on'}
-                  onChange={(e) =>
-                    updateSetting('editor.wordWrap', e.target.checked ? 'on' : 'off')
-                  }
-                  className="rounded bg-slate-700 border-slate-600"
+                  onChange={(checked) => updateSetting('editor.wordWrap', checked ? 'on' : 'off')}
                 />
               </div>
 
               {/* Overlay Mode */}
               <div className="flex items-center justify-between">
                 <label className="text-tiny font-medium text-slate-300">Overlay Mode</label>
-                <input
-                  type="checkbox"
+                <ToggleButton
                   checked={localSettings.editor?.overlayMode === true}
-                  onChange={(e) =>
-                    updateSetting('editor.overlayMode', e.target.checked ? true : false)
-                  }
-                  className="rounded bg-slate-700 border-slate-600"
+                  onChange={(checked) => updateSetting('editor.overlayMode', checked)}
                 />
               </div>
-
-              {/* Caret Color */}
-              {/* <div className="space-y-2">
-                <label
-                  className="text-tiny font-medium"
-                  style={{ color: 'var(--color-text-secondary)' }}
-                >
-                  Caret Color
-                </label>
-                <input
-                  type="color"
-                  value={localSettings.editor?.cursorColor || '#e9e8deff'}
-                  onChange={(e) => updateSetting('editor.cursorColor', e.target.value)}
-                  className="w-10 h-6 rounded"
-                />
-              </div> */}
 
               {/* Line Numbers */}
               <div className="flex items-center justify-between">
                 <label className="text-tiny font-medium text-slate-300">Line Numbers</label>
-                <input
-                  type="checkbox"
+                <ToggleButton
                   checked={localSettings.editor?.lineNumbers || true}
-                  onChange={(e) => updateSetting('editor.lineNumbers', e.target.checked)}
-                  className="rounded bg-slate-700 border-slate-600"
+                  onChange={(checked) => updateSetting('editor.lineNumbers', checked)}
                 />
               </div>
             </div>
@@ -249,22 +223,18 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
                 >
                   Compact Mode
                 </label>
-                <input
-                  type="checkbox"
+                <ToggleButton
                   checked={localSettings.ui?.compactMode || false}
-                  onChange={(e) => updateSetting('ui.compactMode', e.target.checked)}
-                  className="rounded bg-slate-700 border-slate-600"
+                  onChange={(checked) => updateSetting('ui.compactMode', checked)}
                 />
               </div>
 
               {/* Auto Save */}
               <div className="flex items-center justify-between">
                 <label className="text-tiny font-medium text-slate-300">Auto Save</label>
-                <input
-                  type="checkbox"
+                <ToggleButton
                   checked={localSettings.behavior?.autoSave || true}
-                  onChange={(e) => updateSetting('behavior.autoSave', e.target.checked)}
-                  className="rounded bg-slate-700 border-slate-600"
+                  onChange={(checked) => updateSetting('behavior.autoSave', checked)}
                 />
               </div>
 
@@ -291,22 +261,18 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
               {/* Code Folding */}
               <div className="flex items-center justify-between">
                 <label className="text-tiny font-medium text-slate-300">Code Folding</label>
-                <input
-                  type="checkbox"
+                <ToggleButton
                   checked={localSettings.advanced?.enableCodeFolding || true}
-                  onChange={(e) => updateSetting('advanced.enableCodeFolding', e.target.checked)}
-                  className="rounded bg-slate-700 border-slate-600"
+                  onChange={(checked) => updateSetting('advanced.enableCodeFolding', checked)}
                 />
               </div>
 
               {/* Auto Complete */}
               <div className="flex items-center justify-between">
                 <label className="text-tiny font-medium text-slate-300">Auto Complete</label>
-                <input
-                  type="checkbox"
+                <ToggleButton
                   checked={localSettings.advanced?.enableAutoComplete || true}
-                  onChange={(e) => updateSetting('advanced.enableAutoComplete', e.target.checked)}
-                  className="rounded bg-slate-700 border-slate-600"
+                  onChange={(checked) => updateSetting('advanced.enableAutoComplete', checked)}
                 />
               </div>
             </div>

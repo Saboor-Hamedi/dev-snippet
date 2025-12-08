@@ -48,43 +48,43 @@
   --editor-line-height: 1.6;
   --caret-style: bar;
   /* custom Tailwind font sizes → CSS variables */
---font-size-xtiny : 0.625rem;   /* 10px  */
---font-size-tiny  : 0.75rem;    /* 12px  */
---font-size-xs    : 0.75rem;    /* 12px  */
---font-size-sm    : 0.875rem;   /* 14px  */
---font-size-base  : 1rem;       /* 16px  */
---font-size-lg    : 1.125rem;   /* 18px  */
---font-size-xl    : 1.25rem;    /* 20px  */
---font-size-2xl   : 1.5rem;     /* 24px  */
---font-size-3xl   : 1.875rem;   /* 30px  */
---font-size-4xl   : 2.25rem;    /* 36px  */
---font-size-5xl   : 3rem;       /* 48px  */
---font-size-6xl   : 3.75rem;    /* 60px  */
---font-size-7xl   : 4.5rem;     /* 72px  */
---font-size-8xl   : 6rem;       /* 96px  */
---font-size-9xl   : 8rem;       /* 128px
+  --font-size-xtiny: 0.625rem; /* 10px  */
+  --font-size-tiny: 0.75rem; /* 12px  */
+  --font-size-xs: 0.75rem; /* 12px  */
+  --font-size-sm: 0.875rem; /* 14px  */
+  --font-size-base: 1rem; /* 16px  */
+  --font-size-lg: 1.125rem; /* 18px  */
+  --font-size-xl: 1.25rem; /* 20px  */
+  --font-size-2xl: 1.5rem; /* 24px  */
+  --font-size-3xl: 1.875rem; /* 30px  */
+  --font-size-4xl: 2.25rem; /* 36px  */
+  --font-size-5xl: 3rem; /* 48px  */
+  --font-size-6xl: 3.75rem; /* 60px  */
+  --font-size-7xl: 4.5rem; /* 72px  */
+  --font-size-8xl: 6rem; /* 96px  */
+  --font-size-9xl: 8rem; /* 128px
 
 --font-size-2xs   : 0.6875rem;  /* 11px  */
---font-size-3xs   : 0.625rem;   /* 10px  */
+  --font-size-3xs: 0.625rem; /* 10px  */
 
-/* Bonus: line-height variables too */
---line-height-xtiny : 1rem;
---line-height-tiny  : 1rem;
---line-height-xs    : 1rem;
---line-height-sm    : 1.25rem;
---line-height-base  : 1.5rem;
---line-height-lg    : 1.75rem;
---line-height-xl    : 1.75rem;
---line-height-2xl   : 2rem;
---line-height-3xl   : 2.25rem;
---line-height-4xl   : 2.5rem;
---line-height-5xl   : 1;
---line-height-6xl   : 1;
---line-height-7xl   : 1;
---line-height-8xl   : 1;
---line-height-9xl   : 1;
---line-height-2xs   : 1rem;
---line-height-3xs   : 1rem;
+  /* Bonus: line-height variables too */
+  --line-height-xtiny: 1rem;
+  --line-height-tiny: 1rem;
+  --line-height-xs: 1rem;
+  --line-height-sm: 1.25rem;
+  --line-height-base: 1.5rem;
+  --line-height-lg: 1.75rem;
+  --line-height-xl: 1.75rem;
+  --line-height-2xl: 2rem;
+  --line-height-3xl: 2.25rem;
+  --line-height-4xl: 2.5rem;
+  --line-height-5xl: 1;
+  --line-height-6xl: 1;
+  --line-height-7xl: 1;
+  --line-height-8xl: 1;
+  --line-height-9xl: 1;
+  --line-height-2xs: 1rem;
+  --line-height-3xs: 1rem;
 }
 /* Comprehensive Theme System - All components use these variables */
 
@@ -95,7 +95,7 @@
 }
 
 /* Ensure code block padding doesn’t shift text */
-.markdown-code-block-line>.view-line {
+.markdown-code-block-line > .view-line {
   padding-left: 12px !important;
   /* 8px base + 4px bar */
 }
@@ -115,9 +115,8 @@
   --selected-text: #24292f;
   --hover-bg: #eef6ff;
   --hover-text: #24292f;
-  --current-line-bg: rgba(9, 105, 218, 0.10);
+  --current-line-bg: rgba(9, 105, 218, 0.1);
 }
-
 
 /* Dark Theme */
 [data-theme='dark'] {
@@ -141,14 +140,21 @@
 /* ===== COMPREHENSIVE COMPONENT THEMING ===== */
 
 /* Base elements that should always respect theme */
-body, html, #root {
+body,
+html,
+#root {
   background-color: var(--color-bg-primary) !important;
   color: var(--color-text-primary) !important;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 /* All modals, dialogs, and overlays */
-.modal, .dialog, [role="dialog"], .overlay {
+.modal,
+.dialog,
+[role='dialog'],
+.overlay {
   background-color: var(--color-bg-primary) !important;
   color: var(--color-text-primary) !important;
   border-color: var(--color-border) !important;
@@ -168,13 +174,17 @@ button:not(.theme-exempt):hover {
 }
 
 /* All inputs and textareas */
-input:not(.theme-exempt), textarea:not(.theme-exempt), select:not(.theme-exempt) {
+input:not(.theme-exempt),
+textarea:not(.theme-exempt),
+select:not(.theme-exempt) {
   background-color: var(--color-bg-secondary) !important;
   color: var(--color-text-primary) !important;
   border-color: var(--color-border) !important;
 }
 
-input:not(.theme-exempt):focus, textarea:not(.theme-exempt):focus, select:not(.theme-exempt):focus {
+input:not(.theme-exempt):focus,
+textarea:not(.theme-exempt):focus,
+select:not(.theme-exempt):focus {
   background-color: var(--color-bg-tertiary) !important;
   border-color: var(--color-accent-primary) !important;
 }
@@ -185,33 +195,46 @@ input:not(.theme-exempt):focus, textarea:not(.theme-exempt):focus, select:not(.t
   scrollbar-color: var(--color-border) var(--color-bg-secondary);
 }
 
-*::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* Refined Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
 }
 
-*::-webkit-scrollbar-track {
-  background: var(--color-bg-secondary);
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-*::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 4px;
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 99px;
 }
 
-*::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-tertiary);
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-text-secondary);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 /* Sidebar and navigation elements */
-.sidebar, .nav, .menu, [role="navigation"] {
+.sidebar,
+.nav,
+.menu,
+[role='navigation'] {
   background-color: var(--color-bg-secondary) !important;
   color: var(--sidebar-text, var(--color-text-primary)) !important;
   border-color: var(--color-border) !important;
 }
 
 /* Cards and containers */
-.card, .container, .panel, .section {
+.card,
+.container,
+.panel,
+.section {
   background-color: var(--color-bg-secondary);
   color: var(--color-text-primary);
   border-color: var(--color-border);
@@ -243,7 +266,9 @@ input:not(.theme-exempt):focus, textarea:not(.theme-exempt):focus, select:not(.t
 }
 
 /* Loading states and animations */
-.loading, .spinner, .skeleton {
+.loading,
+.spinner,
+.skeleton {
   background-color: var(--color-bg-tertiary) !important;
 }
 
@@ -259,7 +284,9 @@ input:not(.theme-exempt):focus, textarea:not(.theme-exempt):focus, select:not(.t
 }
 
 /* Tooltips and popovers */
-.tooltip, .popover, [role="tooltip"] {
+.tooltip,
+.popover,
+[role='tooltip'] {
   background-color: var(--color-bg-tertiary) !important;
   color: var(--color-text-primary) !important;
   border-color: var(--color-border) !important;
@@ -369,13 +396,13 @@ input:not(.theme-exempt):focus, textarea:not(.theme-exempt):focus, select:not(.t
 }
 
 /* Smooth input styling */
-.settings-panel input[type="number"] {
+.settings-panel input[type='number'] {
   border: none !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
   transition: all 0.2s ease !important;
 }
 
-.settings-panel input[type="number"]:hover {
+.settings-panel input[type='number']:hover {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
   transform: translateY(-1px) !important;
 }
@@ -390,66 +417,82 @@ input:not(.theme-exempt):focus, textarea:not(.theme-exempt):focus, select:not(.t
 /* ===== HEADER AND NAVIGATION FIXES ===== */
 
 /* Force all headers to use proper theme colors */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   color: var(--color-text-primary) !important;
 }
 
 /* Activity bar and sidebar headers */
-.activity-bar, .sidebar, .sidebar-header, .header {
+.activity-bar,
+.sidebar,
+.sidebar-header,
+.header {
   background-color: var(--color-bg-secondary) !important;
   color: var(--color-text-primary) !important;
 }
 
 /* Navigation and menu items */
-.nav, .menu, .navigation {
+.nav,
+.menu,
+.navigation {
   background-color: var(--color-bg-secondary) !important;
   color: var(--color-text-primary) !important;
 }
 
-.nav *, .menu *, .navigation * {
+.nav *,
+.menu *,
+.navigation * {
   color: var(--sidebar-text, var(--color-text-primary)) !important;
 }
 
 /* Workbench and layout components */
-.workbench, .layout, .main-content {
+.workbench,
+.layout,
+.main-content {
   background-color: var(--color-bg-primary) !important;
   color: var(--color-text-primary) !important;
 }
 
 /* Status bar and toolbar */
-.status-bar, .toolbar, .header-toolbar {
+.status-bar,
+.toolbar,
+.header-toolbar {
   background-color: var(--color-bg-secondary) !important;
   color: var(--color-text-primary) !important;
   border-color: var(--color-border) !important;
 }
 
 /* Force white theme specific fixes */
-[data-theme="polaris"] h1,
-[data-theme="polaris"] h2, 
-[data-theme="polaris"] h3,
-[data-theme="polaris"] h4,
-[data-theme="polaris"] h5,
-[data-theme="polaris"] h6 {
+[data-theme='polaris'] h1,
+[data-theme='polaris'] h2,
+[data-theme='polaris'] h3,
+[data-theme='polaris'] h4,
+[data-theme='polaris'] h5,
+[data-theme='polaris'] h6 {
   color: var(--color-text-primary, #0f172a) !important;
 }
 
-[data-theme="polaris"] .sidebar,
-[data-theme="polaris"] .nav,
-[data-theme="polaris"] .header {
+[data-theme='polaris'] .sidebar,
+[data-theme='polaris'] .nav,
+[data-theme='polaris'] .header {
   color: var(--sidebar-text, #334155) !important;
 }
 
 /* Override any remaining white text in light theme */
-[data-theme="polaris"] .text-white,
-[data-theme="polaris"] .text-slate-50,
-[data-theme="polaris"] .text-slate-100,
-[data-theme="polaris"] .text-gray-50,
-[data-theme="polaris"] .text-neutral-50 {
+[data-theme='polaris'] .text-white,
+[data-theme='polaris'] .text-slate-50,
+[data-theme='polaris'] .text-slate-100,
+[data-theme='polaris'] .text-gray-50,
+[data-theme='polaris'] .text-neutral-50 {
   color: var(--color-text-primary, #0f172a) !important;
 }
 
 /* Force sidebar header text to be dark in light theme */
-[data-theme="polaris"] * {
+[data-theme='polaris'] * {
   --sidebar-header-text: #475569 !important;
   --color-text-primary: #0f172a !important;
   --color-text-secondary: #475569 !important;
@@ -457,24 +500,24 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Ensure all elements that might have light text get dark text in light theme */
-[data-theme="polaris"] h1,
-[data-theme="polaris"] h2,
-[data-theme="polaris"] h3,
-[data-theme="polaris"] h4,
-[data-theme="polaris"] h5,
-[data-theme="polaris"] h6,
-[data-theme="polaris"] p,
-[data-theme="polaris"] span,
-[data-theme="polaris"] div,
-[data-theme="polaris"] button,
-[data-theme="polaris"] label {
+[data-theme='polaris'] h1,
+[data-theme='polaris'] h2,
+[data-theme='polaris'] h3,
+[data-theme='polaris'] h4,
+[data-theme='polaris'] h5,
+[data-theme='polaris'] h6,
+[data-theme='polaris'] p,
+[data-theme='polaris'] span,
+[data-theme='polaris'] div,
+[data-theme='polaris'] button,
+[data-theme='polaris'] label {
   color: var(--color-text-primary, #0f172a) !important;
 }
 
 /* Specific sidebar header fix */
-[data-theme="polaris"] .sidebar-header h1,
-[data-theme="polaris"] .sidebar-header p,
-[data-theme="polaris"] .sidebar-header span {
+[data-theme='polaris'] .sidebar-header h1,
+[data-theme='polaris'] .sidebar-header p,
+[data-theme='polaris'] .sidebar-header span {
   color: #475569 !important;
 }
 
@@ -779,7 +822,6 @@ body {
   border-color: var(--ev-c-gray-2);
 }
 
-
 /* Code Editor Area */
 .code-editor-container {
   font-family: var(--editor-font-family);
@@ -983,20 +1025,15 @@ textarea {
 
 /* Hide scrollbars in SplitPane and overflow containers */
 .split-pane::-webkit-scrollbar,
-[class*="pane"]::-webkit-scrollbar,
+[class*='pane']::-webkit-scrollbar,
 .overflow-auto::-webkit-scrollbar {
   width: 0;
   height: 0;
 }
 
 .split-pane,
-[class*="pane"],
+[class*='pane'],
 .overflow-auto {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
-
-
-
-
-

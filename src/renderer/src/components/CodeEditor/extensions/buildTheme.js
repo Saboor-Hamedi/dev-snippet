@@ -13,6 +13,7 @@ const buildTheme = (EditorView, options = {}) => {
         backgroundColor: 'var(--editor-bg, var(--color-bg-primary)) !important',
         color: 'var(--color-text-primary, #0f172a)',
         fontFamily: 'var(--editor-font-family, "JetBrains Mono")',
+        fontSize: `calc(${fontSize} * var(--zoom-level, 1))`, // MOVED HERE
         lineHeight: '1.6',
         height: '100%',
         transition: 'background-color 140ms ease, color 140ms ease'
@@ -57,7 +58,7 @@ const buildTheme = (EditorView, options = {}) => {
         backgroundColor: 'transparent',
         padding: '12px',
         fontFamily: 'inherit',
-        fontSize: `calc(${fontSize} * var(--zoom-level, 1))`,
+        // fontSize: `calc(${fontSize} * var(--zoom-level, 1))`, // REMOVED
         lineHeight: '1.6',
         minHeight: '100%',
         boxSizing: 'border-box',
@@ -69,20 +70,25 @@ const buildTheme = (EditorView, options = {}) => {
         color: 'var(--color-text-secondary, #64748b)',
         borderRight: '1px solid var(--color-border, #e2e8f0)',
         fontFamily: 'inherit',
-        // Use a slightly larger base width for better breathing room
-        minWidth: `calc(45px * var(--zoom-level, 1))`,
-        fontSize: `calc(${fontSize} * var(--zoom-level, 1))`,
+        // Use em units for stable scaling with font size
+        minWidth: '3em',
         lineHeight: '1.6',
         minHeight: '100%',
         boxSizing: 'border-box',
-        paddingRight: '4px'
+        padding: '0 0.2em', // Scalable padding
+        // backgroundColor: '#e11717ff !important',
+        display: 'flex !important',
+        alignItems: 'center !important',
+        justifyContent: 'center !important'
       },
       '.cm-gutterElement': {
         background: 'transparent !important',
         display: 'flex !important',
         alignItems: 'center !important',
         justifyContent: 'center !important',
-        padding: '0 4px !important'
+        textAlign: 'center !important',
+        padding: '0 !important', // Remove element padding, let gutter handle spacing
+        minWidth: '100%' // Ensure it fills the gutter to center properly
       },
 
       '.cm-activeLine': {

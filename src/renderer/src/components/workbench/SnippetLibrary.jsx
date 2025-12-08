@@ -27,6 +27,7 @@ const SnippetLibrary = () => {
 
   // Settings Context
   const { settings, updateSettings } = useSettings()
+  const hideWelcomePage = settings?.ui?.hideWelcomePage || false
 
   // Modals
   const [isCreatingSnippet, setIsCreatingSnippet] = useState(false)
@@ -156,7 +157,7 @@ const SnippetLibrary = () => {
         setActiveView('welcome')
       } else if (activeView === 'editor' || selectedSnippet) {
         setSelectedSnippet(null)
-        setActiveView('welcome')
+        setActiveView('snippets')
       }
     },
     onToggleCompact: () => {
@@ -173,7 +174,8 @@ const SnippetLibrary = () => {
     onGoToWelcome: () => {
       setSelectedSnippet(null)
       setIsCreatingSnippet(false)
-      setActiveView('welcome')
+      setIsCreatingSnippet(false)
+      setActiveView('snippets')
     },
 
     onToggleCommandPalette: () => {
@@ -204,7 +206,7 @@ const SnippetLibrary = () => {
     },
     onDeleteSnippet: () => {
       if ((activeView === 'snippets' || activeView === 'editor') && selectedSnippet) {
-        setDeleteModal({ isOpen: true, snippetId: selectedSnippet.id });
+        setDeleteModal({ isOpen: true, snippetId: selectedSnippet.id })
       }
     },
     // You can also keep the Ctrl+S save if you want
@@ -279,12 +281,12 @@ const SnippetLibrary = () => {
     // Display the rename modal
     setRenameModal({ isOpen: true, item: selectedSnippet })
   }
-function renameSnippet(oldId, updatedItem) {
-  setSnippets((prev) => [
-    ...prev.filter((snippet) => snippet.id !== oldId), // Remove old draft
-    updatedItem // Add updated snippet with new id
-  ])
-}
+  function renameSnippet(oldId, updatedItem) {
+    setSnippets((prev) => [
+      ...prev.filter((snippet) => snippet.id !== oldId), // Remove old draft
+      updatedItem // Add updated snippet with new id
+    ])
+  }
   // 5. Rename Logic
   const handleRename = async (newName) => {
     await handleRenameSnippet({
@@ -294,7 +296,7 @@ function renameSnippet(oldId, updatedItem) {
       setRenameModal,
       setIsCreatingSnippet,
       renameSnippet,
-      showToast,
+      showToast
     })
   }
 
@@ -354,6 +356,7 @@ function renameSnippet(oldId, updatedItem) {
           showPreview={showPreview}
           onTogglePreview={() => setShowPreview((s) => !s)}
           showToast={showToast}
+          hideWelcomePage={hideWelcomePage}
           onSave={async (item) => {
             try {
               const wasForce = !!window.__forceSave
@@ -388,7 +391,7 @@ function renameSnippet(oldId, updatedItem) {
             setAutosaveStatus(s)
             if (s === 'saved') setTimeout(() => setAutosaveStatus(null), 1200)
           }}
-      onDeleteRequest={handleDeleteSnippet}
+          onDeleteRequest={handleDeleteSnippet}
           onNewSnippet={() => {
             setIsCreatingSnippet(true)
             createDraftSnippet()
