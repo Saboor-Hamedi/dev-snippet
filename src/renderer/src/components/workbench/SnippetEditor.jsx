@@ -366,8 +366,13 @@ const SnippetEditor = ({
   useEffect(() => {
     if (justRenamed && !namePrompt.isOpen) {
       setTimeout(() => {
-        textareaRef.current?.focus()
-      }, 100)
+        if (typeof document !== 'undefined') {
+          const editorElement = document.querySelector('.cm-editor .cm-content')
+          if (editorElement) {
+            editorElement.focus()
+          }
+        }
+      }, 500)
       setJustRenamed(false)
     }
   }, [justRenamed, namePrompt.isOpen])
@@ -384,9 +389,6 @@ const SnippetEditor = ({
             <div
               className="flex-1 min-h-0 overflow-hidden editor-container relative"
               style={{ backgroundColor: 'var(--editor-bg)', display: 'flex' }}
-              data-color-mode={
-                document.documentElement.classList.contains('dark') ? 'dark' : 'light'
-              }
             >
               <AdvancedSplitPane
                 rightHidden={!showPreview || showPreview === false}

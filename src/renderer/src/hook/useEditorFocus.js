@@ -7,11 +7,11 @@ export const useEditorFocus = ({ initialSnippet, isCreateMode, textareaRef }) =>
         // Multiple attempts with different selectors for better reliability
         const selectors = [
           '.cm-editor .cm-content',
-          '.cm-editor', 
+          '.cm-editor',
           '.editor-container textarea',
           'textarea'
         ]
-        
+
         for (const selector of selectors) {
           const element = document.querySelector(selector)
           if (element && typeof element.focus === 'function') {
@@ -19,13 +19,13 @@ export const useEditorFocus = ({ initialSnippet, isCreateMode, textareaRef }) =>
             return true
           }
         }
-        
+
         // Try ref as backup
         if (textareaRef?.current && typeof textareaRef.current.focus === 'function') {
           textareaRef.current.focus()
           return true
         }
-        
+
         return false
       } catch (err) {
         return false

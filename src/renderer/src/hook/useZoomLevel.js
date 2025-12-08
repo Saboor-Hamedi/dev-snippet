@@ -26,12 +26,16 @@ export const useZoomLevel = () => {
   }
 
   // STEP 4 — Apply to DOM
-  document.documentElement.style.setProperty('--zoom-level', cleanZoom)
+  if (typeof document !== 'undefined') {
+    document.documentElement.style.setProperty('--zoom-level', cleanZoom)
+  }
 
   // STEP 5 — Setter ALWAYS normalizes before saving
   const setZoomLevel = (value) => {
     const clean = normalizeZoom(value)
-    document.documentElement.style.setProperty('--zoom-level', clean)
+    if (typeof document !== 'undefined') {
+      document.documentElement.style.setProperty('--zoom-level', clean)
+    }
     updateSetting('editor.zoomLevel', clean)
   }
 

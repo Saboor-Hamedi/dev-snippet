@@ -32,10 +32,16 @@ const CodeEditor = ({
   const viewRef = useRef(null)
   const liveZoomRef = useRef(storedZoomLevel)
 
-  // Determine dark mode (initial check)
-  const isDark =
-    document.documentElement.classList.contains('dark') ||
-    document.documentElement.getAttribute('data-theme') === 'dark'
+  // Determine dark mode
+  const [isDark, setIsDark] = useState(false)
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      const dark = document.documentElement.classList.contains('dark') ||
+                   document.documentElement.getAttribute('data-theme') === 'dark'
+      setIsDark(dark)
+    }
+  }, [])
 
   // Initial base extensions (Theme only) to prevent FOUC
   const baseExtensions = useMemo(() => {
@@ -61,14 +67,16 @@ const CodeEditor = ({
 
   // 1. Efficiently update DOM styles without triggering React re-renders
   const applyZoomToDOM = (level) => {
-    const target = editorDomRef.current || document.documentElement
-    const zoomStr = level.toFixed(3)
-    target.style.setProperty('--zoom-level', zoomStr)
-    target.style.setProperty('--content-zoom', zoomStr)
-
-    if (viewRef.current) {
-      viewRef.current.requestMeasure()
+    const target = editorDomRef.current || (typeof document !== 'undefined' ? document.documentElement : null)
+    if (target) {
+      const zoomStr = level.toFixed(3)
+      target.style.setProperty('--zoom-level', zoomStr)
+      target.style.setProperty('--content-zoom', zoomStr)
     }
+  }
+
+  if (viewRef.current) {
+    viewRef.current.requestMeasure()
   }
 
   // 2. Sync Ref and DOM when storedZoomLevel changes
@@ -109,8 +117,10 @@ const CodeEditor = ({
         const options = {
           EditorView,
           isDark:
-            document.documentElement.classList.contains('dark') ||
-            document.documentElement.getAttribute('data-theme') === 'dark',
+            (typeof document !== 'undefined' &&
+              (document.documentElement.classList.contains('dark') ||
+               document.documentElement.getAttribute('data-theme') === 'dark')) ||
+            false,
           caretColor,
           fontSize: 'var(--editor-font-size, 14px)',
           wordWrap,

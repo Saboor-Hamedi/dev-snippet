@@ -9,3 +9,5 @@ settings.json
 *.msi
 nsis-*
 .agent
+.src/test
+.WARP.md
