@@ -94,6 +94,12 @@ const buildExtensions = async (options, handlers = {}) => {
     exts.push(highlightActiveLine())
   } catch (e) {}
 
+  // Highlight occurrences of the word under cursor
+  try {
+    const { highlightSelectionMatches } = await import('@codemirror/search')
+    exts.push(highlightSelectionMatches({ highlightWordAroundCursor: true }))
+  } catch (e) {}
+
   // ... (Keep line numbers, word wrap, language code same as before)
   // Line numbers
   try {

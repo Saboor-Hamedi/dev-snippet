@@ -2,12 +2,16 @@ import React from 'react'
 import { Settings } from 'lucide-react'
 import { getLanguage } from './language/languageRegistry.js'
 
-// Get extension based on selected language
-const getExtension = (language) => {
+// Get extension based on title or language
+const getExtension = (title, language) => {
+  if (title) {
+    const ext = title.split('.').pop()
+    if (ext && ext !== title) return `.${ext}`
+  }
   if (!language) return '.txt'
   const langDef = getLanguage(language)
-  return langDef && langDef.extensions && langDef.extensions[0] 
-    ? `.${langDef.extensions[0]}` 
+  return langDef && langDef.extensions && langDef.extensions[0]
+    ? `.${langDef.extensions[0]}`
     : '.txt'
 }
 
@@ -18,14 +22,12 @@ const getLanguageName = (language) => {
   return langDef ? langDef.name : 'Plain Text'
 }
 
-const StatusBar = ({ onSettingsClick, language, zoomLevel = 1 }) => {
+const StatusBar = ({ onSettingsClick, language, zoomLevel = 1, title }) => {
   // Show extension and name based on selected language
-  const ext = getExtension(language)
+  const ext = getExtension(title, language)
   const canonical = getLanguageName(language)
   return (
-    <div
-      className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 flex-shrink-0"
-    >
+    <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 flex-shrink-0">
       {/* Show extension with same hover behavior as header buttons */}
       <span
         className="px-1 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -33,7 +35,7 @@ const StatusBar = ({ onSettingsClick, language, zoomLevel = 1 }) => {
       >
         {ext ? ext : ''}
       </span>
-      
+
       {/* Show zoom level */}
       {zoomLevel !== 1 && (
         <span
@@ -43,7 +45,7 @@ const StatusBar = ({ onSettingsClick, language, zoomLevel = 1 }) => {
           {Math.round(zoomLevel * 100)}%
         </span>
       )}
-      
+
       <button
         onClick={onSettingsClick}
         className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors cursor-pointer"

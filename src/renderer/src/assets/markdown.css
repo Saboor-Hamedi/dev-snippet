@@ -108,7 +108,7 @@
 /* Inline code - Clean, minimal */
 .markdown-body code {
   background-color: rgba(0, 0, 0, 0.05) !important;
-  color: var(--text-main) !important;
+  color: rgb(161, 145, 161) !important;
   font-size: 14px !important;
   font-weight: 500 !important;
   padding: 2px 5px !important;
@@ -133,6 +133,7 @@
   padding: 0 !important;
   border-radius: 0 !important;
   border: none !important;
+  color: purple !important;
   font-size: 14px !important;
   line-height: 1.5 !important;
   display: block;
@@ -330,7 +331,7 @@
   border-radius: 4px;
   font-family: 'SFMono-Regular', Consolas, monospace;
   font-size: 14px;
-  color: var(--text-main);
+  color: purple;
 }
 
 .markdown-preview-container pre {
@@ -346,6 +347,7 @@
   padding: 0;
   border-radius: 0;
   font-size: 14px;
+  color: purple;
 }
 
 .markdown-preview-container blockquote {

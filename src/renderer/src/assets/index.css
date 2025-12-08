@@ -240,30 +240,7 @@ select:not(.theme-exempt):focus {
   border-color: var(--color-border);
 }
 
-/* Text selection - theme appropriate colors */
-::selection {
-  background-color: var(--selected-bg, var(--color-accent-primary));
-  color: var(--selected-text, var(--color-text-primary));
-}
 
-::-moz-selection {
-  background-color: var(--selected-bg, var(--color-accent-primary));
-  color: var(--selected-text, var(--color-text-primary));
-}
-
-/* CodeMirror specific selection colors */
-.cm-editor .cm-selectionBackground {
-  background-color: var(--selected-bg, rgba(88, 166, 255, 0.25)) !important;
-}
-
-.cm-editor .cm-focused .cm-selectionBackground {
-  background-color: var(--selected-bg, rgba(88, 166, 255, 0.25)) !important;
-}
-
-.cm-editor .cm-line::selection {
-  background-color: var(--selected-bg, rgba(88, 166, 255, 0.25)) !important;
-  color: var(--selected-text, inherit) !important;
-}
 
 /* Loading states and animations */
 .loading,
@@ -1036,4 +1013,34 @@ textarea {
 .overflow-auto {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+
+/* CodeMirror 6 Selection Override - Aggressive */
+.cm-editor ::selection,
+.cm-editor *::selection,
+.cm-content ::selection,
+.cm-content *::selection,
+.cm-line ::selection {
+  background-color: rgba(0, 0, 0, 0) !important;
+  background: rgba(0, 0, 0, 0) !important;
+  color: inherit !important;
+  text-shadow: none !important;
+  -webkit-text-fill-color: inherit !important;
+}
+
+/* Firefox Support */
+.cm-editor ::-moz-selection,
+.cm-editor *::-moz-selection,
+.cm-content ::-moz-selection {
+  background-color: rgba(0, 0, 0, 0) !important;
+  background: rgba(0, 0, 0, 0) !important;
+  color: inherit !important;
+  text-shadow: none !important;
+}
+
+/* Fallback for native selection in other areas if needed */
+::selection {
+  background-color: var(--selected-bg, rgba(147, 185, 246, 0.3));
+  color: var(--selected-text, inherit);
 }

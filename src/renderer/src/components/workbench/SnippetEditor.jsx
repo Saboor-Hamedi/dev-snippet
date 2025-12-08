@@ -7,13 +7,13 @@ import PropTypes from 'prop-types'
 import { useKeyboardShortcuts } from '../../hook/useKeyboardShortcuts.js'
 import { useEditorFocus } from '../../hook/useEditorFocus.js'
 import extractTags from '../../hook/extractTags.js'
-import { getAllLanguages,getLanguageByExtension } from '../language/languageRegistry.js'
+import { getAllLanguages, getLanguageByExtension, EditorLanguages } from '../language/languageRegistry.js'
 import { useZoomLevel } from '../../hook/useZoomLevel'
 import WelcomePage from '../WelcomePage.jsx'
 import StatusBar from '../StatusBar.jsx'
 import SplitPane from '../SplitPane/SplitPane.jsx'
 import CodeEditor from '../CodeEditor/CodeEditor.jsx'
-import LivePreview from '../LivePreview.jsx'
+import LivePreview from '../livepreview/LivePreview.jsx'
 import NamePrompt from '../modal/NamePrompt.jsx'
 import { useSettings } from '../../hook/useSettingsContext'
 import AdvancedSplitPane from '../AdvancedSplitPane/AdvancedSplitPane'
@@ -35,12 +35,15 @@ const SnippetEditor = ({
   showPreview
 }) => {
   const [code, setCode] = useState(initialSnippet?.code || '')
-  const [language, setLanguage] = React.useState(initialSnippet?.language || 'markdown')
+  const [language, setLanguage] = React.useState(initialSnippet?.language || 'text')
   const [isDirty, setIsDirty] = useState(false)
   const [zoomLevel] = useZoomLevel() // Use useSettingsReact Context for zoom level
-  const { settings } = useSettings()
+  const { settings, getSetting } = useSettings()
 
- 
+  const [title, setTitle] = useState(initialSnippet?.title || '')
+
+  const hideWelcomePage = getSetting('ui.hideWelcomePage') || false
+
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(() => {
     try {
       const saved = localStorage.getItem('autoSave')
@@ -60,13 +63,21 @@ const SnippetEditor = ({
   const wordWrap = settings?.editor?.wordWrap || 'off'
   const overflow = settings?.editor?.overflow || false
 
-  // Modify the .txt to .md for markdown language
+  // Modify the title to include the correct extension based on language
   useEffect(() => {
-    if (language === 'markdown') {
-      const ext = getLanguageByExtension('.md')
-      if (ext) setLanguage(ext)
+    const baseTitle = title.replace(/\.[a-z]+$/, '') // Remove existing extension
+    if (baseTitle) {
+      const ext = EditorLanguages[language]?.extensions[0] || 'txt'
+      const newTitle = `${baseTitle}.${ext}`
+      if (newTitle !== title) {
+        setTitle(newTitle)
+        // Notify parent of title change for live updates
+        if (initialSnippet?.id) {
+          window.dispatchEvent(new CustomEvent('title:change', { detail: { id: initialSnippet.id, title: newTitle } }))
+        }
+      }
     }
-  }, [language])
+  }, [language, title])
 
   // Local compact mode (used only if parent doesn't control it)
   const [localCompact, setLocalCompact] = useState(() => {
@@ -123,7 +134,7 @@ const SnippetEditor = ({
         return
       const updatedSnippet = {
         id: id,
-         // title: initialSnippet.title, // Keep original title during autosave
+        title: title, // Include updated title in autosave
         code: code, // Use current editor content
         language: language,
         timestamp: Date.now(),
@@ -193,10 +204,19 @@ const SnippetEditor = ({
   // Update language/code if initialSnippet changes (only on ID change to prevent autosave loops)
   React.useEffect(() => {
     if (!initialSnippet) return
-    const incomingLang = initialSnippet.language || 'markdown'
+    const incomingLang = initialSnippet.language || 'text'
     if (initialSnippet && initialSnippet.id !== lastSnippetId.current) {
       setLanguage(incomingLang)
       setCode(initialSnippet.code || '')
+      setTitle(initialSnippet.title || '')
+
+      // Detect language from title extension
+      const detected = getLanguageByExtension(initialSnippet.title)
+      if (detected) {
+        setLanguage(detected)
+      } else if (initialSnippet.title && !initialSnippet.title.includes('.')) {
+        setLanguage('text')
+      }
 
       // Loading a new snippet is not a user edit — reset dirty and skip autosave once
       try {
@@ -213,7 +233,7 @@ const SnippetEditor = ({
     if (incomingLang !== language && !isDirty) {
       setLanguage(incomingLang)
     }
-  }, [initialSnippet?.id, initialSnippet?.language, language, isDirty])
+  }, [initialSnippet?.id, initialSnippet?.language, initialSnippet?.title, language, isDirty])
   // Name prompt state for saving unsaved snippets
   const [namePrompt, setNamePrompt] = useState({ isOpen: false, initialName: '' })
 
@@ -243,36 +263,31 @@ const SnippetEditor = ({
       }
     },
     onToggleCompact: onToggleCompactHandler,
-    onDeleteSnippet: () => {
+    // confirm delete
+    onDelete: () => {
       if (onDelete) onDelete(initialSnippet?.id)
     },
+
     onCloseEditor: () => {
       if (onCancel) onCancel()
     }
   })
 
-  // Standard Ctrl+W to close editor (like browser tabs)
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'w' && !e.shiftKey) {
-        e.preventDefault()
-        onCancel && onCancel()
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [onCancel])
-
   const handleSave = () => {
     ;(async () => {
-      let title = initialSnippet?.title || ''
+      let title = title // Use local title state instead of initialSnippet.title
       // Only show "No changes to save" for saved snippets with actual content
-        if (initialSnippet?.id && !initialSnippet?.is_draft && initialSnippet?.title && 
-          initialSnippet.title !== '') {
+      if (
+        initialSnippet?.id &&
+        !initialSnippet?.is_draft &&
+        initialSnippet?.title &&
+        initialSnippet.title !== ''
+      ) {
         const prevCode = initialSnippet?.code || ''
         const prevLang = initialSnippet?.language || 'md'
         const prevTitle = initialSnippet?.title || ''
-        const unchanged = prevCode === (code || '') && prevLang === (language || 'md') && prevTitle === title
+        const unchanged =
+          prevCode === (code || '') && prevLang === (language || 'md') && prevTitle === title
         if (unchanged) {
           if (typeof showToast === 'function') showToast('No changes to save', 'info')
           return
@@ -345,7 +360,7 @@ const SnippetEditor = ({
     <>
       {
         // Guard: if not in create mode and there's no valid snippet, show Welcome
-        !isCreateMode && (!initialSnippet || !initialSnippet.id) ? (
+        !isCreateMode && (!initialSnippet || !initialSnippet.id) && !hideWelcomePage ? (
           <WelcomePage onNewSnippet={onNew} />
         ) : (
           <div className="h-full overflow-hidden flex flex-col items-stretch bg-slate-50 dark:bg-[#0d1117] relative">
@@ -374,11 +389,6 @@ const SnippetEditor = ({
                       }}
                       onKeyDown={(e) => {
                         try {
-                          if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
-                            e.preventDefault()
-                            handleSave()
-                            return
-                          }
                           if (e.key === 'Escape') {
                             onCancel && onCancel()
                             return
@@ -415,13 +425,34 @@ const SnippetEditor = ({
               onChange={(val) => setNamePrompt((prev) => ({ ...prev, initialName: val }))}
               onCancel={() => setNamePrompt({ isOpen: false, initialName: '' })}
               onConfirm={() => {
-                const t = (namePrompt.initialName || '').trim()
-                if (!t) return
+                const entered = (namePrompt.initialName || '').trim()
+                if (!entered) return
+                const detectedLang = getLanguageByExtension(entered)
+                let lang = language
+                let ext = EditorLanguages[language]?.extensions[0] || 'txt'
+                if (detectedLang) {
+                  lang = detectedLang
+                  setLanguage(detectedLang)
+                  ext = EditorLanguages[detectedLang]?.extensions[0] || 'txt'
+                } else {
+                  // no extension detected
+                  if (!entered.includes('.')) {
+                    lang = 'text'
+                    setLanguage('text')
+                    ext = 'txt'
+                  } else {
+                    // entered has extension but not recognized, use current language
+                    lang = language
+                    ext = EditorLanguages[language]?.extensions[0] || 'txt'
+                  }
+                }
+                const baseName = entered.replace(/\.[a-z]+$/, '')
+                const fullTitle = baseName ? `${baseName}.${ext}` : `.${ext}`
                 const payload = {
                   id: initialSnippet?.id || Date.now().toString(),
-                  title: t,
+                  title: fullTitle,
                   code: code,
-                  language: language,
+                  language: lang,
                   timestamp: Date.now(),
                   type: 'snippet',
                   is_draft: false
@@ -449,7 +480,7 @@ const SnippetEditor = ({
                 >
                   {getAllLanguages().map((lang) => (
                     <option
-                      key={lang.key}
+                      key={lang.key }
                       value={lang.key}
                       className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300"
                     >
@@ -464,6 +495,7 @@ const SnippetEditor = ({
                 onToggleCompact={onToggleCompactHandler}
                 language={language}
                 zoomLevel={zoomLevel}
+                title={title}
               />
             </div>
           </div>

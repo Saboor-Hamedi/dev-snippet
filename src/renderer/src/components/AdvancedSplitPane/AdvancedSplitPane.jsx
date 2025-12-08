@@ -32,8 +32,6 @@ const AdvancedSplitPane = ({
     }
   })
 
-  const [renderRight, setRenderRight] = useState(!rightHidden)
-
   useEffect(() => {
     const handleMouseMove = (e) => {
       if (!draggingRef.current || !containerRef.current) return
@@ -88,11 +86,6 @@ const AdvancedSplitPane = ({
     document.body.style.userSelect = 'none'
   }
 
-  // Handle right pane visibility
-  useEffect(() => {
-    setRenderRight(!rightHidden)
-  }, [rightHidden])
-
   // Restore saved widths when switching modes
   useEffect(() => {
     if (overlayMode) {
@@ -104,7 +97,7 @@ const AdvancedSplitPane = ({
     }
   }, [overlayMode, initialLeft])
 
-  if (!renderRight) {
+  if (rightHidden) {
     return (
       <div
         ref={containerRef}
@@ -127,9 +120,7 @@ const AdvancedSplitPane = ({
         style={{ backgroundColor: 'var(--editor-bg)' }}
       >
         {/* Full-width editor */}
-        <div className="absolute inset-0 w-full h-full">
-          {left}
-        </div>
+        <div className="absolute inset-0 w-full h-full">{left}</div>
 
         {/* Floating preview */}
         {!rightHidden && (

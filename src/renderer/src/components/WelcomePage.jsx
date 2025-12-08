@@ -53,7 +53,7 @@ const WelcomePage = ({
 
   return (
     <>
-      <div className="h-full overflow-y-auto bg-[var(--color-bg)] scrollbar-thin scrollbar-thumb-[var(--color-border)] scrollbar-track-transparent">
+      <div className="h-full overflow-y-auto bg-[var(--color-bg)]">
         <div className="h-full flex flex-col">
           {/* Minimal Header */}
           <div className="px-8 py-6">
@@ -180,7 +180,7 @@ const WelcomePage = ({
             </div>
 
             {/* Bottom Section - Recent Activity */}
-            <div className="flex-1 overflow-y-auto px-8 pb-6 scrollbar-thin scrollbar-thumb-[var(--color-border)] scrollbar-track-transparent">
+            <div className="flex-1 overflow-y-auto px-8 pb-6">
               <div className="max-w-3xl">
                 <div className="mb-4 sticky top-0 bg-[var(--color-bg)] py-2 z-10">
                   <h2 className="text-lg font-light text-[var(--color-text-primary)] mb-1">

@@ -174,7 +174,7 @@ const Workbench = ({
           </div>
 
           {/* Footer for Empty State - Moved outside the main content container but still absolutely positioned */}
-          <div className="absolute bottom-0 left-0 right-0 pb-4">
+          <div className="absolute bottom-0 left-0 right-0">
             <SystemStatusFooter snippets={snippets || []} />
           </div>
         </div>

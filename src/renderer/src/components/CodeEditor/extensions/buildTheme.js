@@ -66,9 +66,9 @@ const buildTheme = (EditorView, options = {}) => {
       },
 
       '.cm-gutters': {
-        backgroundColor: 'var(--color-bg-secondary, var(--color-bg-primary)) !important',
+        backgroundColor: 'transparent !important',
         color: 'var(--color-text-secondary, #64748b)',
-        borderRight: '1px solid var(--color-border, #e2e8f0)',
+        borderRight: 'none !important',
         fontFamily: 'inherit',
         // Use em units for stable scaling with font size
         minWidth: '3em',
@@ -91,18 +91,26 @@ const buildTheme = (EditorView, options = {}) => {
         minWidth: '100%' // Ensure it fills the gutter to center properly
       },
 
+      // Active line
       '.cm-activeLine': {
-        backgroundColor: 'var(--active-line-bg, rgba(125, 125, 125, 0.1)) !important'
+        // backgroundColor: 'var(--active-line-bg, rgba(125, 125, 125, 0.1)) !important'
+        backgroundColor: 'transparent !important'
       },
       '.cm-activeLineGutter': {
         backgroundColor: 'transparent !important',
         color: 'var(--color-text-primary, #e2e8f0) !important'
       },
 
+      // Selection match
       '.cm-selectionMatch': {
-        backgroundColor: 'transparent !important'
+        backgroundColor: 'var(--selection-match-bg, rgba(128, 128, 128, 0.2)) !important'
+      },
+      '.cm-matchingBracket': {
+        backgroundColor: 'transparent !important',
+        borderBottom: '1px solid var(--color-text-primary)'
       },
 
+      // Selection background
       '.cm-selectionBackground': {
         backgroundColor: 'var(--selection-bg, rgba(197, 204, 217, 0.4)) !important'
       },

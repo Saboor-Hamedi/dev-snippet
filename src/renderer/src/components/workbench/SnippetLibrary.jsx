@@ -151,10 +151,10 @@ const SnippetLibrary = () => {
       return handled
     },
     onCloseEditor: () => {
-      // Ctrl+Shift+W: Close editor and go to welcome
+      // Ctrl+Shift+W: Close editor and go to appropriate view
       if (isCreatingSnippet) {
         setIsCreatingSnippet(false)
-        setActiveView('welcome')
+        setActiveView(hideWelcomePage ? 'snippets' : 'welcome')
       } else if (activeView === 'editor' || selectedSnippet) {
         setSelectedSnippet(null)
         setActiveView('snippets')
@@ -205,19 +205,24 @@ const SnippetLibrary = () => {
       }
     },
     onDeleteSnippet: () => {
+    
       if ((activeView === 'snippets' || activeView === 'editor') && selectedSnippet) {
         setDeleteModal({ isOpen: true, snippetId: selectedSnippet.id })
       }
     },
     // You can also keep the Ctrl+S save if you want
     onSave: (e) => {
+      if (editorPresent) {
+        // Child handles it directly
+        return
+      }
       if (selectedSnippet) {
         e?.preventDefault() // The hook already does this
         // If an editor textarea is present (covers create-mode and when
         // viewing an existing snippet in the editor), dispatch 'force-save'
         // so the editor flushes its local state and performs the change
         // detection. This avoids saving from the parent when nothing changed.
-        const editorPresent = !!document.querySelector('.editor-container textarea')
+        const editorPresent = !!document.querySelector('.editor-container .cm-editor')
         if (editorPresent || activeView === 'editor' || isCreatingSnippet) {
           try {
             window.__forceSave = true

@@ -8,35 +8,47 @@ const SystemStatusFooter = ({ snippets = [] }) => {
   const hideWelcomePage = getSetting('ui.hideWelcomePage') || false
 
   return (
-    <div className="px-8 py-3 bg-[var(--color-bg-secondary)]/30 border-t border-[var(--color-border)]/10">
-      <div className="flex items-center justify-between text-[10px]">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></div>
-            <span className="text-[var(--color-text-secondary)]">System Ready</span>
-          </div>
-          <div className="text-[var(--color-text-secondary)] font-mono opacity-60">v1.2.0</div>
+    <div
+      className="flex items-center justify-between px-2 py-1 select-none"
+      style={{
+        backgroundColor: 'var(--header-bg)',
+        borderTop: '1px solid var(--border-color)'
+      }}
+    >
+      <div className="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-300">
+        {/* System Ready - Using 'px-1 py-0.5' for similar height/padding as extension/zoom */}
+        <div className="flex items-center gap-1.5 px-1 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-default">
+          <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full"></div>
+          <span className="font-mono tabular-nums">System Ready</span>
         </div>
-        <div className="flex items-center gap-6 text-[var(--color-text-secondary)]">
-          <div className="flex items-center gap-1">
-            <span className="font-mono text-[var(--color-accent)] tabular-nums">
-              {snippets.length}
-            </span>
-            <span>Snippets</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="font-mono text-[var(--color-accent)] tabular-nums">
-              {new Set(snippets.map((s) => s.language)).size}
-            </span>
-            <span>Languages</span>
-          </div>
-          <div className="flex items-center gap-2 pl-4 border-l border-[var(--color-border)]/10">
-            <span className="text-[var(--color-text-secondary)] opacity-80">Don't show again</span>
-            <ToggleButton
-              checked={hideWelcomePage}
-              onChange={(checked) => updateSetting('ui.hideWelcomePage', checked)}
-            />
-          </div>
+        {/* Version - Using 'px-1 py-0.5' */}
+        <div className="px-1 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-default opacity-80">
+          <span className="font-mono tabular-nums">v1.2.0</span>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+        {/* Snippets Count - Using 'px-1 py-0.5' */}
+        <div className="flex items-center gap-1 px-1 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-default">
+          <span className="font-mono tabular-nums">{snippets.length}</span>
+          <span className="font-mono tabular-nums">Snippets</span>
+        </div>
+        {/* Languages Count - Using 'px-1 py-0.5' */}
+        <div className="flex items-center gap-1 px-1 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-default">
+          <span className="font-mono tabular-nums">
+            {new Set(snippets.map((s) => s.language)).size}
+          </span>
+          <span className="font-mono tabular-nums">Languages</span>
+        </div>
+
+        <div className="w-px h-3 bg-slate-300 dark:bg-slate-700 mx-1"></div>
+
+        <div className="flex items-center gap-2">
+          <span className="opacity-80 px-1 py-0.5 font-mono tabular-nums">Don't show again</span>
+          <ToggleButton
+            checked={hideWelcomePage}
+            onChange={(checked) => updateSetting('ui.hideWelcomePage', checked)}
+          />
         </div>
       </div>
     </div>

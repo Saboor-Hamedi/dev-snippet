@@ -33,10 +33,9 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
   // Focus input when opened
   useEffect(() => {
     if (isOpen) {
-      
       // Clear search first
       setSearch('')
-      
+
       // Focus with a single, reliable attempt
       const focusInput = () => {
         if (inputRef.current) {
@@ -44,19 +43,17 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
             // Ensure input is enabled and focusable
             inputRef.current.disabled = false
             inputRef.current.readOnly = false
-            
+
             // Clear any existing selection/focus
             inputRef.current.blur()
-            
+
             // Focus and select
             inputRef.current.focus()
             inputRef.current.select()
-            
-          } catch (err) {
-          }
+          } catch (err) {}
         }
       }
-      
+
       // Single attempt with proper delay
       setTimeout(focusInput, 200)
     }
@@ -85,7 +82,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
     }
 
     window.addEventListener('keydown', handleKeyDown)
-    
+
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
     }
@@ -135,7 +132,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
               }
             }}
             placeholder="Search snippets..."
-            className="flex-1 bg-transparent border-none outline-none text-medium"
+            className="flex-1 bg-transparent border-none outline-none text-medium theme-exempt"
             autoComplete="off"
             spellCheck={false}
             tabIndex={0}

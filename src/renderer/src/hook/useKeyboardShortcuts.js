@@ -52,18 +52,18 @@ export const useKeyboardShortcuts = (shortcuts) => {
           shortcutsRef.current.onSave()
         }
       }
+      // Ctrl+Shift+S save (alternative)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 's') {
+        if (shortcutsRef.current.onSave) {
+          e.preventDefault()
+          shortcutsRef.current.onSave()
+        }
+      }
       // Ctrl+N creates new snippet
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'n' && !e.shiftKey) {
         e.preventDefault()
         if (shortcutsRef.current.onCreateSnippet) {
           shortcutsRef.current.onCreateSnippet()
-        }
-      }
-      // Ctrl+Shift+W goes to Welcome page
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'w') {
-        e.preventDefault()
-        if (shortcutsRef.current.onGoToWelcome) {
-          shortcutsRef.current.onGoToWelcome()
         }
       }
       // Ctrl+P toggles Command Palette

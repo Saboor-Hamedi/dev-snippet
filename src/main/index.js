@@ -40,6 +40,9 @@ function initDB() {
       name TEXT,
       colors TEXT
     );
+
+    CREATE INDEX IF NOT EXISTS idx_snippets_title ON snippets(title);
+    CREATE INDEX IF NOT EXISTS idx_snippets_language ON snippets(language);
   `)
 
   try {
