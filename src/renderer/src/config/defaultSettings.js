@@ -9,7 +9,8 @@ export const DEFAULT_SETTINGS = {
     overlayMode: false,
     tabSize: 2,
     theme: 'dark',
-    caretWidth: '3px',
+    caretWidth: 3,
+    caretColor: '#fefeffff',
     caretStyle: 'bar'
   },
   ui: {

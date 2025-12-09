@@ -2,24 +2,25 @@
   "name": "dev-snippet",
   "version": "1.0.0",
   "description": "An Electron application with React",
-  "main": "./out/main/index.js",
   "author": "example.com",
   "homepage": "https://electron-vite.org",
+  "main": "out/main/index.js",
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint --cache .",
     "start": "electron-vite preview",
     "dev": "electron-vite dev",
     "build": "electron-vite build",
+    "postinstall": "electron-builder install-app-deps",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "rebuild": "electron-rebuild -f -w better-sqlite3",
-    "postinstall": "electron-builder install-app-deps && electron-rebuild -f -w better-sqlite3",
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win",
     "build:mac": "npm run build && electron-builder --mac",
     "build:linux": "npm run build && electron-builder --linux",
-    "dist": "electron-builder",
+    "dist": "npm run build && electron-builder --win --x64",
+    "dist:publish": "npm run build && electron-builder --win --x64 --publish=always",
     "make:icons": "npx electron-icon-maker --input src/renderer/public/icon.png --output build"
   },
   "dependencies": {
@@ -78,17 +79,55 @@
   },
   "files": [
     "dist/**/*",
-    "package.json"
+    "node_modules/**/*",
+    "src/assets/**/*",
+    "package.json",
+    "out/**/*"
   ],
   "build": {
     "appId": "com.devsnippet.app",
+    "productName": "Quick Snippets",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "dist/**/*",
+      "node_modules/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "assets/",
+        "to": "assets/"
+      }
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Saboor-Hamedi",
+        "repo": "dev-snippet"
+      }
+    ],
     "win": {
-      "target": "nsis"
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
       "perMachine": false
-    }
+    },
+    "asar": true,
+    "asarUnpack": [
+      "**/*.node"
+    ]
   }
 }

@@ -4,7 +4,7 @@ const buildTheme = (EditorView, options = {}) => {
   const {
     isDark = false,
     fontSize = 'var(--editor-font-size, 14px)',
-    caretColor = 'var(--caret-color, #0f172a)'
+    caretColor = 'var(--caret-color, #fefeffff)'
   } = options
 
   return EditorView.theme(
@@ -116,7 +116,7 @@ const buildTheme = (EditorView, options = {}) => {
       },
 
       '.cm-cursor': {
-        borderLeft: 'var(--caret-width, 2px) solid var(--caret-color, #0f172a) !important'
+        borderLeft: 'var(--caret-width, 3px) solid var(--caret-color, #fefeffff) !important'
       }
     },
     { dark: isDark }

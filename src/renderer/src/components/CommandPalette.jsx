@@ -132,7 +132,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
               }
             }}
             placeholder="Search snippets..."
-            className="flex-1 bg-transparent border-none outline-none text-medium theme-exempt"
+            className="flex-1 bg-[var(--color-bg-primary)] border-none outline-none text-medium theme-exempt"
             autoComplete="off"
             spellCheck={false}
             tabIndex={0}
@@ -145,9 +145,9 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
         </div>
 
         {/* Results List */}
-        <div className="max-h-[60vh] overflow-y-auto" ref={listRef}>
+        <div className="max-h-[60vh] overflow-y-auto " ref={listRef}>
           {filteredItems.length > 0 ? (
-            <div className="py-2">
+            <div className="py-2 ">
               {filteredItems.map((item, index) => (
                 <div
                   key={item.id}
@@ -157,7 +157,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
                   }}
                   className={`px-4 py-3 flex items-center gap-3 cursor-pointer transition-colors ${
                     index === selectedIndex
-                      ? 'bg-sky-100 dark:bg-sky-900/30'
+                      ? ' bg-[var(--color-bg-primary)] '
                       : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
                   }`}
                 >
@@ -165,14 +165,14 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
                     <FileCode size={12} />
                   </div>
 
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 ">
                     <div className="flex items-center justify-between mb-0.5">
                       <span className="font-medium truncate">{item.title}</span>
                       {index === selectedIndex && (
                         <ArrowRight size={12} className="text-primary-500" />
                       )}
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 ">
                       {/* <span className="capitalize">{item.type}</span> */}
                       <small className="font-mono    rounded">
                         {item.language}{' '}

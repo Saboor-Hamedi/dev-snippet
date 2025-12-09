@@ -202,6 +202,7 @@ const SnippetLibrary = () => {
     onRenameSnippet: () => {
       if (selectedSnippet && (activeView === 'snippets' || activeView === 'editor')) {
         handleRenameOrSave() //  call the new unified handler
+        
       }
     },
     onDeleteSnippet: () => {
@@ -275,7 +276,7 @@ const SnippetLibrary = () => {
   // Handle rename - only allow if snippet has a title (is saved)
   const handleRenameOrSave = async () => {
     if (!selectedSnippet?.title || !selectedSnippet.title.trim()) {
-      showToast('💾 Please save the snippet first before renaming', 'info')
+      showToast(' Please save the snippet first before renaming', 'info')
       return
     }
 
