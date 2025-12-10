@@ -4,6 +4,9 @@
   --caret-color: #fefeffff;
   --editor-font-size: 14px; /* NOT 1rem — absolute units only */
   --zoom-level: 1;
+  --gutter-bg-color: #232731;
+  --gutter-border-color: #232731;
+  --gutter-border-width: 1px;
 }
 /* .cm-cursor {
   border-left: var(--caret-width) solid var(--caret-color) !important;

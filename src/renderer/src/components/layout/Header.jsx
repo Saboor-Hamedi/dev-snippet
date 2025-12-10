@@ -82,7 +82,7 @@ const Header = ({ isCompact, onToggleCompact, title, snippetTitle, autosaveStatu
       >
         <button
           onClick={() => window.api?.toggleMaximize?.()}
-          className="theme-exempt h-5xl w-5xl flex items-center justify-center 
+          className="theme-exempt h-3xl w-3xl flex items-center justify-center 
          
           bg-transparent hover:bg-[#2d3138] focus:outline-none 
           focus:ring-none cursor-pointer transition-none"
@@ -99,7 +99,7 @@ const Header = ({ isCompact, onToggleCompact, title, snippetTitle, autosaveStatu
               window.api?.minimize?.()
             } catch (e) {}
           }}
-          className="theme-exempt h-5xl w-5xl flex items-center justify-center bg-transparent hover:bg-[#2d3138]
+          className="theme-exempt h-3xl w-3xl flex items-center justify-center bg-transparent hover:bg-[#2d3138]
            focus:outline-none focus:ring-none cursor-pointer transition-none"
           title={
             isCompact ? 'Expand to full mode and minimize' : 'Switch to compact mode and minimize'
@@ -109,12 +109,12 @@ const Header = ({ isCompact, onToggleCompact, title, snippetTitle, autosaveStatu
         </button>
         <button
           onClick={() => window.api?.closeWindow?.()}
-          className="theme-exempt h-5xl w-5xl flex items-center 
+          className="theme-exempt h-3xl w-3xl flex items-center 
           justify-center bg-transparent hover:bg-red-500 
           hover:text-white focus:outline-none focus:ring-none cursor-pointer transition-none"
           title="Close"
         >
-          <X size={12} className="text-slate-500 dark:text-slate-400"  />
+          <X size={12} className="text-slate-500 dark:text-slate-400" />
         </button>
       </div>
     </header>

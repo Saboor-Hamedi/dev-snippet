@@ -183,7 +183,12 @@ const SnippetLibrary = () => {
     },
 
     onToggleSettings: () => {
-      setIsSettingsOpen((prev) => !prev)
+      if (activeView === 'settings') {
+        setActiveView('snippets')
+      } else {
+        handleOpenSettings()
+      }
+      setIsSettingsOpen(false)
     },
 
     onCopyToClipboard: () => {
@@ -202,11 +207,9 @@ const SnippetLibrary = () => {
     onRenameSnippet: () => {
       if (selectedSnippet && (activeView === 'snippets' || activeView === 'editor')) {
         handleRenameOrSave() //  call the new unified handler
-        
       }
     },
     onDeleteSnippet: () => {
-    
       if ((activeView === 'snippets' || activeView === 'editor') && selectedSnippet) {
         setDeleteModal({ isOpen: true, snippetId: selectedSnippet.id })
       }

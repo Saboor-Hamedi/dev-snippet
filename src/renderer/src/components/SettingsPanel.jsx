@@ -1,15 +1,26 @@
 import React, { useState, useEffect } from 'react'
-
-import ThemeModal from './ThemeModal'
-import { Monitor, Download, ChevronLeft, Settings, SunMoon, FileDown, Database } from 'lucide-react'
 import ToggleButton from './ToggleButton'
 import { useFontSettings } from '../hook/useFontSettings'
 import { useSettings } from '../hook/useSettingsContext'
 import { useToast } from '../hook/useToast'
 import ToastNotification from '../utils/ToastNotification'
+import EditSettings from './preference/EditSettings'
+import useCleanErrorJson from '../hook/useCleanErrorJson.js'
+import ThemeModal from './ThemeModal'
+import {
+  Monitor,
+  Download,
+  ChevronLeft,
+  Settings,
+  SunMoon,
+  FileDown,
+  Database,
+  FileJson,
+  Save
+} from 'lucide-react'
 
 const SettingsPanel = ({ onClose }) => {
-  const { showToast } = useToast()
+  const { toast, showToast } = useToast()
 
   // Local state for settings
   const {
@@ -26,6 +37,7 @@ const SettingsPanel = ({ onClose }) => {
     updateCaretWidth,
     updateCaretStyle
   } = useFontSettings()
+
   const [wordWrap, setWordWrap] = useState('on')
   const [autoSave, setAutoSave] = useState(false)
 
@@ -40,6 +52,8 @@ const SettingsPanel = ({ onClose }) => {
   const { getSetting, updateSetting } = useSettings()
   const hideWelcomePage = getSetting('ui.hideWelcomePage') || false
   const [activeTab, setActiveTab] = useState('general')
+  const [jsonContent, setJsonContent] = useState('')
+  const [isJsonDirty, setIsJsonDirty] = useState(false)
 
   // Modal State
   const [isThemeModalOpen, setIsThemeModalOpen] = useState(false)
@@ -78,6 +92,80 @@ const SettingsPanel = ({ onClose }) => {
     }
   }
 
+  // Handle opening JSON view
+  const handleOpenJson = async () => {
+    setActiveTab('json')
+    if (window.api?.readSettingsFile) {
+      try {
+        const content = await window.api.readSettingsFile()
+        setJsonContent(content || '{}')
+        setIsJsonDirty(false)
+      } catch (err) {
+        showToast('❌ Failed to load settings file')
+      }
+    }
+  }
+
+  const handleSaveJson = async () => {
+    let parsedSettings
+
+    // --- 1. VALIDATION and PARSING ---
+    try {
+      // FIX: Removed dangerous .padEnd(..., ' ') to ensure valid JSON is parsed/saved.
+      // The padding caused the "Unexpected non-whitespace character after JSON" error.
+      parsedSettings = JSON.parse(jsonContent)
+    } catch (error) {
+      // Delegate error processing to the clean helper function
+      const cleanError = useCleanErrorJson(error, jsonContent)
+      showToast(`Syntax Error: ${cleanError}`)
+      return // Stop execution on error (KISS principle)
+    }
+
+    // --- 2. API CHECK and FILE WRITING ---
+    if (!window.api?.writeSettingsFile) {
+      console.error('API is missing: window.api.writeSettingsFile is undefined.')
+      showToast('❌ System Error: Settings API is missing.')
+      return
+    }
+
+    try {
+      // Write the validated content.
+      // PAD OUT THE CONTENT: Add spaces to overwrite potential leftover bytes from previous saves
+      // This fixes the confusing "Unexpected non-whitespace character" error on shrinking files.
+      const safeContent = jsonContent.padEnd(jsonContent.length + 50, ' ')
+      await window.api.writeSettingsFile(safeContent)
+
+      // --- 3. UPDATE APPLICATION STATE (Context/Store) ---
+      // Update the live application state only after successful file write (High Cohesion)
+      Object.keys(parsedSettings).forEach((sectionKey) => {
+        const sectionValue = parsedSettings[sectionKey]
+
+        // Use recursion or a dedicated helper if settings nesting gets deeper (Next Level Tip)
+        if (
+          typeof sectionValue === 'object' &&
+          sectionValue !== null &&
+          !Array.isArray(sectionValue)
+        ) {
+          Object.keys(sectionValue).forEach((settingKey) => {
+            console.log(`Updating nested: ${sectionKey}.${settingKey} =`, sectionValue[settingKey])
+            updateSetting(`${sectionKey}.${settingKey}`, sectionValue[settingKey])
+          })
+        } else {
+          console.log(`Updating top-level: ${sectionKey} =`, sectionValue)
+          updateSetting(sectionKey, sectionValue)
+        }
+      })
+
+      // Final UI feedback
+      setIsJsonDirty(false)
+      showToast('✓ Settings saved and applied')
+    } catch (error) {
+      // Catch file system or IPC errors
+      showToast(`❌ System Error during save: ${error.message}`)
+      console.error('Save operation failed:', error)
+    }
+  }
+
   // Theme handled by ThemeModal only
 
   // Detect platform to show correct modifier key in shortcut labels
@@ -92,6 +180,7 @@ const SettingsPanel = ({ onClose }) => {
         color: 'var(--color-text-primary)'
       }}
     >
+      <ToastNotification toast={toast} />
       {/* Sidebar Navigation */}
       <div
         className="w-full md:w-56 border-b  md:border-b-0 md:border-r flex flex-col"
@@ -156,6 +245,31 @@ const SettingsPanel = ({ onClose }) => {
             <Settings size={12} />
             <span>General</span>
           </button>
+
+          <button
+            onClick={handleOpenJson}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-xsmall font-medium transition-all duration-200"
+            style={{
+              backgroundColor: activeTab === 'json' ? 'var(--color-accent-primary)' : 'transparent',
+              color:
+                activeTab === 'json' ? 'var(--color-bg-primary)' : 'var(--color-text-secondary)'
+            }}
+            onMouseEnter={(e) => {
+              if (activeTab !== 'json') {
+                e.target.style.backgroundColor = 'var(--hover-bg)'
+                e.target.style.color = 'var(--hover-text)'
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (activeTab !== 'json') {
+                e.target.style.backgroundColor = 'transparent'
+                e.target.style.color = 'var(--color-text-secondary)'
+              }
+            }}
+          >
+            <FileJson size={12} />
+            <span>Settings (JSON)</span>
+          </button>
         </nav>
 
         {/* Footer Info */}
@@ -177,43 +291,817 @@ const SettingsPanel = ({ onClose }) => {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
+        {activeTab === 'json' && (
+          // Display the EditSettings component
+          <EditSettings
+            activeTab={activeTab}
+            jsonContent={jsonContent}
+            isJsonDirty={isJsonDirty}
+            setIsJsonDirty={setIsJsonDirty}
+            handleSaveJson={handleSaveJson}
+            setJsonContent={setJsonContent}
+          />
+        )}
+
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto">
-          {activeTab === 'general' && (
-            <div className="space-y-4 max-full  mx-auto ml-1 mr-1">
-              {/* APPEARANCE SECTION */}
-              <section>
-                {/* <h3 className="text-xsmall font-semibold uppercase tracking-wider mb-3" style={{
+        {activeTab !== 'json' && (
+          <div className="flex-1 overflow-y-auto">
+            {activeTab === 'general' && (
+              <div className="space-y-4 max-full  mx-auto ml-1 mr-1">
+                {/* APPEARANCE SECTION */}
+                <section>
+                  {/* <h3 className="text-xsmall font-semibold uppercase tracking-wider mb-3" style={{
                   color: 'var(--color-text-tertiary)'
                 }}>
                   Appearance
                 </h3> */}
-                <div
-                  className="rounded-md border overflow-hidden "
-                  style={{
-                    backgroundColor: 'var(--color-bg-secondary)',
-                    borderColor: 'var(--color-border)'
-                  }}
-                >
-                  {/* Theme Select */}
                   <div
-                    className="p-2 border-b"
+                    className="rounded-md border overflow-hidden "
                     style={{
+                      backgroundColor: 'var(--color-bg-secondary)',
                       borderColor: 'var(--color-border)'
                     }}
                   >
-                    <div className="flex items-center justify-between mb-2">
+                    {/* Theme Select */}
+                    <div
+                      className="p-2 border-b"
+                      style={{
+                        borderColor: 'var(--color-border)'
+                      }}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <label
+                          className="block text-xsmall font-medium"
+                          style={{
+                            color: 'var(--color-text-primary)'
+                          }}
+                        >
+                          Color Theme
+                        </label>
+                        <button
+                          onClick={() => setIsThemeModalOpen(true)}
+                          className="flex items-center gap-2 px-3 py-1.5 border rounded-md text-xsmall font-medium transition-all"
+                          style={{
+                            backgroundColor: 'var(--color-bg-primary)',
+                            borderColor: 'var(--color-border)',
+                            color: 'var(--color-text-primary)'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.backgroundColor = 'var(--hover-bg)'
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.backgroundColor = 'var(--color-bg-primary)'
+                          }}
+                        >
+                          <SunMoon size={11} />
+                          Change Theme
+                        </button>
+                      </div>
+                      <p
+                        className="text-tiny"
+                        style={{
+                          color: 'var(--color-text-tertiary)'
+                        }}
+                      >
+                        Select your preferred visual theme.
+                      </p>
+                    </div>
+
+                    {/* Editor Font Family */}
+                    <div className="p-2">
                       <label
-                        className="block text-xsmall font-medium"
+                        className="block text-xsmall font-medium mb-1"
                         style={{
                           color: 'var(--color-text-primary)'
                         }}
                       >
-                        Color Theme
+                        Editor Font Family
                       </label>
+                      <p
+                        className="text-tiny mb-2"
+                        style={{
+                          color: 'var(--color-text-tertiary)'
+                        }}
+                      >
+                        Monospace fonts recommended.
+                      </p>
+                      <select
+                        value={editorFontFamily}
+                        onChange={(e) => updateEditorFontFamily(e.target.value)}
+                        className="w-full rounded-md px-3 py-2 text-xsmall outline-none transition-all"
+                        style={{
+                          backgroundColor: 'var(--color-bg-primary)',
+                          color: 'var(--color-text-primary)'
+                        }}
+                        onFocus={(e) => e.target.blur()}
+                      >
+                        <option>JetBrains Mono</option>
+                        <option>Fira Code</option>
+                        <option>Consolas</option>
+                        <option>Monaco</option>
+                        <option>Courier New</option>
+                      </select>
+                    </div>
+
+                    {/* Editor Font Size */}
+                    <div
+                      className="p-2 border-t"
+                      style={{
+                        borderColor: 'var(--color-border)'
+                      }}
+                    >
+                      <label
+                        className="block text-xsmall font-medium mb-1"
+                        style={{
+                          color: 'var(--color-text-primary)'
+                        }}
+                      >
+                        Editor Font Size
+                      </label>
+                      <p
+                        className="text-tiny mb-2"
+                        style={{
+                          color: 'var(--color-text-tertiary)'
+                        }}
+                      >
+                        Controls the editor font size.
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          value={editorFontSize}
+                          onChange={(e) => updateEditorFontSize(e.target.value)}
+                          className="flex-1 rounded-md px-3 py-2 text-xsmall outline-none transition-all"
+                          style={{
+                            backgroundColor: 'var(--color-bg-primary)',
+                            color: 'var(--color-text-primary)'
+                          }}
+                          onFocus={(e) => e.target.blur()}
+                        />
+                        <span
+                          className="text-xsmall"
+                          style={{ color: 'var(--color-text-tertiary)' }}
+                        >
+                          px
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Preview Font Family */}
+                    <div
+                      className="p-2 border-t"
+                      style={{
+                        borderColor: 'var(--color-border)'
+                      }}
+                    >
+                      <label
+                        className="block text-xsmall font-medium mb-1"
+                        style={{
+                          color: 'var(--color-text-primary)'
+                        }}
+                      >
+                        Preview Font Family
+                      </label>
+                      <p
+                        className="text-tiny mb-2"
+                        style={{
+                          color: 'var(--color-text-tertiary)'
+                        }}
+                      >
+                        Applies to code preview blocks.
+                      </p>
+                      <select
+                        value={previewFontFamily}
+                        onChange={(e) => updatePreviewFontFamily(e.target.value)}
+                        className="w-full rounded-md px-3 py-2 text-xsmall outline-none transition-all"
+                        style={{
+                          backgroundColor: 'var(--color-bg-primary)',
+                          color: 'var(--color-text-primary)'
+                        }}
+                        onFocus={(e) => e.target.blur()}
+                      >
+                        <option>JetBrains Mono</option>
+                        <option>Fira Code</option>
+                        <option>Consolas</option>
+                        <option>Monaco</option>
+                        <option>Courier New</option>
+                      </select>
+                    </div>
+
+                    {/* Preview Font Size */}
+                    <div
+                      className="p-2 border-t"
+                      style={{
+                        borderColor: 'var(--color-border)'
+                      }}
+                    >
+                      <label
+                        className="block text-xsmall font-medium mb-1"
+                        style={{
+                          color: 'var(--color-text-primary)'
+                        }}
+                      >
+                        Preview Font Size
+                      </label>
+                      <p
+                        className="text-tiny mb-2"
+                        style={{
+                          color: 'var(--color-text-tertiary)'
+                        }}
+                      >
+                        Controls code preview size.
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          value={previewFontSize}
+                          onChange={(e) => updatePreviewFontSize(e.target.value)}
+                          className="flex-1 rounded-md px-3 py-2 text-xsmall outline-none transition-all"
+                          style={{
+                            backgroundColor: 'var(--color-bg-primary)',
+                            color: 'var(--color-text-primary)'
+                          }}
+                          onFocus={(e) => e.target.blur()}
+                        />
+                        <span
+                          className="text-xsmall"
+                          style={{ color: 'var(--color-text-tertiary)' }}
+                        >
+                          px
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Caret Width */}
+                    <div
+                      className="p-2 border-t"
+                      style={{
+                        borderColor: 'var(--color-border)'
+                      }}
+                    >
+                      <label
+                        className="block text-xsmall font-medium mb-1"
+                        style={{
+                          color: 'var(--color-text-primary)'
+                        }}
+                      >
+                        Caret Width
+                      </label>
+                      <p
+                        className="text-tiny mb-2"
+                        style={{
+                          color: 'var(--color-text-tertiary)'
+                        }}
+                      >
+                        Thickness of the text cursor.
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          value={parseInt(String(caretWidth || '3px').replace('px', ''))}
+                          onChange={(e) => updateCaretWidth(e.target.value)}
+                          className="flex-1 rounded-md px-3 py-2 text-xsmall outline-none transition-all"
+                          style={{
+                            backgroundColor: 'var(--color-bg-primary)',
+                            color: 'var(--color-text-primary)'
+                          }}
+                          onFocus={(e) => e.target.blur()}
+                        />
+                        <span
+                          className="text-xsmall"
+                          style={{ color: 'var(--color-text-tertiary)' }}
+                        >
+                          px
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Caret Style */}
+                    <div
+                      className="p-2 border-t"
+                      style={{
+                        borderColor: 'var(--color-border)'
+                      }}
+                    >
+                      <label
+                        className="block text-xsmall font-medium mb-1"
+                        style={{
+                          color: 'var(--color-text-primary)'
+                        }}
+                      >
+                        Caret Style
+                      </label>
+                      <p
+                        className="text-tiny mb-2"
+                        style={{
+                          color: 'var(--color-text-tertiary)'
+                        }}
+                      >
+                        Choose bar, block, or underline.
+                      </p>
+                      <select
+                        value={caretStyle}
+                        onChange={(e) => updateCaretStyle(e.target.value)}
+                        className="w-full rounded-md px-3 py-2 text-xsmall outline-none transition-all"
+                        style={{
+                          backgroundColor: 'var(--color-bg-primary)',
+                          color: 'var(--color-text-primary)'
+                        }}
+                        onFocus={(e) => e.target.blur()}
+                      >
+                        <option value="bar">Bar</option>
+                        <option value="block">Block</option>
+                        <option value="underline">Underline</option>
+                      </select>
+                    </div>
+                  </div>
+                </section>
+
+                {/* KEYBOARD SHORTCUTS */}
+                <section>
+                  <h3
+                    className="text-xsmall font-semibold uppercase tracking-wider mb-3 ml-3"
+                    style={{
+                      color: 'var(--color-text-tertiary)'
+                    }}
+                  >
+                    Keyboard Shortcuts
+                  </h3>
+                  <div
+                    className="rounded-md border overflow-hidden"
+                    style={{
+                      backgroundColor: 'var(--color-bg-secondary)',
+                      borderColor: 'var(--color-border)'
+                    }}
+                  >
+                    <div className="p-4">
+                      <p
+                        className="text-tiny mb-3"
+                        style={{
+                          color: 'var(--color-text-tertiary)'
+                        }}
+                      >
+                        Common keyboard shortcuts used across the app.
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div
+                          className="flex items-center justify-between px-2 py-1.5 rounded"
+                          style={{
+                            backgroundColor: 'var(--color-bg-primary)'
+                          }}
+                        >
+                          <div>
+                            <div
+                              className="text-xsmall font-medium"
+                              style={{
+                                color: 'var(--color-text-primary)'
+                              }}
+                            >
+                              Create new snippet
+                            </div>
+                            <div
+                              className="text-tiny"
+                              style={{
+                                color: 'var(--color-text-tertiary)'
+                              }}
+                            >
+                              Open a new draft
+                            </div>
+                          </div>
+                          <kbd
+                            className="px-1.5 py-0.5 rounded text-tiny"
+                            style={{
+                              backgroundColor: 'var(--color-bg-tertiary)',
+                              color: 'var(--color-text-secondary)',
+                              border: '1px solid var(--color-border)'
+                            }}
+                          >
+                            {modKey} + N
+                          </kbd>
+                        </div>
+
+                        <div
+                          className="flex items-center justify-between px-2 py-1.5 rounded"
+                          style={{
+                            backgroundColor: 'var(--color-bg-primary)'
+                          }}
+                        >
+                          <div>
+                            <div
+                              className="text-xsmall font-medium"
+                              style={{ color: 'var(--color-text-primary)' }}
+                            >
+                              Save (force)
+                            </div>
+                            <div
+                              className="text-tiny"
+                              style={{ color: 'var(--color-text-tertiary)' }}
+                            >
+                              Trigger editor save (Ctrl+S)
+                            </div>
+                          </div>
+                          <kbd
+                            className="px-1.5 py-0.5 rounded text-tiny"
+                            style={{
+                              backgroundColor: 'var(--color-bg-tertiary)',
+                              color: 'var(--color-text-secondary)',
+                              border: '1px solid var(--color-border)'
+                            }}
+                          >
+                            {modKey} + S
+                          </kbd>
+                        </div>
+
+                        <div
+                          className="flex items-center justify-between px-2 py-1.5 rounded"
+                          style={{
+                            backgroundColor: 'var(--color-bg-primary)'
+                          }}
+                        >
+                          <div>
+                            <div
+                              className="text-xsmall font-medium"
+                              style={{ color: 'var(--color-text-primary)' }}
+                            >
+                              Command Palette
+                            </div>
+                            <div
+                              className="text-tiny"
+                              style={{ color: 'var(--color-text-tertiary)' }}
+                            >
+                              Open quick search / commands
+                            </div>
+                          </div>
+                          <kbd
+                            className="px-1.5 py-0.5 rounded text-tiny"
+                            style={{
+                              backgroundColor: 'var(--color-bg-tertiary)',
+                              color: 'var(--color-text-secondary)',
+                              border: '1px solid var(--color-border)'
+                            }}
+                          >
+                            {modKey} + P
+                          </kbd>
+                        </div>
+
+                        <div
+                          className="flex items-center justify-between px-2 py-1.5 rounded"
+                          style={{
+                            backgroundColor: 'var(--color-bg-primary)'
+                          }}
+                        >
+                          <div>
+                            <div
+                              className="text-xsmall font-medium"
+                              style={{ color: 'var(--color-text-primary)' }}
+                            >
+                              Go to Welcome
+                            </div>
+                            <div
+                              className="text-tiny"
+                              style={{ color: 'var(--color-text-tertiary)' }}
+                            >
+                              Show the welcome page
+                            </div>
+                          </div>
+                          <kbd
+                            className="px-1.5 py-0.5 rounded text-tiny"
+                            style={{
+                              backgroundColor: 'var(--color-bg-tertiary)',
+                              color: 'var(--color-text-secondary)',
+                              border: '1px solid var(--color-border)'
+                            }}
+                          >
+                            {modKey} + Shift + W
+                          </kbd>
+                        </div>
+
+                        <div
+                          className="flex items-center justify-between px-2 py-1.5 rounded"
+                          style={{
+                            backgroundColor: 'var(--color-bg-primary)'
+                          }}
+                        >
+                          <div>
+                            <div
+                              className="text-xsmall font-medium"
+                              style={{ color: 'var(--color-text-primary)' }}
+                            >
+                              Copy to clipboard
+                            </div>
+                            <div
+                              className="text-tiny"
+                              style={{ color: 'var(--color-text-tertiary)' }}
+                            >
+                              Copy selected snippet code
+                            </div>
+                          </div>
+                          <kbd
+                            className="px-1.5 py-0.5 rounded text-tiny"
+                            style={{
+                              backgroundColor: 'var(--color-bg-tertiary)',
+                              color: 'var(--color-text-secondary)',
+                              border: '1px solid var(--color-border)'
+                            }}
+                          >
+                            {modKey} + Shift + C
+                          </kbd>
+                        </div>
+
+                        <div
+                          className="flex items-center justify-between px-2 py-1.5 rounded"
+                          style={{
+                            backgroundColor: 'var(--color-bg-primary)'
+                          }}
+                        >
+                          <div>
+                            <div
+                              className="text-xsmall font-medium"
+                              style={{ color: 'var(--color-text-primary)' }}
+                            >
+                              Rename snippet
+                            </div>
+                            <div
+                              className="text-tiny"
+                              style={{ color: 'var(--color-text-tertiary)' }}
+                            >
+                              Open rename modal
+                            </div>
+                          </div>
+                          <kbd
+                            className="px-1.5 py-0.5 rounded text-tiny"
+                            style={{
+                              backgroundColor: 'var(--color-bg-tertiary)',
+                              color: 'var(--color-text-secondary)',
+                              border: '1px solid var(--color-border)'
+                            }}
+                          >
+                            {modKey} + R
+                          </kbd>
+                        </div>
+
+                        <div
+                          className="flex items-center justify-between px-2 py-1.5 rounded"
+                          style={{
+                            backgroundColor: 'var(--color-bg-primary)'
+                          }}
+                        >
+                          <div>
+                            <div
+                              className="text-xsmall font-medium"
+                              style={{ color: 'var(--color-text-primary)' }}
+                            >
+                              Delete snippet
+                            </div>
+                            <div
+                              className="text-tiny"
+                              style={{ color: 'var(--color-text-tertiary)' }}
+                            >
+                              Open delete confirmation
+                            </div>
+                          </div>
+                          <kbd
+                            className="px-1.5 py-0.5 rounded text-tiny"
+                            style={{
+                              backgroundColor: 'var(--color-bg-tertiary)',
+                              color: 'var(--color-text-secondary)',
+                              border: '1px solid var(--color-border)'
+                            }}
+                          >
+                            {modKey} + Shift + D
+                          </kbd>
+                        </div>
+
+                        <div
+                          className="flex items-center justify-between px-2 py-1.5 rounded"
+                          style={{
+                            backgroundColor: 'var(--color-bg-primary)'
+                          }}
+                        >
+                          <div>
+                            <div
+                              className="text-xsmall font-medium"
+                              style={{ color: 'var(--color-text-primary)' }}
+                            >
+                              Toggle compact
+                            </div>
+                            <div
+                              className="text-tiny"
+                              style={{ color: 'var(--color-text-tertiary)' }}
+                            >
+                              Toggle compact header / status bar
+                            </div>
+                          </div>
+                          <kbd
+                            className="px-1.5 py-0.5 rounded text-tiny"
+                            style={{
+                              backgroundColor: 'var(--color-bg-tertiary)',
+                              color: 'var(--color-text-secondary)',
+                              border: '1px solid var(--color-border)'
+                            }}
+                          >
+                            {modKey} + ,
+                          </kbd>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* EDITOR SECTION */}
+                <section>
+                  <h3
+                    className="text-xsmall font-semibold uppercase tracking-wider mb-3 ml-3"
+                    style={{
+                      color: 'var(--color-text-tertiary)'
+                    }}
+                  >
+                    Text Editor
+                  </h3>
+                  <div
+                    className="rounded-md border overflow-hidden"
+                    style={{
+                      backgroundColor: 'var(--color-bg-secondary)',
+                      borderColor: 'var(--color-border)'
+                    }}
+                  >
+                    {/* Word Wrap */}
+                    <div
+                      className="p-4 flex items-center justify-between gap-4 border-b"
+                      style={{
+                        borderColor: 'var(--color-border)'
+                      }}
+                    >
+                      <div>
+                        <label
+                          className="block text-xsmall font-medium"
+                          style={{
+                            color: 'var(--color-text-primary)'
+                          }}
+                        >
+                          Word Wrap
+                        </label>
+
+                        <p
+                          className="text-tiny mt-1"
+                          style={{
+                            color: 'var(--color-text-tertiary)'
+                          }}
+                        >
+                          Controls how lines should wrap.
+                        </p>
+                      </div>
+                      <select
+                        value={wordWrap}
+                        onChange={(e) => setWordWrap(e.target.value)}
+                        className="rounded-md px-2 py-1 text-xsmall outline-none transition-all"
+                        style={{
+                          backgroundColor: 'var(--color-bg-primary)',
+                          color: 'var(--color-text-primary)'
+                        }}
+                        onFocus={(e) => e.target.blur()}
+                      >
+                        <option value="off">Off</option>
+                        <option value="on">On</option>
+                        <option value="bounded">Bounded</option>
+                      </select>
+                    </div>
+
+                    {/* Auto Save */}
+                    <div
+                      className="p-5 flex items-center justify-between gap-4 border-b"
+                      style={{ borderColor: 'var(--color-border)' }}
+                    >
+                      <div>
+                        <label className="block text-sm font-medium text-slate-900 dark:text-white">
+                          Auto Save
+                        </label>
+                        <p className="text-xsmall text-slate-500 mt-1">
+                          Automatically save changes after delay.
+                        </p>
+                      </div>
+                      <ToggleButton
+                        checked={autoSave}
+                        onChange={(checked) => {
+                          try {
+                            setAutoSave(checked)
+                            localStorage.setItem('autoSave', checked ? 'true' : 'false')
+                            // notify other components (editor) about change
+                            try {
+                              window.dispatchEvent(
+                                new CustomEvent('autosave:toggle', { detail: { enabled: checked } })
+                              )
+                            } catch {}
+                          } catch (e) {
+                            setAutoSave((s) => !s)
+                          }
+                        }}
+                      />
+                    </div>
+
+                    {/* Preview Overlay Mode */}
+                    <div className="p-5 flex items-center justify-between gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-900 dark:text-white">
+                          Preview Overlay Mode
+                        </label>
+                        <p className="text-xsmall text-slate-500 mt-1">
+                          Float preview over editor instead of side-by-side.
+                        </p>
+                      </div>
+                      <ToggleButton
+                        checked={overlayMode}
+                        onChange={(checked) => {
+                          try {
+                            setOverlayMode(checked)
+                            localStorage.setItem('overlayMode', checked ? 'true' : 'false')
+                            // notify editor about change
+                            try {
+                              window.dispatchEvent(
+                                new CustomEvent('overlayMode:toggle', {
+                                  detail: { enabled: checked }
+                                })
+                              )
+                            } catch {}
+                          } catch (e) {
+                            setOverlayMode((s) => !s)
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                </section>
+
+                {/* DATA & SYSTEM SECTION */}
+                <section>
+                  <h3
+                    className="text-xsmall font-semibold uppercase tracking-wider mb-3 ml-3"
+                    style={{
+                      color: 'var(--color-text-tertiary)'
+                    }}
+                  >
+                    System & Data
+                  </h3>
+                  <div
+                    className="rounded-md border overflow-hidden"
+                    style={{
+                      backgroundColor: 'var(--color-bg-secondary)',
+                      borderColor: 'var(--color-border)'
+                    }}
+                  >
+                    {/* Show Welcome Page */}
+                    <div
+                      className="p-4 flex items-center justify-between gap-4 border-b"
+                      style={{ borderColor: 'var(--color-border)' }}
+                    >
+                      <div>
+                        <label
+                          className="block text-xsmall font-medium"
+                          style={{
+                            color: 'var(--color-text-primary)'
+                          }}
+                        >
+                          Show Welcome Page
+                        </label>
+                        <p
+                          className="text-xsmall mt-1 max-w-sm"
+                          style={{
+                            color: 'var(--color-text-tertiary)'
+                          }}
+                        >
+                          Show the welcome page when starting the application.
+                        </p>
+                      </div>
+                      <ToggleButton
+                        checked={!hideWelcomePage}
+                        onChange={(checked) => {
+                          updateSetting('ui.hideWelcomePage', !checked)
+                        }}
+                      />
+                    </div>
+
+                    <div className="p-4 flex items-center justify-between gap-4 ">
+                      <div>
+                        <label
+                          className="block text-xsmall font-medium"
+                          style={{
+                            color: 'var(--color-text-primary)'
+                          }}
+                        >
+                          Export Library
+                        </label>
+                        <p
+                          className="text-xsmall mt-1 max-w-sm"
+                          style={{
+                            color: 'var(--color-text-tertiary)'
+                          }}
+                        >
+                          Create a JSON backup of all your snippets and projects.
+                        </p>
+                      </div>
                       <button
-                        onClick={() => setIsThemeModalOpen(true)}
-                        className="flex items-center gap-2 px-3 py-1.5 border rounded-md text-xsmall font-medium transition-all"
+                        onClick={handleExportData}
+                        className="flex items-center gap-2 px-3 py-1.5 border rounded-md text-xsmall font-medium transition-colors"
                         style={{
                           backgroundColor: 'var(--color-bg-primary)',
                           borderColor: 'var(--color-border)',
@@ -226,767 +1114,16 @@ const SettingsPanel = ({ onClose }) => {
                           e.target.style.backgroundColor = 'var(--color-bg-primary)'
                         }}
                       >
-                        <SunMoon size={11} />
-                        Change Theme
+                        <FileDown size={11} />
+                        Export Data
                       </button>
                     </div>
-                    <p
-                      className="text-tiny"
-                      style={{
-                        color: 'var(--color-text-tertiary)'
-                      }}
-                    >
-                      Select your preferred visual theme.
-                    </p>
                   </div>
-
-                  {/* Editor Font Family */}
-                  <div className="p-2">
-                    <label
-                      className="block text-xsmall font-medium mb-1"
-                      style={{
-                        color: 'var(--color-text-primary)'
-                      }}
-                    >
-                      Editor Font Family
-                    </label>
-                    <p
-                      className="text-tiny mb-2"
-                      style={{
-                        color: 'var(--color-text-tertiary)'
-                      }}
-                    >
-                      Monospace fonts recommended.
-                    </p>
-                    <select
-                      value={editorFontFamily}
-                      onChange={(e) => updateEditorFontFamily(e.target.value)}
-                      className="w-full rounded-md px-3 py-2 text-xsmall outline-none transition-all"
-                      style={{
-                        backgroundColor: 'var(--color-bg-primary)',
-                        color: 'var(--color-text-primary)'
-                      }}
-                      onFocus={(e) => e.target.blur()}
-                    >
-                      <option>JetBrains Mono</option>
-                      <option>Fira Code</option>
-                      <option>Consolas</option>
-                      <option>Monaco</option>
-                      <option>Courier New</option>
-                    </select>
-                  </div>
-
-                  {/* Editor Font Size */}
-                  <div
-                    className="p-2 border-t"
-                    style={{
-                      borderColor: 'var(--color-border)'
-                    }}
-                  >
-                    <label
-                      className="block text-xsmall font-medium mb-1"
-                      style={{
-                        color: 'var(--color-text-primary)'
-                      }}
-                    >
-                      Editor Font Size
-                    </label>
-                    <p
-                      className="text-tiny mb-2"
-                      style={{
-                        color: 'var(--color-text-tertiary)'
-                      }}
-                    >
-                      Controls the editor font size.
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        value={editorFontSize}
-                        onChange={(e) => updateEditorFontSize(e.target.value)}
-                        className="flex-1 rounded-md px-3 py-2 text-xsmall outline-none transition-all"
-                        style={{
-                          backgroundColor: 'var(--color-bg-primary)',
-                          color: 'var(--color-text-primary)'
-                        }}
-                        onFocus={(e) => e.target.blur()}
-                      />
-                      <span className="text-xsmall" style={{ color: 'var(--color-text-tertiary)' }}>
-                        px
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Preview Font Family */}
-                  <div
-                    className="p-2 border-t"
-                    style={{
-                      borderColor: 'var(--color-border)'
-                    }}
-                  >
-                    <label
-                      className="block text-xsmall font-medium mb-1"
-                      style={{
-                        color: 'var(--color-text-primary)'
-                      }}
-                    >
-                      Preview Font Family
-                    </label>
-                    <p
-                      className="text-tiny mb-2"
-                      style={{
-                        color: 'var(--color-text-tertiary)'
-                      }}
-                    >
-                      Applies to code preview blocks.
-                    </p>
-                    <select
-                      value={previewFontFamily}
-                      onChange={(e) => updatePreviewFontFamily(e.target.value)}
-                      className="w-full rounded-md px-3 py-2 text-xsmall outline-none transition-all"
-                      style={{
-                        backgroundColor: 'var(--color-bg-primary)',
-                        color: 'var(--color-text-primary)'
-                      }}
-                      onFocus={(e) => e.target.blur()}
-                    >
-                      <option>JetBrains Mono</option>
-                      <option>Fira Code</option>
-                      <option>Consolas</option>
-                      <option>Monaco</option>
-                      <option>Courier New</option>
-                    </select>
-                  </div>
-
-                  {/* Preview Font Size */}
-                  <div
-                    className="p-2 border-t"
-                    style={{
-                      borderColor: 'var(--color-border)'
-                    }}
-                  >
-                    <label
-                      className="block text-xsmall font-medium mb-1"
-                      style={{
-                        color: 'var(--color-text-primary)'
-                      }}
-                    >
-                      Preview Font Size
-                    </label>
-                    <p
-                      className="text-tiny mb-2"
-                      style={{
-                        color: 'var(--color-text-tertiary)'
-                      }}
-                    >
-                      Controls code preview size.
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        value={previewFontSize}
-                        onChange={(e) => updatePreviewFontSize(e.target.value)}
-                        className="flex-1 rounded-md px-3 py-2 text-xsmall outline-none transition-all"
-                        style={{
-                          backgroundColor: 'var(--color-bg-primary)',
-                          color: 'var(--color-text-primary)'
-                        }}
-                        onFocus={(e) => e.target.blur()}
-                      />
-                      <span className="text-xsmall" style={{ color: 'var(--color-text-tertiary)' }}>
-                        px
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Caret Width */}
-                  <div
-                    className="p-2 border-t"
-                    style={{
-                      borderColor: 'var(--color-border)'
-                    }}
-                  >
-                    <label
-                      className="block text-xsmall font-medium mb-1"
-                      style={{
-                        color: 'var(--color-text-primary)'
-                      }}
-                    >
-                      Caret Width
-                    </label>
-                    <p
-                      className="text-tiny mb-2"
-                      style={{
-                        color: 'var(--color-text-tertiary)'
-                      }}
-                    >
-                      Thickness of the text cursor.
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        value={parseInt(String(caretWidth || '3px').replace('px', ''))}
-                        onChange={(e) => updateCaretWidth(e.target.value)}
-                        className="flex-1 rounded-md px-3 py-2 text-xsmall outline-none transition-all"
-                        style={{
-                          backgroundColor: 'var(--color-bg-primary)',
-                          color: 'var(--color-text-primary)'
-                        }}
-                        onFocus={(e) => e.target.blur()}
-                      />
-                      <span className="text-xsmall" style={{ color: 'var(--color-text-tertiary)' }}>
-                        px
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Caret Style */}
-                  <div
-                    className="p-2 border-t"
-                    style={{
-                      borderColor: 'var(--color-border)'
-                    }}
-                  >
-                    <label
-                      className="block text-xsmall font-medium mb-1"
-                      style={{
-                        color: 'var(--color-text-primary)'
-                      }}
-                    >
-                      Caret Style
-                    </label>
-                    <p
-                      className="text-tiny mb-2"
-                      style={{
-                        color: 'var(--color-text-tertiary)'
-                      }}
-                    >
-                      Choose bar, block, or underline.
-                    </p>
-                    <select
-                      value={caretStyle}
-                      onChange={(e) => updateCaretStyle(e.target.value)}
-                      className="w-full rounded-md px-3 py-2 text-xsmall outline-none transition-all"
-                      style={{
-                        backgroundColor: 'var(--color-bg-primary)',
-                        color: 'var(--color-text-primary)'
-                      }}
-                      onFocus={(e) => e.target.blur()}
-                    >
-                      <option value="bar">Bar</option>
-                      <option value="block">Block</option>
-                      <option value="underline">Underline</option>
-                    </select>
-                  </div>
-                </div>
-              </section>
-
-              {/* KEYBOARD SHORTCUTS */}
-              <section>
-                <h3
-                  className="text-xsmall font-semibold uppercase tracking-wider mb-3 ml-3"
-                  style={{
-                    color: 'var(--color-text-tertiary)'
-                  }}
-                >
-                  Keyboard Shortcuts
-                </h3>
-                <div
-                  className="rounded-md border overflow-hidden"
-                  style={{
-                    backgroundColor: 'var(--color-bg-secondary)',
-                    borderColor: 'var(--color-border)'
-                  }}
-                >
-                  <div className="p-4">
-                    <p
-                      className="text-tiny mb-3"
-                      style={{
-                        color: 'var(--color-text-tertiary)'
-                      }}
-                    >
-                      Common keyboard shortcuts used across the app.
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <div
-                        className="flex items-center justify-between px-2 py-1.5 rounded"
-                        style={{
-                          backgroundColor: 'var(--color-bg-primary)'
-                        }}
-                      >
-                        <div>
-                          <div
-                            className="text-xsmall font-medium"
-                            style={{
-                              color: 'var(--color-text-primary)'
-                            }}
-                          >
-                            Create new snippet
-                          </div>
-                          <div
-                            className="text-tiny"
-                            style={{
-                              color: 'var(--color-text-tertiary)'
-                            }}
-                          >
-                            Open a new draft
-                          </div>
-                        </div>
-                        <kbd
-                          className="px-1.5 py-0.5 rounded text-tiny"
-                          style={{
-                            backgroundColor: 'var(--color-bg-tertiary)',
-                            color: 'var(--color-text-secondary)',
-                            border: '1px solid var(--color-border)'
-                          }}
-                        >
-                          {modKey} + N
-                        </kbd>
-                      </div>
-
-                      <div
-                        className="flex items-center justify-between px-2 py-1.5 rounded"
-                        style={{
-                          backgroundColor: 'var(--color-bg-primary)'
-                        }}
-                      >
-                        <div>
-                          <div
-                            className="text-xsmall font-medium"
-                            style={{ color: 'var(--color-text-primary)' }}
-                          >
-                            Save (force)
-                          </div>
-                          <div
-                            className="text-tiny"
-                            style={{ color: 'var(--color-text-tertiary)' }}
-                          >
-                            Trigger editor save (Ctrl+S)
-                          </div>
-                        </div>
-                        <kbd
-                          className="px-1.5 py-0.5 rounded text-tiny"
-                          style={{
-                            backgroundColor: 'var(--color-bg-tertiary)',
-                            color: 'var(--color-text-secondary)',
-                            border: '1px solid var(--color-border)'
-                          }}
-                        >
-                          {modKey} + S
-                        </kbd>
-                      </div>
-
-                      <div
-                        className="flex items-center justify-between px-2 py-1.5 rounded"
-                        style={{
-                          backgroundColor: 'var(--color-bg-primary)'
-                        }}
-                      >
-                        <div>
-                          <div
-                            className="text-xsmall font-medium"
-                            style={{ color: 'var(--color-text-primary)' }}
-                          >
-                            Command Palette
-                          </div>
-                          <div
-                            className="text-tiny"
-                            style={{ color: 'var(--color-text-tertiary)' }}
-                          >
-                            Open quick search / commands
-                          </div>
-                        </div>
-                        <kbd
-                          className="px-1.5 py-0.5 rounded text-tiny"
-                          style={{
-                            backgroundColor: 'var(--color-bg-tertiary)',
-                            color: 'var(--color-text-secondary)',
-                            border: '1px solid var(--color-border)'
-                          }}
-                        >
-                          {modKey} + P
-                        </kbd>
-                      </div>
-
-                      <div
-                        className="flex items-center justify-between px-2 py-1.5 rounded"
-                        style={{
-                          backgroundColor: 'var(--color-bg-primary)'
-                        }}
-                      >
-                        <div>
-                          <div
-                            className="text-xsmall font-medium"
-                            style={{ color: 'var(--color-text-primary)' }}
-                          >
-                            Go to Welcome
-                          </div>
-                          <div
-                            className="text-tiny"
-                            style={{ color: 'var(--color-text-tertiary)' }}
-                          >
-                            Show the welcome page
-                          </div>
-                        </div>
-                        <kbd
-                          className="px-1.5 py-0.5 rounded text-tiny"
-                          style={{
-                            backgroundColor: 'var(--color-bg-tertiary)',
-                            color: 'var(--color-text-secondary)',
-                            border: '1px solid var(--color-border)'
-                          }}
-                        >
-                          {modKey} + Shift + W
-                        </kbd>
-                      </div>
-
-                      <div
-                        className="flex items-center justify-between px-2 py-1.5 rounded"
-                        style={{
-                          backgroundColor: 'var(--color-bg-primary)'
-                        }}
-                      >
-                        <div>
-                          <div
-                            className="text-xsmall font-medium"
-                            style={{ color: 'var(--color-text-primary)' }}
-                          >
-                            Copy to clipboard
-                          </div>
-                          <div
-                            className="text-tiny"
-                            style={{ color: 'var(--color-text-tertiary)' }}
-                          >
-                            Copy selected snippet code
-                          </div>
-                        </div>
-                        <kbd
-                          className="px-1.5 py-0.5 rounded text-tiny"
-                          style={{
-                            backgroundColor: 'var(--color-bg-tertiary)',
-                            color: 'var(--color-text-secondary)',
-                            border: '1px solid var(--color-border)'
-                          }}
-                        >
-                          {modKey} + Shift + C
-                        </kbd>
-                      </div>
-
-                      <div
-                        className="flex items-center justify-between px-2 py-1.5 rounded"
-                        style={{
-                          backgroundColor: 'var(--color-bg-primary)'
-                        }}
-                      >
-                        <div>
-                          <div
-                            className="text-xsmall font-medium"
-                            style={{ color: 'var(--color-text-primary)' }}
-                          >
-                            Rename snippet
-                          </div>
-                          <div
-                            className="text-tiny"
-                            style={{ color: 'var(--color-text-tertiary)' }}
-                          >
-                            Open rename modal
-                          </div>
-                        </div>
-                        <kbd
-                          className="px-1.5 py-0.5 rounded text-tiny"
-                          style={{
-                            backgroundColor: 'var(--color-bg-tertiary)',
-                            color: 'var(--color-text-secondary)',
-                            border: '1px solid var(--color-border)'
-                          }}
-                        >
-                          {modKey} + R
-                        </kbd>
-                      </div>
-
-                      <div
-                        className="flex items-center justify-between px-2 py-1.5 rounded"
-                        style={{
-                          backgroundColor: 'var(--color-bg-primary)'
-                        }}
-                      >
-                        <div>
-                          <div
-                            className="text-xsmall font-medium"
-                            style={{ color: 'var(--color-text-primary)' }}
-                          >
-                            Delete snippet
-                          </div>
-                          <div
-                            className="text-tiny"
-                            style={{ color: 'var(--color-text-tertiary)' }}
-                          >
-                            Open delete confirmation
-                          </div>
-                        </div>
-                        <kbd
-                          className="px-1.5 py-0.5 rounded text-tiny"
-                          style={{
-                            backgroundColor: 'var(--color-bg-tertiary)',
-                            color: 'var(--color-text-secondary)',
-                            border: '1px solid var(--color-border)'
-                          }}
-                        >
-                          {modKey} + Shift + D
-                        </kbd>
-                      </div>
-
-                      <div
-                        className="flex items-center justify-between px-2 py-1.5 rounded"
-                        style={{
-                          backgroundColor: 'var(--color-bg-primary)'
-                        }}
-                      >
-                        <div>
-                          <div
-                            className="text-xsmall font-medium"
-                            style={{ color: 'var(--color-text-primary)' }}
-                          >
-                            Toggle compact
-                          </div>
-                          <div
-                            className="text-tiny"
-                            style={{ color: 'var(--color-text-tertiary)' }}
-                          >
-                            Toggle compact header / status bar
-                          </div>
-                        </div>
-                        <kbd
-                          className="px-1.5 py-0.5 rounded text-tiny"
-                          style={{
-                            backgroundColor: 'var(--color-bg-tertiary)',
-                            color: 'var(--color-text-secondary)',
-                            border: '1px solid var(--color-border)'
-                          }}
-                        >
-                          {modKey} + ,
-                        </kbd>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              {/* EDITOR SECTION */}
-              <section>
-                <h3
-                  className="text-xsmall font-semibold uppercase tracking-wider mb-3 ml-3"
-                  style={{
-                    color: 'var(--color-text-tertiary)'
-                  }}
-                >
-                  Text Editor
-                </h3>
-                <div
-                  className="rounded-md border overflow-hidden"
-                  style={{
-                    backgroundColor: 'var(--color-bg-secondary)',
-                    borderColor: 'var(--color-border)'
-                  }}
-                >
-                  {/* Word Wrap */}
-                  <div
-                    className="p-4 flex items-center justify-between gap-4 border-b"
-                    style={{
-                      borderColor: 'var(--color-border)'
-                    }}
-                  >
-                    <div>
-                      <label
-                        className="block text-xsmall font-medium"
-                        style={{
-                          color: 'var(--color-text-primary)'
-                        }}
-                      >
-                        Word Wrap
-                      </label>
-
-                      <p
-                        className="text-tiny mt-1"
-                        style={{
-                          color: 'var(--color-text-tertiary)'
-                        }}
-                      >
-                        Controls how lines should wrap.
-                      </p>
-                    </div>
-                    <select
-                      value={wordWrap}
-                      onChange={(e) => setWordWrap(e.target.value)}
-                      className="rounded-md px-2 py-1 text-xsmall outline-none transition-all"
-                      style={{
-                        backgroundColor: 'var(--color-bg-primary)',
-                        color: 'var(--color-text-primary)'
-                      }}
-                      onFocus={(e) => e.target.blur()}
-                    >
-                      <option value="off">Off</option>
-                      <option value="on">On</option>
-                      <option value="bounded">Bounded</option>
-                    </select>
-                  </div>
-
-                  {/* Auto Save */}
-                  <div
-                    className="p-5 flex items-center justify-between gap-4 border-b"
-                    style={{ borderColor: 'var(--color-border)' }}
-                  >
-                    <div>
-                      <label className="block text-sm font-medium text-slate-900 dark:text-white">
-                        Auto Save
-                      </label>
-                      <p className="text-xsmall text-slate-500 mt-1">
-                        Automatically save changes after delay.
-                      </p>
-                    </div>
-                    <ToggleButton
-                      checked={autoSave}
-                      onChange={(checked) => {
-                        try {
-                          setAutoSave(checked)
-                          localStorage.setItem('autoSave', checked ? 'true' : 'false')
-                          // notify other components (editor) about change
-                          try {
-                            window.dispatchEvent(
-                              new CustomEvent('autosave:toggle', { detail: { enabled: checked } })
-                            )
-                          } catch {}
-                        } catch (e) {
-                          setAutoSave((s) => !s)
-                        }
-                      }}
-                    />
-                  </div>
-
-                  {/* Preview Overlay Mode */}
-                  <div className="p-5 flex items-center justify-between gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-900 dark:text-white">
-                        Preview Overlay Mode
-                      </label>
-                      <p className="text-xsmall text-slate-500 mt-1">
-                        Float preview over editor instead of side-by-side.
-                      </p>
-                    </div>
-                    <ToggleButton
-                      checked={overlayMode}
-                      onChange={(checked) => {
-                        try {
-                          setOverlayMode(checked)
-                          localStorage.setItem('overlayMode', checked ? 'true' : 'false')
-                          // notify editor about change
-                          try {
-                            window.dispatchEvent(
-                              new CustomEvent('overlayMode:toggle', {
-                                detail: { enabled: checked }
-                              })
-                            )
-                          } catch {}
-                        } catch (e) {
-                          setOverlayMode((s) => !s)
-                        }
-                      }}
-                    />
-                  </div>
-                </div>
-              </section>
-
-              {/* DATA & SYSTEM SECTION */}
-              <section>
-                <h3
-                  className="text-xsmall font-semibold uppercase tracking-wider mb-3 ml-3"
-                  style={{
-                    color: 'var(--color-text-tertiary)'
-                  }}
-                >
-                  System & Data
-                </h3>
-                <div
-                  className="rounded-md border overflow-hidden"
-                  style={{
-                    backgroundColor: 'var(--color-bg-secondary)',
-                    borderColor: 'var(--color-border)'
-                  }}
-                >
-                  {/* Show Welcome Page */}
-                  <div
-                    className="p-4 flex items-center justify-between gap-4 border-b"
-                    style={{ borderColor: 'var(--color-border)' }}
-                  >
-                    <div>
-                      <label
-                        className="block text-xsmall font-medium"
-                        style={{
-                          color: 'var(--color-text-primary)'
-                        }}
-                      >
-                        Show Welcome Page
-                      </label>
-                      <p
-                        className="text-xsmall mt-1 max-w-sm"
-                        style={{
-                          color: 'var(--color-text-tertiary)'
-                        }}
-                      >
-                        Show the welcome page when starting the application.
-                      </p>
-                    </div>
-                    <ToggleButton
-                      checked={!hideWelcomePage}
-                      onChange={(checked) => {
-                        updateSetting('ui.hideWelcomePage', !checked)
-                      }}
-                    />
-                  </div>
-
-                  <div className="p-4 flex items-center justify-between gap-4 ">
-                    <div>
-                      <label
-                        className="block text-xsmall font-medium"
-                        style={{
-                          color: 'var(--color-text-primary)'
-                        }}
-                      >
-                        Export Library
-                      </label>
-                      <p
-                        className="text-xsmall mt-1 max-w-sm"
-                        style={{
-                          color: 'var(--color-text-tertiary)'
-                        }}
-                      >
-                        Create a JSON backup of all your snippets and projects.
-                      </p>
-                    </div>
-                    <button
-                      onClick={handleExportData}
-                      className="flex items-center gap-2 px-3 py-1.5 border rounded-md text-xsmall font-medium transition-colors"
-                      style={{
-                        backgroundColor: 'var(--color-bg-primary)',
-                        borderColor: 'var(--color-border)',
-                        color: 'var(--color-text-primary)'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = 'var(--hover-bg)'
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = 'var(--color-bg-primary)'
-                      }}
-                    >
-                      <FileDown size={11} />
-                      Export Data
-                    </button>
-                  </div>
-                </div>
-              </section>
-            </div>
-          )}
-        </div>
+                </section>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Theme Modal */}

@@ -157,7 +157,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
                   }}
                   className={`px-4 py-3 flex items-center gap-3 cursor-pointer transition-colors ${
                     index === selectedIndex
-                      ? ' bg-[var(--color-bg-primary)] '
+                      ? ' bg-slate-50 '
                       : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
                   }`}
                 >

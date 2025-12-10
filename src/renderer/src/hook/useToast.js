@@ -14,7 +14,7 @@ export const useToast = () => {
     setToast({ message, type })
 
     // Clear the toast after 3 seconds
-    setTimeout(() => setToast(null), 3000)
+    setTimeout(() => setToast(null), 5000)
   }
 
   // Return the toast object and the function

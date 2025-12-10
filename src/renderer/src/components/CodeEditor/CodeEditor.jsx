@@ -1,4 +1,5 @@
-import useCaretWidth from '../../hook/useCaretWidth.js'
+import useCaretProp from '../../hook/useCaretProp.js'
+import useGutterProp from '../../hook/useGutterProp.js'
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useZoomLevel } from '../../hook/useZoomLevel'
 import settingsManager from '../../config/settingsManager'
@@ -27,18 +28,22 @@ const CodeEditor = ({
 }) => {
   const [storedZoomLevel, setStoredZoomLevel] = useZoomLevel()
   const editorDomRef = useRef(null)
-  const [caretWidth] = useCaretWidth()
-  const caretColor = settingsManager.get('editor.caretColor')
+  // This is the caret width and color
+  const { width: caretWidth, color: caretColor } = useCaretProp()
+  const { gutterBgColor, gutterBorderColor, gutterBorderWidth } = useGutterProp()
   const viewRef = useRef(null)
   const liveZoomRef = useRef(storedZoomLevel)
 
   // Determine dark mode
   const [isDark, setIsDark] = useState(false)
 
+  // Gutter background color
+
   useEffect(() => {
     if (typeof document !== 'undefined') {
-      const dark = document.documentElement.classList.contains('dark') ||
-                   document.documentElement.getAttribute('data-theme') === 'dark'
+      const dark =
+        document.documentElement.classList.contains('dark') ||
+        document.documentElement.getAttribute('data-theme') === 'dark'
       setIsDark(dark)
     }
   }, [])
@@ -67,7 +72,8 @@ const CodeEditor = ({
 
   // 1. Efficiently update DOM styles without triggering React re-renders
   const applyZoomToDOM = (level) => {
-    const target = editorDomRef.current || (typeof document !== 'undefined' ? document.documentElement : null)
+    const target =
+      editorDomRef.current || (typeof document !== 'undefined' ? document.documentElement : null)
     if (target) {
       const zoomStr = level.toFixed(3)
       target.style.setProperty('--zoom-level', zoomStr)
@@ -90,7 +96,10 @@ const CodeEditor = ({
     if (!editorDomRef.current) return
     editorDomRef.current.style.setProperty('--caret-width', `${caretWidth}px`)
     editorDomRef.current.style.setProperty('--caret-color', caretColor)
-  }, [caretWidth, caretColor])
+    editorDomRef.current.style.setProperty('--gutter-bg-color', gutterBgColor)
+    editorDomRef.current.style.setProperty('--gutter-border-color', gutterBorderColor)
+    editorDomRef.current.style.setProperty('--gutter-border-width', `${gutterBorderWidth}px`)
+  }, [caretWidth, caretColor, gutterBgColor, gutterBorderColor, gutterBorderWidth])
 
   // Adjust scroller overflow
   const adjustOverflow = useCallback(() => {
@@ -119,7 +128,7 @@ const CodeEditor = ({
           isDark:
             (typeof document !== 'undefined' &&
               (document.documentElement.classList.contains('dark') ||
-               document.documentElement.getAttribute('data-theme') === 'dark')) ||
+                document.documentElement.getAttribute('data-theme') === 'dark')) ||
             false,
           caretColor,
           fontSize: 'var(--editor-font-size, 14px)',
@@ -145,7 +154,7 @@ const CodeEditor = ({
     return () => {
       mounted = false
     }
-  }, [language, wordWrap, caretColor])
+  }, [language, wordWrap, caretWidth, caretColor, gutterBgColor])
 
   return (
     <div
@@ -153,7 +162,10 @@ const CodeEditor = ({
       ref={editorDomRef}
       style={{
         '--caret-width': `${caretWidth}px`,
-        '--caret-color': caretColor
+        '--caret-color': caretColor,
+        '--gutter-bg-color': gutterBgColor,
+        '--gutter-border-color': gutterBorderColor,
+        '--gutter-border-width': gutterBorderWidth
       }}
     >
       <CodeMirror

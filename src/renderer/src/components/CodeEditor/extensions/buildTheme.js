@@ -65,10 +65,18 @@ const buildTheme = (EditorView, options = {}) => {
         flex: '1 1 auto'
       },
 
+      // This is the gutter stuff, you can play around with gutter.
+      // I don't like it, so I set it to transparent.
+      // Of course I set custom settings.json for
+      // --gutterBgColor: #fefeffff;
+
       '.cm-gutters': {
-        backgroundColor: 'transparent !important',
+        // backgroundColor: 'transparent !important',
+        backgroundColor: 'var(--gutter-bg-color, transparent) !important',
         color: 'var(--color-text-secondary, #64748b)',
-        borderRight: 'none !important',
+        // borderRight: 'none !important',
+        borderRight:
+          'var(--gutter-border-width, 1px) solid var(--gutter-border-color, transparent) !important',
         fontFamily: 'inherit',
         // Use em units for stable scaling with font size
         minWidth: '3em',
@@ -76,7 +84,6 @@ const buildTheme = (EditorView, options = {}) => {
         minHeight: '100%',
         boxSizing: 'border-box',
         padding: '0 0.2em', // Scalable padding
-        // backgroundColor: '#e11717ff !important',
         display: 'flex !important',
         alignItems: 'center !important',
         justifyContent: 'center !important'
@@ -97,7 +104,9 @@ const buildTheme = (EditorView, options = {}) => {
         backgroundColor: 'transparent !important'
       },
       '.cm-activeLineGutter': {
-        backgroundColor: 'transparent !important',
+        // This it linenumber background, which I hate it.
+        // backgroundColor: 'transparent !important',
+
         color: 'var(--color-text-primary, #e2e8f0) !important'
       },
 

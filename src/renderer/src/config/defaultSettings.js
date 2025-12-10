@@ -13,6 +13,11 @@ export const DEFAULT_SETTINGS = {
     caretColor: '#fefeffff',
     caretStyle: 'bar'
   },
+  gutter: {
+    gutterBgColor: 'var(--gutter-bg-color, transparent)',
+    gutterBorderColor: 'var(--gutter-border-color, transparent)',
+    gutterBorderWidth: 1
+  },
   ui: {
     compactMode: false,
     showPreview: false,

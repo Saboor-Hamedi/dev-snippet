@@ -1,7 +1,7 @@
 // settingManager.js
 // Manages application settings: load, save, watch for changes, notify subscribers
 
-import { DEFAULT_SETTINGS } from "./defaultSettings.js"
+import { DEFAULT_SETTINGS } from './defaultSettings.js'
 class SettingManager {
   constructor(defaultSettings) {
     this.DEFAULT_SETTINGS = defaultSettings || DEFAULT_SETTINGS
@@ -13,7 +13,7 @@ class SettingManager {
   // 1. Schema validation
 
   validateSettingsEarly(settings) {
-    const required = ['editor', 'ui', 'behavior', 'advanced']
+    const required = ['editor', 'ui', 'behavior', 'advanced', 'gutter']
     return required.every((key) => settings && typeof settings[key] === 'object')
   }
 
@@ -48,7 +48,8 @@ class SettingManager {
               editor: { ...DEFAULT_SETTINGS.editor, ...newSettings.editor },
               ui: { ...DEFAULT_SETTINGS.ui, ...newSettings.ui },
               behavior: { ...DEFAULT_SETTINGS.behavior, ...newSettings.behavior },
-              advanced: { ...DEFAULT_SETTINGS.advanced, ...newSettings.advanced }
+              advanced: { ...DEFAULT_SETTINGS.advanced, ...newSettings.advanced },
+              gutter: { ...DEFAULT_SETTINGS.gutter, ...newSettings.gutter }
             }
             // console.log('🔄 Settings updated from file:', this.settings)
             this.notifyListeners()
@@ -84,18 +85,17 @@ class SettingManager {
   // Load settings from JSON file
   async load() {
     try {
-      let shouldSave = false;
+      let shouldSave = false
 
-     
       if (window.api?.readSettingsFile) {
-        const data = await window.api.readSettingsFile();
+        const data = await window.api.readSettingsFile()
         if (data) {
-          const newSettings = JSON.parse(data);
+          const newSettings = JSON.parse(data)
           // Use proper validation method
           if (!this.validateSettings(newSettings)) {
-            console.warn('Invalid settings structure in file, using defaults');
-            this.settings = { ...DEFAULT_SETTINGS };
-            shouldSave = true;
+            console.warn('Invalid settings structure in file, using defaults')
+            this.settings = { ...DEFAULT_SETTINGS }
+            shouldSave = true
           } else {
             // Merge settings
             this.settings = {
@@ -105,20 +105,20 @@ class SettingManager {
               ui: { ...DEFAULT_SETTINGS.ui, ...newSettings.ui },
               behavior: { ...DEFAULT_SETTINGS.behavior, ...newSettings.behavior },
               advanced: { ...DEFAULT_SETTINGS.advanced, ...newSettings.advanced }
-            };
+            }
           }
-          this.notifyListeners();
-          if (shouldSave) await this.save();
-                  // console.log('Settings saved with cursorColor and cursorWidth:', this.settings.editor)
+          this.notifyListeners()
+          if (shouldSave) await this.save()
+          // console.log('Settings saved with cursorColor and cursorWidth:', this.settings.editor)
         }
       }
       // Start watching after load
-      this.startWatching();
+      this.startWatching()
     } catch (error) {
-      this.settings = { ...DEFAULT_SETTINGS };
-      await this.save();
+      this.settings = { ...DEFAULT_SETTINGS }
+      await this.save()
       // Start watching even if load failed (file might be created later)
-      this.startWatching();
+      this.startWatching()
     }
   }
 
