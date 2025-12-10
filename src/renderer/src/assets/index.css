@@ -16,7 +16,7 @@
   --color-text-tertiary: #6e7681;
   --color-accent-primary: #58a6ff;
   --color-border: #30363d;
-  --hover-bg: #21262d;
+  --hover-settings-panel: #21262d;
   --hover-text: #ffffff;
   --selected-bg: #30363d;
   --selected-text: #ffffff;
@@ -274,7 +274,6 @@ select:not(.theme-exempt):focus {
 /* Force SettingsPanel to use theme colors */
 .settings-panel,
 .settings-panel * {
-  /* Override any hardcoded Tailwind colors */
 }
 
 /* Settings Panel main container */
@@ -328,7 +327,7 @@ select:not(.theme-exempt):focus {
 .settings-panel textarea {
   background-color: var(--color-bg-secondary) !important;
   color: var(--color-text-primary) !important;
-  border-color: var(--color-border) !important;
+  /* border-color: var(--color-border) !important; */
 }
 
 .settings-panel input:focus,
@@ -348,7 +347,6 @@ select:not(.theme-exempt):focus {
 .settings-panel kbd {
   background-color: var(--color-bg-tertiary) !important;
   color: var(--color-text-secondary) !important;
-  border: 1px solid var(--color-border) !important;
 }
 
 /* ===== SMOOTH SELECT DROPDOWNS ===== */

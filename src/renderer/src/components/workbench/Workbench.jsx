@@ -5,6 +5,7 @@ import SettingsPanel from '../SettingsPanel'
 import WelcomePage from '../WelcomePage'
 import Header from '../layout/Header'
 import SystemStatusFooter from '../SystemStatusFooter'
+import SidebarTheme from '../preference/SidebarTheme'
 import { File } from 'lucide-react'
 
 const Workbench = ({
@@ -33,11 +34,25 @@ const Workbench = ({
     onSave(snippet)
   }
 
+  // Toggle sidebarTheme.
+  const [isSidebarThemeOpen, setIsSidebarThemeOpen] = React.useState(false)
   const handleSettingsClick = () => {
     if (onOpenSettings) {
       onOpenSettings()
     }
   }
+  React.useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Check for Ctrl+B (Windows/Linux) or Cmd+B (Mac)
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault() // Prevent default browser behavior (bold text etc.)
+        setIsSidebarThemeOpen((prev) => !prev)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   // Determine header title based on current view
   const getHeaderTitle = () => {
@@ -56,6 +71,8 @@ const Workbench = ({
   }
 
   const renderContent = () => {
+    // SidebarTheme here, it will everhwhere.
+
     // Priority 0: Settings
     if (activeView === 'settings') {
       return <SettingsPanel onClose={onCloseSettings} />
@@ -196,14 +213,19 @@ const Workbench = ({
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <Header
-        title={getHeaderTitle()}
-        isCompact={isCompact}
-        onToggleCompact={onToggleCompact}
-        autosaveStatus={autosaveStatus}
-      />
-      <div className="flex-1 min-h-0 overflow-hidden">{renderContent()}</div>
+    <div className="h-full flex overflow-hidden">
+      {/* This is where the sidebar theme appears.  */}
+      <SidebarTheme isOpen={isSidebarThemeOpen} />
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        <Header
+          title={getHeaderTitle()}
+          isCompact={isCompact}
+          onToggleCompact={onToggleCompact}
+          autosaveStatus={autosaveStatus}
+        />
+        <div className="flex-1 min-h-0 overflow-hidden">{renderContent()}</div>
+      </div>
     </div>
   )
 }

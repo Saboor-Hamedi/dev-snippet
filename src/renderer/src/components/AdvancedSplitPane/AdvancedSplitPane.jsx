@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react'
 import { GripVertical } from 'lucide-react'
+import { useSettings } from '../../hook/useSettingsContext'
 
 const AdvancedSplitPane = ({
   left,
@@ -14,6 +15,34 @@ const AdvancedSplitPane = ({
 }) => {
   const containerRef = useRef(null)
   const draggingRef = useRef(false)
+
+  // Read preview colors from settings via the settings hook
+  const { getSetting } = useSettings()
+  const livePreviewBgColor = getSetting('preview.livePreviewBgColor') ?? '#232731'
+  const livePreviewBorderColor = getSetting('preview.livePreviewBorderColor') ?? '#232731'
+  const livePreviewBorderWidth = getSetting('preview.livePreviewBorderWidth') ?? 1
+  const livePreviewBorderRound = getSetting('preview.livePreviewBorderRound') ?? 4
+
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.style.setProperty('--live-preview-bg-color', livePreviewBgColor)
+      containerRef.current.style.setProperty('--live-preview-border-color', livePreviewBorderColor)
+      containerRef.current.style.setProperty(
+        '--live-preview-border-width',
+        `${livePreviewBorderWidth}px`
+      )
+      containerRef.current.style.setProperty(
+        '--live-preview-border-round',
+        `${livePreviewBorderRound}px`
+      )
+    }
+  }, [
+    livePreviewBgColor,
+    livePreviewBorderColor,
+    livePreviewBorderWidth,
+    livePreviewBorderRound,
+    containerRef
+  ])
 
   // Separate state for each mode
   const [overlayWidth, setOverlayWidth] = useState(() => {
@@ -102,8 +131,7 @@ const AdvancedSplitPane = ({
       <div
         ref={containerRef}
         className="flex h-full w-full overflow-hidden"
-        style={{ backgroundColor: 'var(--editor-bg)' }}
-      >
+        style={{ backgroundColor: 'var(--editor-bg)' }}>
         <div className="min-h-0 overflow-auto" style={{ width: '100%' }}>
           {left}
         </div>
@@ -114,11 +142,8 @@ const AdvancedSplitPane = ({
   // Overlay mode: LivePreview floats over editor
   if (overlayMode) {
     return (
-      <div
-        ref={containerRef}
-        className="relative h-full w-full overflow-hidden"
-        style={{ backgroundColor: 'var(--editor-bg)' }}
-      >
+      // This is the live preview overlay mode
+      <div ref={containerRef} className="relative h-full w-full overflow-hidden">
         {/* Full-width editor */}
         <div className="absolute inset-0 w-full h-full">{left}</div>
 
@@ -132,7 +157,8 @@ const AdvancedSplitPane = ({
                   setOverlayWidth(25)
                   localStorage.setItem('overlayWidth', 25)
                 }}
-                className="px-2 py-1 text-xs bg-slate-600 hover:bg-slate-500 text-white rounded transition-colors"
+                className="px-2 py-1 text-xs bg-slate-600 hover:bg-slate-500 
+                text-white rounded transition-colors"
               >
                 25%
               </button>
@@ -141,7 +167,8 @@ const AdvancedSplitPane = ({
                   setOverlayWidth(50)
                   localStorage.setItem('overlayWidth', 50)
                 }}
-                className="px-2 py-1 text-xs bg-slate-600 hover:bg-slate-500 text-white rounded transition-colors"
+                className="px-2 py-1 text-xs bg-slate-600 hover:bg-slate-500 
+                text-white rounded transition-colors"
               >
                 50%
               </button>
@@ -158,18 +185,22 @@ const AdvancedSplitPane = ({
 
             {/* Floating panel  change the size and the margin from here*/}
             <div
-              className="absolute top-2 right-5 bottom-2 bg-white dark:bg-slate-800 
-                         border border-slate-200 dark:border-slate-700 rounded-md
+              className="absolute top-2 right-5 bottom-2 
                          shadow-lg  z-10 overflow-x-auto"
               style={{
                 width: `${overlayWidth}%`,
                 minWidth: `${minRight}px`,
-                maxWidth: '90%'
+                maxWidth: '90%',
+                backgroundColor: livePreviewBgColor,
+                borderWidth: `${livePreviewBorderWidth}px`,
+                borderColor: livePreviewBorderColor || 'rgba(0,0,0,0.06)',
+                borderRadius: `${livePreviewBorderRound}px`
               }}
             >
               {/* Resize handle */}
               <div
-                className="absolute left-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-500/20 transition-colors flex items-center justify-center"
+                className="absolute left-0 top-0 bottom-0 w-2 cursor-col-resize
+                 hover:bg-blue-500/20 transition-colors flex items-center justify-center"
                 onMouseDown={startDrag}
               >
                 <div className="w-1 h-8 bg-slate-400 dark:bg-slate-500 rounded-full"></div>

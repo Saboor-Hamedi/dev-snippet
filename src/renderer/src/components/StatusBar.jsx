@@ -27,7 +27,7 @@ const StatusBar = ({ onSettingsClick, language, zoomLevel = 1, title }) => {
   const ext = getExtension(title, language)
   const canonical = getLanguageName(language)
   return (
-    <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 flex-shrink-0">
+    <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 flex-shrink-1">
       {/* Show extension with same hover behavior as header buttons */}
       <span
         className="px-1 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"

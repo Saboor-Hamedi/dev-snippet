@@ -7,6 +7,10 @@
   --gutter-bg-color: #232731;
   --gutter-border-color: #232731;
   --gutter-border-width: 1px;
+  --live-preview-bg-color: #232731;
+  --live-preview-border-color: #232731;
+  --live-preview-border-width: 0px;
+  --live-preview-border-round: 4px;
 }
 /* .cm-cursor {
   border-left: var(--caret-width) solid var(--caret-color) !important;

@@ -18,6 +18,12 @@ export const DEFAULT_SETTINGS = {
     gutterBorderColor: 'transparent',
     gutterBorderWidth: 1
   },
+  preview:{
+    livePreviewBgColor: '#232731',
+    livePreviewBorderColor: '#232731',
+    livePreviewBorderWidth: 0,
+    livePreviewBorderRound: 4
+  },
   ui: {
     compactMode: false,
     showPreview: false,

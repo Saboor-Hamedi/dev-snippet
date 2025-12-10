@@ -9,6 +9,7 @@ dev-snippet is an Electron + React desktop application for creating, editing, an
 ## Development Commands
 
 ### Core Development
+
 ```powershell
 # Install dependencies (runs electron-rebuild for better-sqlite3 automatically)
 npm install
@@ -21,6 +22,7 @@ npm run build
 ```
 
 ### Testing
+
 ```powershell
 # Run tests with Vitest
 npm test
@@ -30,6 +32,7 @@ npm test:ui
 ```
 
 ### Code Quality
+
 ```powershell
 # Lint code with ESLint
 npm run lint
@@ -39,12 +42,14 @@ npm run format
 ```
 
 ### Native Module Rebuild
+
 ```powershell
 # Rebuild native modules (e.g., better-sqlite3) if installation fails
 npm run rebuild
 ```
 
 ### Building Distributables
+
 ```powershell
 # Build for Windows (produces NSIS installer)
 npm run build:win
@@ -60,6 +65,7 @@ npm run build:unpack
 ```
 
 ### Icon Generation
+
 ```powershell
 # Generate platform-specific icons from source PNG (requires 1024x1024 PNG)
 npm run make:icons
@@ -72,6 +78,7 @@ npm run make:icons
 This application follows the standard Electron multi-process model:
 
 #### Main Process (`src/main/index.js`)
+
 - Creates and manages the BrowserWindow with frameless design
 - Initializes SQLite database (`snippets.db`) in userData directory
 - Exposes IPC handlers for:
@@ -82,6 +89,7 @@ This application follows the standard Electron multi-process model:
 - Handles platform-specific icon selection (`.ico` on Windows, `.png` elsewhere)
 
 #### Preload Script (`src/preload/index.js`)
+
 - Bridges main and renderer processes with context isolation
 - Exposes safe API to renderer via `contextBridge`:
   - `window.api.*` - IPC invocations for DB, file system, dialogs
@@ -89,6 +97,7 @@ This application follows the standard Electron multi-process model:
   - `window.api.onSettingsChanged` - Event listener for external settings changes
 
 #### Renderer Process (`src/renderer/src`)
+
 - React application built with Vite
 - Single-page application with view-based navigation
 
@@ -134,6 +143,7 @@ App.jsx (SettingsProvider)
 ### Database Schema (SQLite via better-sqlite3)
 
 #### `snippets` Table
+
 - `id` (TEXT, PK) - Timestamp-based unique ID
 - `title` (TEXT) - Snippet name with extension
 - `code` (TEXT) - Saved content
@@ -146,10 +156,12 @@ App.jsx (SettingsProvider)
 - `sort_index` (INTEGER) - User-defined sort order
 
 #### `settings` Table
+
 - `key` (TEXT, PK)
 - `value` (TEXT)
 
 #### `theme` Table
+
 - `id` (TEXT, PK)
 - `name` (TEXT)
 - `colors` (TEXT) - JSON string
@@ -239,25 +251,30 @@ Managed by `useKeyboardShortcuts` hook. Active shortcuts:
 ## Common Pitfalls
 
 ### 1. DevTools Toggle
+
 - DevTools controlled by `ENABLE_DEVTOOLS` constant in `src/main/index.js` (line 2)
 - Set to `true` for development, `false` for production builds
 
 ### 2. Icon Display
+
 - Development: Icons loaded from `resources/` folder
 - Production: Icons embedded from `build/` folder during packaging
 - Use `npm run make:icons` to generate from `src/renderer/public/icon.png`
 
 ### 3. Native Module Errors
+
 - Symptom: "better-sqlite3 module not found" or segfault
 - Fix: Run `npm run rebuild` to recompile for current Electron version
 - Ensure you're not running dev mode with wrong architecture (x64 vs arm64)
 
 ### 4. IPC Communication
+
 - Always use `invoke/handle` pattern, never `send/on` for request-response
 - Main process handlers return values synchronously or as promises
 - Never expose Node.js APIs directly to renderer
 
 ### 5. State Sync Issues
+
 - Snippets list updated immediately after save to prevent UI flicker
 - Use `skipSelectedUpdate` option in `saveSnippet` if you don't want to refresh `selectedSnippet`
 - Deleted snippet IDs stored temporarily in `window.__deletedIds` to prevent autosave race conditions
@@ -284,6 +301,7 @@ Managed by `useKeyboardShortcuts` hook. Active shortcuts:
 ### Adding a New IPC Handler
 
 **Main process (`src/main/index.js`)**:
+
 ```js
 ipcMain.handle('my:action', async (event, arg) => {
   // Your logic here
@@ -292,14 +310,16 @@ ipcMain.handle('my:action', async (event, arg) => {
 ```
 
 **Preload (`src/preload/index.js`)**:
+
 ```js
 const api = {
-  myAction: (arg) => electronAPI.ipcRenderer.invoke('my:action', arg),
+  myAction: (arg) => electronAPI.ipcRenderer.invoke('my:action', arg)
   // ...
 }
 ```
 
 **Renderer (any component)**:
+
 ```js
 const result = await window.api.myAction(arg)
 ```
@@ -307,6 +327,7 @@ const result = await window.api.myAction(arg)
 ### Adding a New Language
 
 Edit `src/renderer/src/components/language/languageRegistry.js`:
+
 ```js
 export const EditorLanguages = {
   mylang: {
@@ -316,7 +337,7 @@ export const EditorLanguages = {
       const { myLang } = await import('@codemirror/lang-mylang')
       return myLang()
     }
-  },
+  }
   // ...
 }
 ```
@@ -324,19 +345,33 @@ export const EditorLanguages = {
 ### Adding a Global Keyboard Shortcut
 
 In `SnippetLibrary.jsx`:
+
 ```js
 useKeyboardShortcuts({
   onMyAction: () => {
     // Your action logic
-  },
+  }
   // ...
 })
 ```
 
 Then implement in `src/renderer/src/hook/useKeyboardShortcuts.js`:
+
 ```js
 if (isMod && e.key === 'x') {
   e.preventDefault()
   callbacks.onMyAction?.()
 }
 ```
+
+## Recent Updates (v1.2.0)
+
+### UI Refinements
+
+- **ToggleButton**: Redesigned for a cleaner, static appearance. Removed focus rings, shadows, and hover animations to mimic native OS controls and provide a 'solid' feel.
+- **WelcomePage**: Redesigned to closely resemble VS Code's "Get Started" screen, featuring a split layout ("Start" vs "Recent") and minimalist text-based interactions.
+
+### Functionality
+
+- **Gutter Settings**: Fixed synchronization logic for editor gutter elements (line numbers, fold gutter). Changes in `settings.json` now propagate immediately to the `CodeMirror` instance via `useGutterProp`.
+- **Settings Architecture**: `SettingsPanel.jsx` is established as the primary configuration interface, utilizing `ToggleButton` for boolean options and handling JSON-based settings edits directly.

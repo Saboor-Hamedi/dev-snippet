@@ -4,7 +4,7 @@ import { useFontSettings } from '../hook/useFontSettings'
 import { useSettings } from '../hook/useSettingsContext'
 import { useToast } from '../hook/useToast'
 import ToastNotification from '../utils/ToastNotification'
-import EditSettings from './preference/EditSettings'
+import UserSettings from './preference/UserSettings.jsx'
 import cleanErrorJson from '../hook/useCleanErrorJson.js'
 import ThemeModal from './ThemeModal'
 import {
@@ -78,7 +78,7 @@ const SettingsPanel = ({ onClose }) => {
         if (path) {
           const data = {
             exportDate: new Date().toISOString(),
-            version: '1.0.0',
+            version: '1.2.0',
             snippets,
             projects
           }
@@ -156,7 +156,7 @@ const SettingsPanel = ({ onClose }) => {
 
   return (
     <div
-      className="settings-panel h-full flex flex-col md:flex-row overflow-hidden transition-colors duration-200"
+      className="settings-panel h-full flex flex-col md:flex-row overflow-hidden transition-colors duration-200 p-2"
       style={{
         backgroundColor: 'var(--color-bg-primary)',
         color: 'var(--color-text-primary)'
@@ -165,15 +165,15 @@ const SettingsPanel = ({ onClose }) => {
       <ToastNotification toast={toast} />
       {/* Sidebar Navigation */}
       <div
-        className="w-full md:w-56 border-b  md:border-b-0 md:border-r flex flex-col"
+        className="w-full md:w-56  md:border-b-0 flex flex-col "
         style={{
           borderColor: 'var(--color-border)',
           backgroundColor: 'var(--color-bg-secondary)'
         }}
       >
-        <nav className="flex-1 p-1 space-y-1">
+        <nav className="flex-1 p-1 space-y-1 rounded-sm">
           <div
-            className="text-tiny font-medium uppercase tracking-wider mb-2 px-3"
+            className="text-xtiny font-thin uppercase tracking-wider mb-2 px-3"
             style={{
               color: 'var(--color-text-tertiary)'
             }}
@@ -184,7 +184,7 @@ const SettingsPanel = ({ onClose }) => {
           {/* Go back */}
           <button
             onClick={handleGoBack}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-xsmall font-medium transition-all duration-200"
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-xtiny font-thin transition-all duration-200"
             style={{
               color: 'var(--color-text-secondary)',
               backgroundColor: 'transparent'
@@ -199,12 +199,12 @@ const SettingsPanel = ({ onClose }) => {
             }}
           >
             <ChevronLeft size={12} />
-            <span>Go Back</span>
+            <span >Back</span>
           </button>
 
           <button
             onClick={() => setActiveTab('general')}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-xsmall font-medium transition-all duration-200"
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-xtiny font-thin transition-all duration-200"
             style={{
               backgroundColor:
                 activeTab === 'general' ? 'var(--color-accent-primary)' : 'transparent',
@@ -227,12 +227,12 @@ const SettingsPanel = ({ onClose }) => {
             }}
           >
             <Settings size={12} />
-            <span>General</span>
+            <span >General</span>
           </button>
 
           <button
             onClick={handleOpenJson}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-xsmall font-medium transition-all duration-200"
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-xtiny font-thin transition-all duration-200"
             style={{
               backgroundColor: activeTab === 'json' ? 'var(--color-accent-primary)' : 'transparent',
               color:
@@ -254,13 +254,13 @@ const SettingsPanel = ({ onClose }) => {
             }}
           >
             <FileJson size={12} />
-            <span>Settings (JSON)</span>
+            <span>User Settings</span>
           </button>
         </nav>
 
         {/* Footer Info */}
         <div className="p-3 border-t" style={{ borderColor: 'var(--color-border)' }}>
-          <div className="text-tiny" style={{ color: 'var(--color-text-tertiary)' }}>
+          <div className="text-xtiny" style={{ color: 'var(--color-text-tertiary)' }}>
             <div className="flex items-center justify-between mb-1">
               <span>Version</span>
               <span className="font-mono">1.2.0</span>
@@ -278,8 +278,8 @@ const SettingsPanel = ({ onClose }) => {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {activeTab === 'json' && (
-          // Display the EditSettings component
-          <EditSettings
+          // Display the UserSettings component
+          <UserSettings
             activeTab={activeTab}
             jsonContent={jsonContent}
             isJsonDirty={isJsonDirty}
@@ -296,7 +296,7 @@ const SettingsPanel = ({ onClose }) => {
               <div className="space-y-4 max-full  mx-auto ml-1 mr-1">
                 {/* APPEARANCE SECTION */}
                 <section>
-                  {/* <h3 className="text-xsmall font-semibold uppercase tracking-wider mb-3" style={{
+                  {/* <h3 className="text-xtiny font-semibold uppercase tracking-wider mb-3" style={{
                   color: 'var(--color-text-tertiary)'
                 }}>
                   Appearance
@@ -317,7 +317,7 @@ const SettingsPanel = ({ onClose }) => {
                     >
                       <div className="flex items-center justify-between mb-2">
                         <label
-                          className="block text-xsmall font-medium"
+                          className="block text-xtiny font-thin"
                           style={{
                             color: 'var(--color-text-primary)'
                           }}
@@ -326,7 +326,7 @@ const SettingsPanel = ({ onClose }) => {
                         </label>
                         <button
                           onClick={() => setIsThemeModalOpen(true)}
-                          className="flex items-center gap-2 px-3 py-1.5 rounded-md text-xsmall font-medium transition-all"
+                          className="flex items-center gap-2 px-3 py-1.5 rounded-md text-xtiny font-thin transition-all"
                           style={{
                             backgroundColor: 'var(--color-bg-primary)',
                             border: '1px solid var(--color-border)',
@@ -346,7 +346,7 @@ const SettingsPanel = ({ onClose }) => {
                         </button>
                       </div>
                       <p
-                        className="text-tiny"
+                        className="text-xtiny"
                         style={{
                           color: 'var(--color-text-tertiary)'
                         }}
@@ -358,7 +358,7 @@ const SettingsPanel = ({ onClose }) => {
                     {/* Editor Font Family */}
                     <div className="p-2">
                       <label
-                        className="block text-xsmall font-medium mb-1"
+                        className="block text-xtiny font-thin mb-1"
                         style={{
                           color: 'var(--color-text-primary)'
                         }}
@@ -366,7 +366,7 @@ const SettingsPanel = ({ onClose }) => {
                         Editor Font Family
                       </label>
                       <p
-                        className="text-tiny mb-2"
+                        className="text-xtiny mb-2"
                         style={{
                           color: 'var(--color-text-tertiary)'
                         }}
@@ -376,7 +376,7 @@ const SettingsPanel = ({ onClose }) => {
                       <select
                         value={editorFontFamily}
                         onChange={(e) => updateEditorFontFamily(e.target.value)}
-                        className="w-full rounded-md px-3 py-2 text-xsmall outline-none transition-all"
+                        className="w-full rounded-md px-3 py-2 text-xtiny outline-none transition-all"
                         style={{
                           backgroundColor: 'var(--color-bg-primary)',
                           color: 'var(--color-text-primary)',
@@ -401,7 +401,7 @@ const SettingsPanel = ({ onClose }) => {
                       }}
                     >
                       <label
-                        className="block text-xsmall font-medium mb-1"
+                        className="block text-xtiny font-thin mb-1"
                         style={{
                           color: 'var(--color-text-primary)'
                         }}
@@ -409,7 +409,7 @@ const SettingsPanel = ({ onClose }) => {
                         Editor Font Size
                       </label>
                       <p
-                        className="text-tiny mb-2"
+                        className="text-xtiny mb-2"
                         style={{
                           color: 'var(--color-text-tertiary)'
                         }}
@@ -421,7 +421,7 @@ const SettingsPanel = ({ onClose }) => {
                           type="number"
                           value={editorFontSize}
                           onChange={(e) => updateEditorFontSize(e.target.value)}
-                          className="flex-1 rounded-md px-3 py-2 text-xsmall outline-none transition-all"
+                          className="flex-1 rounded-md px-3 py-2 text-xtiny outline-none transition-all"
                           style={{
                             backgroundColor: 'var(--color-bg-primary)',
                             color: 'var(--color-text-primary)',
@@ -431,7 +431,7 @@ const SettingsPanel = ({ onClose }) => {
                           }}
                         />
                         <span
-                          className="text-xsmall"
+                          className="text-xtiny"
                           style={{ color: 'var(--color-text-tertiary)' }}
                         >
                           px
@@ -447,7 +447,7 @@ const SettingsPanel = ({ onClose }) => {
                       }}
                     >
                       <label
-                        className="block text-xsmall font-medium mb-1"
+                        className="block text-xtiny font-thin mb-1"
                         style={{
                           color: 'var(--color-text-primary)'
                         }}
@@ -455,7 +455,7 @@ const SettingsPanel = ({ onClose }) => {
                         Preview Font Family
                       </label>
                       <p
-                        className="text-tiny mb-2"
+                        className="text-xtiny mb-2"
                         style={{
                           color: 'var(--color-text-tertiary)'
                         }}
@@ -465,7 +465,7 @@ const SettingsPanel = ({ onClose }) => {
                       <select
                         value={previewFontFamily}
                         onChange={(e) => updatePreviewFontFamily(e.target.value)}
-                        className="w-full rounded-md px-3 py-2 text-xsmall outline-none transition-all"
+                        className="w-full rounded-md px-3 py-2 text-xtiny outline-none transition-all"
                         style={{
                           backgroundColor: 'var(--color-bg-primary)',
                           color: 'var(--color-text-primary)',
@@ -490,7 +490,7 @@ const SettingsPanel = ({ onClose }) => {
                       }}
                     >
                       <label
-                        className="block text-xsmall font-medium mb-1"
+                        className="block text-xtiny font-thin mb-1"
                         style={{
                           color: 'var(--color-text-primary)'
                         }}
@@ -498,7 +498,7 @@ const SettingsPanel = ({ onClose }) => {
                         Preview Font Size
                       </label>
                       <p
-                        className="text-tiny mb-2"
+                        className="text-xtiny mb-2"
                         style={{
                           color: 'var(--color-text-tertiary)'
                         }}
@@ -510,7 +510,7 @@ const SettingsPanel = ({ onClose }) => {
                           type="number"
                           value={previewFontSize}
                           onChange={(e) => updatePreviewFontSize(e.target.value)}
-                          className="flex-1 rounded-md px-3 py-2 text-xsmall outline-none transition-all"
+                          className="flex-1 rounded-md px-3 py-2 text-xtiny outline-none transition-all"
                           style={{
                             backgroundColor: 'var(--color-bg-primary)',
                             color: 'var(--color-text-primary)',
@@ -520,7 +520,7 @@ const SettingsPanel = ({ onClose }) => {
                           }}
                         />
                         <span
-                          className="text-xsmall"
+                          className="text-xtiny"
                           style={{ color: 'var(--color-text-tertiary)' }}
                         >
                           px
@@ -536,7 +536,7 @@ const SettingsPanel = ({ onClose }) => {
                       }}
                     >
                       <label
-                        className="block text-xsmall font-medium mb-1"
+                        className="block text-xtiny font-thin mb-1"
                         style={{
                           color: 'var(--color-text-primary)'
                         }}
@@ -544,7 +544,7 @@ const SettingsPanel = ({ onClose }) => {
                         Caret Width
                       </label>
                       <p
-                        className="text-tiny mb-2"
+                        className="text-xtiny mb-2"
                         style={{
                           color: 'var(--color-text-tertiary)'
                         }}
@@ -556,7 +556,7 @@ const SettingsPanel = ({ onClose }) => {
                           type="number"
                           value={parseInt(String(caretWidth || '3px').replace('px', ''))}
                           onChange={(e) => updateCaretWidth(e.target.value)}
-                          className="flex-1 rounded-md px-3 py-2 text-xsmall outline-none transition-all"
+                          className="flex-1 rounded-md px-3 py-2 text-xtiny outline-none transition-all"
                           style={{
                             backgroundColor: 'var(--color-bg-primary)',
                             color: 'var(--color-text-primary)',
@@ -566,7 +566,7 @@ const SettingsPanel = ({ onClose }) => {
                           }}
                         />
                         <span
-                          className="text-xsmall"
+                          className="text-xtiny"
                           style={{ color: 'var(--color-text-tertiary)' }}
                         >
                           px
@@ -582,7 +582,7 @@ const SettingsPanel = ({ onClose }) => {
                       }}
                     >
                       <label
-                        className="block text-xsmall font-medium mb-1"
+                        className="block text-xtiny font-thin mb-1"
                         style={{
                           color: 'var(--color-text-primary)'
                         }}
@@ -590,7 +590,7 @@ const SettingsPanel = ({ onClose }) => {
                         Caret Style
                       </label>
                       <p
-                        className="text-tiny mb-2"
+                        className="text-xtiny mb-2"
                         style={{
                           color: 'var(--color-text-tertiary)'
                         }}
@@ -600,7 +600,7 @@ const SettingsPanel = ({ onClose }) => {
                       <select
                         value={caretStyle}
                         onChange={(e) => updateCaretStyle(e.target.value)}
-                        className="w-full rounded-md px-3 py-2 text-xsmall outline-none transition-all"
+                        className="w-full rounded-md px-3 py-2 text-xtiny outline-none transition-all"
                         style={{
                           backgroundColor: 'var(--color-bg-primary)',
                           color: 'var(--color-text-primary)',
@@ -620,7 +620,7 @@ const SettingsPanel = ({ onClose }) => {
                 {/* KEYBOARD SHORTCUTS */}
                 <section>
                   <h3
-                    className="text-xsmall font-semibold uppercase tracking-wider mb-3 ml-3"
+                    className="text-xtiny font-semibold uppercase tracking-wider mb-3 ml-3"
                     style={{
                       color: 'var(--color-text-tertiary)'
                     }}
@@ -636,7 +636,7 @@ const SettingsPanel = ({ onClose }) => {
                   >
                     <div className="p-4">
                       <p
-                        className="text-tiny mb-3"
+                        className="text-xtiny mb-3"
                         style={{
                           color: 'var(--color-text-tertiary)'
                         }}
@@ -652,7 +652,7 @@ const SettingsPanel = ({ onClose }) => {
                         >
                           <div>
                             <div
-                              className="text-xsmall font-medium"
+                              className="text-xtiny font-thin"
                               style={{
                                 color: 'var(--color-text-primary)'
                               }}
@@ -660,7 +660,7 @@ const SettingsPanel = ({ onClose }) => {
                               Create new snippet
                             </div>
                             <div
-                              className="text-tiny"
+                              className="text-xtiny"
                               style={{
                                 color: 'var(--color-text-tertiary)'
                               }}
@@ -669,7 +669,7 @@ const SettingsPanel = ({ onClose }) => {
                             </div>
                           </div>
                           <kbd
-                            className="px-1.5 py-0.5 rounded text-tiny"
+                            className="px-1.5 py-0.5 rounded text-xtiny"
                             style={{
                               backgroundColor: 'var(--color-bg-tertiary)',
                               color: 'var(--color-text-secondary)',
@@ -688,20 +688,20 @@ const SettingsPanel = ({ onClose }) => {
                         >
                           <div>
                             <div
-                              className="text-xsmall font-medium"
+                              className="text-xtiny font-thin"
                               style={{ color: 'var(--color-text-primary)' }}
                             >
                               Save (force)
                             </div>
                             <div
-                              className="text-tiny"
+                              className="text-xtiny"
                               style={{ color: 'var(--color-text-tertiary)' }}
                             >
                               Trigger editor save (Ctrl+S)
                             </div>
                           </div>
                           <kbd
-                            className="px-1.5 py-0.5 rounded text-tiny"
+                            className="px-1.5 py-0.5 rounded text-xtiny"
                             style={{
                               backgroundColor: 'var(--color-bg-tertiary)',
                               color: 'var(--color-text-secondary)',
@@ -720,20 +720,20 @@ const SettingsPanel = ({ onClose }) => {
                         >
                           <div>
                             <div
-                              className="text-xsmall font-medium"
+                              className="text-xtiny font-thin"
                               style={{ color: 'var(--color-text-primary)' }}
                             >
                               Command Palette
                             </div>
                             <div
-                              className="text-tiny"
+                              className="text-xtiny"
                               style={{ color: 'var(--color-text-tertiary)' }}
                             >
                               Open quick search / commands
                             </div>
                           </div>
                           <kbd
-                            className="px-1.5 py-0.5 rounded text-tiny"
+                            className="px-1.5 py-0.5 rounded text-xtiny"
                             style={{
                               backgroundColor: 'var(--color-bg-tertiary)',
                               color: 'var(--color-text-secondary)',
@@ -752,20 +752,20 @@ const SettingsPanel = ({ onClose }) => {
                         >
                           <div>
                             <div
-                              className="text-xsmall font-medium"
+                              className="text-xtiny font-thin"
                               style={{ color: 'var(--color-text-primary)' }}
                             >
                               Go to Welcome
                             </div>
                             <div
-                              className="text-tiny"
+                              className="text-xtiny"
                               style={{ color: 'var(--color-text-tertiary)' }}
                             >
                               Show the welcome page
                             </div>
                           </div>
                           <kbd
-                            className="px-1.5 py-0.5 rounded text-tiny"
+                            className="px-1.5 py-0.5 rounded text-xtiny"
                             style={{
                               backgroundColor: 'var(--color-bg-tertiary)',
                               color: 'var(--color-text-secondary)',
@@ -784,20 +784,20 @@ const SettingsPanel = ({ onClose }) => {
                         >
                           <div>
                             <div
-                              className="text-xsmall font-medium"
+                              className="text-xtiny font-thin"
                               style={{ color: 'var(--color-text-primary)' }}
                             >
                               Copy to clipboard
                             </div>
                             <div
-                              className="text-tiny"
+                              className="text-xtiny"
                               style={{ color: 'var(--color-text-tertiary)' }}
                             >
                               Copy selected snippet code
                             </div>
                           </div>
                           <kbd
-                            className="px-1.5 py-0.5 rounded text-tiny"
+                            className="px-1.5 py-0.5 rounded text-xtiny"
                             style={{
                               backgroundColor: 'var(--color-bg-tertiary)',
                               color: 'var(--color-text-secondary)',
@@ -816,20 +816,20 @@ const SettingsPanel = ({ onClose }) => {
                         >
                           <div>
                             <div
-                              className="text-xsmall font-medium"
+                              className="text-xtiny font-thin"
                               style={{ color: 'var(--color-text-primary)' }}
                             >
                               Rename snippet
                             </div>
                             <div
-                              className="text-tiny"
+                              className="text-xtiny"
                               style={{ color: 'var(--color-text-tertiary)' }}
                             >
                               Open rename modal
                             </div>
                           </div>
                           <kbd
-                            className="px-1.5 py-0.5 rounded text-tiny"
+                            className="px-1.5 py-0.5 rounded text-xtiny"
                             style={{
                               backgroundColor: 'var(--color-bg-tertiary)',
                               color: 'var(--color-text-secondary)',
@@ -848,20 +848,20 @@ const SettingsPanel = ({ onClose }) => {
                         >
                           <div>
                             <div
-                              className="text-xsmall font-medium"
+                              className="text-xtiny font-thin"
                               style={{ color: 'var(--color-text-primary)' }}
                             >
                               Delete snippet
                             </div>
                             <div
-                              className="text-tiny"
+                              className="text-xtiny"
                               style={{ color: 'var(--color-text-tertiary)' }}
                             >
                               Open delete confirmation
                             </div>
                           </div>
                           <kbd
-                            className="px-1.5 py-0.5 rounded text-tiny"
+                            className="px-1.5 py-0.5 rounded text-xtiny"
                             style={{
                               backgroundColor: 'var(--color-bg-tertiary)',
                               color: 'var(--color-text-secondary)',
@@ -880,20 +880,20 @@ const SettingsPanel = ({ onClose }) => {
                         >
                           <div>
                             <div
-                              className="text-xsmall font-medium"
+                              className="text-xtiny font-thin"
                               style={{ color: 'var(--color-text-primary)' }}
                             >
                               Toggle compact
                             </div>
                             <div
-                              className="text-tiny"
+                              className="text-xtiny"
                               style={{ color: 'var(--color-text-tertiary)' }}
                             >
                               Toggle compact header / status bar
                             </div>
                           </div>
                           <kbd
-                            className="px-1.5 py-0.5 rounded text-tiny"
+                            className="px-1.5 py-0.5 rounded text-xtiny"
                             style={{
                               backgroundColor: 'var(--color-bg-tertiary)',
                               color: 'var(--color-text-secondary)',
@@ -911,7 +911,7 @@ const SettingsPanel = ({ onClose }) => {
                 {/* EDITOR SECTION */}
                 <section>
                   <h3
-                    className="text-xsmall font-semibold uppercase tracking-wider mb-3 ml-3"
+                    className="text-xtiny font-semibold uppercase tracking-wider mb-3 ml-3"
                     style={{
                       color: 'var(--color-text-tertiary)'
                     }}
@@ -934,7 +934,7 @@ const SettingsPanel = ({ onClose }) => {
                     >
                       <div>
                         <label
-                          className="block text-xsmall font-medium"
+                          className="block text-xtiny font-thin"
                           style={{
                             color: 'var(--color-text-primary)'
                           }}
@@ -943,7 +943,7 @@ const SettingsPanel = ({ onClose }) => {
                         </label>
 
                         <p
-                          className="text-tiny mt-1"
+                          className="text-xtiny mt-1"
                           style={{
                             color: 'var(--color-text-tertiary)'
                           }}
@@ -954,7 +954,7 @@ const SettingsPanel = ({ onClose }) => {
                       <select
                         value={wordWrap}
                         onChange={(e) => setWordWrap(e.target.value)}
-                        className="rounded-md px-2 py-1 text-xsmall outline-none transition-all"
+                        className="rounded-md px-2 py-1 text-xtiny outline-none transition-all"
                         style={{
                           backgroundColor: 'var(--color-bg-primary)',
                           color: 'var(--color-text-primary)'
@@ -973,10 +973,10 @@ const SettingsPanel = ({ onClose }) => {
                       style={{ borderColor: 'var(--color-border)' }}
                     >
                       <div>
-                        <label className="block text-sm font-medium text-slate-900 dark:text-white">
+                        <label className="block text-sm font-thin text-slate-900 dark:text-white">
                           Auto Save
                         </label>
-                        <p className="text-xsmall text-slate-500 mt-1">
+                        <p className="text-xtiny text-slate-500 mt-1">
                           Automatically save changes after delay.
                         </p>
                       </div>
@@ -1002,10 +1002,10 @@ const SettingsPanel = ({ onClose }) => {
                     {/* Preview Overlay Mode */}
                     <div className="p-5 flex items-center justify-between gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-slate-900 dark:text-white">
+                        <label className="block text-sm font-thin text-slate-900 dark:text-white">
                           Preview Overlay Mode
                         </label>
-                        <p className="text-xsmall text-slate-500 mt-1">
+                        <p className="text-xtiny text-slate-500 mt-1">
                           Float preview over editor instead of side-by-side.
                         </p>
                       </div>
@@ -1035,7 +1035,7 @@ const SettingsPanel = ({ onClose }) => {
                 {/* DATA & SYSTEM SECTION */}
                 <section>
                   <h3
-                    className="text-xsmall font-semibold uppercase tracking-wider mb-3 ml-3"
+                    className="text-xtiny font-semibold uppercase tracking-wider mb-3 ml-3"
                     style={{
                       color: 'var(--color-text-tertiary)'
                     }}
@@ -1056,7 +1056,7 @@ const SettingsPanel = ({ onClose }) => {
                     >
                       <div>
                         <label
-                          className="block text-xsmall font-medium"
+                          className="block text-xtiny font-thin"
                           style={{
                             color: 'var(--color-text-primary)'
                           }}
@@ -1064,7 +1064,7 @@ const SettingsPanel = ({ onClose }) => {
                           Show Welcome Page
                         </label>
                         <p
-                          className="text-xsmall mt-1 max-w-sm"
+                          className="text-xtiny mt-1 max-w-sm"
                           style={{
                             color: 'var(--color-text-tertiary)'
                           }}
@@ -1083,7 +1083,7 @@ const SettingsPanel = ({ onClose }) => {
                     <div className="p-4 flex items-center justify-between gap-4 ">
                       <div>
                         <label
-                          className="block text-xsmall font-medium"
+                          className="block text-xtiny font-thin"
                           style={{
                             color: 'var(--color-text-primary)'
                           }}
@@ -1091,7 +1091,7 @@ const SettingsPanel = ({ onClose }) => {
                           Export Library
                         </label>
                         <p
-                          className="text-xsmall mt-1 max-w-sm"
+                          className="text-xtiny mt-1 max-w-sm"
                           style={{
                             color: 'var(--color-text-tertiary)'
                           }}
@@ -1101,7 +1101,7 @@ const SettingsPanel = ({ onClose }) => {
                       </div>
                       <button
                         onClick={handleExportData}
-                        className="flex items-center gap-2 px-3 py-1.5 border rounded-md text-xsmall font-medium transition-colors"
+                        className="flex items-center gap-2 px-3 py-1.5 border rounded-md text-xtiny font-thin transition-colors"
                         style={{
                           backgroundColor: 'var(--color-bg-primary)',
                           borderColor: 'var(--color-border)',
