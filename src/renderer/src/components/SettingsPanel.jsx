@@ -5,7 +5,7 @@ import { useSettings } from '../hook/useSettingsContext'
 import { useToast } from '../hook/useToast'
 import ToastNotification from '../utils/ToastNotification'
 import EditSettings from './preference/EditSettings'
-import useCleanErrorJson from '../hook/useCleanErrorJson.js'
+import cleanErrorJson from '../hook/useCleanErrorJson.js'
 import ThemeModal from './ThemeModal'
 import {
   Monitor,
@@ -49,7 +49,7 @@ const SettingsPanel = ({ onClose }) => {
       return false // Default to disabled
     }
   })
-  const { getSetting, updateSetting } = useSettings()
+  const { getSetting, updateSetting, updateSettings } = useSettings()
   const hideWelcomePage = getSetting('ui.hideWelcomePage') || false
   const [activeTab, setActiveTab] = useState('general')
   const [jsonContent, setJsonContent] = useState('')
@@ -88,7 +88,7 @@ const SettingsPanel = ({ onClose }) => {
       } else {
       }
     } catch (error) {
-      showToast('❌ Failed to export data')
+      showToast('❌ Failed to export data', error)
     }
   }
 
@@ -100,67 +100,49 @@ const SettingsPanel = ({ onClose }) => {
         const content = await window.api.readSettingsFile()
         setJsonContent(content || '{}')
         setIsJsonDirty(false)
-      } catch (err) {
-        showToast('❌ Failed to load settings file')
+      } catch (error) {
+        showToast('❌ Failed to load settings file', error)
       }
     }
   }
 
+  // Handle saving JSON view
   const handleSaveJson = async () => {
     let parsedSettings
 
     // --- 1. VALIDATION and PARSING ---
     try {
-      // FIX: Removed dangerous .padEnd(..., ' ') to ensure valid JSON is parsed/saved.
-      // The padding caused the "Unexpected non-whitespace character after JSON" error.
       parsedSettings = JSON.parse(jsonContent)
     } catch (error) {
-      // Delegate error processing to the clean helper function
-      const cleanError = useCleanErrorJson(error, jsonContent)
-      showToast(`Syntax Error: ${cleanError}`)
-      return // Stop execution on error (KISS principle)
-    }
-
-    // --- 2. API CHECK and FILE WRITING ---
-    if (!window.api?.writeSettingsFile) {
-      console.error('API is missing: window.api.writeSettingsFile is undefined.')
-      showToast('❌ System Error: Settings API is missing.')
-      return
+      // Attempt auto-repair for trailing garbage (common after file corruption)
+      try {
+        const trimmed = jsonContent.trim()
+        const lastBrace = trimmed.lastIndexOf('}')
+        if (lastBrace !== -1 && lastBrace < trimmed.length - 1) {
+          const candidate = trimmed.substring(0, lastBrace + 1)
+          parsedSettings = JSON.parse(candidate)
+          // If successful, notify user but proceed
+          showToast('⚠️ Repaired trailing characters in JSON', 'info')
+        } else {
+          throw error
+        }
+      } catch (retryError) {
+        const cleanError = cleanErrorJson(error, jsonContent)
+        showToast(`Syntax Error: ${cleanError}`)
+        return // Stop execution on error
+      }
     }
 
     try {
-      // Write the validated content.
-      // PAD OUT THE CONTENT: Add spaces to overwrite potential leftover bytes from previous saves
-      // This fixes the confusing "Unexpected non-whitespace character" error on shrinking files.
-      const safeContent = jsonContent.padEnd(jsonContent.length + 50, ' ')
-      await window.api.writeSettingsFile(safeContent)
-
-      // --- 3. UPDATE APPLICATION STATE (Context/Store) ---
-      // Update the live application state only after successful file write (High Cohesion)
-      Object.keys(parsedSettings).forEach((sectionKey) => {
-        const sectionValue = parsedSettings[sectionKey]
-
-        // Use recursion or a dedicated helper if settings nesting gets deeper (Next Level Tip)
-        if (
-          typeof sectionValue === 'object' &&
-          sectionValue !== null &&
-          !Array.isArray(sectionValue)
-        ) {
-          Object.keys(sectionValue).forEach((settingKey) => {
-            console.log(`Updating nested: ${sectionKey}.${settingKey} =`, sectionValue[settingKey])
-            updateSetting(`${sectionKey}.${settingKey}`, sectionValue[settingKey])
-          })
-        } else {
-          console.log(`Updating top-level: ${sectionKey} =`, sectionValue)
-          updateSetting(sectionKey, sectionValue)
-        }
-      })
+      // --- 2. UPDATE APPLICATION STATE via Context ---
+      // This delegates persistence to the SettingsManager, ensuring a single source of truth
+      // and preventing race conditions (double-writes) caused by manual file writing here.
+      await updateSettings(parsedSettings)
 
       // Final UI feedback
       setIsJsonDirty(false)
       showToast('✓ Settings saved and applied')
     } catch (error) {
-      // Catch file system or IPC errors
       showToast(`❌ System Error during save: ${error.message}`)
       console.error('Save operation failed:', error)
     }
@@ -233,12 +215,14 @@ const SettingsPanel = ({ onClose }) => {
               if (activeTab !== 'general') {
                 e.target.style.backgroundColor = 'var(--hover-bg)'
                 e.target.style.color = 'var(--hover-text)'
+                e.target.style.opacity = '1'
               }
             }}
             onMouseLeave={(e) => {
               if (activeTab !== 'general') {
                 e.target.style.backgroundColor = 'transparent'
                 e.target.style.color = 'var(--color-text-secondary)'
+                e.target.style.opacity = '0.8'
               }
             }}
           >
@@ -258,12 +242,14 @@ const SettingsPanel = ({ onClose }) => {
               if (activeTab !== 'json') {
                 e.target.style.backgroundColor = 'var(--hover-bg)'
                 e.target.style.color = 'var(--hover-text)'
+                e.target.style.opacity = '1'
               }
             }}
             onMouseLeave={(e) => {
               if (activeTab !== 'json') {
                 e.target.style.backgroundColor = 'transparent'
                 e.target.style.color = 'var(--color-text-secondary)'
+                e.target.style.opacity = '0.8'
               }
             }}
           >
@@ -340,17 +326,19 @@ const SettingsPanel = ({ onClose }) => {
                         </label>
                         <button
                           onClick={() => setIsThemeModalOpen(true)}
-                          className="flex items-center gap-2 px-3 py-1.5 border rounded-md text-xsmall font-medium transition-all"
+                          className="flex items-center gap-2 px-3 py-1.5 rounded-md text-xsmall font-medium transition-all"
                           style={{
                             backgroundColor: 'var(--color-bg-primary)',
-                            borderColor: 'var(--color-border)',
+                            border: '1px solid var(--color-border)',
                             color: 'var(--color-text-primary)'
                           }}
                           onMouseEnter={(e) => {
                             e.target.style.backgroundColor = 'var(--hover-bg)'
+                            e.target.style.borderColor = 'var(--color-text-secondary)'
                           }}
                           onMouseLeave={(e) => {
                             e.target.style.backgroundColor = 'var(--color-bg-primary)'
+                            e.target.style.borderColor = 'var(--color-border)'
                           }}
                         >
                           <SunMoon size={11} />
@@ -391,9 +379,11 @@ const SettingsPanel = ({ onClose }) => {
                         className="w-full rounded-md px-3 py-2 text-xsmall outline-none transition-all"
                         style={{
                           backgroundColor: 'var(--color-bg-primary)',
-                          color: 'var(--color-text-primary)'
+                          color: 'var(--color-text-primary)',
+                          border: 'none',
+                          outline: 'none',
+                          boxShadow: 'none'
                         }}
-                        onFocus={(e) => e.target.blur()}
                       >
                         <option>JetBrains Mono</option>
                         <option>Fira Code</option>
@@ -434,9 +424,11 @@ const SettingsPanel = ({ onClose }) => {
                           className="flex-1 rounded-md px-3 py-2 text-xsmall outline-none transition-all"
                           style={{
                             backgroundColor: 'var(--color-bg-primary)',
-                            color: 'var(--color-text-primary)'
+                            color: 'var(--color-text-primary)',
+                            border: 'none',
+                            outline: 'none',
+                            boxShadow: 'none'
                           }}
-                          onFocus={(e) => e.target.blur()}
                         />
                         <span
                           className="text-xsmall"
@@ -476,9 +468,11 @@ const SettingsPanel = ({ onClose }) => {
                         className="w-full rounded-md px-3 py-2 text-xsmall outline-none transition-all"
                         style={{
                           backgroundColor: 'var(--color-bg-primary)',
-                          color: 'var(--color-text-primary)'
+                          color: 'var(--color-text-primary)',
+                          border: 'none',
+                          outline: 'none',
+                          boxShadow: 'none'
                         }}
-                        onFocus={(e) => e.target.blur()}
                       >
                         <option>JetBrains Mono</option>
                         <option>Fira Code</option>
@@ -519,9 +513,11 @@ const SettingsPanel = ({ onClose }) => {
                           className="flex-1 rounded-md px-3 py-2 text-xsmall outline-none transition-all"
                           style={{
                             backgroundColor: 'var(--color-bg-primary)',
-                            color: 'var(--color-text-primary)'
+                            color: 'var(--color-text-primary)',
+                            border: 'none',
+                            outline: 'none',
+                            boxShadow: 'none'
                           }}
-                          onFocus={(e) => e.target.blur()}
                         />
                         <span
                           className="text-xsmall"
@@ -563,9 +559,11 @@ const SettingsPanel = ({ onClose }) => {
                           className="flex-1 rounded-md px-3 py-2 text-xsmall outline-none transition-all"
                           style={{
                             backgroundColor: 'var(--color-bg-primary)',
-                            color: 'var(--color-text-primary)'
+                            color: 'var(--color-text-primary)',
+                            border: 'none',
+                            outline: 'none',
+                            boxShadow: 'none'
                           }}
-                          onFocus={(e) => e.target.blur()}
                         />
                         <span
                           className="text-xsmall"
@@ -605,9 +603,11 @@ const SettingsPanel = ({ onClose }) => {
                         className="w-full rounded-md px-3 py-2 text-xsmall outline-none transition-all"
                         style={{
                           backgroundColor: 'var(--color-bg-primary)',
-                          color: 'var(--color-text-primary)'
+                          color: 'var(--color-text-primary)',
+                          border: 'none',
+                          outline: 'none',
+                          boxShadow: 'none'
                         }}
-                        onFocus={(e) => e.target.blur()}
                       >
                         <option value="bar">Bar</option>
                         <option value="block">Block</option>

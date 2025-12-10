@@ -1,5 +1,5 @@
 import { useSettings } from './useSettingsContext'
-
+import { clamp, roundTo } from './useRoundedClamp.js'
 // Zoom limits
 export const MIN_ZOOM = 0.8
 export const MAX_ZOOM = 2.0
@@ -7,8 +7,8 @@ export const MAX_ZOOM = 2.0
 // Normalizer — ALWAYS force one decimal, then clamp
 const normalizeZoom = (value) => {
   // const rounded = Number(value.toFixed(1))
-  const rounded = Math.round(value * 10) / 10
-  return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, rounded))
+  const rounded = roundTo(value, 1)
+  return clamp(rounded, MIN_ZOOM, MAX_ZOOM)
 }
 
 export const useZoomLevel = () => {

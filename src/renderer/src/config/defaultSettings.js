@@ -14,8 +14,8 @@ export const DEFAULT_SETTINGS = {
     caretStyle: 'bar'
   },
   gutter: {
-    gutterBgColor: 'var(--gutter-bg-color, transparent)',
-    gutterBorderColor: 'var(--gutter-border-color, transparent)',
+    gutterBgColor: '#232731',
+    gutterBorderColor: 'transparent',
     gutterBorderWidth: 1
   },
   ui: {

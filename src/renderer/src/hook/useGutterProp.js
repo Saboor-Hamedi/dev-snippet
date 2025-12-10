@@ -1,4 +1,5 @@
 import { useSettings } from './useSettingsContext'
+import { clamp, roundTo } from './useRoundedClamp.js'
 export const DEFAULT_GUTTER_BG_COLOR = '#232731'
 export const DEFAULT_GUTTER_BORDER_COLOR = 'transparent'
 export const DEFAULT_GUTTER_BORDER_WIDTH = 1
@@ -20,13 +21,14 @@ const useGutterProp = () => {
 
   const rawWidth = getSetting('gutter.gutterBorderWidth') ?? DEFAULT_GUTTER_BORDER_WIDTH
 
-  const gutterBorderWidth = Math.max(
+  const gutterBorderWidth = clamp(
+    roundTo(rawWidth, 1),
     MIN_GUTTER_BORDER_WIDTH,
-    Math.min(MAX_GUTTER_BORDER_WIDTH, Number(rawWidth))
+    MAX_GUTTER_BORDER_WIDTH
   )
 
   const setGutterBorderWidth = (value) => {
-    const clamped = Math.max(MIN_GUTTER_BORDER_WIDTH, Math.min(MAX_GUTTER_BORDER_WIDTH, value))
+    const clamped = clamp(roundTo(value, 1), MIN_GUTTER_BORDER_WIDTH, MAX_GUTTER_BORDER_WIDTH)
     updateSetting('gutter.gutterBorderWidth', clamped)
   }
 

@@ -10,26 +10,25 @@ const ToggleButton = ({ checked, onChange, disabled }) => {
       disabled={disabled}
       onClick={() => !disabled && onChange(!checked)}
       className={`
-        relative inline-flex items-center h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border-1 border-transparent 
-        transition-colors duration-200 ease-in-out focus:outline-none focus:ring-0 focus:ring-offset-0
+        relative inline-flex items-center h-5 w-9 flex-shrink-0 cursor-pointer rounded-full 
+        !outline-none !ring-0 !shadow-none border-none
+        bg-[var(--color-bg-secondary)]
         ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
       `}
       style={{
-        backgroundColor: checked ? '#0525f7ff' : '#ffffffff'
+        WebkitTapHighlightColor: 'transparent',
+        outline: 'none',
+        boxShadow: 'none'
       }}
     >
       <span className="sr-only">Use setting</span>
       <span
         aria-hidden="true"
         className={`
-          pointer-events-none inline-block h-3 w-3 transform rounded-full shadow ring-0 
-          transition duration-200 ease-in-out
-          
+          pointer-events-none inline-block h-4 w-4 transform rounded-full shadow-md ring-0 
+          transition-transform duration-200 ease-in-out bg-blue-600
+          ${checked ? 'translate-x-[18px]' : 'translate-x-[2px]'}
         `}
-        style={{
-          transform: checked ? 'translateX(16px)' : 'translateX(0)',
-          backgroundColor: checked ? '#ffffffff' : '#0525f7ff'
-        }}
       />
     </button>
   )

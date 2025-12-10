@@ -306,38 +306,26 @@ app.whenReady().then(() => {
   })
 
   ipcMain.handle('fs:readFile', async (event, path) => {
-    try {
-      if (typeof path !== 'string') throw new Error('Invalid path')
-      const content = await fs.readFile(path, 'utf-8')
-      return content
-    } catch (err) {
-      throw err
-    }
+    if (typeof path !== 'string') throw new Error('Invalid path')
+    const content = await fs.readFile(path, 'utf-8')
+    return content
   })
 
   ipcMain.handle('fs:writeFile', async (event, path, content) => {
-    try {
-      if (typeof path !== 'string') throw new Error('Invalid path')
-      if (typeof content !== 'string') throw new Error('Invalid content')
-      await fs.writeFile(path, content, 'utf-8')
-      return true
-    } catch (err) {
-      throw err
-    }
+    if (typeof path !== 'string') throw new Error('Invalid path')
+    if (typeof content !== 'string') throw new Error('Invalid content')
+    await fs.writeFile(path, content, 'utf-8')
+    return true
   })
 
   ipcMain.handle('fs:readDirectory', async (event, path) => {
-    try {
-      if (typeof path !== 'string') throw new Error('Invalid path')
-      const files = await fs.readdir(path, { withFileTypes: true })
-      return files.map((file) => ({
-        name: file.name,
-        isDirectory: file.isDirectory(),
-        path: join(path, file.name)
-      }))
-    } catch (err) {
-      throw err
-    }
+    if (typeof path !== 'string') throw new Error('Invalid path')
+    const files = await fs.readdir(path, { withFileTypes: true })
+    return files.map((file) => ({
+      name: file.name,
+      isDirectory: file.isDirectory(),
+      path: join(path, file.name)
+    }))
   })
 
   // Settings file IPC handlers
@@ -356,7 +344,18 @@ app.whenReady().then(() => {
         settingsWatcher = fsSync.watch(settingsPath, async (eventType) => {
           if (eventType === 'change') {
             try {
+              // Wait for write to complete (debounce/fix partial reads)
+              await new Promise((resolve) => setTimeout(resolve, 100))
+
               const newContent = await fs.readFile(settingsPath, 'utf-8')
+
+              // Verify it's valid JSON before broadcasting
+              try {
+                JSON.parse(newContent)
+              } catch (e) {
+                // If invalid (partial write), ignore this event
+                return
+              }
 
               // Only notify if content actually changed (avoid duplicate events)
               if (newContent !== lastSettingsContent) {
@@ -396,30 +395,26 @@ app.whenReady().then(() => {
   })
 
   ipcMain.handle('settings:write', async (event, content) => {
+    if (typeof content !== 'string') throw new Error('Invalid content')
+
+    // Ensure directory exists
+    const dir = app.getPath('userData')
+    await fs.mkdir(dir, { recursive: true })
+
+    await fs.writeFile(settingsPath, content, 'utf-8')
+    lastSettingsContent = content
+
+    // Verify the file was created
     try {
-      if (typeof content !== 'string') throw new Error('Invalid content')
+      const stats = await fs.stat(settingsPath)
+    } catch (verifyErr) {}
 
-      // Ensure directory exists
-      const dir = app.getPath('userData')
-      await fs.mkdir(dir, { recursive: true })
-
-      await fs.writeFile(settingsPath, content, 'utf-8')
-      lastSettingsContent = content
-
-      // Verify the file was created
-      try {
-        const stats = await fs.stat(settingsPath)
-      } catch (verifyErr) {}
-
-      // Start watcher if not already running
-      if (!settingsWatcher) {
-        startSettingsWatcher()
-      }
-
-      return true
-    } catch (err) {
-      throw err
+    // Start watcher if not already running
+    if (!settingsWatcher) {
+      startSettingsWatcher()
     }
+
+    return true
   })
 
   // Get settings file path
@@ -432,12 +427,8 @@ app.whenReady().then(() => {
     const testSettings = {
       editor: { zoomLevel: 1.5 }
     }
-    try {
-      await fs.writeFile(settingsPath, JSON.stringify(testSettings, null, 2), 'utf-8')
-      return true
-    } catch (err) {
-      return false
-    }
+    await fs.writeFile(settingsPath, JSON.stringify(testSettings, null, 2), 'utf-8')
+    return true
   })
 
   // Database IPC Handlers
