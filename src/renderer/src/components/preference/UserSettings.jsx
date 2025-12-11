@@ -30,7 +30,7 @@ const UserSettings = ({
                   : 'bg-transparent text-gray-500 cursor-not-allowed opacity-50'
               }`}
             >
-              <Save size={12} className='text-white' />
+              <Save size={12} className="text-white" />
             </button>
           </div>
           <div className="flex-1 overflow-hidden">

@@ -199,7 +199,7 @@ const SettingsPanel = ({ onClose }) => {
             }}
           >
             <ChevronLeft size={12} />
-            <span >Back</span>
+            <span>Back</span>
           </button>
 
           <button
@@ -227,7 +227,7 @@ const SettingsPanel = ({ onClose }) => {
             }}
           >
             <Settings size={12} />
-            <span >General</span>
+            <span>General</span>
           </button>
 
           <button

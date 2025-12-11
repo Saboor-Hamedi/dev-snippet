@@ -39,8 +39,12 @@ const GitHubSettings = ({ onSave, onCancel, currentUsername = '' }) => {
             <Github className="w-5 h-5 text-[var(--color-accent)]" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">GitHub Profile</h3>
-            <p className="text-sm text-[var(--color-text-secondary)]">Connect your GitHub profile</p>
+            <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">
+              GitHub Profile
+            </h3>
+            <p className="text-sm text-[var(--color-text-secondary)]">
+              Connect your GitHub profile
+            </p>
           </div>
         </div>
 
@@ -65,18 +69,17 @@ const GitHubSettings = ({ onSave, onCancel, currentUsername = '' }) => {
                   text-[var(--color-text-primary)]
                   placeholder-[var(--color-text-secondary)]
                   focus:outline-none focus:ring-2
-                  ${isValid 
-                    ? 'border-[var(--color-border)] focus:ring-[var(--color-accent)]/20 focus:border-[var(--color-accent)]' 
-                    : 'border-red-500 focus:ring-red-500/20 focus:border-red-500'
+                  ${
+                    isValid
+                      ? 'border-[var(--color-border)] focus:ring-[var(--color-accent)]/20 focus:border-[var(--color-accent)]'
+                      : 'border-red-500 focus:ring-red-500/20 focus:border-red-500'
                   }
                 `}
                 autoFocus
               />
             </div>
             {!isValid && username && (
-              <p className="mt-2 text-sm text-red-500">
-                Please enter a valid GitHub username
-              </p>
+              <p className="mt-2 text-sm text-red-500">Please enter a valid GitHub username</p>
             )}
             {username && isValid && (
               <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
@@ -91,9 +94,10 @@ const GitHubSettings = ({ onSave, onCancel, currentUsername = '' }) => {
               disabled={!username || !isValid}
               className={`
                 flex-1 flex items-center justify-center space-x-2 py-3 px-4 rounded-xl transition-colors
-                ${username && isValid
-                  ? 'bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent)]/80'
-                  : 'bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] cursor-not-allowed'
+                ${
+                  username && isValid
+                    ? 'bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent)]/80'
+                    : 'bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] cursor-not-allowed'
                 }
               `}
             >

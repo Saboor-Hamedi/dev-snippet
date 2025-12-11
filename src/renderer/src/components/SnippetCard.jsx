@@ -12,8 +12,7 @@ const copyToClipboard = async (text) => {
     try {
       await navigator.clipboard.writeText(text)
       return true
-    } catch (err) {
-    }
+    } catch (err) {}
   }
 
   const textArea = document.createElement('textarea')
@@ -40,7 +39,8 @@ const SnippetCard = ({ snippet, onRequestDelete, onEdit, snippets = [], projects
 
   const highlightedContent = useHighlight(snippet.code, snippet.language)
   const isCode = !['text', 'txt'].includes(snippet.language)
-  const isMarkdownLike = /^(# |## |### |> |\* |\d+\. )/m.test(snippet.code || '') || /@\w+/.test(snippet.code || '')
+  const isMarkdownLike =
+    /^(# |## |### |> |\* |\d+\. )/m.test(snippet.code || '') || /@\w+/.test(snippet.code || '')
 
   const handleCopy = async () => {
     const success = await copyToClipboard(snippet.code)

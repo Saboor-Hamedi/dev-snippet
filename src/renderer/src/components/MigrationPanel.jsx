@@ -9,7 +9,7 @@ const MigrationPanel = ({ onClose }) => {
     setIsRunning(true)
     setError(null)
     setResult(null)
-    
+
     try {
       const migrationResult = await window.api.migrateSnippets()
       setResult(migrationResult)
@@ -26,25 +26,25 @@ const MigrationPanel = ({ onClose }) => {
         <h2 className="text-lg font-semibold mb-4 text-slate-900 dark:text-slate-100">
           Migrate Snippets to Files
         </h2>
-        
+
         <div className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-          This will move snippet content from the database to individual files for better performance.
-          Your data will be safely migrated and no content will be lost.
+          This will move snippet content from the database to individual files for better
+          performance. Your data will be safely migrated and no content will be lost.
         </div>
 
         {error && (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded p-3 mb-4">
-            <div className="text-red-700 dark:text-red-400 text-sm">
-              ❌ {error}
-            </div>
+            <div className="text-red-700 dark:text-red-400 text-sm">❌ {error}</div>
           </div>
         )}
 
         {result && (
           <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-3 mb-4">
             <div className="text-green-700 dark:text-green-400 text-sm">
-              ✅ Migration completed successfully!<br/>
-              Migrated: {result.migrated} snippets<br/>
+              ✅ Migration completed successfully!
+              <br />
+              Migrated: {result.migrated} snippets
+              <br />
               Skipped: {result.skipped} snippets
             </div>
           </div>

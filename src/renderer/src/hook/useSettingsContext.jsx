@@ -25,7 +25,7 @@ export const SettingsProvider = ({ children }) => {
     const unsubscribe = settingsManager.subscribe((newSettings) => {
       setSettings({ ...newSettings })
     })
-    
+
     return () => {
       unsubscribe()
     }
@@ -37,9 +37,9 @@ export const SettingsProvider = ({ children }) => {
       const root = document.documentElement
       const fontSize = settings.editor.fontSize || 14
       const fontFamily = settings.editor.fontFamily || 'JetBrains Mono'
-      
+
       const sizeVal = typeof fontSize === 'number' ? `${fontSize / 16}rem` : fontSize
-      
+
       root.style.setProperty('--editor-font-size', sizeVal)
       root.style.setProperty('--editor-font-family', fontFamily)
     }
@@ -91,7 +91,7 @@ export const SettingsProvider = ({ children }) => {
 }
 
 // Custom hook to use settings
-export const useSettings = () => {
+export const useSettings = () =>  {
   const context = useContext(SettingsContext)
   if (!context) {
     throw new Error('useSettings must be used within a SettingsProvider')
@@ -102,22 +102,22 @@ export const useSettings = () => {
 export const useAutoSave = () => {
   const { getSetting, updateSetting } = useSettings()
   const autoSave = getSetting('behavior.autoSave') || true
-  
+
   const setAutoSave = (enabled) => {
     updateSetting('behavior.autoSave', enabled)
   }
-  
+
   return [autoSave, setAutoSave]
 }
 
 export const useCompactMode = () => {
   const { getSetting, updateSetting } = useSettings()
   const compactMode = getSetting('ui.compactMode') || false
-  
+
   const setCompactMode = (enabled) => {
     updateSetting('ui.compactMode', enabled)
   }
-  
+
   return [compactMode, setCompactMode]
 }
 

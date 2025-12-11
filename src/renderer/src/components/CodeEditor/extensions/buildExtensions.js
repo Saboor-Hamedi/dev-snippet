@@ -6,8 +6,8 @@ const buildExtensions = async (options, handlers = {}) => {
     isDark = false,
     caretColor = '#0f172a',
     fontSize = '14px',
-    wordWrap = 'on',
-    language = 'markdown'
+    wordWrap = 'on'
+    // language prop ignored/removed
   } = options
   const { liveZoomRef, applyZoomToDOM, debouncedSaveZoom, setStoredZoomLevel } = handlers
 
@@ -15,6 +15,28 @@ const buildExtensions = async (options, handlers = {}) => {
 
   // THEME
   exts.push(buildTheme(EditorView, { isDark, caretColor, fontSize }))
+
+  // CORE UI EXTENSIONS (Critical for stability)
+  try {
+    const { drawSelection, dropCursor, highlightActiveLine } = await import('@codemirror/view')
+    // Uses custom drawn selection (better for mixed font sizes/rich text)
+    exts.push(drawSelection())
+    exts.push(dropCursor())
+    // highlightActiveLine helps visual context
+    exts.push(highlightActiveLine())
+  } catch (e) {}
+
+  // HISTORY (Undo/Redo)
+  try {
+    const { history } = await import('@codemirror/commands')
+    exts.push(history())
+  } catch (e) {}
+
+  // BRACKET MATCHING
+  try {
+    const { bracketMatching } = await import('@codemirror/language')
+    exts.push(bracketMatching())
+  } catch (e) {}
 
   // SMOOTH ZOOM LOGIC
   if (liveZoomRef && applyZoomToDOM) {
@@ -87,20 +109,6 @@ const buildExtensions = async (options, handlers = {}) => {
     )
   }
 
-  // --- Add Highlight Active Line Extension explicitly ---
-  try {
-    const { highlightActiveLine, highlightActiveLineGutter } = await import('@codemirror/view')
-    exts.push(highlightActiveLineGutter())
-    exts.push(highlightActiveLine())
-  } catch (e) {}
-
-  // Highlight occurrences of the word under cursor
-  try {
-    const { highlightSelectionMatches } = await import('@codemirror/search')
-    exts.push(highlightSelectionMatches({ highlightWordAroundCursor: true }))
-  } catch (e) {}
-
-  // ... (Keep line numbers, word wrap, language code same as before)
   // Line numbers
   try {
     const { lineNumbers } = await import('@codemirror/view')
@@ -116,27 +124,20 @@ const buildExtensions = async (options, handlers = {}) => {
 
   if (wordWrap === 'on') {
     exts.push(EditorView.lineWrapping)
-    const wrapTheme = EditorView.theme({
-      '.cm-line': {
-        whiteSpace: 'pre-wrap',
-        wordBreak: 'normal',
-        overflowWrap: 'anywhere'
-      },
-      '.cm-content': {
-        whiteSpace: 'pre-wrap'
-      }
-    })
-    exts.push(wrapTheme)
   }
 
+  // Always load Markdown Support
   try {
-    const { getLanguage } = await import('../../language/languageRegistry.js')
-    const langDef = getLanguage(language)
-    if (langDef && langDef.import) {
-      const langExt = await langDef.import()
-      if (langExt) exts.push(langExt)
-    }
-  } catch (err) {}
+    // 1. Load Custom Syntax Highlighting (Colors only, no strange fonts/sizes)
+    const { richMarkdownExtension } = await import('./richMarkdown.js')
+    exts.push(richMarkdownExtension)
+
+    // 2. Official Markdown Extension (with disabled keymap to prevent jumps)
+    const { markdown } = await import('@codemirror/lang-markdown')
+    exts.push(markdown({ addKeymap: false }))
+  } catch (e) {
+    console.error('Failed to load markdown extensions', e)
+  }
 
   return exts
 }

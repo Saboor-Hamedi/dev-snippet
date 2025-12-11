@@ -1,6 +1,6 @@
 import useCaretProp from '../../hook/useCaretProp.js'
 import useGutterProp from '../../hook/useGutterProp.js'
-import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useZoomLevel } from '../../hook/useZoomLevel'
 import settingsManager from '../../config/settingsManager'
 import CodeMirror from '@uiw/react-codemirror'
@@ -22,7 +22,7 @@ const CodeEditor = ({
   onChange,
   height = '100%',
   className = 'h-full',
-  language = 'markdown',
+  // language prop removed/ignored
   onZoomChange,
   wordWrap = 'on'
 }) => {
@@ -81,9 +81,7 @@ const CodeEditor = ({
     }
   }
 
-  if (viewRef.current) {
-    viewRef.current.requestMeasure()
-  }
+  // Avoid calling `requestMeasure` during render — move to effect below
 
   // 2. Sync Ref and DOM when storedZoomLevel changes
   useEffect(() => {
@@ -101,22 +99,7 @@ const CodeEditor = ({
     editorDomRef.current.style.setProperty('--gutter-border-width', `${gutterBorderWidth}px`)
   }, [caretWidth, caretColor, gutterBgColor, gutterBorderColor, gutterBorderWidth])
 
-  // Adjust scroller overflow
-  const adjustOverflow = useCallback(() => {
-    if (!viewRef.current) return
-    const scroller = viewRef.current.scrollDOM
-    const content = viewRef.current.contentDOM
-    if (scroller && content) {
-      const contentHeight = content.scrollHeight
-      const scrollerHeight = scroller.clientHeight
-      // scroller.style.overflowY = contentHeight <= scrollerHeight ? 'hidden' : 'auto'
-      // Keep auto to allow scroll if needed, or let CSS handle it
-    }
-  }, [])
-
-  useEffect(() => {
-    adjustOverflow()
-  }, [value, storedZoomLevel, adjustOverflow])
+  // adjustOverflow removed (legacy layout logic)
 
   // 4. Load Full Extensions
   useEffect(() => {
@@ -133,7 +116,7 @@ const CodeEditor = ({
           caretColor,
           fontSize: 'var(--editor-font-size, 14px)',
           wordWrap,
-          language
+          language: 'markdown' // Force markdown
         }
 
         const exts = await buildExtensions(options, {
@@ -154,7 +137,7 @@ const CodeEditor = ({
     return () => {
       mounted = false
     }
-  }, [language, wordWrap, caretWidth, caretColor, gutterBgColor])
+  }, [wordWrap, caretWidth, caretColor, gutterBgColor])
 
   return (
     <div
@@ -176,7 +159,7 @@ const CodeEditor = ({
         onCreateEditor={(view) => {
           viewRef.current = view
           applyZoomToDOM(liveZoomRef.current)
-          adjustOverflow()
+          // adjustOverflow() removed
         }}
       />
     </div>

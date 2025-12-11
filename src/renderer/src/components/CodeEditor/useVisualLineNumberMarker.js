@@ -9,178 +9,141 @@ export function useVisualLineNumberMarker(viewModule) {
       super()
       this.numbers = numbers
     }
+    eq(other) {
+      if (this.numbers === other.numbers) return true
+      if (Array.isArray(this.numbers) && Array.isArray(other.numbers)) {
+        return (
+          this.numbers.length === other.numbers.length &&
+          this.numbers.every((n, i) => n === other.numbers[i])
+        )
+      }
+      return this.numbers == other.numbers
+    }
     toDOM() {
       const wrapper = document.createElement('div')
       wrapper.className = 'vis-line-num-wrapper'
-      if (Array.isArray(this.numbers)) {
-        for (let i = 0; i < this.numbers.length; i++) {
-          const d = document.createElement('div')
-          d.className = i === 0 ? 'vis-line-num vis-line-num-primary' : 'vis-line-num vis-line-num-sub'
-          d.textContent = String(this.numbers[i])
-          wrapper.appendChild(d)
-        }
-      } else if (typeof this.numbers === 'string') {
-        wrapper.innerHTML = this.numbers
+      const nums = Array.isArray(this.numbers) ? this.numbers : [this.numbers]
+
+      for (let i = 0; i < nums.length; i++) {
+        const d = document.createElement('div')
+        d.className =
+          i === 0 ? 'vis-line-num vis-line-num-primary' : 'vis-line-num vis-line-num-sub'
+        d.textContent = String(nums[i])
+        wrapper.appendChild(d)
       }
-      // Debug: log gutter marker creation and font-size/font-family/font-weight
-      try {
-        const gutterFont = window.getComputedStyle(wrapper).fontSize;
-        const gutterFamily = window.getComputedStyle(wrapper).fontFamily;
-        const gutterWeight = window.getComputedStyle(wrapper).fontWeight;
-        const content = document.querySelector('.cm-content');
-        const contentFont = content ? window.getComputedStyle(content).fontSize : 'N/A';
-        const contentFamily = content ? window.getComputedStyle(content).fontFamily : 'N/A';
-        const contentWeight = content ? window.getComputedStyle(content).fontWeight : 'N/A';
-        console.debug('[GUTTER] Marker created:', this.numbers, {
-          gutterFont, gutterFamily, gutterWeight,
-          contentFont, contentFamily, contentWeight
-        });
-      } catch (e) {}
       return wrapper
     }
   }
 
-  function makeNumbersArray(number, count) {
-    // VS Code behavior: each visual line gets the document line number
-    // If a paragraph wraps to 3 lines, all 3 get the same document line number
-    return Array(count).fill(number)
-  }
-
+  // Map<pos, count>
   const cache = new Map()
 
-  const computeForLine = (view, line) => {
-    try {
-      const { from } = line
-      // If this is outside the visible viewport, avoid expensive DOM reads.
-      const vp = view.viewport
-      if (from < vp.from || from >= vp.to) return 1
-
-      const posInfo = view.domAtPos(from)
-      let node = posInfo.node
-      while (node && node !== view.dom && !node.classList?.contains?.('cm-line')) {
-        node = node.parentElement
-      }
-      if (!node || node === view.dom) return 1
-
-      const rects = node.getClientRects()
-      if (rects && rects.length > 0) {
-        return Math.max(1, rects.length)
+  const measurePlugin = ViewPlugin.fromClass(
+    class {
+      constructor(view) {
+        this.view = view
+        this.requestMeasure()
       }
 
-      const lineRect = node.getBoundingClientRect()
-      const style = window.getComputedStyle(node)
-      const parentStyle = window.getComputedStyle(view.dom)
-      const lineHeightPx = parseFloat(style.lineHeight) || parseFloat(parentStyle.lineHeight) || 16
-      const count = Math.max(1, Math.round(lineRect.height / Math.max(1, lineHeightPx)))
-      return count
-    } catch (e) {
-      return 1
+      update(update) {
+        if (update.docChanged || update.viewportChanged || update.geometryChanged) {
+          this.requestMeasure()
+        }
+      }
+
+      requestMeasure() {
+        // Use requestMeasure to safely access DOM
+        try {
+          this.view.requestMeasure({
+            read: (view) => {
+              const vp = view.viewport
+              let changed = false
+
+              // Iterate over visible logical lines
+              for (let pos = vp.from; pos < vp.to; ) {
+                const line = view.state.doc.lineAt(pos)
+                const start = line.from
+
+                try {
+                  // Determine visual line count
+                  let count = 1
+                  // Safe DOM access check
+                  try {
+                    const posInfo = view.domAtPos(start)
+                    let node = posInfo.node
+                    // Walk up to find the line element
+                    while (node && node !== view.dom && !node.classList?.contains?.('cm-line')) {
+                      node = node.parentElement
+                    }
+
+                    if (node && node !== view.dom) {
+                      const style = window.getComputedStyle(node)
+                      const parentStyle = window.getComputedStyle(view.dom)
+                      const lh =
+                        parseFloat(style.lineHeight) || parseFloat(parentStyle.lineHeight) || 16
+                      const rect = node.getBoundingClientRect()
+                      // Calculate how many lines fit in the height
+                      count = Math.max(1, Math.round(rect.height / lh))
+                    }
+                  } catch (err) {
+                    // domAtPos might throw if view is in inconsistent state
+                    count = 1
+                  }
+
+                  if (cache.get(start) !== count) {
+                    cache.set(start, count)
+                    changed = true
+                  }
+                } catch (e) {
+                  // General safety catch
+                }
+
+                pos = line.to + 1
+              }
+              return changed
+            },
+            write: (changed, view) => {
+              if (changed) {
+                // Determine if we need to force a full redraw.
+                // Using requestMeasure recursively in write phase is safer than dispatch.
+                // However, getting the gutter to update might require a transaction.
+                // Let's try to just let the ViewPlugin lifecycle handle it, or use a safer dispatch.
+                // Actually, cache update alone won't trigger gutter redraw.
+                // We need to invalidate the gutter.
+                // A safe way is to dispatch a no-op effect or rely on the fact that geometry changes
+                // often trigger another measure pass.
+                // The crash 'destructure property tile of undefined' usually means
+                // we are messing with the view during a delicate phase.
+                // Let's TRY delaying the dispatch to next tick.
+                setTimeout(() => {
+                  try {
+                    if (!view.isDestroyed) view.dispatch([])
+                  } catch (e) {}
+                }, 0)
+              }
+            }
+          })
+        } catch (e) {
+          // Ignore measure request errors
+        }
+      }
+
+      destroy() {
+        cache.clear()
+      }
     }
-  }
+  )
 
   const gutterExt = gutter({
     class: 'cm-visualLineNumbers',
     marker(view, line) {
-      const start = line.from;
-      let count = cache.get(start);
-      let number = view.state.doc.lineAt(start).number;
-      let arr = [];
-      try {
-        const posInfo = view.domAtPos(start);
-        let node = posInfo.node;
-        while (node && node !== view.dom && !node.classList?.contains?.('cm-line')) {
-          node = node.parentElement;
-        }
-        let rects = null;
-        if (node && node !== view.dom) rects = node.getClientRects();
-        if (count == null) {
-          count = rects && rects.length > 0 ? rects.length : computeForLine(view, line);
-          cache.set(start, count);
-        }
-        // Defensive: always at least one marker
-        const remaining = Math.max(1, (rects?.length || count));
-        arr = makeNumbersArray(number, remaining);
-        // Debug: log marker, rects, and scroll
-        console.debug('[GUTTER] marker', {number, arr, rects, count});
-      } catch (e) {
-        // Defensive fallback: always show one marker
-        if (count == null) {
-          count = computeForLine(view, line);
-          cache.set(start, count);
-        }
-        arr = makeNumbersArray(number, Math.max(1, count));
-        console.debug('[GUTTER] fallback marker', {number, arr, count, error: e});
-      }
-      return new MultiNumberMarker(arr);
+      // Gutter marker simply reads from cache
+      // Default to 1 if not yet measured
+      const count = cache.get(line.from) || 1
+      const arr = Array(count).fill(line.number)
+      return new MultiNumberMarker(arr)
     }
   })
 
-  const refresher = ViewPlugin.fromClass(class {
-    constructor(view) {
-      this.view = view
-      this.scheduled = false
-      this.handleResize = () => this.requestRefresh('resize')
-      window.addEventListener('resize', this.handleResize)
-      this.scroller = view.dom.querySelector('.cm-scroller') || null
-      this._lastScrollTs = 0
-      this.handleScroll = () => {
-        const now = Date.now()
-        if (now - this._lastScrollTs > 16) {
-          this._lastScrollTs = now
-          // Always clear cache and force redraw
-          cache.clear();
-          try {
-            this.view.dispatch({ selection: this.view.state.selection })
-          } catch (e) {
-            try { this.view.requestMeasure() } catch (_) {}
-          }
-        }
-      }
-      if (this.scroller) this.scroller.addEventListener('scroll', this.handleScroll, { passive: true })
-      this.mo = new MutationObserver(() => this.requestRefresh('mutation'))
-      this.mo.observe(view.dom, { attributes: true, subtree: true, attributeFilter: ['style', 'class'] })
-      // Listen for zoom/font-size changes
-      this._zoomObserver = new MutationObserver(() => {
-        cache.clear();
-        this.requestRefresh('zoom');
-      })
-      const content = view.dom.querySelector('.cm-content')
-      if (content) this._zoomObserver.observe(content, { attributes: true, attributeFilter: ['style', 'class'] })
-    }
-    requestRefresh(reason) {
-      if (this.scheduled) return
-      this.scheduled = true
-      requestAnimationFrame(() => {
-        this.scheduled = false
-        try {
-          const vp = this.view.viewport
-          for (const key of Array.from(cache.keys())) {
-            if (key < vp.from || key >= vp.to) cache.delete(key)
-          }
-        } catch (err) {
-          cache.clear()
-        }
-        // Debug: log refresh reason and font-size
-        try {
-          const gutter = this.view.dom.querySelector('.cm-gutters')
-          const content = this.view.dom.querySelector('.cm-content')
-          const gutterFont = gutter ? window.getComputedStyle(gutter).fontSize : 'N/A'
-          const contentFont = content ? window.getComputedStyle(content).fontSize : 'N/A'
-          console.debug('[GUTTER] Refresh:', reason, 'Gutter font-size:', gutterFont, 'Content font-size:', contentFont)
-        } catch (e) {}
-        try { this.view.requestMeasure() } catch (e) { try { this.view.dispatch({ effects: [] }) } catch (_) {} }
-      })
-    }
-    update(update) {
-      if (update.docChanged || update.viewportChanged || update.selectionSet) this.requestRefresh('update')
-    }
-    destroy() {
-      window.removeEventListener('resize', this.handleResize)
-      if (this.scroller) this.scroller.removeEventListener('scroll', this.handleScroll)
-      this.mo.disconnect()
-      if (this._zoomObserver) this._zoomObserver.disconnect()
-    }
-  })
-
-  return [gutterExt, refresher]
+  return [gutterExt, measurePlugin]
 }

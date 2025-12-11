@@ -1,13 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 
-const NamePrompt = ({
-  open,
-  value,
-  onChange,
-  onCancel,
-  onConfirm
-}) => {
+const NamePrompt = ({ open, value, onChange, onCancel, onConfirm }) => {
   // Handle keyboard shortcuts
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && value?.trim()) {

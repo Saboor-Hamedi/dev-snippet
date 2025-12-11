@@ -8,7 +8,9 @@ const SidebarHeader = ({ title, count, itemLabel, onAction }) => (
     style={{ backgroundColor: 'var(--color-background-soft)', borderColor: 'var(--border-color)' }}
   >
     <div className="flex items-center gap-3 p-2 ">
-      <h1 className="text-sm font-medium" style={{ color: 'var(--sidebar-header-text)' }}>{title}</h1>
+      <h1 className="text-sm font-medium" style={{ color: 'var(--sidebar-header-text)' }}>
+        {title}
+      </h1>
       <>
         <p className="text-xs" style={{ color: 'var(--sidebar-header-text)' }}>
           {count}

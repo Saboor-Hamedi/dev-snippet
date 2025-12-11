@@ -47,7 +47,7 @@ export const useSnippetData = () => {
 
       // Save to database
       await window.api.saveSnippet(payload)
-      
+
       // Update local list in-place to avoid flicker
       setSnippets((prev) => {
         const exists = prev.some((s) => s.id === snippet.id)
@@ -56,7 +56,7 @@ export const useSnippetData = () => {
           ? prev.map((s) => (s.id === snippet.id ? { ...s, ...updatedItem } : s))
           : [updatedItem, ...prev]
       })
-      
+
       // Update the active view immediately to refresh snippet data for rename functionality
       if (!options.skipSelectedUpdate) {
         if (selectedSnippet && selectedSnippet.id === snippet.id) {

@@ -13,8 +13,6 @@ import { useKeyboardShortcuts } from '../../hook/useKeyboardShortcuts'
 import { useSettings } from '../../hook/useSettingsContext.jsx'
 import { useFontSettings } from '../../hook/useFontSettings'
 
-import { isSnippetSaved } from '../../hook/snippetUtils.js'
-
 const SnippetLibrary = () => {
   // Apply font settings globally
   useFontSettings()
@@ -94,9 +92,9 @@ const SnippetLibrary = () => {
       id: Date.now().toString(),
       title: '',
       code: '',
-      language: 'md',
+      language: 'markdown', // Force md
       timestamp: Date.now(),
-      type: 'snippet',
+      type: 'snippet', // Keep logic simple
       is_draft: true
     }
     // Keep draft in memory and open editor directly so it isn't accidentally
@@ -258,11 +256,13 @@ const SnippetLibrary = () => {
           const fileName = path.split('\\').pop().split('/').pop()
           const extension = fileName.split('.').pop()?.toLowerCase()
 
+          // Force language to markdown even if extension is different
+          // (User requested removal of language detection)
           const newEntry = {
             id: Date.now().toString(),
             title: fileName,
             code: content,
-            language: extension || 'text',
+            language: 'markdown',
             timestamp: Date.now(),
             type: 'snippet'
           }

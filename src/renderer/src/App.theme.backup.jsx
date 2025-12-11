@@ -8,7 +8,7 @@ import { SettingsProvider } from './hook/useSettingsContext.jsx'
 
 function App() {
   const { setTheme } = useTheme()
-  
+
   // Apply comprehensive theme system on app start
   useEffect(() => {
     const applyGlobalStyles = () => {
@@ -40,9 +40,9 @@ function App() {
       `
       document.head.appendChild(style)
     }
-    
+
     applyGlobalStyles()
-    
+
     const load = async () => {
       try {
         if (window.api?.getTheme) {

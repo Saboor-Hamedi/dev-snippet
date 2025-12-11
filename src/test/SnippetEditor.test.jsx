@@ -1,7 +1,6 @@
 import React from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import SnippetEditor from '../renderer/src/components/workbench/SnippetEditor.jsx'
 
 // Mock the hooks - capture shortcuts for testing
@@ -36,6 +35,10 @@ vi.mock('../renderer/src/hook/extractTags.js', () => ({
   default: vi.fn(() => [])
 }))
 
+// Mock Registry (even if unused, tests might import it)
+// We removed it from source code, but tests might still mock it if they think it's used
+// But SnippetEditor doesn't use it anymore.
+// I'll leave the mock if it's harmless or remove it.
 vi.mock('../renderer/src/language/languageRegistry.js', () => ({
   getAllLanguages: () => [{ key: 'javascript', name: 'JavaScript' }],
   getLanguageByExtension: vi.fn(() => 'javascript'),
@@ -206,7 +209,7 @@ describe('SnippetEditor', () => {
     })
 
     const nameInput = await screen.findByTestId('name-input')
-    fireEvent.change(nameInput, { target: { value: 'newfile.js' } })
+    fireEvent.change(nameInput, { target: { value: 'newfile.js' } }) // Tests that extension is replaced
 
     const confirmButton = screen.getByTestId('confirm-button')
     fireEvent.click(confirmButton)
@@ -214,8 +217,9 @@ describe('SnippetEditor', () => {
     await waitFor(() => {
       expect(mockOnSave).toHaveBeenCalledWith(
         expect.objectContaining({
-          title: 'newfile.js',
-          is_draft: false
+          title: 'newfile.md', // Expect forced .md
+          is_draft: false,
+          language: 'markdown' // Expect forced markdown
         })
       )
     })
@@ -251,8 +255,9 @@ describe('SnippetEditor', () => {
     await waitFor(() => {
       expect(mockOnSave).toHaveBeenCalledWith(
         expect.objectContaining({
-          title: 'newfile.js',
-          is_draft: false
+          title: 'newfile.md', // Expect forced .md
+          is_draft: false,
+          language: 'markdown' // Expect forced markdown
         })
       )
     })

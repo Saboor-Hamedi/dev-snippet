@@ -1,14 +1,14 @@
 // components/CopyButton.tsx
-import { Copy, Check } from 'lucide-react';
-import { useState } from 'react';
+import { Copy, Check } from 'lucide-react'
+import { useState } from 'react'
 export default function CopyButton({ text }) {
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState(false)
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+    await navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   return (
     <button

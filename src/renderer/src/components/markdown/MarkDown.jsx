@@ -13,7 +13,7 @@ const renderMarkdown = (text) => {
   html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
   html = html.replace(/\*(.*?)\*/g, '<em>$1</em>')
   html = html.replace(/`([^`]+)`/g, '<code>$1</code>')
-  html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+  // Do not convert triple-backtick fenced blocks to <pre><code>; leave them as literal text
   html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank">$1</a>')
   html = html.replace(/\n/g, '<br/>')
   return html

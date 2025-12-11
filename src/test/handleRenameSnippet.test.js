@@ -1,19 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { handleRenameSnippet } from '../renderer/src/hook/handleRenameSnippet.js'
 
-// Mock the language registry
+// Mock the language registry (though ignored by implementation, kept for safety)
 vi.mock('../renderer/src/components/language/languageRegistry.js', () => ({
   getLanguageByExtension: vi.fn((filename) => {
-    const ext = filename.match(/\.([^.]+)$/)?.[1]
-    const langMap = {
-      js: 'javascript',
-      py: 'python',
-      md: 'markdown',
-      css: 'css',
-      html: 'html',
-      json: 'json'
-    }
-    return langMap[ext] || null
+    // Return mock values if needed, but logic is hardcoded now
+    return 'markdown'
   })
 }))
 
@@ -32,11 +24,11 @@ describe('handleRenameSnippet', () => {
     mockShowToast = vi.fn()
   })
 
-  it('renames snippet with new extension', async () => {
+  it('renames snippet with new extension (forced to .md)', async () => {
     const renameModal = {
       isOpen: true,
       item: { id: '1', title: 'old.js', language: 'javascript', code: 'test' },
-      newName: 'new.py'
+      newName: 'new.py' // User types .py
     }
 
     await handleRenameSnippet({
@@ -50,15 +42,15 @@ describe('handleRenameSnippet', () => {
 
     expect(mockSaveSnippet).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: 'new.py',
-        language: 'python',
+        title: 'new.md', // Forced .md
+        language: 'markdown', // Forced markdown
         is_draft: false
       })
     )
     expect(mockShowToast).toHaveBeenCalledWith('✓ Snippet renamed successfully', 'success')
   })
 
-  it('preserves language when renaming without extension', async () => {
+  it('preserves language when renaming without extension (forced to .md)', async () => {
     const renameModal = {
       isOpen: true,
       item: { id: '1', title: 'old.js', language: 'javascript', code: 'test' },
@@ -76,8 +68,8 @@ describe('handleRenameSnippet', () => {
 
     expect(mockSaveSnippet).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: 'newname',
-        language: 'javascript' // Should preserve original language
+        title: 'newname.md',
+        language: 'markdown' // Forced
       })
     )
   })
@@ -100,7 +92,8 @@ describe('handleRenameSnippet', () => {
 
     expect(mockSaveSnippet).toHaveBeenCalledWith(
       expect.objectContaining({
-        language: 'markdown'
+        language: 'markdown',
+        title: 'script.md'
       })
     )
   })
@@ -108,7 +101,8 @@ describe('handleRenameSnippet', () => {
   it('uses original title when newName is empty', async () => {
     const renameModal = {
       isOpen: true,
-      item: { id: '1', title: 'old.js', language: 'javascript', code: 'test' },
+      // Use .md here so no migration occurs
+      item: { id: '1', title: 'old.md', language: 'markdown', code: 'test' },
       newName: ''
     }
 
@@ -123,7 +117,7 @@ describe('handleRenameSnippet', () => {
 
     // Should skip saving since name didn't change
     expect(mockSaveSnippet).not.toHaveBeenCalled()
-    expect(mockShowToast).toHaveBeenCalledWith("Not renamed: 'old.js'", 'info')
+    expect(mockShowToast).toHaveBeenCalledWith('No changes made', 'info')
   })
 
   it('trims whitespace from new name', async () => {
@@ -144,7 +138,7 @@ describe('handleRenameSnippet', () => {
 
     expect(mockSaveSnippet).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: 'newfile.js'
+        title: 'newfile.md'
       })
     )
   })
@@ -152,8 +146,9 @@ describe('handleRenameSnippet', () => {
   it('skips saving when name unchanged', async () => {
     const renameModal = {
       isOpen: true,
-      item: { id: '1', title: 'same.js', language: 'javascript', code: 'test' },
-      newName: 'same.js'
+      // Use .md here so no migration occurs
+      item: { id: '1', title: 'same.md', language: 'markdown', code: 'test' },
+      newName: 'same.md'
     }
 
     await handleRenameSnippet({
@@ -166,7 +161,7 @@ describe('handleRenameSnippet', () => {
     })
 
     expect(mockSaveSnippet).not.toHaveBeenCalled()
-    expect(mockShowToast).toHaveBeenCalledWith("Not renamed: 'same.js'", 'info')
+    expect(mockShowToast).toHaveBeenCalledWith('No changes made', 'info')
   })
 
   it('handles missing item gracefully', async () => {
@@ -230,7 +225,8 @@ describe('handleRenameSnippet', () => {
 
     expect(mockSaveSnippet).toHaveBeenCalledWith(
       expect.objectContaining({
-        is_draft: false
+        is_draft: false,
+        title: 'final.md'
       })
     )
   })
@@ -271,11 +267,12 @@ describe('handleRenameSnippet', () => {
       showToast: mockShowToast
     })
 
-    // Should preserve original language for unknown extensions
+    // Should preserve original language for unknown extensions -> OLD LOGIC
+    // NEW LOGIC: Force md and markdown
     expect(mockSaveSnippet).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: 'file.xyz',
-        language: 'javascript' // Preserves original
+        title: 'file.md', // Forced
+        language: 'markdown' // Forced
       })
     )
   })

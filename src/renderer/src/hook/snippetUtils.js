@@ -7,13 +7,13 @@
  */
 export function isSnippetSaved(snippet) {
   if (!snippet) return false
-  
+
   // Explicitly marked as draft
   if (snippet.is_draft === true) return false
-  
+
   // Has draft ID prefix (temporary/unsaved)
   if (typeof snippet.id === 'string' && snippet.id.startsWith('draft-')) return false
-  
+
   // Must have a valid ID to be considered saved
   return Boolean(snippet.id)
 }

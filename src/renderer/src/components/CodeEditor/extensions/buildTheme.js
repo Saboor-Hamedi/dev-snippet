@@ -1,11 +1,5 @@
-import { EditorView } from '@codemirror/view'
-
 const buildTheme = (EditorView, options = {}) => {
-  const {
-    isDark = false,
-    fontSize = 'var(--editor-font-size, 14px)',
-    caretColor = 'var(--caret-color, #fefeffff)'
-  } = options
+  const { isDark = false, fontSize = 'var(--editor-font-size, 14px)' } = options
 
   return EditorView.theme(
     {
@@ -13,10 +7,22 @@ const buildTheme = (EditorView, options = {}) => {
         backgroundColor: 'var(--editor-bg, var(--color-bg-primary)) !important',
         color: 'var(--color-text-primary, #0f172a)',
         fontFamily: 'var(--editor-font-family, "JetBrains Mono")',
-        fontSize: `calc(${fontSize} * var(--zoom-level, 1))`, // MOVED HERE
+        fontSize: `calc(${fontSize} * var(--zoom-level, 1))`,
         lineHeight: '1.6',
         height: '100%',
         transition: 'background-color 140ms ease, color 140ms ease'
+      },
+
+      // Dark mode overrides for safety
+      '&.cm-editor.dark': {
+        backgroundColor: '#0d1117 !important',
+        color: '#e6edf3'
+      },
+      '&.cm-editor.dark .cm-gutters': {
+        backgroundColor: 'transparent !important',
+        // Force a light color for getters in dark mode regardless of bad vars
+        color: '#8b949e !important',
+        borderRightColor: '#30363d !important'
       },
 
       '.cm-scroller': {
@@ -26,10 +32,6 @@ const buildTheme = (EditorView, options = {}) => {
         minWidth: '100%',
         height: '100%',
         boxSizing: 'border-box',
-        display: 'flex !important',
-        flexDirection: 'row !important', // Ensure gutters and content are side-by-side if that's the structure, or just let CM handle it.
-        // Actually, CM6 structure is usually Gutters + Content inside Scroller? No, Gutters are often separate or inside.
-        // Let's stick to standard properties but ensure height is passed down.
         position: 'relative'
       },
 
@@ -58,35 +60,22 @@ const buildTheme = (EditorView, options = {}) => {
         backgroundColor: 'transparent',
         padding: '12px',
         fontFamily: 'inherit',
-        // fontSize: `calc(${fontSize} * var(--zoom-level, 1))`, // REMOVED
         lineHeight: '1.6',
         minHeight: '100%',
-        boxSizing: 'border-box',
-        flex: '1 1 auto'
+        boxSizing: 'border-box'
       },
 
-      // This is the gutter stuff, you can play around with gutter.
-      // I don't like it, so I set it to transparent.
-      // Of course I set custom settings.json for
-      // --gutterBgColor: #fefeffff;
-
       '.cm-gutters': {
-        // backgroundColor: 'transparent !important',
         backgroundColor: 'var(--gutter-bg-color, transparent) !important',
         color: 'var(--color-text-secondary, #64748b)',
-        // borderRight: 'none !important',
         borderRight:
           'var(--gutter-border-width, 1px) solid var(--gutter-border-color, transparent) !important',
         fontFamily: 'inherit',
-        // Use em units for stable scaling with font size
         minWidth: '3em',
         lineHeight: '1.6',
         minHeight: '100%',
         boxSizing: 'border-box',
-        padding: '0 0.2em', // Scalable padding
-        display: 'flex !important',
-        alignItems: 'center !important',
-        justifyContent: 'center !important'
+        padding: '0 0.2em'
       },
       '.cm-gutterElement': {
         background: 'transparent !important',
@@ -94,19 +83,15 @@ const buildTheme = (EditorView, options = {}) => {
         alignItems: 'center !important',
         justifyContent: 'center !important',
         textAlign: 'center !important',
-        padding: '0 !important', // Remove element padding, let gutter handle spacing
-        minWidth: '100%' // Ensure it fills the gutter to center properly
+        padding: '0 !important',
+        minWidth: '100%'
       },
 
       // Active line
       '.cm-activeLine': {
-        // backgroundColor: 'var(--active-line-bg, rgba(125, 125, 125, 0.1)) !important'
         backgroundColor: 'transparent !important'
       },
       '.cm-activeLineGutter': {
-        // This it linenumber background, which I hate it.
-        // backgroundColor: 'transparent !important',
-
         color: 'var(--color-text-primary, #e2e8f0) !important'
       },
 

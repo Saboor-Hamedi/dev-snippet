@@ -14,14 +14,14 @@ export const useTheme = () => {
   const setTheme = (themeId, colors) => {
     setCurrentTheme(themeId)
     document.documentElement.setAttribute('data-theme', themeId)
-    
+
     // Set dark class for non-light themes
     if (themeId === 'polaris') {
       document.documentElement.classList.remove('dark')
     } else {
       document.documentElement.classList.add('dark')
     }
-    
+
     // Let ThemeModal handle all CSS variable setting
     // This function is mainly for state management and persistence
   }

@@ -8,17 +8,13 @@ export const useKeyboardShortcuts = (shortcuts) => {
     shortcutsRef.current = shortcuts
   }, [shortcuts])
 
-  
   useEffect(() => {
-    
-    
     const handleKeyDown = (e) => {
-      
       /*
        * This will basically stop other handlers when a modal is open
        * For example, if a delete confirmation modal is open, we don't want
        * the global shortcuts to trigger actions in the background.
-      */
+       */
       // Handle Escape key - check if menus are open first
       if (e.key === 'Escape' || e.key === 'Esc') {
         // Only close modals and menus with plain Escape, don't close editor
@@ -35,7 +31,7 @@ export const useKeyboardShortcuts = (shortcuts) => {
           } catch {}
         }
       }
-      
+
       // Ctrl+Shift+W to close editor/go to welcome (like closing a tab)
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'w') {
         e.preventDefault()
@@ -90,7 +86,8 @@ export const useKeyboardShortcuts = (shortcuts) => {
       // Ctrl+Shift+\ toggles live preview. Support multiple key/code variants
       // to handle different keyboard layouts (Backslash, IntlBackslash, '|' with Shift).
       if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
-        const isBackslashKey = e.key === '\\' || e.key === '|' || e.code === 'Backslash' || e.code === 'IntlBackslash'
+        const isBackslashKey =
+          e.key === '\\' || e.key === '|' || e.code === 'Backslash' || e.code === 'IntlBackslash'
         if (isBackslashKey) {
           try {
             e.preventDefault()

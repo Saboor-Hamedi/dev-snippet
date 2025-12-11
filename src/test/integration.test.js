@@ -10,14 +10,6 @@ vi.mock('../renderer/src/hook/useToast', () => ({
   useToast: () => ({ showToast: vi.fn() })
 }))
 
-vi.mock('../renderer/src/components/language/languageRegistry.js', () => ({
-  getLanguageByExtension: vi.fn((filename) => {
-    const ext = filename.match(/\.([^.]+)$/)?.[1]
-    const langMap = { js: 'javascript', py: 'python', md: 'markdown' }
-    return langMap[ext] || null
-  })
-}))
-
 const mockApi = {
   getSnippets: vi.fn(),
   saveSnippet: vi.fn(),
@@ -41,7 +33,7 @@ describe('Integration Tests', () => {
       // Wait for initial load
       await waitFor(() => expect(result.current.snippets).toEqual([]))
 
-      // 1. CREATE: Add new snippet
+      // 1. CREATE: Add new snippet (Direct save allows .js if bypassed)
       const newSnippet = {
         id: '1',
         title: 'test.js',
@@ -74,7 +66,7 @@ describe('Integration Tests', () => {
 
       expect(result.current.snippets[0].code).toBe('console.log("updated")')
 
-      // 3. RENAME: Change filename and language
+      // 3. RENAME: Change filename and language (Uses handleRenameSnippet which enforces .md)
       const mockSetters = {
         setSelectedSnippet: vi.fn(),
         setRenameModal: vi.fn(),
@@ -84,17 +76,18 @@ describe('Integration Tests', () => {
       await handleRenameSnippet({
         renameModal: {
           item: result.current.snippets[0],
-          newName: 'script.py'
+          newName: 'script.py' // Input
         },
         saveSnippet: result.current.saveSnippet,
         ...mockSetters,
         showToast: vi.fn()
       })
 
+      // EXPECT ENFORCED MARKDOWN
       expect(mockApi.saveSnippet).toHaveBeenCalledWith(
         expect.objectContaining({
-          title: 'script.py',
-          language: 'python'
+          title: 'script.md', // Forced .md
+          language: 'markdown' // Forced markdown
         })
       )
 

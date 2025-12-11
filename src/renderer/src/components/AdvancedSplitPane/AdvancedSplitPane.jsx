@@ -1,6 +1,7 @@
-import React, { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState } from 'react'
+import PropTypes from 'prop-types'
 import { GripVertical } from 'lucide-react'
-import { useSettings } from '../../hook/useSettingsContext'
+import useAdvancedSplitPane from './useAdvacedSplitPane.js'
 
 const AdvancedSplitPane = ({
   left,
@@ -16,33 +17,21 @@ const AdvancedSplitPane = ({
   const containerRef = useRef(null)
   const draggingRef = useRef(false)
 
-  // Read preview colors from settings via the settings hook
-  const { getSetting } = useSettings()
-  const livePreviewBgColor = getSetting('preview.livePreviewBgColor') ?? '#232731'
-  const livePreviewBorderColor = getSetting('preview.livePreviewBorderColor') ?? '#232731'
-  const livePreviewBorderWidth = getSetting('preview.livePreviewBorderWidth') ?? 1
-  const livePreviewBorderRound = getSetting('preview.livePreviewBorderRound') ?? 4
+  /*
+   * Read preview colors from settings via the settings hook
+   * useAdvancedSplitPane.js
+   * This allows dynamic updating without re-rendering the whole component.
+   */
+  const { bgColor, borderWidth, borderColor, borderRound } = useAdvancedSplitPane()
 
   useEffect(() => {
     if (containerRef.current) {
-      containerRef.current.style.setProperty('--live-preview-bg-color', livePreviewBgColor)
-      containerRef.current.style.setProperty('--live-preview-border-color', livePreviewBorderColor)
-      containerRef.current.style.setProperty(
-        '--live-preview-border-width',
-        `${livePreviewBorderWidth}px`
-      )
-      containerRef.current.style.setProperty(
-        '--live-preview-border-round',
-        `${livePreviewBorderRound}px`
-      )
+      containerRef.current.style.setProperty('--bg-color', bgColor)
+      containerRef.current.style.setProperty('--border-width', `${borderWidth}px`)
+      containerRef.current.style.setProperty('--border-color', borderColor)
+      containerRef.current.style.setProperty('--border-round', `${borderRound}px`)
     }
-  }, [
-    livePreviewBgColor,
-    livePreviewBorderColor,
-    livePreviewBorderWidth,
-    livePreviewBorderRound,
-    containerRef
-  ])
+  }, [bgColor, borderWidth, borderColor, borderRound, containerRef])
 
   // Separate state for each mode
   const [overlayWidth, setOverlayWidth] = useState(() => {
@@ -131,7 +120,8 @@ const AdvancedSplitPane = ({
       <div
         ref={containerRef}
         className="flex h-full w-full overflow-hidden"
-        style={{ backgroundColor: 'var(--editor-bg)' }}>
+        style={{ backgroundColor: 'var(--editor-bg)' }}
+      >
         <div className="min-h-0 overflow-auto" style={{ width: '100%' }}>
           {left}
         </div>
@@ -191,10 +181,11 @@ const AdvancedSplitPane = ({
                 width: `${overlayWidth}%`,
                 minWidth: `${minRight}px`,
                 maxWidth: '90%',
-                backgroundColor: livePreviewBgColor,
-                borderWidth: `${livePreviewBorderWidth}px`,
-                borderColor: livePreviewBorderColor || 'rgba(0,0,0,0.06)',
-                borderRadius: `${livePreviewBorderRound}px`
+                backgroundColor: bgColor,
+                border: `${borderWidth}px solid ${borderColor || 'rgba(0,0,0,0.06)'}`,
+                // borderColor: borderColor || 'rgba(0,0,0,0.06)',
+                borderRadius: `${borderRound}px`
+                // borderStyle: 'solid'
               }}
             >
               {/* Resize handle */}
@@ -259,6 +250,16 @@ const AdvancedSplitPane = ({
       </div>
     </div>
   )
+}
+AdvancedSplitPane.propTypes = {
+  left: PropTypes.node,
+  right: PropTypes.node,
+  unifiedScroll: PropTypes.bool,
+  overlayMode: PropTypes.bool,
+  minLeft: PropTypes.number,
+  minRight: PropTypes.number,
+  initialLeft: PropTypes.number,
+  rightHidden: PropTypes.bool
 }
 
 export default AdvancedSplitPane

@@ -12,7 +12,7 @@ const ToastNotification = ({ toast }) => {
       style={{
         zIndex: 1000,
         // backgroundColor: 'var(--color-bg-primary)',
-        color: 'var(--color-text-primary)',
+        color: 'var(--color-text-primary)'
         // border: '1px solid var(--border-color)',
       }}
     >

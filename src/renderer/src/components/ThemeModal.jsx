@@ -178,24 +178,24 @@ const ThemeModal = ({ isOpen, onClose }) => {
                 onClick={async () => {
                   // Apply ALL CSS variables to document root for comprehensive theming
                   const root = document.documentElement
-                  
+
                   // Clear any existing theme classes
                   root.classList.remove('dark')
-                  
+
                   // Apply CSS custom properties
                   Object.entries(theme.colors).forEach(([key, value]) => {
                     if (key.startsWith('--')) {
                       root.style.setProperty(key, value)
                     }
                   })
-                  
+
                   // Force specific variables for better reliability
                   if (theme.id === 'polaris') {
                     root.style.setProperty('--sidebar-header-text', '#475569')
                     root.style.setProperty('--color-text-primary', '#0f172a')
                     root.style.setProperty('--color-text-secondary', '#475569')
                   }
-                  
+
                   // Apply legacy CSS variables for compatibility
                   root.style.setProperty('--color-background', theme.colors.background)
                   root.style.setProperty('--color-background-soft', theme.colors.sidebar)
@@ -203,25 +203,29 @@ const ThemeModal = ({ isOpen, onClose }) => {
                   root.style.setProperty('--text-main', theme.colors.text)
                   root.style.setProperty('--accent', theme.colors.accent)
                   root.style.setProperty('--border-color', theme.colors.border)
-                  
+
                   // Apply selection colors from theme CSS variables
-                  if (theme.colors['--selected-bg']) root.style.setProperty('--selected-bg', theme.colors['--selected-bg'])
-                  if (theme.colors['--selected-text']) root.style.setProperty('--selected-text', theme.colors['--selected-text'])
-                  if (theme.colors['--hover-bg']) root.style.setProperty('--hover-bg', theme.colors['--hover-bg'])
-                  if (theme.colors['--hover-text']) root.style.setProperty('--hover-text', theme.colors['--hover-text'])
-                  
+                  if (theme.colors['--selected-bg'])
+                    root.style.setProperty('--selected-bg', theme.colors['--selected-bg'])
+                  if (theme.colors['--selected-text'])
+                    root.style.setProperty('--selected-text', theme.colors['--selected-text'])
+                  if (theme.colors['--hover-bg'])
+                    root.style.setProperty('--hover-bg', theme.colors['--hover-bg'])
+                  if (theme.colors['--hover-text'])
+                    root.style.setProperty('--hover-text', theme.colors['--hover-text'])
+
                   // Set dark class for non-light themes
                   if (theme.id !== 'polaris') {
                     root.classList.add('dark')
                   }
-                  
+
                   // Set theme attribute for CSS selectors
                   root.setAttribute('data-theme', theme.id)
-                  
+
                   // Force body background update
                   document.body.style.backgroundColor = theme.colors.background
                   document.body.style.color = theme.colors.text
-                  
+
                   setTheme(theme.id, theme.colors)
                   if (window.api?.saveTheme) {
                     await window.api.saveTheme({

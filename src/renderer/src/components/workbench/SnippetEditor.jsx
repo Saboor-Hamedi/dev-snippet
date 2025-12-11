@@ -1,17 +1,13 @@
 // SnippetEditor
 // - Responsible for editing a single snippet (draft or existing)
-// - Provides debounced autosave, forced-save (Ctrl+S) and name/save modal
-// - Receives `showToast` from parent to display user-facing toasts
 import React, { useState, useEffect, useRef } from 'react'
 import PropTypes from 'prop-types'
 import { useKeyboardShortcuts } from '../../hook/useKeyboardShortcuts.js'
 import { useEditorFocus } from '../../hook/useEditorFocus.js'
 import extractTags from '../../hook/extractTags.js'
-import { getAllLanguages, getLanguageByExtension, EditorLanguages } from '../language/languageRegistry.js'
 import { useZoomLevel } from '../../hook/useZoomLevel'
 import WelcomePage from '../WelcomePage.jsx'
 import StatusBar from '../StatusBar.jsx'
-import SplitPane from '../SplitPane/SplitPane.jsx'
 import CodeEditor from '../CodeEditor/CodeEditor.jsx'
 import LivePreview from '../livepreview/LivePreview.jsx'
 import NamePrompt from '../modal/NamePrompt.jsx'
@@ -29,21 +25,21 @@ const SnippetEditor = ({
   onSettingsClick,
   onAutosave,
   showToast,
-  // layout control forwarded from parent
   isCompact,
   onToggleCompact,
   showPreview
 }) => {
   const [code, setCode] = useState(initialSnippet?.code || '')
-  const [language, setLanguage] = React.useState(initialSnippet?.language || 'text')
+
+  // Language state removed. Implicitly 'markdown' everywhere.
+
   const [isDirty, setIsDirty] = useState(false)
-  const [zoomLevel] = useZoomLevel() // Use useSettingsReact Context for zoom level
+  const [zoomLevel] = useZoomLevel()
   const { settings, getSetting } = useSettings()
 
   const [title, setTitle] = useState(initialSnippet?.title || '')
 
   const [justRenamed, setJustRenamed] = useState(false)
-
 
   const hideWelcomePage = getSetting('ui.hideWelcomePage') || false
   const saveTimerRef = useRef(null)
@@ -51,40 +47,22 @@ const SnippetEditor = ({
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(() => {
     try {
       const saved = localStorage.getItem('autoSave')
-      return saved ? saved === 'true' : true // Default to enabled if not set
+      return saved ? saved === 'true' : true
     } catch (e) {
-      return true // Default to enabled
+      return true
     }
   })
 
   const lastSavedCode = useRef(initialSnippet?.code || '')
-  const lastSavedLanguage = useRef(initialSnippet?.language || 'text')
+  // lastSavedLanguage removed
   const lastSavedTitle = useRef(initialSnippet?.title || '')
 
   const isDeletingRef = useRef(false)
   const textareaRef = useRef(null)
   const editorContainerRef = useRef(null)
-  // Line wrapped here from  CodeEditor.jsx
   const wordWrap = settings?.editor?.wordWrap || 'off'
-  const overflow = settings?.editor?.overflow || false
 
-  // Modify the title to include the correct extension based on language
-  useEffect(() => {
-    const baseTitle = title.replace(/\.[a-z]+$/, '') // Remove existing extension
-    if (baseTitle) {
-      const ext = EditorLanguages[language]?.extensions[0] || 'txt'
-      const newTitle = `${baseTitle}.${ext}`
-      if (newTitle !== title) {
-        setTitle(newTitle)
-        // Notify parent of title change for live updates
-        if (initialSnippet?.id) {
-          window.dispatchEvent(new CustomEvent('title:change', { detail: { id: initialSnippet.id, title: newTitle } }))
-        }
-      }
-    }
-  }, [language, title])
-
-  // Local compact mode (used only if parent doesn't control it)
+  // Local compact mode
   const [localCompact, setLocalCompact] = useState(() => {
     try {
       return localStorage.getItem('compactMode') === 'true'
@@ -99,8 +77,6 @@ const SnippetEditor = ({
     } catch (e) {}
   }, [localCompact])
 
-  // If parent passes `isCompact` and `onToggleCompact`, treat compact as controlled.
-  // Otherwise fall back to local compact state `localCompact`.
   const controlledCompact = typeof isCompact !== 'undefined'
   const compact = controlledCompact ? isCompact : localCompact
   const onToggleCompactHandler = () => {
@@ -111,18 +87,13 @@ const SnippetEditor = ({
     }
   }
 
-  // Focus management extracted into a hook
+  // Focus management
   useEditorFocus({ initialSnippet, isCreateMode, textareaRef })
 
-  // CodeMirror is encapsulated in CodeEditor now
-
   const scheduleSave = () => {
-    // If autosave is disabled, skip scheduling
     if (!autoSaveEnabled) return
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
-    // Debounce autosave: 5000ms to reduce frequent writes for large snippets
-    // Emit a rate-limited 'pending' status so header shows "Saving..."
-    // without updating on every keystroke. Limit to once per 800ms.
+
     saveTimerRef.current = setTimeout(async () => {
       const id = initialSnippet?.id
       if (!id) return
@@ -132,9 +103,9 @@ const SnippetEditor = ({
         return
       const updatedSnippet = {
         id: id,
-        title: title, // Include updated title in autosave
-        code: code, // Use current editor content
-        language: language,
+        title: title,
+        code: code,
+        language: 'markdown', // Enforce Markdown
         timestamp: Date.now(),
         type: initialSnippet.type || 'snippet',
         tags: extractTags(code),
@@ -144,16 +115,12 @@ const SnippetEditor = ({
         onAutosave && onAutosave('saving')
       } catch {}
       try {
-        // Allow onSave to be async and wait for completion
         await onSave(updatedSnippet)
         onAutosave && onAutosave('saved')
-        // Clear dirty flag after a successful autosave
         try {
           setIsDirty(false)
         } catch {}
-        // Update last saved values
         lastSavedCode.current = code
-        lastSavedLanguage.current = language
         lastSavedTitle.current = title
       } catch (err) {
         onAutosave && onAutosave(null)
@@ -162,7 +129,6 @@ const SnippetEditor = ({
   }
 
   useEffect(() => {
-    // Register canceler globally keyed by snippet id
     const id = initialSnippet?.id
     if (id) {
       if (!window.__autosaveCancel) window.__autosaveCancel = new Map()
@@ -179,14 +145,12 @@ const SnippetEditor = ({
     }
   }, [initialSnippet?.id])
 
-  // Listen for autosave toggle events from SettingsPanel
   useEffect(() => {
     const onToggle = (e) => {
       try {
         const enabled = !!(e && e.detail && e.detail.enabled)
         setAutoSaveEnabled(enabled)
         if (!enabled) {
-          // cancel any pending autosave
           if (saveTimerRef.current) {
             clearTimeout(saveTimerRef.current)
             saveTimerRef.current = null
@@ -198,29 +162,16 @@ const SnippetEditor = ({
     return () => window.removeEventListener('autosave:toggle', onToggle)
   }, [])
 
-  // Track if this is the initial mount to prevent autosave on first render
   const isInitialMount = useRef(true)
   const lastSnippetId = useRef(initialSnippet?.id)
 
-  // Live update language extension
-  // Update language/code if initialSnippet changes (only on ID change to prevent autosave loops)
+  // Update code if initialSnippet changes
   React.useEffect(() => {
     if (!initialSnippet) return
-    const incomingLang = initialSnippet.language || 'text'
     if (initialSnippet && initialSnippet.id !== lastSnippetId.current) {
-      setLanguage(incomingLang)
       setCode(initialSnippet.code || '')
       setTitle(initialSnippet.title || '')
 
-      // Detect language from title extension
-      const detected = getLanguageByExtension(initialSnippet.title)
-      if (detected) {
-        setLanguage(detected)
-      } else if (initialSnippet.title && !initialSnippet.title.includes('.')) {
-        setLanguage('text')
-      }
-
-      // Loading a new snippet is not a user edit — reset dirty and skip autosave once
       try {
         setIsDirty(false)
       } catch {}
@@ -230,46 +181,35 @@ const SnippetEditor = ({
       lastSnippetId.current = initialSnippet.id
       return
     }
-    // Same snippet id but its language changed externally (e.g., rename)
-    // Only update editor language if user isn't actively editing and the incoming language differs.
-    if (incomingLang !== language && !isDirty) {
-      setLanguage(incomingLang)
-    }
-  }, [initialSnippet?.id, initialSnippet?.language, initialSnippet?.title, language, isDirty])
-  // Name prompt state for saving unsaved snippets
+  }, [initialSnippet?.id, initialSnippet?.title, isDirty])
+
   const [namePrompt, setNamePrompt] = useState({ isOpen: false, initialName: '' })
 
-  // Trigger debounced save on content or language change
+  // Trigger debounced save on content change (removed language dep)
   useEffect(() => {
-    // Skip autosave on initial mount/load
     if (isInitialMount.current) {
       isInitialMount.current = false
       return
     }
-    // Only schedule autosave when user actually changed content
     if (!isDirty) return
     if (!autoSaveEnabled) return
-    // Only autosave if snippet has a title (not untitled/draft)
     if (!initialSnippet?.title || initialSnippet?.title.toLowerCase() === 'untitled') return
     scheduleSave()
-  }, [code, language])
+  }, [code]) // Only code changes trigger autosave now
 
-  // Handle keyboard shortcuts (combined into single call)
   useKeyboardShortcuts({
     onSave: () => {
       const title = initialSnippet?.title || ''
       if (!title || title.toLowerCase() === 'untitled') {
         setNamePrompt({ isOpen: true, initialName: '' })
       } else {
-        handleSave(true) // force save
+        handleSave(true)
       }
     },
     onToggleCompact: onToggleCompactHandler,
-    // confirm delete
     onDelete: () => {
       if (onDelete) onDelete(initialSnippet?.id)
     },
-
     onCloseEditor: () => {
       if (onCancel) onCancel()
     }
@@ -277,15 +217,17 @@ const SnippetEditor = ({
 
   const handleSave = (forceSave = false) => {
     ;(async () => {
-      const localTitle = title // Use local title state instead of initialSnippet.title
-      // Only show "No changes to save" for saved snippets with actual content
-      // Check for changes (for saved snippets or manual saves)
-      if ((initialSnippet?.id && !initialSnippet?.is_draft && initialSnippet?.title && initialSnippet.title !== '') || forceSave) {
+      const localTitle = title
+      if (
+        (initialSnippet?.id &&
+          !initialSnippet?.is_draft &&
+          initialSnippet?.title &&
+          initialSnippet.title !== '') ||
+        forceSave
+      ) {
         const prevCode = lastSavedCode.current
-        const prevLang = lastSavedLanguage.current
         const prevTitle = lastSavedTitle.current
-        const unchanged =
-          prevCode === (code || '') && prevLang === (language || 'md') && prevTitle === localTitle
+        const unchanged = prevCode === (code || '') && prevTitle === localTitle
         if (unchanged) {
           if (typeof showToast === 'function') showToast('No changes to save', 'info')
           return
@@ -299,14 +241,12 @@ const SnippetEditor = ({
         id: initialSnippet?.id || Date.now().toString(),
         title: localTitle,
         code: code,
-        language: language,
+        language: 'markdown', // Enforce Markdown
         timestamp: Date.now(),
         type: 'snippet',
         tags: extractTags(code),
         is_draft: false
       }
-      // If there is a pending autosave timer, cancel it so we don't run
-      // the debounced save afterwards (avoid duplicate saves/state flips).
       try {
         const id = initialSnippet?.id
         if (id && window.__autosaveCancel && window.__autosaveCancel.get(id)) {
@@ -320,29 +260,20 @@ const SnippetEditor = ({
         }
       } catch {}
 
-      // Optimistic UI: show 'saved' immediately for a snappier feel when
-      // the user presses Ctrl+S. If the async save fails, emit an error
-      // state so the UI can show failure.
       try {
         onAutosave && onAutosave('saved')
       } catch {}
       try {
         await onSave(payload)
-        // notify parent that a forced save completed so they can show toast
         try {
           window.dispatchEvent(new CustomEvent('autosave:complete', { detail: { id: payload.id } }))
         } catch {}
-        // Clear dirty flag after successful manual save
         try {
           setIsDirty(false)
         } catch {}
-        // Update last saved values
         lastSavedCode.current = code
-        lastSavedLanguage.current = language
         lastSavedTitle.current = localTitle
-        // keep 'saved' state; parent may clear it after a short delay
       } catch (err) {
-        // indicate failure
         try {
           onAutosave && onAutosave('error')
           window.dispatchEvent(new CustomEvent('autosave:error', { detail: { id: payload.id } }))
@@ -351,7 +282,6 @@ const SnippetEditor = ({
     })()
   }
 
-  // Listen for an external 'force-save' event (e.g., Ctrl+S from global handler)
   useEffect(() => {
     const fn = (e) => {
       try {
@@ -362,7 +292,6 @@ const SnippetEditor = ({
     return () => window.removeEventListener('force-save', fn)
   }, [code, initialSnippet])
 
-  // Focus editor after renaming
   useEffect(() => {
     if (justRenamed && !namePrompt.isOpen) {
       setTimeout(() => {
@@ -379,148 +308,113 @@ const SnippetEditor = ({
 
   return (
     <>
-      {
-        // Guard: if not in create mode and there's no valid snippet, show Welcome
-        !isCreateMode && (!initialSnippet || !initialSnippet.id) && !hideWelcomePage ? (
-          <WelcomePage onNewSnippet={onNew} />
-        ) : (
-          <div className="h-full overflow-hidden flex flex-col items-stretch bg-slate-50 dark:bg-[#0d1117] relative">
-            {/* Header is rendered at the top-level (SnippetLibrary). Do not render it here to avoid duplicates. */}
-            <div
-              className="flex-1 min-h-0 overflow-hidden editor-container relative"
-              style={{ backgroundColor: 'var(--editor-bg)', display: 'flex' }}
-            >
-              <AdvancedSplitPane
-                rightHidden={!showPreview || showPreview === false}
-                unifiedScroll={true} // Add this prop to enable unified scrolling
-                overlayMode={settings?.editor?.overlayMode || false} // Use existing settings
-                left={
-                  <div ref={editorContainerRef} className="w-full h-full">
-                    <CodeEditor
-                      value={code || ''}
-                      wordWrap={wordWrap}
-                      onChange={(val) => {
-                        try {
-                          setCode(val || '')
-                          setIsDirty(true)
-                        } catch {}
-                      }}
-                      onKeyDown={(e) => {
-                        try {
-                          if (e.key === 'Escape') {
-                            onCancel && onCancel()
-                            return
-                          }
-                          if ((e.ctrlKey || e.metaKey) && e.key === ',') {
-                            e.preventDefault()
-                            onToggleCompactHandler()
-                            return
-                          }
-                        } catch {}
-                      }}
-                      height="100%"
-                      className="h-full"
-                      style={{ backgroundColor: 'transparent' }}
-                      language={language}
-                      textareaRef={textareaRef}
-                      onZoomChange={() => {}} // No need for callback, using React Context
-                    />
-                  </div>
-                }
-                right={
-                  <div className="h-full p-4" style={{ backgroundColor: 'transparent' }}>
-                    <LivePreview code={code} language={language} />
-                  </div>
-                }
-              />
-            </div>
-
-            {false && <div />}
-
-            <NamePrompt
-              open={namePrompt.isOpen}
-              value={namePrompt.initialName}
-              onChange={(val) => setNamePrompt((prev) => ({ ...prev, initialName: val }))}
-              onCancel={() => setNamePrompt({ isOpen: false, initialName: '' })}
-              onConfirm={() => {
-                const entered = (namePrompt.initialName || '').trim()
-                if (!entered) return
-                const detectedLang = getLanguageByExtension(entered)
-                let lang = language
-                let ext = EditorLanguages[language]?.extensions[0] || 'txt'
-                if (detectedLang) {
-                  lang = detectedLang
-                  setLanguage(detectedLang)
-                  ext = EditorLanguages[detectedLang]?.extensions[0] || 'txt'
-                } else {
-                  // no extension detected
-                  if (!entered.includes('.')) {
-                    lang = 'text'
-                    setLanguage('text')
-                    ext = 'txt'
-                  } else {
-                    // entered has extension but not recognized, use current language
-                    lang = language
-                    ext = EditorLanguages[language]?.extensions[0] || 'txt'
-                  }
-                }
-                const baseName = entered.replace(/\.[a-z]+$/, '')
-                const fullTitle = baseName ? `${baseName}.${ext}` : `.${ext}`
-                const payload = {
-                  id: initialSnippet?.id || Date.now().toString(),
-                  title: fullTitle,
-                  code: code,
-                  language: lang,
-                  timestamp: Date.now(),
-                  type: 'snippet',
-                  is_draft: false
-                }
-                setNamePrompt({ isOpen: false, initialName: '' })
-                setJustRenamed(true)
-                setTitle(fullTitle) // Update local title state
-                onSave(payload)
-              }}
+      {!isCreateMode && (!initialSnippet || !initialSnippet.id) && !hideWelcomePage ? (
+        <WelcomePage onNewSnippet={onNew} />
+      ) : (
+        <div className="h-full overflow-hidden flex flex-col items-stretch bg-slate-50 dark:bg-[#0d1117] relative">
+          <div
+            className="flex-1 min-h-0 overflow-hidden editor-container relative"
+            style={{ backgroundColor: 'var(--editor-bg)', display: 'flex' }}
+          >
+            <AdvancedSplitPane
+              rightHidden={!showPreview || showPreview === false}
+              unifiedScroll={true}
+              overlayMode={settings?.editor?.overlayMode || false}
+              left={
+                <div ref={editorContainerRef} className="w-full h-full">
+                  <CodeEditor
+                    value={code || ''}
+                    wordWrap={wordWrap}
+                    onChange={(val) => {
+                      try {
+                        setCode(val || '')
+                        setIsDirty(true)
+                      } catch {}
+                    }}
+                    onKeyDown={(e) => {
+                      try {
+                        if (e.key === 'Escape') {
+                          onCancel && onCancel()
+                          return
+                        }
+                        if ((e.ctrlKey || e.metaKey) && e.key === ',') {
+                          e.preventDefault()
+                          onToggleCompactHandler()
+                          return
+                        }
+                      } catch {}
+                    }}
+                    height="100%"
+                    className="h-full"
+                    style={{ backgroundColor: 'transparent' }}
+                    // Language prop removed - implied markdown
+                    textareaRef={textareaRef}
+                    onZoomChange={() => {}}
+                  />
+                </div>
+              }
+              right={
+                <div className="h-full p-4" style={{ backgroundColor: 'transparent' }}>
+                  {/* LivePreview language fixed to markdown */}
+                  <LivePreview code={code} language="markdown" />
+                </div>
+              }
             />
-            <div
-              className="flex items-center justify-between px-2 py-1"
-              style={{
-                backgroundColor: 'var(--header-bg)',
-                borderTop: '1px solid var(--border-color)'
-              }}
-            >
-              <div className="flex items-center gap-2">
-                <select
-                  value={language}
-                  onChange={(e) => {
-                    setLanguage(e.target.value)
-                    setIsDirty(true)
-                  }}
-                  className="text-xs bg-transparent border-none outline-none px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-300 cursor-pointer"
-                  title="Select Language"
-                >
-                  {getAllLanguages().map((lang) => (
-                    <option
-                      key={lang.key }
-                      value={lang.key}
-                      className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300"
-                    >
-                      {lang.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <StatusBar
-                onSettingsClick={onSettingsClick}
-                isCompact={compact}
-                onToggleCompact={onToggleCompactHandler}
-                language={language}
-                zoomLevel={zoomLevel}
-                title={title}
-              />
-            </div>
           </div>
-        )
-      }
+
+          {false && <div />}
+
+          <NamePrompt
+            open={namePrompt.isOpen}
+            value={namePrompt.initialName}
+            onChange={(val) => setNamePrompt((prev) => ({ ...prev, initialName: val }))}
+            onCancel={() => setNamePrompt({ isOpen: false, initialName: '' })}
+            onConfirm={() => {
+              const entered = (namePrompt.initialName || '').trim()
+              if (!entered) return
+
+              // Force markdown logic
+              const ext = 'md'
+              const baseName = entered.replace(/\.[a-z0-9]+$/i, '')
+              // Always append .md if not present, or replace existing extension with .md
+              // User said "save .md not anything else"
+              const fullTitle = `${baseName}.${ext}`
+
+              const payload = {
+                id: initialSnippet?.id || Date.now().toString(),
+                title: fullTitle,
+                code: code,
+                language: 'markdown',
+                timestamp: Date.now(),
+                type: 'snippet',
+                tags: extractTags(code),
+                is_draft: false
+              }
+              setNamePrompt({ isOpen: false, initialName: '' })
+              setJustRenamed(true)
+              setTitle(fullTitle)
+              onSave(payload)
+            }}
+          />
+          <div
+            className="flex items-center justify-between px-2 py-1"
+            style={{
+              backgroundColor: 'var(--header-bg)',
+              borderTop: '1px solid var(--border-color)'
+            }}
+          >
+            <div className="flex items-center gap-2"></div>
+            <StatusBar
+              onSettingsClick={onSettingsClick}
+              isCompact={compact}
+              onToggleCompact={onToggleCompactHandler}
+              // language prop removed
+              zoomLevel={zoomLevel}
+              title={title}
+            />
+          </div>
+        </div>
+      )}
     </>
   )
 }

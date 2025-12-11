@@ -103,6 +103,7 @@ class SettingManager {
               ...newSettings,
               editor: { ...DEFAULT_SETTINGS.editor, ...newSettings.editor },
               ui: { ...DEFAULT_SETTINGS.ui, ...newSettings.ui },
+              livePreview: { ...DEFAULT_SETTINGS.livePreview, ...newSettings.livePreview },
               behavior: { ...DEFAULT_SETTINGS.behavior, ...newSettings.behavior },
               advanced: { ...DEFAULT_SETTINGS.advanced, ...newSettings.advanced }
             }

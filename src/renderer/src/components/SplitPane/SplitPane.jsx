@@ -58,19 +58,19 @@ const SplitPane = ({
   useEffect(() => {
     const handleMouseMove = (e) => {
       if (!draggingRef.current || !containerRef.current) return
-      
+
       e.preventDefault()
       e.stopPropagation()
-      
+
       const rect = containerRef.current.getBoundingClientRect()
-      
+
       if (overlayMode) {
         // In overlay mode, adjust the width of the floating panel from the right edge
         const x = e.clientX - rect.left
         const rightWidth = rect.width - x
         const rightPercent = Math.max(20, Math.min(80, (rightWidth / rect.width) * 100))
         const newLeftPercent = 100 - rightPercent
-        
+
         setLeftPercent(newLeftPercent)
         userSplitRef.current = newLeftPercent
       } else {
@@ -80,7 +80,7 @@ const SplitPane = ({
         const minRightPx = Math.max(minRight, 0)
         const clampedX = Math.min(Math.max(x, minLeftPx), rect.width - minRightPx)
         const newPercent = Math.max(10, Math.min(90, (clampedX / rect.width) * 100))
-        
+
         setLeftPercent(newPercent)
         userSplitRef.current = newPercent
       }
@@ -170,32 +170,30 @@ const SplitPane = ({
         style={{ backgroundColor: 'var(--editor-bg)' }}
       >
         {/* Full-width editor (left pane) */}
-        <div className="absolute inset-0 w-full h-full">
-          {left}
-        </div>
-        
+        <div className="absolute inset-0 w-full h-full">{left}</div>
+
         {/* Floating LivePreview overlay (right pane) */}
         {!rightHidden && (
-          <div 
+          <div
             className="absolute top-4 right-4 bottom-4 bg-white dark:bg-slate-800 
                        border border-slate-200 dark:border-slate-700 rounded-lg
                        shadow-md overflow-hidden"
-            style={{ 
+            style={{
               width: `${100 - leftPercent}%`,
               minWidth: `${minRight}px`,
               maxWidth: '80%'
             }}
           >
             {/* Resize handle */}
-            <div className="absolute left-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-500/20 transition-colors flex items-center justify-center"
-                 onMouseDown={startDrag}>
+            <div
+              className="absolute left-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-500/20 transition-colors flex items-center justify-center"
+              onMouseDown={startDrag}
+            >
               <div className="w-1 h-8 bg-slate-400 dark:bg-slate-500 rounded-full"></div>
             </div>
-            
+
             {/* Content with padding for resize handle */}
-            <div className="h-full ml-2 overflow-auto">
-              {right}
-            </div>
+            <div className="h-full ml-2 overflow-auto">{right}</div>
           </div>
         )}
       </div>
@@ -225,17 +223,17 @@ const SplitPane = ({
              transition-all duration-200 
              rounded-md
              p-1 ml-1 cursor-col-resize select-none"
-            role="separator"
-            aria-orientation="vertical"
-            onMouseDown={startDrag}
-            onTouchStart={startDrag}
-            style={{
-              userSelect: 'none',
-              touchAction: 'none',
-              WebkitUserSelect: 'none',
-              msUserSelect: 'none',
-              MozUserSelect: 'none'
-            }}
+          role="separator"
+          aria-orientation="vertical"
+          onMouseDown={startDrag}
+          onTouchStart={startDrag}
+          style={{
+            userSelect: 'none',
+            touchAction: 'none',
+            WebkitUserSelect: 'none',
+            msUserSelect: 'none',
+            MozUserSelect: 'none'
+          }}
         >
           <GripVertical className="text-slate-600 dark:text-slate-300 pointer-events-none" />
         </div>
@@ -248,4 +246,3 @@ const SplitPane = ({
   )
 }
 export default SplitPane
-

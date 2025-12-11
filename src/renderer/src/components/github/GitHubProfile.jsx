@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react'
-import { 
-  Github, 
-  MapPin, 
-  Link as LinkIcon, 
-  Users, 
-  BookOpen, 
+import {
+  Github,
+  MapPin,
+  Link as LinkIcon,
+  Users,
+  BookOpen,
   Star,
   GitFork,
   Calendar,
@@ -44,26 +44,29 @@ const GitHubProfile = ({ username, onClose }) => {
         const profileResponse = await fetch(`https://api.github.com/users/${username}`, {
           mode: 'cors',
           headers: {
-            'Accept': 'application/vnd.github.v3+json'
+            Accept: 'application/vnd.github.v3+json'
           }
         })
-        
+
         if (!profileResponse.ok) {
           throw new Error('API request failed')
         }
-        
+
         const profileData = await profileResponse.json()
         setProfile(profileData)
 
         // Try to fetch repos
         try {
-          const reposResponse = await fetch(`https://api.github.com/users/${username}/repos?sort=updated&per_page=8`, {
-            mode: 'cors',
-            headers: {
-              'Accept': 'application/vnd.github.v3+json'
+          const reposResponse = await fetch(
+            `https://api.github.com/users/${username}/repos?sort=updated&per_page=8`,
+            {
+              mode: 'cors',
+              headers: {
+                Accept: 'application/vnd.github.v3+json'
+              }
             }
-          })
-          
+          )
+
           if (reposResponse.ok) {
             const reposData = await reposResponse.json()
             setRepos(reposData)
@@ -71,7 +74,6 @@ const GitHubProfile = ({ username, onClose }) => {
         } catch (repoError) {
           console.log('Could not fetch repositories')
         }
-
       } catch (err) {
         console.error('GitHub fetch error:', err)
         // Set comprehensive fallback data
@@ -80,7 +82,10 @@ const GitHubProfile = ({ username, onClose }) => {
           name: username === 'Saboor-Hamedi' ? 'Saboor Hamedi' : username,
           avatar_url: `https://github.com/${username}.png`,
           html_url: `https://github.com/${username}`,
-          bio: username === 'Saboor-Hamedi' ? 'Software Developer passionate about creating efficient tools and applications. Building the future, one line of code at a time.' : 'Passionate developer building amazing software solutions.',
+          bio:
+            username === 'Saboor-Hamedi'
+              ? 'Software Developer passionate about creating efficient tools and applications. Building the future, one line of code at a time.'
+              : 'Passionate developer building amazing software solutions.',
           company: username === 'Saboor-Hamedi' ? 'Independent Developer' : null,
           location: username === 'Saboor-Hamedi' ? 'Afghanistan' : null,
           blog: username === 'Saboor-Hamedi' ? 'https://saboor-dev.com' : null,
@@ -89,7 +94,7 @@ const GitHubProfile = ({ username, onClose }) => {
           following: username === 'Saboor-Hamedi' ? '30+' : '?',
           created_at: '2020-01-01T00:00:00Z'
         })
-        
+
         // Set some sample repositories for better demo
         if (username === 'Saboor-Hamedi') {
           setRepos([
@@ -122,7 +127,7 @@ const GitHubProfile = ({ username, onClose }) => {
             }
           ])
         }
-        
+
         setError(null) // Don't show error since we have good fallback data
       } finally {
         setLoading(false)
@@ -159,8 +164,8 @@ const GitHubProfile = ({ username, onClose }) => {
         <div className="p-3 border-b border-[var(--color-border)]/20">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <img 
-                src={profile?.avatar_url || `https://github.com/${username}.png`} 
+              <img
+                src={profile?.avatar_url || `https://github.com/${username}.png`}
                 alt={profile?.name || username}
                 className="w-10 h-10 rounded-full ring-1 ring-[var(--color-accent)]/20"
                 onError={(e) => {
@@ -171,10 +176,12 @@ const GitHubProfile = ({ username, onClose }) => {
                 <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
                   {profile?.name || profile?.login || username}
                 </h2>
-                <p className="text-xs text-[var(--color-text-secondary)]">@{profile?.login || username}</p>
+                <p className="text-xs text-[var(--color-text-secondary)]">
+                  @{profile?.login || username}
+                </p>
               </div>
             </div>
-            <button 
+            <button
               onClick={onClose}
               className="w-6 h-6 rounded-md hover:bg-[var(--color-bg-secondary)] transition-colors flex items-center justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] text-lg"
             >
@@ -185,27 +192,33 @@ const GitHubProfile = ({ username, onClose }) => {
 
         {/* Profile Info */}
         <div className="p-3 space-y-3">
-
-          
           {/* Stats */}
           <div className="flex items-center space-x-3">
             <div className="flex items-center space-x-1 px-2 py-1 rounded-full bg-[var(--color-bg-secondary)]/30">
-              <span className="text-xs font-semibold text-[var(--color-accent)]">{profile.public_repos || '?'}</span>
+              <span className="text-xs font-semibold text-[var(--color-accent)]">
+                {profile.public_repos || '?'}
+              </span>
               <span className="text-xs text-[var(--color-text-secondary)]">Repos</span>
             </div>
             <div className="flex items-center space-x-1 px-2 py-1 rounded-full bg-[var(--color-bg-secondary)]/30">
-              <span className="text-xs font-semibold text-[var(--color-accent)]">{profile.followers || '?'}</span>
+              <span className="text-xs font-semibold text-[var(--color-accent)]">
+                {profile.followers || '?'}
+              </span>
               <span className="text-xs text-[var(--color-text-secondary)]">Followers</span>
             </div>
             <div className="flex items-center space-x-1 px-2 py-1 rounded-full bg-[var(--color-bg-secondary)]/30">
-              <span className="text-xs font-semibold text-[var(--color-accent)]">{profile.following || '?'}</span>
+              <span className="text-xs font-semibold text-[var(--color-accent)]">
+                {profile.following || '?'}
+              </span>
               <span className="text-xs text-[var(--color-text-secondary)]">Following</span>
             </div>
           </div>
 
           {/* Bio */}
           {profile.bio && (
-            <p className="text-xs text-[var(--color-text-primary)] leading-snug line-clamp-2">{profile.bio}</p>
+            <p className="text-xs text-[var(--color-text-primary)] leading-snug line-clamp-2">
+              {profile.bio}
+            </p>
           )}
 
           {/* Details */}
@@ -225,7 +238,7 @@ const GitHubProfile = ({ username, onClose }) => {
             {profile.blog && (
               <div className="flex items-center space-x-2 text-xs text-[var(--color-text-secondary)]">
                 <LinkIcon className="w-3 h-3" />
-                <a 
+                <a
                   href={profile.blog.startsWith('http') ? profile.blog : `https://${profile.blog}`}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -237,10 +250,13 @@ const GitHubProfile = ({ username, onClose }) => {
             )}
             <div className="flex items-center space-x-2 text-xs text-[var(--color-text-secondary)]">
               <Calendar className="w-3 h-3" />
-              <span>Joined {new Date(profile.created_at).toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: 'long' 
-              })}</span>
+              <span>
+                Joined{' '}
+                {new Date(profile.created_at).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long'
+                })}
+              </span>
             </div>
           </div>
 
@@ -251,7 +267,9 @@ const GitHubProfile = ({ username, onClose }) => {
                 {repos.length <= 3 ? 'Featured Projects' : `Recent Repositories (${repos.length})`}
               </h3>
               {repos.length <= 3 && (
-                <span className="text-xs text-[var(--color-text-secondary)] opacity-60">Sample data</span>
+                <span className="text-xs text-[var(--color-text-secondary)] opacity-60">
+                  Sample data
+                </span>
               )}
             </div>
             <div className="grid gap-2">
@@ -262,39 +280,39 @@ const GitHubProfile = ({ username, onClose }) => {
                 </div>
               ) : (
                 repos.slice(0, 3).map((repo) => (
-                <div 
-                  key={repo.id} 
-                  className="p-2 rounded bg-[var(--color-bg-secondary)]/20 hover:bg-[var(--color-bg-secondary)]/40 transition-colors"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-1 mb-1">
-                        <a 
-                          href={repo.html_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs font-medium text-[var(--color-text-primary)] hover:text-[var(--color-accent)] transition-colors"
-                        >
-                          {repo.name}
-                        </a>
-                        <ExternalLink className="w-2 h-2 text-[var(--color-text-secondary)]" />
-                      </div>
-                      <div className="flex items-center space-x-2 text-xs text-[var(--color-text-secondary)]">
-                        {repo.language && (
+                  <div
+                    key={repo.id}
+                    className="p-2 rounded bg-[var(--color-bg-secondary)]/20 hover:bg-[var(--color-bg-secondary)]/40 transition-colors"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-1 mb-1">
+                          <a
+                            href={repo.html_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs font-medium text-[var(--color-text-primary)] hover:text-[var(--color-accent)] transition-colors"
+                          >
+                            {repo.name}
+                          </a>
+                          <ExternalLink className="w-2 h-2 text-[var(--color-text-secondary)]" />
+                        </div>
+                        <div className="flex items-center space-x-2 text-xs text-[var(--color-text-secondary)]">
+                          {repo.language && (
+                            <div className="flex items-center space-x-1">
+                              <div className="w-1 h-1 rounded-full bg-[var(--color-accent)]"></div>
+                              <span>{repo.language}</span>
+                            </div>
+                          )}
                           <div className="flex items-center space-x-1">
-                            <div className="w-1 h-1 rounded-full bg-[var(--color-accent)]"></div>
-                            <span>{repo.language}</span>
+                            <Star className="w-2 h-2" />
+                            <span>{repo.stargazers_count}</span>
                           </div>
-                        )}
-                        <div className="flex items-center space-x-1">
-                          <Star className="w-2 h-2" />
-                          <span>{repo.stargazers_count}</span>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))
+                ))
               )}
             </div>
           </div>
@@ -310,7 +328,6 @@ const GitHubProfile = ({ username, onClose }) => {
               <Github className="w-3 h-3" />
               <span>View Profile</span>
             </a>
-           
           </div>
         </div>
       </div>

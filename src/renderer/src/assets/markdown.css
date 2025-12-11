@@ -142,11 +142,10 @@
   box-shadow: none !important;
 }
 
-/* Tables - Clean, readable */
+/* Tables - Full Width ('Full Screen') */
 .markdown-body table {
-  display: block;
-  width: 100%;
-  overflow: auto;
+  display: table !important; /* Force full table layout behavior */
+  width: 100% !important;    /* Force full width */
   margin: 24px 0 !important;
   border-collapse: collapse;
   border-spacing: 0;
@@ -155,10 +154,10 @@
 .markdown-body table th,
 .markdown-body table td {
   padding: 12px 16px !important;
-  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  /* Use CSS variable */
+  border: 1px solid var(--border-color) !important; 
   text-align: left;
   color: var(--text-main) !important;
- 
 }
 
 .markdown-body table th {
@@ -178,7 +177,7 @@
 /* Horizontal rule - Minimal */
 .markdown-body hr {
   height: 1px;
-  background-color: rgba(0, 0, 0, 0.1) !important;
+  background-color: var(--border-color) !important;
   border: none !important;
   margin: 32px 0 !important;
 }
@@ -206,6 +205,14 @@
 /* Task lists */
 .markdown-body .task-list-item {
   list-style-type: none !important;
+  display: flex !important; /* Ensure alignment */
+  align-items: center; 
+}
+
+/* Ensure checkbox alignment */
+.markdown-body .task-list-item input[type="checkbox"] {
+  margin: 0 .4em .25em -1.6em !important;
+  vertical-align: middle;
 }
 
 .markdown-body .task-list-item-checkbox {
@@ -302,13 +309,13 @@
 .markdown-preview-container h1 {
   font-size: 32px;
   padding-bottom: 12px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .markdown-preview-container h2 {
   font-size: 26px;
   padding-bottom: 8px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .markdown-preview-container h3 { font-size: 22px; }
@@ -380,7 +387,7 @@
 
 .markdown-preview-container hr {
   height: 1px;
-  background: rgba(0, 0, 0, 0.1);
+  background: var(--border-color);
   border: none;
   margin: 32px 0;
 }
@@ -394,7 +401,7 @@
 .markdown-preview-container th,
 .markdown-preview-container td {
   padding: 12px 16px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-color);
   text-align: left;
 }
 
@@ -413,7 +420,7 @@
   --bg-secondary: var(--bg-secondary);
   --text-main: var(--text-main);
   --text-secondary: var(--text-main);
-  --border-color: rgba(0, 0, 0, 0.1);
+  --border-color: rgba(0, 0, 0, 0.2); /* INCREASED OPACITY FOR CLARITY */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -422,7 +429,7 @@
     --bg-secondary: var(--bg-secondary);
     --text-main: var(--text-main);
     --text-secondary: var(--text-main);
-    --border-color: rgba(255, 255, 255, 0.1);
+    --border-color: rgba(255, 255, 255, 0.2); /* INCREASED OPACITY */
   }
   
   /* Dark theme adjustments */
@@ -437,7 +444,7 @@
   
   .markdown-body h1,
   .markdown-body h2 {
-    border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+    border-bottom-color: var(--border-color) !important;
   }
   
   .markdown-body table tr:nth-child(2n) {
@@ -445,7 +452,7 @@
   }
   
   .markdown-body hr {
-    background-color: rgba(255, 255, 255, 0.1) !important;
+    background-color: var(--border-color) !important;
   }
   
   .markdown-body a {
