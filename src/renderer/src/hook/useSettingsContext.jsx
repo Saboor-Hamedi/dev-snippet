@@ -74,8 +74,9 @@ export const SettingsProvider = ({ children }) => {
   const setZoom = (value) => {
     setZoomInternal((prev) => {
       const next = typeof value === 'function' ? value(prev) : value
-      // Step: 0.5, Floor: 0.5, Ceiling: 5.0
-      const target = Math.max(0.5, Math.min(5.0, Math.round(next * 2) / 2))
+      // Step: 0.1, Floor: 0.5, Ceiling: 5.0
+      // Round to nearest 0.1 (one decimal place)
+      const target = Math.max(0.5, Math.min(5.0, Math.round(next * 10) / 10))
       return target
     })
   }

@@ -157,14 +157,20 @@ export const useKeyboardShortcuts = (shortcuts) => {
       }
     }
 
+    // VS Code-style smooth wheel zoom - instant response
     const handleWheel = (e) => {
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault()
-        // Standard VS Code zoom wheel behavior
+
+        // Instant zoom with 0.1 increments for smooth, responsive feel
         if (e.deltaY < 0) {
-          if (shortcutsRef.current.onZoomIn) shortcutsRef.current.onZoomIn()
+          if (shortcutsRef.current.onZoomIn) {
+            shortcutsRef.current.onZoomIn()
+          }
         } else if (e.deltaY > 0) {
-          if (shortcutsRef.current.onZoomOut) shortcutsRef.current.onZoomOut()
+          if (shortcutsRef.current.onZoomOut) {
+            shortcutsRef.current.onZoomOut()
+          }
         }
       }
     }

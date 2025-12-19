@@ -11,6 +11,6 @@ export const useZoomLevel = () => {
 
 export const MIN_ZOOM = 0.5
 export const MAX_ZOOM = 4.0
-export const ZOOM_STEP = 0.5
+export const ZOOM_STEP = 0.1 // Smooth VS Code-like increments
 
 export default useZoomLevel

@@ -1,5 +1,5 @@
 // Set this to true for development, false for production
-const ENABLE_DEVTOOLS = true // <-- CHANGE THIS FOR YOUR NEEDS
+const ENABLE_DEVTOOLS = false // <-- CHANGE THIS FOR YOUR NEEDS
 const { app, shell, BrowserWindow, ipcMain, dialog, protocol } = require('electron')
 const { join } = require('path')
 const path = require('path')

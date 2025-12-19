@@ -245,10 +245,10 @@ const SnippetLibrary = () => {
       }
     },
     onZoomIn: () => {
-      setZoomLevel((prev) => prev + 0.5)
+      setZoomLevel((prev) => prev + 0.1)
     },
     onZoomOut: () => {
-      setZoomLevel((prev) => prev - 0.5)
+      setZoomLevel((prev) => prev - 0.1)
     },
     onZoomReset: () => {
       setZoomLevel(1.0)
