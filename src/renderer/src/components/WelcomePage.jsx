@@ -1,7 +1,9 @@
-import { useState, useEffect, memo } from 'react'
+import { useState, useEffect, memo, lazy, Suspense } from 'react'
 import PropTypes from 'prop-types'
 import { Folder, Command, Plus, Settings, Github } from 'lucide-react'
-import { GitHubProfile, GitHubSettings } from './github'
+// Lazy load GitHub components (only when user clicks GitHub button)
+const GitHubProfile = lazy(() => import('./github').then((m) => ({ default: m.GitHubProfile })))
+const GitHubSettings = lazy(() => import('./github').then((m) => ({ default: m.GitHubSettings })))
 import SystemStatusFooter from './SystemStatusFooter'
 import useGeneralProp from '../hook/useGeneralProp.js'
 const WelcomePage = ({
@@ -15,7 +17,7 @@ const WelcomePage = ({
   const [showGitHubProfile, setShowGitHubProfile] = useState(false)
   const [showGitHubSettings, setShowGitHubSettings] = useState(false)
   const [showAllRecents, setShowAllRecents] = useState(false)
-  const { welcomeBg } = useGeneralProp() // Get welcome background color  
+  const { welcomeBg } = useGeneralProp() // Get welcome background color
   const [githubUsername, setGitHubUsername] = useState(() => {
     try {
       return localStorage.getItem('githubUsername') || 'Saboor-Hamedi'
@@ -23,8 +25,6 @@ const WelcomePage = ({
       return 'Saboor-Hamedi'
     }
   })
-
-  
 
   // Get recent files (last 5 snippets by timestamp)
   // Get recent files
@@ -50,121 +50,171 @@ const WelcomePage = ({
     <>
       <div className="h-full overflow-y-auto" style={{ backgroundColor: welcomeBg }}>
         <div className="h-full flex flex-col">
-          {/* Minimal Header */}
-          <div className="px-4 py-6">
-            <div className="flex space-x-4 justify-around items-center">
-              <div className="flex items-center gap-7 ">
-                {/* GitHub Profile Button - Top Left */}
-                <button
-                  onClick={() => {
-                    if (githubUsername) {
-                      setShowGitHubProfile(true)
-                    } else {
-                      setShowGitHubSettings(true)
-                    }
-                  }}
-                  className="flex items-center gap-2 p-1 border rounded-md text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors group"
-                >
-                  <div className="w-8 h-8 rounded-full bg-[var(--color-bg-secondary)] flex items-center justify-center group-hover:bg-[var(--color-accent)]/10 transition-colors">
-                    <Github size={12} className="group-hover:text-[var(--color-accent)]" />
-                  </div>
-                  <span className="text-xtiny font-normal opacity-80 group-hover:opacity-100">
-                    {githubUsername ? `@${githubUsername}` : 'Connect'}
-                  </span>
-                </button>
-              </div>
+          {/* Clean Header Bar */}
+          <div className="px-6 py-4 border-b border-[var(--color-border)]/20">
+            <div className="flex items-center justify-between">
+              {/* Left: GitHub Profile */}
+              <button
+                onClick={() => {
+                  if (githubUsername) {
+                    setShowGitHubProfile(true)
+                  } else {
+                    setShowGitHubSettings(true)
+                  }
+                }}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--color-border)]/30 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-accent)]/30 transition-all group"
+              >
+                <div className="w-6 h-6 rounded-full bg-[var(--color-bg-secondary)] flex items-center justify-center group-hover:bg-[var(--color-accent)]/10 transition-colors">
+                  <Github size={14} className="group-hover:text-[var(--color-accent)]" />
+                </div>
+                <span className="text-sm font-medium">
+                  {githubUsername ? `@${githubUsername}` : 'Connect GitHub'}
+                </span>
+              </button>
+
+              {/* Right: Stats & Settings */}
               <div className="flex items-center gap-4">
-                <div className="text-right">
-                  <div className="text-lg font-mono text-[var(--color-accent)] tabular-nums">
+                {/* Snippet Count */}
+                <div className="text-center px-3 py-1">
+                  <div className="text-2xl font-bold text-[var(--color-accent)] tabular-nums">
                     {snippets.length}
                   </div>
-                  <div className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wider">
+                  <div className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide">
                     Snippets
                   </div>
                 </div>
+
                 <div className="w-px h-8 bg-[var(--color-border)]/30"></div>
+
+                {/* Settings Button */}
                 <button
                   onClick={onOpenSettings}
-                  className="rounded-md hover:bg-[var(--color-accent)] transition-colors flex items-center justify-center group"
+                  className="p-2 rounded-lg hover:bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] transition-all"
+                  title="Settings"
                 >
-                  <Settings size={12} />
+                  <Settings size={18} />
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Main Content - VS Code Style Layout */}
+          {/* Main Content Area */}
           <div className="flex-1 overflow-y-auto">
-            <div className="max-w-4xl mx-auto px-12 py-12">
-              <div className="mb-12">
-                <h1 className="text-4xl font-light text-[var(--color-text-primary)] mb-1">
-                  Div Snippet
+            <div className="max-w-5xl mx-auto px-12 py-16">
+              {/* Hero Section */}
+              <div className="mb-16">
+                <h1 className="text-5xl font-light text-[var(--color-text-primary)] mb-2">
+                  Dev Snippet
                 </h1>
-                <p className="text-xl text-[var(--color-text-secondary)] font-light opacity-80">
-                  Editing evolved
+                <p className="text-xl text-[var(--color-text-secondary)] font-light">
+                  Your code, organized and accessible
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
-                {/* Left Column: Start */}
-                <div className="flex flex-col gap-4">
-                  <div className="flex flex-col gap-3 items-start">
+              {/* Two Column Layout */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                {/* Left Column: Quick Actions */}
+                <div>
+                  <h2 className="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-4">
+                    Start
+                  </h2>
+                  <div className="space-y-2">
                     <button
                       onClick={onNewSnippet}
-                      className="group p-1 flex items-center gap-2 text-[var(--color-accent)] hover:underline decoration-[var(--color-accent)] underline-offset-2 transition-all text-left"
+                      className="w-full group flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[var(--color-bg-secondary)]/50 text-left transition-all"
                     >
-                      <Plus size={12} />
-                      <span className="text-tiny">New Snippet</span>
+                      <div className="p-2 rounded-md bg-[var(--color-accent)]/10 text-[var(--color-accent)] group-hover:bg-[var(--color-accent)]/20 transition-colors">
+                        <Plus size={16} />
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-[var(--color-text-primary)]">
+                          New Snippet
+                        </div>
+                        <div className="text-xs text-[var(--color-text-secondary)]">
+                          Create a new code snippet
+                        </div>
+                      </div>
                     </button>
 
                     <button
                       onClick={onNewProject}
-                      className="group p-1 flex items-center gap-2 text-[var(--color-accent)] hover:underline decoration-[var(--color-accent)] underline-offset-2 transition-all text-left"
+                      className="w-full group flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[var(--color-bg-secondary)]/50 text-left transition-all"
                     >
-                      <Folder size={12} />
-                      <span className="text-tiny">Open Project</span>
+                      <div className="p-2 rounded-md bg-blue-500/10 text-blue-500 group-hover:bg-blue-500/20 transition-colors">
+                        <Folder size={16} />
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-[var(--color-text-primary)]">
+                          Open Project
+                        </div>
+                        <div className="text-xs text-[var(--color-text-secondary)]">
+                          Browse your projects
+                        </div>
+                      </div>
                     </button>
 
-                    <button className="group p-1 flex items-center gap-2 text-[var(--color-accent)] hover:underline decoration-[var(--color-accent)] underline-offset-2 transition-all text-left">
-                      <Command size={12} />
-                      <span className="text-tiny">Command Palette</span>
+                    <button className="w-full group flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[var(--color-bg-secondary)]/50 text-left transition-all">
+                      <div className="p-2 rounded-md bg-purple-500/10 text-purple-500 group-hover:bg-purple-500/20 transition-colors">
+                        <Command size={16} />
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-[var(--color-text-primary)]">
+                          Command Palette
+                        </div>
+                        <div className="text-xs text-[var(--color-text-secondary)]">
+                          Press Ctrl+P to open
+                        </div>
+                      </div>
                     </button>
                   </div>
                 </div>
 
-                {/* Right Column: Recent */}
-                <div className="flex flex-col gap-4">
-                  <h2 className="text-lg font-normal text-[var(--color-text-primary)]">Recent</h2>
-                  <div className="flex flex-col gap-2">
+                {/* Right Column: Recent Snippets */}
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">
+                      Recent
+                    </h2>
+                    {allRecentSnippets.length > 1 && (
+                      <button
+                        onClick={() => setShowAllRecents(!showAllRecents)}
+                        className="text-xs text-[var(--color-accent)] hover:underline"
+                      >
+                        {showAllRecents ? 'Show less' : 'Show more'}
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="space-y-1">
                     {recentFiles.length > 0 ? (
                       recentFiles.map((snippet) => (
                         <button
                           key={snippet.id}
                           onClick={() => onSelectSnippet && onSelectSnippet(snippet)}
-                          className="group p-1 flex flex-col items-start text-left text-[var(--color-accent)] hover:text-[var(--color-text-primary)] transition-colors py-1"
+                          className="w-full group flex items-center justify-between px-4 py-3 rounded-lg hover:bg-[var(--color-bg-secondary)]/50 text-left transition-all"
                         >
-                          <span className="text-tiny group-hover:underline decoration-[var(--color-accent)] underline-offset-2">
-                            {snippet.title || 'Untitled'}
-                          </span>
-                          <span className="text-xs text-[var(--color-text-secondary)] opacity-70 font-mono">
-                            {snippet.language}
-                          </span>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium text-[var(--color-text-primary)] truncate group-hover:text-[var(--color-accent)] transition-colors">
+                              {snippet.title || 'Untitled'}
+                            </div>
+                            <div className="text-xs text-[var(--color-text-secondary)] font-mono">
+                              {snippet.language}
+                            </div>
+                          </div>
+                          <div className="text-xs text-[var(--color-text-secondary)] opacity-0 group-hover:opacity-100 transition-opacity">
+                            {new Date(snippet.timestamp).toLocaleDateString()}
+                          </div>
                         </button>
                       ))
                     ) : (
-                      <p className="text-[var(--color-text-secondary)] opacity-60 text-sm italic">
-                        No recent files
-                      </p>
-                    )}
-
-                    {/* Show 'More...' link */}
-                    {allRecentSnippets.length > 1 && (
-                      <button
-                        onClick={() => setShowAllRecents(!showAllRecents)}
-                        className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:underline text-left mt-2"
-                      >
-                        {showAllRecents ? 'Less...' : 'More...'}
-                      </button>
+                      <div className="px-4 py-8 text-center">
+                        <p className="text-sm text-[var(--color-text-secondary)] opacity-60">
+                          No recent snippets
+                        </p>
+                        <p className="text-xs text-[var(--color-text-secondary)] opacity-40 mt-1">
+                          Create your first snippet to get started
+                        </p>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -177,18 +227,22 @@ const WelcomePage = ({
         </div>
       </div>
 
-      {/* GitHub Profile Modal */}
+      {/* GitHub Profile Modal - Lazy Loaded */}
       {showGitHubProfile && githubUsername && (
-        <GitHubProfile username={githubUsername} onClose={() => setShowGitHubProfile(false)} />
+        <Suspense fallback={<div className="fixed inset-0 z-50 bg-black/20" />}>
+          <GitHubProfile username={githubUsername} onClose={() => setShowGitHubProfile(false)} />
+        </Suspense>
       )}
 
-      {/* GitHub Settings Modal */}
+      {/* GitHub Settings Modal - Lazy Loaded */}
       {showGitHubSettings && (
-        <GitHubSettings
-          currentUsername={githubUsername}
-          onSave={handleSaveGitHubUsername}
-          onCancel={() => setShowGitHubSettings(false)}
-        />
+        <Suspense fallback={<div className="fixed inset-0 z-50 bg-black/20" />}>
+          <GitHubSettings
+            currentUsername={githubUsername}
+            onSave={handleSaveGitHubUsername}
+            onCancel={() => setShowGitHubSettings(false)}
+          />
+        </Suspense>
       )}
     </>
   )

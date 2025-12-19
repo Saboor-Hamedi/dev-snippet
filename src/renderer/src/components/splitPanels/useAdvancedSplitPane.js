@@ -1,5 +1,5 @@
 /*
- * src/renderer/src/components/AdvancedSplitPane/useAdvacedSplitPane.js
+ * src/renderer/src/components/splitPanels/useAdvancedSplitPane.js
  * Custom hook to manage advanced split pane settings
  * including background color, border width, border color, and border roundness.
  * This hook interacts with the settings context to read and update these values.

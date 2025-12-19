@@ -214,17 +214,11 @@ const SplitPane = ({
       >
         {left}
       </div>
-      {/* This is the knob of the splitPane */}
-      <div className="shrink-0 relative flex items-center justify-center">
-        {/* Visual knob */}
+      {/* This is the knob of the splitPane - VS Code style */}
+      <div className="shrink-0 relative flex items-center justify-center group">
+        {/* Invisible hit area for easier grabbing */}
         <div
-          className="w-base h-base flex items-center justify-center 
-             bg-slate-700/50 hover:bg-slate-600/70 
-             transition-all duration-200 
-             rounded-md
-             p-1 ml-1 cursor-col-resize select-none"
-          role="separator"
-          aria-orientation="vertical"
+          className="absolute inset-y-0 -inset-x-2 cursor-col-resize"
           onMouseDown={startDrag}
           onTouchStart={startDrag}
           style={{
@@ -234,8 +228,27 @@ const SplitPane = ({
             msUserSelect: 'none',
             MozUserSelect: 'none'
           }}
+        />
+
+        {/* Visual separator line */}
+        <div
+          className="w-[1px] h-full bg-slate-300 dark:bg-slate-700 
+                     group-hover:bg-blue-500 dark:group-hover:bg-blue-400
+                     transition-colors duration-150"
+          role="separator"
+          aria-orientation="vertical"
+        />
+
+        {/* Grip indicator - shows on hover */}
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+                     w-4 h-8 flex items-center justify-center
+                     bg-slate-200 dark:bg-slate-800
+                     border border-slate-300 dark:border-slate-700
+                     rounded opacity-0 group-hover:opacity-100
+                     transition-opacity duration-150 pointer-events-none"
         >
-          <GripVertical className="text-slate-600 dark:text-slate-300 pointer-events-none" />
+          <GripVertical className="text-slate-500 dark:text-slate-400" size={12} />
         </div>
       </div>
       <div className="min-h-0 overflow-auto" style={{ width: `${100 - leftPercent}%` }}>

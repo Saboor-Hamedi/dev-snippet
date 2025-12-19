@@ -1,6 +1,7 @@
 export const handleRenameSnippet = async ({
   renameModal,
   saveSnippet,
+  renameSnippet,
   setSelectedSnippet,
   setRenameModal,
   setIsCreatingSnippet,

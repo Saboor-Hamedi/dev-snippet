@@ -39,5 +39,5 @@ export const useEditorFocus = ({ initialSnippet, isCreateMode, textareaRef }) =>
       setTimeout(focusEditor, 150)
       setTimeout(focusEditor, 300)
     }
-  }, [initialSnippet?.id, isCreateMode, textareaRef])
+  }, [initialSnippet?.id, initialSnippet?.title, isCreateMode, textareaRef])
 }

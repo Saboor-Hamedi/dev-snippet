@@ -10,7 +10,7 @@ import CodeEditor from '../CodeEditor/CodeEditor.jsx'
 import LivePreview from '../livepreview/LivePreview.jsx'
 import NamePrompt from '../modal/NamePrompt.jsx'
 import { useSettings } from '../../hook/useSettingsContext'
-import AdvancedSplitPane from '../AdvancedSplitPane/AdvancedSplitPane'
+import AdvancedSplitPane from '../splitPanels/AdvancedSplitPane'
 
 const SnippetEditor = ({
   onSave,

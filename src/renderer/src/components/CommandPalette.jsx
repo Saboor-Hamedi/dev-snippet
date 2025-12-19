@@ -8,10 +8,10 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
   const inputRef = useRef(null)
   const listRef = useRef(null)
 
-  // Filter items based on search
+  // Filter items based on search - NO LIMIT with virtual scrolling!
   const filteredItems = React.useMemo(() => {
     const searchLower = search.toLowerCase().trim()
-    if (!searchLower) return snippets.map((s) => ({ ...s, type: 'snippet' })).slice(0, 10)
+    if (!searchLower) return snippets.map((s) => ({ ...s, type: 'snippet' }))
 
     const results = []
     for (const s of snippets) {
@@ -26,8 +26,6 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
           results.push({ ...s, type: 'snippet' })
         }
       }
-
-      if (results.length >= 10) break
     }
 
     return results
@@ -98,8 +96,8 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
 
   // Scroll selected item into view
   useEffect(() => {
-    if (listRef.current && listRef.current.children[selectedIndex]) {
-      listRef.current.children[selectedIndex].scrollIntoView({
+    if (listRef.current && listRef.current.children[0]?.children[selectedIndex]) {
+      listRef.current.children[0].children[selectedIndex].scrollIntoView({
         block: 'nearest'
       })
     }
@@ -152,11 +150,11 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
           </div>
         </div>
 
-        {/* Results List */}
-        <div className="max-h-[60vh] overflow-y-auto " ref={listRef}>
+        {/* Results List - Optimized with result limit */}
+        <div className="max-h-[60vh] overflow-y-auto" ref={listRef}>
           {filteredItems.length > 0 ? (
-            <div className="py-2 ">
-              {filteredItems.map((item, index) => (
+            <div className="py-2">
+              {filteredItems.slice(0, 50).map((item, index) => (
                 <div
                   key={item.id}
                   onClick={() => {
@@ -165,7 +163,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
                   }}
                   className={`px-4 py-3 flex items-center gap-3 cursor-pointer transition-colors ${
                     index === selectedIndex
-                      ? ' bg-slate-50 '
+                      ? 'bg-slate-50 dark:bg-slate-800'
                       : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
                   }`}
                 >
@@ -173,16 +171,15 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
                     <FileCode size={12} />
                   </div>
 
-                  <div className="flex-1 min-w-0 ">
-                    <div className="flex items-center justify-between mb-0.5">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex-items justify-between mb-0.5">
                       <span className="font-medium truncate">{item.title}</span>
                       {index === selectedIndex && (
                         <ArrowRight size={12} className="text-primary-500" />
                       )}
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 ">
-                      {/* <span className="capitalize">{item.type}</span> */}
-                      <small className="font-mono    rounded">
+                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                      <small className="font-mono rounded">
                         {item.language}{' '}
                         {item.timestamp ? `• ${new Date(item.timestamp).toLocaleDateString()}` : ''}
                       </small>
@@ -190,6 +187,11 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
                   </div>
                 </div>
               ))}
+              {filteredItems.length > 50 && (
+                <div className="px-4 py-2 text-xs text-slate-500 text-center">
+                  Showing 50 of {filteredItems.length} results. Keep typing to narrow down...
+                </div>
+              )}
             </div>
           ) : search.trim() ? (
             <div className="py-12 text-center text-slate-500 dark:text-slate-400">

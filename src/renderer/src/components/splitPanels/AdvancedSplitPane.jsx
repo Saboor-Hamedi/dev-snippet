@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { GripVertical, Smartphone, Tablet, Monitor, Image } from 'lucide-react'
-import useAdvancedSplitPane from './useAdvacedSplitPane.js'
+import useAdvancedSplitPane from './useAdvancedSplitPane.js'
 
 const AdvancedSplitPane = ({
   left,

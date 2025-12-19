@@ -1,0 +1,111 @@
+/**
+ * Window Control IPC Handlers
+ */
+
+const { ipcMain, BrowserWindow } = require('electron')
+
+const registerWindowHandlers = () => {
+  // Minimize window
+  ipcMain.handle('window:minimize', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win) win.minimize()
+    return true
+  })
+
+  // Maximize window
+  ipcMain.handle('window:maximize', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win) win.maximize()
+    return true
+  })
+
+  // Unmaximize window
+  ipcMain.handle('window:unmaximize', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win) win.unmaximize()
+    return true
+  })
+
+  // Toggle maximize
+  ipcMain.handle('window:toggle-maximize', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win) {
+      if (win.isMaximized()) {
+        win.unmaximize()
+      } else {
+        win.maximize()
+      }
+    }
+    return true
+  })
+
+  // Close window
+  ipcMain.handle('window:close', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win) win.close()
+    return true
+  })
+
+  // Get window bounds
+  ipcMain.handle('window:getBounds', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (!win) return null
+    return win.getBounds()
+  })
+
+  // Set window bounds
+  ipcMain.handle('window:setBounds', (event, bounds) => {
+    try {
+      const win = BrowserWindow.fromWebContents(event.sender)
+      if (win && bounds) {
+        win.setBounds(bounds, true)
+        return true
+      }
+    } catch (err) {
+      console.error('Failed to set bounds:', err)
+    }
+    return false
+  })
+
+  // Restore default size
+  ipcMain.handle('window:restore-default-size', (event) => {
+    try {
+      const win = BrowserWindow.fromWebContents(event.sender)
+      if (win) {
+        win.setSize(800, 600, true)
+        win.center()
+        return true
+      }
+    } catch (err) {
+      console.error('Failed to restore default size:', err)
+    }
+    return false
+  })
+
+  // Set zoom factor
+  ipcMain.handle('window:setZoom', (event, factor) => {
+    try {
+      const win = BrowserWindow.fromWebContents(event.sender)
+      if (win && typeof factor === 'number' && factor > 0) {
+        win.webContents.setZoomFactor(factor)
+        return true
+      }
+    } catch (err) {
+      console.error('Failed to set zoom factor:', err)
+    }
+    return false
+  })
+
+  // Get zoom factor
+  ipcMain.handle('window:getZoom', (event) => {
+    try {
+      const win = BrowserWindow.fromWebContents(event.sender)
+      if (win) {
+        return win.webContents.getZoomFactor()
+      }
+    } catch (err) {}
+    return 1.0
+  })
+}
+
+module.exports = { registerWindowHandlers }

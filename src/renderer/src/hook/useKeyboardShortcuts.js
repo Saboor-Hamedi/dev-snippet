@@ -102,8 +102,13 @@ export const useKeyboardShortcuts = (shortcuts) => {
       // Ctrl+R rename selected snippet
       if ((e.ctrlKey || e.metaKey) && e.key?.toLowerCase() === 'r' && !e.shiftKey) {
         e.preventDefault()
+        e.stopPropagation()
         if (shortcutsRef.current.onRenameSnippet) {
-          shortcutsRef.current.onRenameSnippet()
+          try {
+            shortcutsRef.current.onRenameSnippet()
+          } catch (err) {
+            console.error('❌ Error in onRenameSnippet:', err)
+          }
         }
       }
       // Ctrl+delete delete selected snippet
@@ -157,20 +162,27 @@ export const useKeyboardShortcuts = (shortcuts) => {
       }
     }
 
-    // VS Code-style smooth wheel zoom - instant response
+    // VS Code-style smooth wheel zoom - throttled via accumulation
+    let wheelAccumulator = 0
+    const WHEEL_THRESHOLD = 100 // Similar to standard mouse wheel "clicks"
+
     const handleWheel = (e) => {
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault()
 
-        // Instant zoom with 0.1 increments for smooth, responsive feel
-        if (e.deltaY < 0) {
-          if (shortcutsRef.current.onZoomIn) {
-            shortcutsRef.current.onZoomIn()
+        wheelAccumulator += e.deltaY
+
+        if (Math.abs(wheelAccumulator) >= WHEEL_THRESHOLD) {
+          if (wheelAccumulator > 0) {
+            if (shortcutsRef.current.onZoomOut) {
+              shortcutsRef.current.onZoomOut()
+            }
+          } else {
+            if (shortcutsRef.current.onZoomIn) {
+              shortcutsRef.current.onZoomIn()
+            }
           }
-        } else if (e.deltaY > 0) {
-          if (shortcutsRef.current.onZoomOut) {
-            shortcutsRef.current.onZoomOut()
-          }
+          wheelAccumulator = 0 // Reset after triggering
         }
       }
     }

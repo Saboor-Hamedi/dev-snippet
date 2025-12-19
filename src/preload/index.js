@@ -47,7 +47,10 @@ const api = {
   setWindowBounds: (bounds) => electronAPI.ipcRenderer.invoke('window:setBounds', bounds),
   restoreDefaultSize: () => electronAPI.ipcRenderer.invoke('window:restore-default-size'),
   setZoom: (factor) => electronAPI.ipcRenderer.invoke('window:setZoom', factor),
-  getZoom: () => electronAPI.ipcRenderer.invoke('window:getZoom')
+  getZoom: () => electronAPI.ipcRenderer.invoke('window:getZoom'),
+  // Backup Management
+  listBackups: () => electronAPI.ipcRenderer.invoke('backup:list'),
+  restoreBackup: (backupPath) => electronAPI.ipcRenderer.invoke('backup:restore', backupPath)
 }
 
 if (process.contextIsolated) {
