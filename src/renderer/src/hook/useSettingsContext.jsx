@@ -31,6 +31,55 @@ export const SettingsProvider = ({ children }) => {
     }
   }, [])
 
+  // LIVE ZOOM STATE - For smooth, immediate interface updates
+  // LIVE ZOOM STATE - For smooth, immediate interface updates
+  const [zoom, setZoomInternal] = useState(() => {
+    // Pre-calculate to avoid FOUC or 10% issue on first render
+    const initial = settingsManager.get('editor.zoomLevel') ?? 1.0
+    return Math.max(0.5, Number(initial))
+  })
+
+  // Sync live zoom with settings on load
+  useEffect(() => {
+    const savedZoom = settings.editor?.zoomLevel ?? 1.0
+    // FORCED FLOOR of 0.5 (50%) to prevent "tiny UI" issues.
+    // This ensures Ctrl+0 never results in 10%.
+    const cleanSaved = Math.max(0.5, Number(savedZoom))
+    if (Math.abs(cleanSaved - zoom) > 0.01) {
+      setZoomInternal(cleanSaved)
+    }
+  }, [settings.editor?.zoomLevel])
+
+  // Apply Live Zoom factor to the native window and CSS
+  useEffect(() => {
+    // 1. CSS Variable for components that need it
+    document.documentElement.style.setProperty('--zoom-level', zoom)
+
+    // 2. Native Electron Zoom (The professional way)
+    if (window.api?.setZoom) {
+      window.api.setZoom(zoom).catch(() => {})
+    }
+
+    // 3. Debounced persist to settings.json
+    const timer = setTimeout(() => {
+      const currentSaved = settings.editor?.zoomLevel ?? 1.0
+      if (Math.abs(zoom - currentSaved) > 0.01) {
+        settingsManager.set('editor.zoomLevel', zoom)
+      }
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [zoom])
+
+  const setZoom = (value) => {
+    setZoomInternal((prev) => {
+      const next = typeof value === 'function' ? value(prev) : value
+      // Step: 0.5, Floor: 0.5, Ceiling: 5.0
+      const target = Math.max(0.5, Math.min(5.0, Math.round(next * 2) / 2))
+      return target
+    })
+  }
+
   // Apply font settings to CSS variables whenever settings change
   useEffect(() => {
     if (settings.editor) {
@@ -82,7 +131,9 @@ export const SettingsProvider = ({ children }) => {
         settings,
         getSetting,
         updateSetting,
-        updateSettings
+        updateSettings,
+        zoom,
+        setZoom
       }}
     >
       {children}
@@ -91,7 +142,7 @@ export const SettingsProvider = ({ children }) => {
 }
 
 // Custom hook to use settings
-export const useSettings = () =>  {
+export const useSettings = () => {
   const context = useContext(SettingsContext)
   if (!context) {
     throw new Error('useSettings must be used within a SettingsProvider')
@@ -108,6 +159,14 @@ export const useAutoSave = () => {
   }
 
   return [autoSave, setAutoSave]
+}
+
+export const useZoomLevel = () => {
+  const context = useContext(SettingsContext)
+  if (!context) throw new Error('useZoomLevel must be used within a SettingsProvider')
+
+  const { zoom, setZoom } = context
+  return [zoom, setZoom]
 }
 
 export const useCompactMode = () => {

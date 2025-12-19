@@ -1,9 +1,13 @@
 // Set this to true for development, false for production
 const ENABLE_DEVTOOLS = true // <-- CHANGE THIS FOR YOUR NEEDS
-import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
-import { join } from 'path'
-import fs from 'fs/promises'
-import Database from 'better-sqlite3'
+const { app, shell, BrowserWindow, ipcMain, dialog, protocol } = require('electron')
+const { join } = require('path')
+const path = require('path')
+const fs = require('fs/promises')
+const fsSync = require('fs')
+const Database = require('better-sqlite3')
+const { randomUUID } = require('crypto')
+
 let db
 
 function initDB() {
@@ -33,12 +37,6 @@ function initDB() {
     CREATE TABLE IF NOT EXISTS settings (
       key TEXT PRIMARY KEY,
       value TEXT
-    );
-
-    CREATE TABLE IF NOT EXISTS theme (
-      id TEXT PRIMARY KEY,
-      name TEXT,
-      colors TEXT
     );
 
     CREATE INDEX IF NOT EXISTS idx_snippets_title ON snippets(title);
@@ -94,9 +92,8 @@ function createWindow() {
   }
 
   // Check if icon exists
-  const fs = require('fs')
   try {
-    if (fs.existsSync(iconPath)) {
+    if (fsSync.existsSync(iconPath)) {
       // Icon exists
     } else {
       // Icon not found, try fallbacks
@@ -108,7 +105,7 @@ function createWindow() {
       ]
 
       for (const fallback of fallbacks) {
-        if (fs.existsSync(fallback)) {
+        if (fsSync.existsSync(fallback)) {
           console.log(`✅ Using fallback icon: ${fallback}`)
           iconPath = fallback
           break
@@ -181,10 +178,6 @@ function createWindow() {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
 }
-
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
   // Set app user model id for windows
   if (process.platform === 'win32') {
@@ -271,6 +264,30 @@ app.whenReady().then(() => {
     }
   })
 
+  // NATIVE ZOOM HANDLING
+  ipcMain.handle('window:setZoom', (event, factor) => {
+    try {
+      const win = BrowserWindow.fromWebContents(event.sender)
+      if (win && typeof factor === 'number' && factor > 0) {
+        win.webContents.setZoomFactor(factor)
+        return true
+      }
+    } catch (err) {
+      console.error('Failed to set zoom factor:', err)
+    }
+    return false
+  })
+
+  ipcMain.handle('window:getZoom', (event) => {
+    try {
+      const win = BrowserWindow.fromWebContents(event.sender)
+      if (win) {
+        return win.webContents.getZoomFactor()
+      }
+    } catch (err) {}
+    return 1.0
+  })
+
   // File System IPC Handlers
   ipcMain.handle('dialog:openFile', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
@@ -337,8 +354,6 @@ app.whenReady().then(() => {
 
   const startSettingsWatcher = () => {
     try {
-      const fsSync = require('fs')
-
       // Only watch if file exists
       if (fsSync.existsSync(settingsPath)) {
         settingsWatcher = fsSync.watch(settingsPath, async (eventType) => {
@@ -432,7 +447,7 @@ app.whenReady().then(() => {
   })
 
   // Database IPC Handlers
-  const db = getDB()
+  getDB()
 
   // Snippets
   ipcMain.handle('db:getSnippets', () => {
@@ -488,19 +503,6 @@ app.whenReady().then(() => {
 
   ipcMain.handle('db:saveSetting', (event, key, value) => {
     db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(key, value)
-    return true
-  })
-
-  ipcMain.handle('db:getTheme', () => {
-    const row = db.prepare('SELECT id, name, colors FROM theme WHERE id = ?').get('current')
-    return row || null
-  })
-
-  ipcMain.handle('db:saveTheme', (event, theme) => {
-    const stmt = db.prepare(
-      'INSERT OR REPLACE INTO theme (id, name, colors) VALUES (@id, @name, @colors)'
-    )
-    stmt.run(theme)
     return true
   })
 

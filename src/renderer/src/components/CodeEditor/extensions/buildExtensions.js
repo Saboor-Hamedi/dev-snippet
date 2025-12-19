@@ -6,12 +6,138 @@ const buildExtensions = async (options, handlers = {}) => {
     isDark = false,
     caretColor = '#0f172a',
     fontSize = '14px',
-    wordWrap = 'on'
-    // language prop ignored/removed
+    wordWrap = 'on',
+    language = 'markdown',
+    isLargeFile = false // NEW: Flag for large files
   } = options
   const { liveZoomRef, applyZoomToDOM, debouncedSaveZoom, setStoredZoomLevel } = handlers
 
   const exts = []
+
+  // Debug flag: set `localStorage.disableComplexCM = '1'` in renderer DevTools
+  // to run a minimal extension set which avoids DOM-touching optional
+  // extensions (drawSelection, dropCursor, imageHandler, etc.). This helps
+  // isolate crashes caused by extensions that interact with CodeMirror's DOM
+  // lifecycle during rapid updates (paste/scroll).
+  const disableComplex =
+    typeof window !== 'undefined' &&
+    window.localStorage &&
+    window.localStorage.getItem('disableComplexCM') === '1'
+  if (disableComplex) {
+    // Minimal set: theme + basic line numbers + wrapping
+    exts.push(buildTheme(EditorView, { isDark, caretColor, fontSize }))
+    try {
+      const { lineNumbers } = await import('@codemirror/view')
+      exts.push(
+        lineNumbers({
+          formatNumber: (n) => n.toString()
+        })
+      )
+    } catch (e) {}
+    if (wordWrap === 'on') exts.push(EditorView.lineWrapping)
+
+    // Allow selectively enabling optional extension groups via localStorage
+    // Example: `localStorage.setItem('cmExtras','draw,richMarkdown,image')`
+    const extrasStr =
+      (typeof window !== 'undefined' &&
+        window.localStorage &&
+        window.localStorage.getItem('cmExtras')) ||
+      ''
+    const extras = extrasStr
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+
+    const shouldLoad = (name) => extras.includes(name)
+
+    // Helper loaders for known groups (safe, logged)
+    if (shouldLoad('draw')) {
+      try {
+        const { drawSelection, dropCursor, highlightActiveLine } = await import('@codemirror/view')
+        exts.push(drawSelection())
+        exts.push(dropCursor())
+        exts.push(highlightActiveLine())
+        console.info('[CM DEBUG] Loaded draw group')
+      } catch (e) {
+        console.warn('[CM DEBUG] Failed to load draw group', e)
+      }
+    }
+
+    if (shouldLoad('history')) {
+      try {
+        const { history } = await import('@codemirror/commands')
+        exts.push(history())
+        console.info('[CM DEBUG] Loaded history')
+      } catch (e) {
+        console.warn('[CM DEBUG] Failed to load history', e)
+      }
+    }
+
+    if (shouldLoad('bracket')) {
+      try {
+        const { bracketMatching } = await import('@codemirror/language')
+        exts.push(bracketMatching())
+        console.info('[CM DEBUG] Loaded bracketMatching')
+      } catch (e) {
+        console.warn('[CM DEBUG] Failed to load bracketMatching', e)
+      }
+    }
+
+    if (shouldLoad('markdown') || shouldLoad('richMarkdown')) {
+      try {
+        if (shouldLoad('richMarkdown')) {
+          const { richMarkdownExtension } = await import('./richMarkdown.js')
+          exts.push(richMarkdownExtension)
+          console.info('[CM DEBUG] Loaded richMarkdown')
+        }
+        if (shouldLoad('markdown')) {
+          const { markdown } = await import('@codemirror/lang-markdown')
+          exts.push(markdown({ addKeymap: false }))
+          console.info('[CM DEBUG] Loaded markdown')
+        }
+      } catch (e) {
+        console.warn('[CM DEBUG] Failed to load markdown group', e)
+      }
+    }
+
+    if (shouldLoad('zoom')) {
+      try {
+        const { keymap } = await import('@codemirror/view')
+        const { MIN_ZOOM, MAX_ZOOM } = await import('../../../hook/useZoomLevel.js')
+        // Re-use the zoom logic from below (simplified)
+        let rafId = null
+        const safeApplyZoom = (newZoom) => {
+          newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom))
+          liveZoomRef.current = newZoom
+          if (rafId) cancelAnimationFrame(rafId)
+          rafId = requestAnimationFrame(() => applyZoomToDOM(newZoom))
+          if (debouncedSaveZoom) debouncedSaveZoom(newZoom)
+          if (setStoredZoomLevel) setStoredZoomLevel(newZoom)
+        }
+        const zoomHandler = (change) => {
+          safeApplyZoom(liveZoomRef.current + change)
+          return true
+        }
+        const resetZoom = () => {
+          safeApplyZoom(1.0)
+          return true
+        }
+        const zoomKeymap = keymap.of([
+          { key: 'Ctrl-=', run: () => zoomHandler(0.1) },
+          { key: 'Ctrl-+', run: () => zoomHandler(0.1) },
+          { key: 'Ctrl-Minus', run: () => zoomHandler(-0.1) },
+          { key: 'Ctrl-_', run: () => zoomHandler(-0.1) },
+          { key: 'Ctrl-0', run: resetZoom }
+        ])
+        exts.push(zoomKeymap)
+        // console.info('[CM DEBUG] Loaded zoom')
+      } catch (e) {
+        // console.warn('[CM DEBUG] Failed to load zoom', e)
+      }
+    }
+
+    return exts
+  }
 
   // THEME
   exts.push(buildTheme(EditorView, { isDark, caretColor, fontSize }))
@@ -32,81 +158,12 @@ const buildExtensions = async (options, handlers = {}) => {
     exts.push(history())
   } catch (e) {}
 
-  // BRACKET MATCHING
-  try {
-    const { bracketMatching } = await import('@codemirror/language')
-    exts.push(bracketMatching())
-  } catch (e) {}
-
-  // SMOOTH ZOOM LOGIC
-  if (liveZoomRef && applyZoomToDOM) {
-    const { keymap } = await import('@codemirror/view')
-    const { MIN_ZOOM, MAX_ZOOM } = await import('../../../hook/useZoomLevel.js')
-
-    // Use an animation frame ID to prevent stacking updates
-    let rafId = null
-
-    const safeApplyZoom = (newZoom) => {
-      // Clamp values
-      newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom))
-
-      // Update Ref immediately for logic
-      liveZoomRef.current = newZoom
-
-      // Update DOM in the next animation frame for smoothness
-      if (rafId) cancelAnimationFrame(rafId)
-      rafId = requestAnimationFrame(() => {
-        applyZoomToDOM(newZoom)
-      })
-
-      // Debounce the storage save
-      if (debouncedSaveZoom) debouncedSaveZoom(newZoom)
-      if (setStoredZoomLevel) setStoredZoomLevel(newZoom)
-    }
-
-    const zoomHandler = (change) => {
-      safeApplyZoom(liveZoomRef.current + change)
-      return true
-    }
-
-    const resetZoom = () => {
-      safeApplyZoom(1.0)
-      return true
-    }
-
-    // Keymap (Ctrl + / -) - Keep these stepping at 0.1 for precision
-    const zoomKeymap = keymap.of([
-      { key: 'Ctrl-=', run: () => zoomHandler(0.1) },
-      { key: 'Ctrl-Minus', run: () => zoomHandler(-0.1) },
-      { key: 'Ctrl-0', run: resetZoom },
-      { key: 'Cmd-=', run: () => zoomHandler(0.1) },
-      { key: 'Cmd-Minus', run: () => zoomHandler(-0.1) },
-      { key: 'Cmd-0', run: resetZoom }
-    ])
-    exts.push(zoomKeymap)
-
-    // Wheel Handler - Variable speed for smoothness
-    exts.push(
-      EditorView.domEventHandlers({
-        wheel: (event, view) => {
-          if (event.ctrlKey || event.metaKey) {
-            event.preventDefault()
-
-            // Calculate smooth delta based on wheel hardware
-            // Usually deltaY is +/- 100, so we scale it down drastically
-            const sensitivity = 0.0015
-            const delta = -event.deltaY * sensitivity
-
-            const current = liveZoomRef.current
-            const newZoom = current + delta
-
-            safeApplyZoom(newZoom)
-            return true
-          }
-          return false
-        }
-      })
-    )
+  // BRACKET MATCHING (Skip for large files - expensive)
+  if (!isLargeFile) {
+    try {
+      const { bracketMatching } = await import('@codemirror/language')
+      exts.push(bracketMatching())
+    } catch (e) {}
   }
 
   // Line numbers
@@ -126,17 +183,25 @@ const buildExtensions = async (options, handlers = {}) => {
     exts.push(EditorView.lineWrapping)
   }
 
-  // Always load Markdown Support
-  try {
-    // 1. Load Custom Syntax Highlighting (Colors only, no strange fonts/sizes)
-    const { richMarkdownExtension } = await import('./richMarkdown.js')
-    exts.push(richMarkdownExtension)
+  // Markdown Support (Skip rich decorations for large files)
+  if (!isLargeFile && language === 'markdown') {
+    try {
+      // 1. Load Custom Syntax Highlighting (Colors only, no strange fonts/sizes)
+      const { richMarkdownExtension } = await import('./richMarkdown.js')
+      exts.push(richMarkdownExtension)
 
-    // 2. Official Markdown Extension (with disabled keymap to prevent jumps)
-    const { markdown } = await import('@codemirror/lang-markdown')
-    exts.push(markdown({ addKeymap: false }))
-  } catch (e) {
-    console.error('Failed to load markdown extensions', e)
+      // 2. Official Markdown Extension (with disabled keymap to prevent jumps)
+      const { markdown } = await import('@codemirror/lang-markdown')
+      exts.push(markdown({ addKeymap: false }))
+    } catch (e) {
+      console.error('Failed to load markdown extensions', e)
+    }
+  } else if (language === 'markdown' && isLargeFile) {
+    // For large files, use basic markdown without rich decorations
+    try {
+      const { markdown } = await import('@codemirror/lang-markdown')
+      exts.push(markdown({ addKeymap: false }))
+    } catch (e) {}
   }
 
   return exts

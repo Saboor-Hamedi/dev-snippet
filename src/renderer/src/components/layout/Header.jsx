@@ -50,7 +50,7 @@ const Header = ({ isCompact, onToggleCompact, title, snippetTitle, autosaveStatu
             className="text-xtiny"
             style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}
           >
-            {displayTitle}
+            {displayTitle?.replace(/\.[^/.]+$/, '') || 'Untitled'}
           </span>
           {/* Autosave indicator */}
           {autosaveStatus ? (
@@ -99,7 +99,8 @@ const Header = ({ isCompact, onToggleCompact, title, snippetTitle, autosaveStatu
               window.api?.minimize?.()
             } catch (e) {}
           }}
-          className="theme-exempt h-3xl w-3xl flex items-center justify-center bg-transparent hover:bg-[#2d3138]
+          className="theme-exempt h-3xl w-3xl flex items-center justify-center
+          bg-transparent hover:bg-[#2d3138]
            focus:outline-none focus:ring-none cursor-pointer transition-none"
           title={
             isCompact ? 'Expand to full mode and minimize' : 'Switch to compact mode and minimize'

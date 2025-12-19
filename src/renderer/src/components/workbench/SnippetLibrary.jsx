@@ -12,10 +12,12 @@ import SettingsModal from '../SettingsModal'
 import { useKeyboardShortcuts } from '../../hook/useKeyboardShortcuts'
 import { useSettings } from '../../hook/useSettingsContext.jsx'
 import { useFontSettings } from '../../hook/useFontSettings'
+import { useZoomLevel } from '../../hook/useZoomLevel'
 
 const SnippetLibrary = () => {
   // Apply font settings globally
   useFontSettings()
+  const [zoomLevel, setZoomLevel] = useZoomLevel()
 
   // 1. Logic & Data (From Hook)
   const { snippets, selectedSnippet, setSelectedSnippet, setSnippets, saveSnippet, deleteItem } =
@@ -241,40 +243,17 @@ const SnippetLibrary = () => {
         }
         saveSnippet(selectedSnippet)
       }
+    },
+    onZoomIn: () => {
+      setZoomLevel((prev) => prev + 0.5)
+    },
+    onZoomOut: () => {
+      setZoomLevel((prev) => prev - 0.5)
+    },
+    onZoomReset: () => {
+      setZoomLevel(1.0)
     }
   })
-
-  // Note: save-toasts are emitted by `useSnippetData.saveSnippet` to avoid duplicates.
-
-  // 3. Global Actions (e.g. Opening a file from OS)
-  const handleOpenFile = async () => {
-    try {
-      if (window.api?.openFile) {
-        const path = await window.api.openFile()
-        if (path) {
-          const content = await window.api.readFile(path)
-          const fileName = path.split('\\').pop().split('/').pop()
-          const extension = fileName.split('.').pop()?.toLowerCase()
-
-          // Force language to markdown even if extension is different
-          // (User requested removal of language detection)
-          const newEntry = {
-            id: Date.now().toString(),
-            title: fileName,
-            code: content,
-            language: 'markdown',
-            timestamp: Date.now(),
-            type: 'snippet'
-          }
-
-          // Use the hook to save it
-          await saveSnippet(newEntry)
-        }
-      }
-    } catch (error) {
-      showToast('❌ Failed to open file')
-    }
-  }
 
   // Handle rename - only allow if snippet has a title (is saved)
   const handleRenameOrSave = async () => {

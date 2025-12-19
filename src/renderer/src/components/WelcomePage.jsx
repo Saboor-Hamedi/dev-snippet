@@ -1,9 +1,9 @@
-import React, { useState } from 'react'
+import { useState, useEffect, memo } from 'react'
 import PropTypes from 'prop-types'
 import { Folder, Command, Plus, Settings, Github } from 'lucide-react'
 import { GitHubProfile, GitHubSettings } from './github'
 import SystemStatusFooter from './SystemStatusFooter'
-
+import useGeneralProp from '../hook/useGeneralProp.js'
 const WelcomePage = ({
   onNewSnippet,
   onNewProject,
@@ -15,6 +15,7 @@ const WelcomePage = ({
   const [showGitHubProfile, setShowGitHubProfile] = useState(false)
   const [showGitHubSettings, setShowGitHubSettings] = useState(false)
   const [showAllRecents, setShowAllRecents] = useState(false)
+  const { welcomeBg } = useGeneralProp() // Get welcome background color  
   const [githubUsername, setGitHubUsername] = useState(() => {
     try {
       return localStorage.getItem('githubUsername') || 'Saboor-Hamedi'
@@ -22,6 +23,8 @@ const WelcomePage = ({
       return 'Saboor-Hamedi'
     }
   })
+
+  
 
   // Get recent files (last 5 snippets by timestamp)
   // Get recent files
@@ -45,7 +48,7 @@ const WelcomePage = ({
 
   return (
     <>
-      <div className="h-full overflow-y-auto bg-[var(--color-bg)]">
+      <div className="h-full overflow-y-auto" style={{ backgroundColor: welcomeBg }}>
         <div className="h-full flex flex-col">
           {/* Minimal Header */}
           <div className="px-4 py-6">
@@ -63,9 +66,9 @@ const WelcomePage = ({
                   className="flex items-center gap-2 p-1 border rounded-md text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors group"
                 >
                   <div className="w-8 h-8 rounded-full bg-[var(--color-bg-secondary)] flex items-center justify-center group-hover:bg-[var(--color-accent)]/10 transition-colors">
-                    <Github size={16} className="group-hover:text-[var(--color-accent)]" />
+                    <Github size={12} className="group-hover:text-[var(--color-accent)]" />
                   </div>
-                  <span className="text-xs font-medium opacity-80 group-hover:opacity-100">
+                  <span className="text-xtiny font-normal opacity-80 group-hover:opacity-100">
                     {githubUsername ? `@${githubUsername}` : 'Connect'}
                   </span>
                 </button>
@@ -82,12 +85,9 @@ const WelcomePage = ({
                 <div className="w-px h-8 bg-[var(--color-border)]/30"></div>
                 <button
                   onClick={onOpenSettings}
-                  className="w-8 h-8 rounded-lg transition-colors flex items-center justify-center group"
+                  className="rounded-md hover:bg-[var(--color-accent)] transition-colors flex items-center justify-center group"
                 >
-                  <Settings
-                    size={18}
-                    className="text-[var(--color-text-secondary)] group-hover:text-[var(--color-accent)] transition-colors"
-                  />
+                  <Settings size={12} />
                 </button>
               </div>
             </div>
@@ -113,28 +113,28 @@ const WelcomePage = ({
                       onClick={onNewSnippet}
                       className="group p-1 flex items-center gap-2 text-[var(--color-accent)] hover:underline decoration-[var(--color-accent)] underline-offset-2 transition-all text-left"
                     >
-                      <Plus size={18} />
-                      <span className="text-base">New Snippet</span>
+                      <Plus size={12} />
+                      <span className="text-tiny">New Snippet</span>
                     </button>
 
                     <button
                       onClick={onNewProject}
                       className="group p-1 flex items-center gap-2 text-[var(--color-accent)] hover:underline decoration-[var(--color-accent)] underline-offset-2 transition-all text-left"
                     >
-                      <Folder size={18} />
-                      <span className="text-base">Open Project</span>
+                      <Folder size={12} />
+                      <span className="text-tiny">Open Project</span>
                     </button>
 
                     <button className="group p-1 flex items-center gap-2 text-[var(--color-accent)] hover:underline decoration-[var(--color-accent)] underline-offset-2 transition-all text-left">
-                      <Command size={18} />
-                      <span className="text-base">Command Palette</span>
+                      <Command size={12} />
+                      <span className="text-tiny">Command Palette</span>
                     </button>
                   </div>
                 </div>
 
                 {/* Right Column: Recent */}
                 <div className="flex flex-col gap-4">
-                  <h2 className="text-xl font-normal text-[var(--color-text-primary)]">Recent</h2>
+                  <h2 className="text-lg font-normal text-[var(--color-text-primary)]">Recent</h2>
                   <div className="flex flex-col gap-2">
                     {recentFiles.length > 0 ? (
                       recentFiles.map((snippet) => (
@@ -143,7 +143,7 @@ const WelcomePage = ({
                           onClick={() => onSelectSnippet && onSelectSnippet(snippet)}
                           className="group p-1 flex flex-col items-start text-left text-[var(--color-accent)] hover:text-[var(--color-text-primary)] transition-colors py-1"
                         >
-                          <span className="text-base group-hover:underline decoration-[var(--color-accent)] underline-offset-2">
+                          <span className="text-tiny group-hover:underline decoration-[var(--color-accent)] underline-offset-2">
                             {snippet.title || 'Untitled'}
                           </span>
                           <span className="text-xs text-[var(--color-text-secondary)] opacity-70 font-mono">
@@ -202,4 +202,4 @@ WelcomePage.propTypes = {
   snippets: PropTypes.array
 }
 
-export default WelcomePage
+export default memo(WelcomePage)

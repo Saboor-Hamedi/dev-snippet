@@ -8,14 +8,8 @@ const SystemStatusFooter = ({ snippets = [] }) => {
   const hideWelcomePage = getSetting('ui.hideWelcomePage') || false
 
   return (
-    <div
-      className="flex items-center justify-between px-2 py-1 select-none"
-      style={{
-        backgroundColor: 'var(--header-bg)',
-        borderTop: '1px solid var(--border-color)'
-      }}
-    >
-      <div className="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-300">
+    <div className="flex items-center justify-between py-1 select-none bg-[var(--welcome-bg)]">
+      <div className="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-300 ">
         {/* System Ready - Using 'px-1 py-0.5' for similar height/padding as extension/zoom */}
         <div className="flex items-center gap-1.5 px-1 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-default">
           <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full"></div>

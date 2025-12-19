@@ -1,45 +1,16 @@
-import { useSettings } from './useSettingsContext'
-import { clamp, roundTo } from './useRoundedClamp.js'
-// Zoom limits
-export const MIN_ZOOM = 0.8
-export const MAX_ZOOM = 2.0
+import { useZoomLevel as useZoomFromContext } from './useSettingsContext'
 
-// Normalizer — ALWAYS force one decimal, then clamp
-const normalizeZoom = (value) => {
-  // const rounded = Number(value.toFixed(1))
-  const rounded = roundTo(value, 1)
-  return clamp(rounded, MIN_ZOOM, MAX_ZOOM)
-}
-
+/**
+ * Hook to access and control the application zoom level.
+ * This is now a lightweight wrapper around the global SettingsContext
+ * to ensure a single source of truth for the entire application.
+ */
 export const useZoomLevel = () => {
-  const { getSetting, updateSetting } = useSettings()
-
-  // STEP 1 — Load raw value
-  let zoom = getSetting('editor.zoomLevel') ?? 1.0
-
-  // STEP 2 — Normalize immediately
-  const cleanZoom = normalizeZoom(zoom)
-
-  // STEP 3 — Auto-heal and rewrite if needed
-  if (cleanZoom !== zoom) {
-    updateSetting('editor.zoomLevel', cleanZoom)
-  }
-
-  // STEP 4 — Apply to DOM
-  if (typeof document !== 'undefined') {
-    document.documentElement.style.setProperty('--zoom-level', cleanZoom)
-  }
-
-  // STEP 5 — Setter ALWAYS normalizes before saving
-  const setZoomLevel = (value) => {
-    const clean = normalizeZoom(value)
-    if (typeof document !== 'undefined') {
-      document.documentElement.style.setProperty('--zoom-level', clean)
-    }
-    updateSetting('editor.zoomLevel', clean)
-  }
-
-  return [cleanZoom, setZoomLevel]
+  return useZoomFromContext()
 }
+
+export const MIN_ZOOM = 0.5
+export const MAX_ZOOM = 4.0
+export const ZOOM_STEP = 0.5
 
 export default useZoomLevel

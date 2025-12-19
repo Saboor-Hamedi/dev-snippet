@@ -1,13 +1,11 @@
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import useCaretProp from '../../hook/useCaretProp.js'
 import useGutterProp from '../../hook/useGutterProp.js'
-import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
-import { useZoomLevel } from '../../hook/useZoomLevel'
 import settingsManager from '../../config/settingsManager'
 import CodeMirror from '@uiw/react-codemirror'
 import { EditorView } from '@codemirror/view'
 import buildTheme from './extensions/buildTheme'
 import buildExtensions from './extensions/buildExtensions'
-
 // Helper to debounce save operations
 const debounce = (func, wait) => {
   let timeout
@@ -24,15 +22,17 @@ const CodeEditor = ({
   className = 'h-full',
   // language prop removed/ignored
   onZoomChange,
-  wordWrap = 'on'
+  wordWrap = 'on',
+  onEditorReady, // NEW: callback to pass editor view to parent
+  onLargeFileChange // NEW: callback when large file mode changes
 }) => {
-  const [storedZoomLevel, setStoredZoomLevel] = useZoomLevel()
+  // Zoom level is now managed globally by useZoomLevel at the root/SettingsProvider level.
+  // Individual components consume the result via CSS variables.
   const editorDomRef = useRef(null)
   // This is the caret width and color
   const { width: caretWidth, color: caretColor } = useCaretProp()
   const { gutterBgColor, gutterBorderColor, gutterBorderWidth } = useGutterProp()
   const viewRef = useRef(null)
-  const liveZoomRef = useRef(storedZoomLevel)
 
   // Determine dark mode
   const [isDark, setIsDark] = useState(false)
@@ -60,6 +60,8 @@ const CodeEditor = ({
   }, [isDark, caretColor])
 
   const [cmExtensions, setCmExtensions] = useState(baseExtensions)
+  const [isLargeFile, setIsLargeFile] = useState(false)
+  const [extensionsLoaded, setExtensionsLoaded] = useState(false)
 
   // Save zoom to storage with debounce
   const debouncedSaveZoom = useCallback(
@@ -70,26 +72,12 @@ const CodeEditor = ({
     [onZoomChange]
   )
 
-  // 1. Efficiently update DOM styles without triggering React re-renders
-  const applyZoomToDOM = (level) => {
-    const target =
-      editorDomRef.current || (typeof document !== 'undefined' ? document.documentElement : null)
-    if (target) {
-      const zoomStr = level.toFixed(3)
-      target.style.setProperty('--zoom-level', zoomStr)
-      target.style.setProperty('--content-zoom', zoomStr)
-    }
-  }
+  // Zoom application is now handled entirely by the useZoomLevel hook at the root level.
+  // This prevents conflicts between parent and child zoom handlers.
 
   // Avoid calling `requestMeasure` during render — move to effect below
 
-  // 2. Sync Ref and DOM when storedZoomLevel changes
-  useEffect(() => {
-    liveZoomRef.current = storedZoomLevel
-    applyZoomToDOM(storedZoomLevel)
-  }, [storedZoomLevel])
-
-  // 3. Handle CSS Variables for Caret
+  // 2. Handle CSS Variables for Caret
   useEffect(() => {
     if (!editorDomRef.current) return
     editorDomRef.current.style.setProperty('--caret-width', `${caretWidth}px`)
@@ -101,9 +89,20 @@ const CodeEditor = ({
 
   // adjustOverflow removed (legacy layout logic)
 
-  // 4. Load Full Extensions
+  // Detect large files
+  useEffect(() => {
+    const lineCount = (value || '').split('\n').length
+    const charCount = (value || '').length
+    const isLarge = lineCount > 10000 || charCount > 500000
+    setIsLargeFile(isLarge)
+    if (onLargeFileChange) onLargeFileChange(isLarge)
+  }, [value, onLargeFileChange])
+
+  // 4. Load Full Extensions (Lazy + Progressive)
   useEffect(() => {
     let mounted = true
+    let timeoutId = null
+
     const load = async () => {
       try {
         const options = {
@@ -115,29 +114,45 @@ const CodeEditor = ({
             false,
           caretColor,
           fontSize: 'var(--editor-font-size, 14px)',
-          wordWrap,
-          language: 'markdown' // Force markdown
+          wordWrap: isLargeFile ? 'off' : wordWrap, // Disable wrapping for large files
+          language: isLargeFile ? 'plaintext' : 'markdown', // Plain text for large files
+          isLargeFile // Pass flag to buildExtensions
         }
 
         const exts = await buildExtensions(options, {
-          liveZoomRef,
-          applyZoomToDOM,
-          debouncedSaveZoom,
-          setStoredZoomLevel
+          debouncedSaveZoom
         })
 
         if (mounted) {
           setCmExtensions(exts)
+          setExtensionsLoaded(true)
         }
       } catch (e) {
         console.error(e)
       }
     }
-    load()
+
+    // Lazy load: Start with base extensions, load full set after idle
+    if (!extensionsLoaded) {
+      timeoutId = setTimeout(load, 150)
+    } else {
+      // Already loaded, just update if dependencies change
+      load()
+    }
+
     return () => {
       mounted = false
+      if (timeoutId) clearTimeout(timeoutId)
     }
-  }, [wordWrap, caretWidth, caretColor, gutterBgColor])
+  }, [
+    wordWrap,
+    caretWidth,
+    caretColor,
+    gutterBgColor,
+    debouncedSaveZoom,
+    isLargeFile,
+    extensionsLoaded
+  ])
 
   return (
     <div
@@ -155,10 +170,15 @@ const CodeEditor = ({
         value={value || ''}
         onChange={onChange}
         extensions={cmExtensions}
+        height="100%"
+        theme={isDark ? 'dark' : 'light'}
         className={`${className} h-full`}
         onCreateEditor={(view) => {
           viewRef.current = view
-          applyZoomToDOM(liveZoomRef.current)
+          // Pass view to parent if callback provided
+          if (onEditorReady) {
+            onEditorReady(view)
+          }
           // adjustOverflow() removed
         }}
       />
@@ -166,4 +186,4 @@ const CodeEditor = ({
   )
 }
 
-export default CodeEditor
+export default React.memo(CodeEditor)

@@ -6,6 +6,8 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 
 dev-snippet is an Electron + React desktop application for creating, editing, and managing code/text snippets. It features a CodeMirror-based editor with syntax highlighting, markdown preview, autosave functionality, and SQLite storage.
 
+**Note:** As of v1.2.0, the application is strictly a **Markdown Editor**.
+
 ## Development Commands
 
 ### Core Development
@@ -60,7 +62,7 @@ npm run build:mac
 # Build for Linux (AppImage, snap, deb)
 npm run build:linux
 
-# Build unpacked (for testing)
+# Build for unpacked (for testing)
 npm run build:unpack
 ```
 
@@ -148,7 +150,7 @@ App.jsx (SettingsProvider)
 - `title` (TEXT) - Snippet name with extension
 - `code` (TEXT) - Saved content
 - `code_draft` (TEXT) - Unsaved draft content (for autosave)
-- `language` (TEXT) - Syntax highlighting language key
+- `language` (TEXT) - Syntax highlighting language key (Always 'markdown')
 - `timestamp` (INTEGER) - Creation/modification time
 - `type` (TEXT) - Always 'snippet' (projects removed)
 - `tags` (TEXT) - Auto-extracted from content
@@ -171,16 +173,16 @@ App.jsx (SettingsProvider)
 The editor (`src/renderer/src/components/CodeEditor/CodeEditor.jsx`) is a wrapper around `@uiw/react-codemirror`:
 
 - **Extensions loaded dynamically** from `extensions/buildExtensions.js`:
-  - Language support (via `languageRegistry.js`)
+  - Markdown Language Support (Standard + Custom Highlighting)
   - Theme (dark/light mode aware)
   - Zoom controls (Ctrl+MouseWheel, Ctrl+Plus/Minus)
   - Word wrap configuration
   - Custom keymaps
 
 - **Language detection**:
-  - Based on file extension in title
-  - Fallback to 'text' if unknown
-  - See `src/renderer/src/components/language/languageRegistry.js`
+  - STRICTLY enforced to Markdown (`.md`).
+  - All new files and renames are forced to have `.md` extension.
+  - Multi-language support has been removed to focus on a premium Markdown experience.
 
 ### Keyboard Shortcuts
 
@@ -324,23 +326,13 @@ const api = {
 const result = await window.api.myAction(arg)
 ```
 
-### Adding a New Language
+### Rich Markdown Preview
 
-Edit `src/renderer/src/components/language/languageRegistry.js`:
+The Live Preview (`LivePreview.jsx`) renders GitHub Flavored Markdown (GFM) using `react-markdown`:
 
-```js
-export const EditorLanguages = {
-  mylang: {
-    name: 'My Language',
-    extensions: ['ml', 'mylang'],
-    loader: async () => {
-      const { myLang } = await import('@codemirror/lang-mylang')
-      return myLang()
-    }
-  }
-  // ...
-}
-```
+- **GFM Support**: Tables, task lists, strikethrough via `remark-gfm`.
+- **Line Breaks**: Single newlines are rendered as `<br>` via `remark-breaks`.
+- **Syntax Highlighting**: Code blocks in preview use `react-syntax-highlighter` (Prism).
 
 ### Adding a Global Keyboard Shortcut
 
@@ -363,15 +355,3 @@ if (isMod && e.key === 'x') {
   callbacks.onMyAction?.()
 }
 ```
-
-## Recent Updates (v1.2.0)
-
-### UI Refinements
-
-- **ToggleButton**: Redesigned for a cleaner, static appearance. Removed focus rings, shadows, and hover animations to mimic native OS controls and provide a 'solid' feel.
-- **WelcomePage**: Redesigned to closely resemble VS Code's "Get Started" screen, featuring a split layout ("Start" vs "Recent") and minimalist text-based interactions.
-
-### Functionality
-
-- **Gutter Settings**: Fixed synchronization logic for editor gutter elements (line numbers, fold gutter). Changes in `settings.json` now propagate immediately to the `CodeMirror` instance via `useGutterProp`.
-- **Settings Architecture**: `SettingsPanel.jsx` is established as the primary configuration interface, utilizing `ToggleButton` for boolean options and handling JSON-based settings edits directly.

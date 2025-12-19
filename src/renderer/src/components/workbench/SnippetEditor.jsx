@@ -1,6 +1,4 @@
-// SnippetEditor
-// - Responsible for editing a single snippet (draft or existing)
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import PropTypes from 'prop-types'
 import { useKeyboardShortcuts } from '../../hook/useKeyboardShortcuts.js'
 import { useEditorFocus } from '../../hook/useEditorFocus.js'
@@ -43,6 +41,17 @@ const SnippetEditor = ({
 
   const hideWelcomePage = getSetting('ui.hideWelcomePage') || false
   const saveTimerRef = useRef(null)
+  const [isLargeFile, setIsLargeFile] = useState(false)
+
+  // Debounced code for live preview to reduce re-renders during typing
+  const [debouncedCode, setDebouncedCode] = useState(code)
+  useEffect(() => {
+    // Dynamically adjust debounce based on code length
+    // Very large snippets get a longer debounce to keep the editor snappy
+    const wait = code.length > 50000 ? 1000 : code.length > 10000 ? 500 : 300
+    const timer = setTimeout(() => setDebouncedCode(code), wait)
+    return () => clearTimeout(timer)
+  }, [code])
 
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(() => {
     try {
@@ -237,6 +246,7 @@ const SnippetEditor = ({
         setNamePrompt({ isOpen: true, initialName: '' })
         return
       }
+
       const payload = {
         id: initialSnippet?.id || Date.now().toString(),
         title: localTitle,
@@ -325,12 +335,18 @@ const SnippetEditor = ({
                   <CodeEditor
                     value={code || ''}
                     wordWrap={wordWrap}
-                    onChange={(val) => {
-                      try {
-                        setCode(val || '')
-                        setIsDirty(true)
-                      } catch {}
-                    }}
+                    onChange={useCallback(
+                      (val) => {
+                        try {
+                          // Batch state updates and only if changed
+                          if (val !== code) {
+                            setCode(val || '')
+                            setIsDirty(true)
+                          }
+                        } catch {}
+                      },
+                      [code]
+                    )}
                     onKeyDown={(e) => {
                       try {
                         if (e.key === 'Escape') {
@@ -350,19 +366,23 @@ const SnippetEditor = ({
                     // Language prop removed - implied markdown
                     textareaRef={textareaRef}
                     onZoomChange={() => {}}
+                    onEditorReady={() => {}}
+                    onLargeFileChange={setIsLargeFile}
                   />
                 </div>
               }
               right={
                 <div className="h-full p-4" style={{ backgroundColor: 'transparent' }}>
-                  {/* LivePreview language fixed to markdown */}
-                  <LivePreview code={code} language="markdown" />
+                  {useMemo(
+                    () => (
+                      <LivePreview code={debouncedCode} language="markdown" />
+                    ),
+                    [debouncedCode]
+                  )}
                 </div>
               }
             />
           </div>
-
-          {false && <div />}
 
           <NamePrompt
             open={namePrompt.isOpen}
@@ -411,6 +431,7 @@ const SnippetEditor = ({
               // language prop removed
               zoomLevel={zoomLevel}
               title={title}
+              isLargeFile={isLargeFile}
             />
           </div>
         </div>
@@ -432,4 +453,4 @@ SnippetEditor.propTypes = {
   onToggleCompact: PropTypes.func
 }
 
-export default SnippetEditor
+export default React.memo(SnippetEditor)

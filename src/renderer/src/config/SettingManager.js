@@ -5,28 +5,14 @@ import { DEFAULT_SETTINGS } from './defaultSettings.js'
 class SettingManager {
   constructor(defaultSettings) {
     this.DEFAULT_SETTINGS = defaultSettings || DEFAULT_SETTINGS
-    this.settings = { ...this.DEFAULT_SETTINGS }
+    this.settings = JSON.parse(JSON.stringify(this.DEFAULT_SETTINGS))
     this.listeners = new Set()
     this.watchingEnabled = false
     this.unsubscribeWatcher = null
+    this.saveTimeout = null
   }
   // 1. Schema validation
 
-  validateSettingsEarly(settings) {
-    const required = ['editor', 'ui', 'behavior', 'advanced', 'gutter']
-    return required.every((key) => settings && typeof settings[key] === 'object')
-  }
-
-  // 2. Sanitize and watch for changes
-  sanitizeValueEarly(value) {
-    if (typeof value === 'string') {
-      return value.slice(0, 1000) // Prevent extremely long strings
-    }
-    if (typeof value === 'number') {
-      return Math.max(-1000, Math.min(1000, value)) // Reasonable bounds
-    }
-    return value
-  }
   // Start watching settings file
   async startWatching() {
     if (this.watchingEnabled) return
@@ -41,20 +27,33 @@ class SettingManager {
               return
             }
             const newSettings = JSON.parse(data)
+
             // Merge with defaults to ensure structure
             this.settings = {
               ...DEFAULT_SETTINGS,
-              ...newSettings,
-              editor: { ...DEFAULT_SETTINGS.editor, ...newSettings.editor },
-              ui: { ...DEFAULT_SETTINGS.ui, ...newSettings.ui },
-              behavior: { ...DEFAULT_SETTINGS.behavior, ...newSettings.behavior },
-              advanced: { ...DEFAULT_SETTINGS.advanced, ...newSettings.advanced },
-              gutter: { ...DEFAULT_SETTINGS.gutter, ...newSettings.gutter }
+              ...newSettings
             }
-            // console.log('🔄 Settings updated from file:', this.settings)
+
+            // Deep merge for key objects
+            for (const key of [
+              'editor',
+              'ui',
+              'behavior',
+              'advanced',
+              'gutter',
+              'livePreview',
+              'welcome'
+            ]) {
+              if (DEFAULT_SETTINGS[key] && typeof DEFAULT_SETTINGS[key] === 'object') {
+                this.settings[key] = {
+                  ...DEFAULT_SETTINGS[key],
+                  ...(newSettings[key] || {})
+                }
+              }
+            }
             this.notifyListeners()
           } catch (err) {
-            console.warn('Failed to parse settings from file:', err)
+            console.warn('Failed to parse settings from file during live update:', err)
           }
         })
         // Mark as watching
@@ -85,53 +84,79 @@ class SettingManager {
   // Load settings from JSON file
   async load() {
     try {
-      let shouldSave = false
-
       if (window.api?.readSettingsFile) {
         const data = await window.api.readSettingsFile()
-        if (data) {
-          const newSettings = JSON.parse(data)
-          // Use proper validation method
-          if (!this.validateSettings(newSettings)) {
-            console.warn('Invalid settings structure in file, using defaults')
-            this.settings = { ...DEFAULT_SETTINGS }
-            shouldSave = true
-          } else {
-            // Merge settings
-            this.settings = {
-              ...DEFAULT_SETTINGS,
-              ...newSettings,
-              editor: { ...DEFAULT_SETTINGS.editor, ...newSettings.editor },
-              ui: { ...DEFAULT_SETTINGS.ui, ...newSettings.ui },
-              livePreview: { ...DEFAULT_SETTINGS.livePreview, ...newSettings.livePreview },
-              behavior: { ...DEFAULT_SETTINGS.behavior, ...newSettings.behavior },
-              advanced: { ...DEFAULT_SETTINGS.advanced, ...newSettings.advanced }
+        if (data && data.trim()) {
+          try {
+            const newSettings = JSON.parse(data)
+
+            // Create a fresh object from defaults
+            const nextSettings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS))
+
+            // Shallow merge the new settings
+            Object.assign(nextSettings, newSettings)
+
+            // Deep merge key sections to preserve sub-keys from defaults
+            const sections = [
+              'editor',
+              'ui',
+              'behavior',
+              'advanced',
+              'gutter',
+              'livePreview',
+              'welcome'
+            ]
+            for (const key of sections) {
+              if (DEFAULT_SETTINGS[key] && typeof DEFAULT_SETTINGS[key] === 'object') {
+                nextSettings[key] = {
+                  ...DEFAULT_SETTINGS[key],
+                  ...(newSettings[key] || {})
+                }
+              }
             }
+
+            this.settings = nextSettings
+            this.notifyListeners()
+          } catch (parseErr) {
+            console.error('Settings parse error:', parseErr)
+            this.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS))
+            this.notifyListeners()
           }
+        } else {
+          // File is empty or does not exist, initialize with defaults
+          this.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS))
+          await this.save(true) // Immediate save for new file
           this.notifyListeners()
-          if (shouldSave) await this.save()
-          // console.log('Settings saved with cursorColor and cursorWidth:', this.settings.editor)
         }
       }
-      // Start watching after load
       this.startWatching()
     } catch (error) {
-      this.settings = { ...DEFAULT_SETTINGS }
-      await this.save()
-      // Start watching even if load failed (file might be created later)
+      console.error('Settings load error:', error)
+      this.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS))
+      this.notifyListeners()
       this.startWatching()
     }
   }
 
-  // Save settings to JSON file
-  async save() {
-    try {
-      if (window.api?.writeSettingsFile) {
-        const settingsJson = JSON.stringify(this.settings, null, 2)
-        await window.api.writeSettingsFile(settingsJson)
+  // Debounced save
+  async save(immediate = false) {
+    if (this.saveTimeout) clearTimeout(this.saveTimeout)
+
+    const performSave = async () => {
+      try {
+        if (window.api?.writeSettingsFile) {
+          const json = JSON.stringify(this.settings, null, 2)
+          await window.api.writeSettingsFile(json)
+        }
+      } catch (e) {
+        console.error('Settings save failed:', e)
       }
-    } catch (error) {
-      console.error('Failed to save settings:', error)
+    }
+
+    if (immediate) {
+      await performSave()
+    } else {
+      this.saveTimeout = setTimeout(performSave, 250)
     }
   }
 
@@ -148,40 +173,31 @@ class SettingManager {
 
   // Backup before changes
   async set(path, value) {
-    const backup = { ...this.settings }
+    // Deep clone state to avoid mutation issues
+    const nextSettings = JSON.parse(JSON.stringify(this.settings))
+    const keys = path.split('.')
+    let target = nextSettings
 
-    try {
-      // Sanitize the input value
-      const sanitizedValue = this.sanitizeValue(value)
-      const keys = path.split('.')
-      let target = this.settings
-
-      // Navigate to the parent object
-      for (let i = 0; i < keys.length - 1; i++) {
-        const key = keys[i]
-        if (!target[key] || typeof target[key] !== 'object') {
-          target[key] = {}
-        }
-        target = target[key]
+    for (let i = 0; i < keys.length - 1; i++) {
+      const key = keys[i]
+      if (!target[key] || typeof target[key] !== 'object') {
+        target[key] = {}
       }
-
-      // Set the final value
-      target[keys[keys.length - 1]] = sanitizedValue
-
-      // Skip validation for zoom level updates (allow rapid changes)
-      if (!path.includes('zoomLevel') && !this.validateSettings(this.settings)) {
-        this.settings = backup // Restore backup
-        throw new Error('Invalid settings structure after update')
-      }
-
-      // Save and notify
-      await this.save()
-      this.notifyListeners()
-    } catch (err) {
-      this.settings = backup // Restore backup on any error
-      console.error('Failed to set setting:', err)
-      throw err
+      target = target[key]
     }
+
+    const lastKey = keys[keys.length - 1]
+    const sanitized = this.sanitizeValue(value)
+
+    // Only update and notify if value actually changed
+    if (target[lastKey] === sanitized) return
+
+    target[lastKey] = sanitized
+    this.settings = nextSettings
+
+    // Zoom updates save immediately, others use debounce
+    await this.save(path.includes('zoomLevel'))
+    this.notifyListeners()
   }
 
   // Subscribe to setting changes
@@ -192,33 +208,31 @@ class SettingManager {
 
   // Notify all listeners
   notifyListeners() {
-    this.listeners.forEach((callback) => {
+    const current = this.getAll()
+    this.listeners.forEach((cb) => {
       try {
-        callback(this.settings)
-      } catch (error) {
-        console.error('Error in settings listener:', error)
-      }
+        cb(current)
+      } catch (e) {}
     })
   }
 
   // Reset to defaults
   async reset() {
-    this.settings = { ...DEFAULT_SETTINGS }
-    await this.save()
+    this.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS))
+    await this.save(true)
     this.notifyListeners()
   }
 
   // Get all settings
   getAll() {
-    return { ...this.settings }
+    return JSON.parse(JSON.stringify(this.settings))
   }
 
-  // Validate settings structure
+  // Validate settings structure - more forgiving to allow partial config files
   validateSettings(settings) {
     if (!settings || typeof settings !== 'object') return false
-
-    const required = ['editor', 'ui', 'behavior', 'advanced']
-    return required.every((key) => settings[key] && typeof settings[key] === 'object')
+    // Just ensure it's an object. Missing sections will be filled by defaults during merge.
+    return true
   }
 
   // Sanitize input values

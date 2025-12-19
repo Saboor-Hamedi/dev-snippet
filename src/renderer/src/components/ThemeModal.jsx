@@ -1,123 +1,8 @@
-import React, { useEffect } from 'react'
-import { useTheme } from '../hook/useTheme'
-
-const themes = [
-  {
-    id: 'polaris',
-    name: 'Polaris',
-    icon: '☀️',
-    description: 'Clean, professional, airy.',
-    colors: {
-      '--color-bg-primary': '#ffffff',
-      '--color-bg-secondary': '#f8fafc',
-      '--color-bg-tertiary': '#f1f5f9',
-      '--color-text-primary': '#0f172a',
-      '--color-text-secondary': '#475569',
-      '--color-text-tertiary': '#64748b',
-      '--color-accent-primary': '#0ea5e9',
-      '--color-border': '#e2e8f0',
-      '--hover-bg': '#f1f5f9',
-      '--hover-text': '#1e293b',
-      '--selected-bg': '#e0f2fe',
-      '--selected-text': '#0284c7',
-      '--sidebar-text': '#334155',
-      '--sidebar-header-text': '#475569',
-      background: '#ffffff',
-      sidebar: '#f8fafc',
-      text: '#0f172a',
-      accent: '#0ea5e9',
-      border: '#e2e8f0'
-    },
-    previewColors: ['bg-white', 'bg-slate-100', 'bg-sky-500']
-  },
-  {
-    id: 'midnight-pro',
-    name: 'Midnight Pro',
-    icon: '🌙',
-    description: 'Standard developer dark mode.',
-    colors: {
-      '--color-bg-primary': '#0d1117',
-      '--color-bg-secondary': '#161b22',
-      '--color-bg-tertiary': '#21262d',
-      '--color-text-primary': '#c9d1d9',
-      '--color-text-secondary': '#8b949e',
-      '--color-text-tertiary': '#6e7681',
-      '--color-accent-primary': '#58a6ff',
-      '--color-border': '#30363d',
-      '--hover-bg': '#21262d',
-      '--hover-text': '#ffffff',
-      '--selected-bg': '#30363d',
-      '--selected-text': '#ffffff',
-      '--sidebar-text': '#c9d1d9',
-      '--sidebar-header-text': '#8b949e',
-      background: '#0d1117',
-      sidebar: '#161b22',
-      text: '#c9d1d9',
-      accent: '#58a6ff',
-      border: '#30363d'
-    },
-    previewColors: ['bg-[#0d1117]', 'bg-[#161b22]', 'bg-blue-500']
-  },
-  {
-    id: 'nebula',
-    name: 'Nebula',
-    icon: '🪐',
-    description: 'High contrast, futuristic, neon.',
-    colors: {
-      '--color-bg-primary': '#09090b',
-      '--color-bg-secondary': '#18181b',
-      '--color-bg-tertiary': '#27272a',
-      '--color-text-primary': '#e4e4e7',
-      '--color-text-secondary': '#a1a1aa',
-      '--color-text-tertiary': '#71717a',
-      '--color-accent-primary': '#d946ef',
-      '--color-border': '#27272a',
-      '--hover-bg': 'rgba(217,70,239,0.15)',
-      '--hover-text': '#f4f4f5',
-      '--selected-bg': 'rgba(217,70,239,0.25)',
-      '--selected-text': '#fafafa',
-      '--sidebar-text': '#e4e4e7',
-      '--sidebar-header-text': '#a1a1aa',
-      background: '#09090b',
-      sidebar: '#18181b',
-      text: '#e4e4e7',
-      accent: '#d946ef',
-      border: '#27272a'
-    },
-    previewColors: ['bg-[#09090b]', 'bg-[#18181b]', 'bg-fuchsia-500']
-  },
-  {
-    id: 'forest',
-    name: 'Forest',
-    icon: '🌲',
-    description: 'Calming, natural, warm.',
-    colors: {
-      '--color-bg-primary': '#1c1917',
-      '--color-bg-secondary': '#292524',
-      '--color-bg-tertiary': '#44403c',
-      '--color-text-primary': '#e7e5e4',
-      '--color-text-secondary': '#d6d3d1',
-      '--color-text-tertiary': '#a8a29e',
-      '--color-accent-primary': '#22c55e',
-      '--color-border': '#44403c',
-      '--hover-bg': 'rgba(34,197,94,0.15)',
-      '--hover-text': '#f5f5f4',
-      '--selected-bg': 'rgba(34,197,94,0.25)',
-      '--selected-text': '#fafaf9',
-      '--sidebar-text': '#e7e5e4',
-      '--sidebar-header-text': '#d6d3d1',
-      background: '#1c1917',
-      sidebar: '#292524',
-      text: '#e7e5e4',
-      accent: '#22c55e',
-      border: '#44403c'
-    },
-    previewColors: ['bg-[#1c1917]', 'bg-[#292524]', 'bg-emerald-500']
-  }
-]
+import { useEffect } from 'react'
+import { themeProps } from './preference/theme/themeProps'
 
 const ThemeModal = ({ isOpen, onClose }) => {
-  const { currentTheme, setTheme } = useTheme()
+  const { currentThemeId, setTheme, themes } = themeProps()
 
   // Handle Escape Key
   useEffect(() => {
@@ -167,8 +52,7 @@ const ThemeModal = ({ isOpen, onClose }) => {
         {/* Theme Grid */}
         <div className="p-6 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-4">
           {themes.map((theme) => {
-            const isActive = currentTheme === theme.id
-
+            const isActive = currentThemeId === theme.id
             const activeClasses = 'border-[#30363d] bg-[#161b22] ring-1 ring-[#30363d]'
             const inactiveClasses = 'border-[#30363d] hover:bg-[#161b22]'
 
@@ -176,64 +60,8 @@ const ThemeModal = ({ isOpen, onClose }) => {
               <button
                 key={theme.id}
                 onClick={async () => {
-                  // Apply ALL CSS variables to document root for comprehensive theming
-                  const root = document.documentElement
-
-                  // Clear any existing theme classes
-                  root.classList.remove('dark')
-
-                  // Apply CSS custom properties
-                  Object.entries(theme.colors).forEach(([key, value]) => {
-                    if (key.startsWith('--')) {
-                      root.style.setProperty(key, value)
-                    }
-                  })
-
-                  // Force specific variables for better reliability
-                  if (theme.id === 'polaris') {
-                    root.style.setProperty('--sidebar-header-text', '#475569')
-                    root.style.setProperty('--color-text-primary', '#0f172a')
-                    root.style.setProperty('--color-text-secondary', '#475569')
-                  }
-
-                  // Apply legacy CSS variables for compatibility
-                  root.style.setProperty('--color-background', theme.colors.background)
-                  root.style.setProperty('--color-background-soft', theme.colors.sidebar)
-                  root.style.setProperty('--color-text', theme.colors.text)
-                  root.style.setProperty('--text-main', theme.colors.text)
-                  root.style.setProperty('--accent', theme.colors.accent)
-                  root.style.setProperty('--border-color', theme.colors.border)
-
-                  // Apply selection colors from theme CSS variables
-                  if (theme.colors['--selected-bg'])
-                    root.style.setProperty('--selected-bg', theme.colors['--selected-bg'])
-                  if (theme.colors['--selected-text'])
-                    root.style.setProperty('--selected-text', theme.colors['--selected-text'])
-                  if (theme.colors['--hover-bg'])
-                    root.style.setProperty('--hover-bg', theme.colors['--hover-bg'])
-                  if (theme.colors['--hover-text'])
-                    root.style.setProperty('--hover-text', theme.colors['--hover-text'])
-
-                  // Set dark class for non-light themes
-                  if (theme.id !== 'polaris') {
-                    root.classList.add('dark')
-                  }
-
-                  // Set theme attribute for CSS selectors
-                  root.setAttribute('data-theme', theme.id)
-
-                  // Force body background update
-                  document.body.style.backgroundColor = theme.colors.background
-                  document.body.style.color = theme.colors.text
-
-                  setTheme(theme.id, theme.colors)
-                  if (window.api?.saveTheme) {
-                    await window.api.saveTheme({
-                      id: 'current',
-                      name: theme.id,
-                      colors: JSON.stringify(theme.colors)
-                    })
-                  }
+                  setTheme(theme.id)
+                  onClose()
                 }}
                 className={`relative group flex flex-col text-left p-4 rounded-xl border-2 transition-all duration-200 ${
                   isActive ? activeClasses : inactiveClasses

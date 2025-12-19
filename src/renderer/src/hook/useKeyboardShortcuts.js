@@ -113,9 +113,67 @@ export const useKeyboardShortcuts = (shortcuts) => {
           shortcutsRef.current.onDeleteSnippet()
         }
       }
+      // Zoom In
+      const isZoomIn =
+        (e.ctrlKey || e.metaKey) &&
+        (e.key === '=' ||
+          e.key === '+' ||
+          e.code === 'Equal' ||
+          e.code === 'NumpadAdd' ||
+          e.key === 'Add')
+
+      if (isZoomIn) {
+        e.preventDefault()
+        if (shortcutsRef.current.onZoomIn) {
+          shortcutsRef.current.onZoomIn()
+        }
+      }
+
+      // Zoom Out
+      const isZoomOut =
+        (e.ctrlKey || e.metaKey) &&
+        (e.key === '-' ||
+          e.key === '_' ||
+          e.code === 'Minus' ||
+          e.code === 'NumpadSubtract' ||
+          e.key === 'Subtract')
+
+      if (isZoomOut) {
+        e.preventDefault()
+        if (shortcutsRef.current.onZoomOut) {
+          shortcutsRef.current.onZoomOut()
+        }
+      }
+
+      // Reset Zoom
+      const isZoomReset =
+        (e.ctrlKey || e.metaKey) && (e.key === '0' || e.code === 'Digit0' || e.code === 'Numpad0')
+
+      if (isZoomReset) {
+        e.preventDefault()
+        if (shortcutsRef.current.onZoomReset) {
+          shortcutsRef.current.onZoomReset()
+        }
+      }
+    }
+
+    const handleWheel = (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault()
+        // Standard VS Code zoom wheel behavior
+        if (e.deltaY < 0) {
+          if (shortcutsRef.current.onZoomIn) shortcutsRef.current.onZoomIn()
+        } else if (e.deltaY > 0) {
+          if (shortcutsRef.current.onZoomOut) shortcutsRef.current.onZoomOut()
+        }
+      }
     }
 
     window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
+    window.addEventListener('wheel', handleWheel, { passive: false })
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('wheel', handleWheel)
+    }
   }, [])
 }

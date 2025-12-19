@@ -4,6 +4,12 @@ import electron from 'electron-vite'
 
 export default defineConfig({
   plugins: [react(), electron()],
+  resolve: {
+    alias: {
+      'react': 'preact/compat',
+      'react-dom': 'preact/compat'
+    }
+  },
   build: {
     rollupOptions: {
       output: {

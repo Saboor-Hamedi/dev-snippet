@@ -1,5 +1,9 @@
 // src/config/defaultSettings.js
 export const DEFAULT_SETTINGS = {
+  // Welcome settings Covers all tiny components
+  welcome: {
+    welcomePage: '#232731'
+  },
   editor: {
     zoomLevel: 1.0,
     fontSize: 16,

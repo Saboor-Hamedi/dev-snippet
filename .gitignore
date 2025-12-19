@@ -11,3 +11,6 @@ nsis-*
 .agent
 .src/test
 .WARP.md
+.vscode/
+.github/
+.idea/

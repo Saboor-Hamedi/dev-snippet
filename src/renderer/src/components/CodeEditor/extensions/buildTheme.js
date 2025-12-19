@@ -7,7 +7,7 @@ const buildTheme = (EditorView, options = {}) => {
         backgroundColor: 'var(--editor-bg, var(--color-bg-primary)) !important',
         color: 'var(--color-text-primary, #0f172a)',
         fontFamily: 'var(--editor-font-family, "JetBrains Mono")',
-        fontSize: `calc(${fontSize} * var(--zoom-level, 1))`,
+        fontSize: fontSize,
         lineHeight: '1.6',
         height: '100%',
         transition: 'background-color 140ms ease, color 140ms ease'

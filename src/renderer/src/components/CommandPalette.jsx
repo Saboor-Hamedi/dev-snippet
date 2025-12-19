@@ -11,18 +11,26 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
   // Filter items based on search
   const filteredItems = React.useMemo(() => {
     const searchLower = search.toLowerCase().trim()
+    if (!searchLower) return snippets.map((s) => ({ ...s, type: 'snippet' })).slice(0, 10)
 
-    // If no search term, show all snippets. Otherwise, filter.
-    const sourceItems = !searchLower
-      ? snippets
-      : snippets.filter((s) => {
-          const titleMatch = (s.title || '').toLowerCase().includes(searchLower)
-          const langMatch = (s.language || '').toLowerCase().includes(searchLower)
-          const codeMatch = (s.code || '').toLowerCase().includes(searchLower)
-          return titleMatch || langMatch || codeMatch
-        })
+    const results = []
+    for (const s of snippets) {
+      const title = (s.title || '').toLowerCase()
+      const lang = (s.language || '').toLowerCase()
 
-    return sourceItems.map((s) => ({ ...s, type: 'snippet' })).slice(0, 10) // Limit to 10 results
+      if (title.includes(searchLower) || lang.includes(searchLower)) {
+        results.push({ ...s, type: 'snippet' })
+      } else if (s.code && s.code.length < 20000) {
+        // Only search code for reasonably sized snippets
+        if (s.code.toLowerCase().includes(searchLower)) {
+          results.push({ ...s, type: 'snippet' })
+        }
+      }
+
+      if (results.length >= 10) break
+    }
+
+    return results
   }, [search, snippets])
 
   // Reset selection when search changes

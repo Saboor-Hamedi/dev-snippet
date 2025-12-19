@@ -33,8 +33,6 @@ const api = {
   deleteSnippet: (id) => electronAPI.ipcRenderer.invoke('db:deleteSnippet', id),
   getSetting: (key) => electronAPI.ipcRenderer.invoke('db:getSetting', key),
   saveSetting: (key, value) => electronAPI.ipcRenderer.invoke('db:saveSetting', key, value),
-  getTheme: () => electronAPI.ipcRenderer.invoke('db:getTheme'),
-  saveTheme: (theme) => electronAPI.ipcRenderer.invoke('db:saveTheme', theme),
   // Drafts
   saveSnippetDraft: (payload) => electronAPI.ipcRenderer.invoke('db:saveSnippetDraft', payload),
   commitSnippetDraft: (id) => electronAPI.ipcRenderer.invoke('db:commitSnippetDraft', id),
@@ -47,7 +45,9 @@ const api = {
   // Bounds helpers for custom resize handles (renderer will call these)
   getWindowBounds: () => electronAPI.ipcRenderer.invoke('window:getBounds'),
   setWindowBounds: (bounds) => electronAPI.ipcRenderer.invoke('window:setBounds', bounds),
-  restoreDefaultSize: () => electronAPI.ipcRenderer.invoke('window:restore-default-size')
+  restoreDefaultSize: () => electronAPI.ipcRenderer.invoke('window:restore-default-size'),
+  setZoom: (factor) => electronAPI.ipcRenderer.invoke('window:setZoom', factor),
+  getZoom: () => electronAPI.ipcRenderer.invoke('window:getZoom')
 }
 
 if (process.contextIsolated) {
