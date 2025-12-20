@@ -3,7 +3,7 @@
  * Contains all CREATE TABLE and CREATE INDEX statements
  */
 
-const createTables = (db) => {
+export const createTables = (db) => {
   db.exec(`
     CREATE TABLE IF NOT EXISTS snippets (
       id TEXT PRIMARY KEY,
@@ -36,7 +36,7 @@ const createTables = (db) => {
   `)
 }
 
-const createFTS5 = (db) => {
+export const createFTS5 = (db) => {
   try {
     db.exec(`
       CREATE VIRTUAL TABLE IF NOT EXISTS snippets_fts USING fts5(
@@ -67,9 +67,4 @@ const createFTS5 = (db) => {
   } catch (e) {
     console.warn('FTS5 setup skipped (may already exist):', e.message)
   }
-}
-
-module.exports = {
-  createTables,
-  createFTS5
 }

@@ -2,18 +2,39 @@
  * Database IPC Handlers
  */
 
-const { ipcMain } = require('electron')
+import { ipcMain } from 'electron'
 
-const registerDatabaseHandlers = (db, preparedStatements) => {
-  // Get all snippets
-  ipcMain.handle('db:getSnippets', () => {
-    return preparedStatements.getAll.all()
+export const registerDatabaseHandlers = (db, preparedStatements) => {
+  // Get snippets (all or paginated)
+  ipcMain.handle('db:getSnippets', (event, options = {}) => {
+    const { limit, offset, metadataOnly = true } = options
+
+    // Choose the statement based on whether we want full text or just metadata
+    const stmt = metadataOnly ? preparedStatements.getMetadata : preparedStatements.getAll
+    const paginatedStmt = metadataOnly
+      ? preparedStatements.getMetadataPaginated
+      : preparedStatements.getAll // Note: I didn't create getAllPaginated but we could if needed
+
+    if (limit !== undefined && offset !== undefined) {
+      if (metadataOnly) {
+        return preparedStatements.getMetadataPaginated.all(limit, offset)
+      }
+      // Fallback for full-paginated if needed (can be added later)
+      return db.prepare(`${stmt.source} LIMIT ? OFFSET ?`).all(limit, offset)
+    }
+
+    return stmt.all()
+  })
+
+  // Get single snippet by ID (full content)
+  ipcMain.handle('db:getSnippetById', (event, id) => {
+    return preparedStatements.getById.get(id)
   })
 
   // Full-text search using FTS5
   ipcMain.handle('db:searchSnippets', (event, query) => {
     if (!query || query.trim().length === 0) {
-      return preparedStatements.getAll.all()
+      return preparedStatements.getMetadata.all()
     }
 
     try {
@@ -26,10 +47,12 @@ const registerDatabaseHandlers = (db, preparedStatements) => {
       const results = db
         .prepare(
           `
-        SELECT s.* FROM snippets s
+        SELECT s.id, s.title, s.language, s.timestamp, s.type, s.tags, s.is_draft, s.sort_index
+        FROM snippets s
         INNER JOIN snippets_fts fts ON s.rowid = fts.rowid
         WHERE snippets_fts MATCH ?
         ORDER BY rank
+        LIMIT 100
       `
         )
         .all(ftsQuery)
@@ -41,9 +64,11 @@ const registerDatabaseHandlers = (db, preparedStatements) => {
       return db
         .prepare(
           `
-        SELECT * FROM snippets
+        SELECT id, title, language, timestamp, type, tags, is_draft, sort_index 
+        FROM snippets
         WHERE title LIKE ? OR code LIKE ? OR tags LIKE ?
         ORDER BY timestamp DESC
+        LIMIT 100
       `
         )
         .all(likeQuery, likeQuery, likeQuery)
@@ -100,5 +125,3 @@ const registerDatabaseHandlers = (db, preparedStatements) => {
     return true
   })
 }
-
-module.exports = { registerDatabaseHandlers }

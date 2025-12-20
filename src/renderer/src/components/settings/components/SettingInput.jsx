@@ -13,45 +13,46 @@ const SettingInput = ({
   suffix = null,
   noBorder = false,
   min,
-  max
+  max,
+  placeholder
 }) => {
   return (
     <div
-      className={`p-2 ${!noBorder ? 'border-t' : ''}`}
+      className={`flex items-center justify-between p-3 gap-4 ${!noBorder ? 'border-t first:border-t-0' : ''}`}
       style={{ borderColor: 'var(--color-border)' }}
     >
-      <label
-        className="block text-xtiny font-thin mb-1"
-        style={{ color: 'var(--color-text-primary)' }}
-      >
-        {label}
-      </label>
-      {description && (
-        <p className="text-xtiny mb-2" style={{ color: 'var(--color-text-tertiary)' }}>
-          {description}
-        </p>
-      )}
-      <div className="flex items-center gap-2">
+      <div className="flex-1">
+        <label className="block text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
+          {label}
+        </label>
+        {description && (
+          <p className="text-xs mt-0.5 max-w-sm" style={{ color: 'var(--color-text-tertiary)' }}>
+            {description}
+          </p>
+        )}
+      </div>
+
+      <div className="flex-shrink-0">
         <input
           type={type}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           min={min}
           max={max}
-          className="flex-1 rounded-md px-3 py-2 text-xtiny outline-none transition-all"
+          placeholder={placeholder}
+          onFocus={(e) => {
+            e.target.style.backgroundColor = '#1a1d29'
+          }}
+          onBlur={(e) => {
+            e.target.style.backgroundColor = 'var(--color-bg-secondary)'
+          }}
+          className="w-36 rounded-[5px] px-2 py-1.5 text-xs text-left outline-none border border-[var(--color-border)] ring-0 focus:ring-0 focus:outline-none transition-none"
           style={{
-            backgroundColor: 'var(--color-bg-primary)',
+            backgroundColor: 'var(--color-bg-secondary)',
             color: 'var(--color-text-primary)',
-            border: 'none',
-            outline: 'none',
             boxShadow: 'none'
           }}
         />
-        {suffix && (
-          <span className="text-xtiny" style={{ color: 'var(--color-text-tertiary)' }}>
-            {suffix}
-          </span>
-        )}
       </div>
     </div>
   )
@@ -63,7 +64,6 @@ SettingInput.propTypes = {
   value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   onChange: PropTypes.func.isRequired,
   type: PropTypes.string,
-  suffix: PropTypes.string,
   noBorder: PropTypes.bool,
   min: PropTypes.number,
   max: PropTypes.number

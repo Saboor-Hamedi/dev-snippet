@@ -2,12 +2,12 @@
  * Database Initialization and Management
  */
 
-const { join } = require('path')
-const fsSync = require('fs')
-const Database = require('better-sqlite3')
-const { createTables, createFTS5 } = require('./schema')
-const { runMigrations } = require('./migrations')
-const { createPreparedStatements } = require('./queries')
+import { join } from 'path'
+import fsSync from 'fs'
+import Database from 'better-sqlite3'
+import { createTables, createFTS5 } from './schema'
+import { runMigrations } from './migrations'
+import { createPreparedStatements } from './queries'
 
 let db = null
 let preparedStatements = null
@@ -15,7 +15,7 @@ let preparedStatements = null
 /**
  * Initialize database with automatic backup
  */
-const initDB = (app) => {
+export const initDB = (app) => {
   const dbPath = join(app.getPath('userData'), 'snippets.db')
 
   // Create automatic backup before opening database
@@ -83,7 +83,7 @@ const initDB = (app) => {
 /**
  * Get database instance
  */
-const getDB = (app) => {
+export const getDB = (app) => {
   if (!db) {
     return initDB(app)
   }
@@ -93,12 +93,6 @@ const getDB = (app) => {
 /**
  * Get prepared statements
  */
-const getPreparedStatements = () => {
+export const getPreparedStatements = () => {
   return preparedStatements
-}
-
-module.exports = {
-  initDB,
-  getDB,
-  getPreparedStatements
 }

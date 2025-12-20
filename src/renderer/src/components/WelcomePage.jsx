@@ -5,7 +5,7 @@ import { Folder, Command, Plus, Settings, Github } from 'lucide-react'
 const GitHubProfile = lazy(() => import('./github').then((m) => ({ default: m.GitHubProfile })))
 const GitHubSettings = lazy(() => import('./github').then((m) => ({ default: m.GitHubSettings })))
 import SystemStatusFooter from './SystemStatusFooter'
-import useGeneralProp from '../hook/useGeneralProp.js'
+import useGeneralProp from '../hook/settings/useGeneralProp.js'
 const WelcomePage = ({
   onNewSnippet,
   onNewProject,

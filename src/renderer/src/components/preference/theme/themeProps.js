@@ -1,13 +1,22 @@
-import { useState, useEffect } from 'react'
 import { useSettings } from '../../../hook/useSettingsContext'
 import { themes } from './themes'
 
+// Theme-specific overrides to fix inconsistent colors without modifying themes.js
+const THEME_OVERRIDES = {
+  polaris: {
+    '--sidebar-header-text': '#586069',
+    '--color-text-primary': '#24292f',
+    '--color-text-secondary': '#586069'
+  }
+}
+
 export const themeProps = () => {
-  const { getSetting, updateSetting, updateSettings } = useSettings()
-  const [currentThemeId, setCurrentThemeId] = useState('midnight-pro') // Default
+  const { updateSetting, getSetting, updateSettings } = useSettings()
+  // Themes source of truth - Derived directly from global settings
+  const currentThemeId = getSetting('ui.theme') || 'midnight-pro'
 
   // Preload all theme CSS variables immediately (synchronous)
-  themes.forEach(theme => {
+  themes.forEach((theme) => {
     if (!theme._cssCache) {
       theme._cssCache = Object.entries(theme.colors).filter(([key]) => key.startsWith('--'))
     }
@@ -40,6 +49,14 @@ export const themeProps = () => {
   const applyThemeCSS = (theme) => {
     const root = document.documentElement
 
+    // 1. DISABLE TRANSITIONS to prevent "disco effect"
+    const style = document.createElement('style')
+    style.innerHTML = '* { transition: none !important; }'
+    document.head.appendChild(style)
+
+    // Force reflow
+    void document.body.offsetHeight
+
     // Clear existing theme classes
     root.classList.remove('dark')
 
@@ -58,12 +75,18 @@ export const themeProps = () => {
         }
       })
     }
-      
-    // Force specific variables for Polaris
-    if (theme.id === 'polaris') {
-      root.style.setProperty('--sidebar-header-text', '#586069')
-      root.style.setProperty('--color-text-primary', '#24292f')
-      root.style.setProperty('--color-text-secondary', '#586069')
+
+    // 2. RE-ENABLE TRANSITIONS just after paint
+    setTimeout(() => {
+      document.head.removeChild(style)
+    }, 10)
+
+    // Apply specific theme overrides (Generic)
+    const overrides = THEME_OVERRIDES[theme.id]
+    if (overrides) {
+      Object.entries(overrides).forEach(([key, value]) => {
+        root.style.setProperty(key, value)
+      })
     }
 
     // Apply legacy variables
@@ -97,9 +120,6 @@ export const themeProps = () => {
 
     // Save to settings
     updateSetting('ui.theme', theme.id)
-    setCurrentThemeId(theme.id)
-
-    console.log(`🎨 ${theme.id} theme applied successfully!`)
   }
   const setTheme = (themeId) => {
     applyTheme(themeId)

@@ -3,7 +3,7 @@
  * Handles adding optional columns to existing tables
  */
 
-const runMigrations = (db) => {
+export const runMigrations = (db) => {
   try {
     // Drop old projects table if it exists
     db.exec('DROP TABLE IF EXISTS projects')
@@ -26,5 +26,3 @@ const runMigrations = (db) => {
     console.warn('Migration warning:', e.message)
   }
 }
-
-module.exports = { runMigrations }

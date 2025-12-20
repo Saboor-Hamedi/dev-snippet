@@ -8,18 +8,15 @@ import PropTypes from 'prop-types'
 const SettingRow = ({ label, description, children, noBorder = false, className = '' }) => {
   return (
     <div
-      className={`p-4 flex items-center justify-between gap-4 ${!noBorder ? 'border-b' : ''} ${className}`}
+      className={`flex items-center justify-between p-3 gap-4 ${!noBorder ? 'border-t first:border-t-0' : ''} ${className}`}
       style={{ borderColor: 'var(--color-border)' }}
     >
       <div className="flex-1">
-        <label
-          className="block text-xtiny font-thin"
-          style={{ color: 'var(--color-text-primary)' }}
-        >
+        <label className="block text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
           {label}
         </label>
         {description && (
-          <p className="text-xtiny mt-1 max-w-sm" style={{ color: 'var(--color-text-tertiary)' }}>
+          <p className="text-xs mt-0.5 max-w-sm" style={{ color: 'var(--color-text-tertiary)' }}>
             {description}
           </p>
         )}

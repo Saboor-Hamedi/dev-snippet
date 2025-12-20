@@ -2,7 +2,7 @@
  * Keyboard Shortcuts for DevTools
  */
 
-const setupDevToolsShortcuts = (mainWindow, ENABLE_DEVTOOLS) => {
+export const setupDevToolsShortcuts = (mainWindow, ENABLE_DEVTOOLS) => {
   if (!ENABLE_DEVTOOLS) return
 
   mainWindow.webContents.on('before-input-event', (event, input) => {
@@ -26,5 +26,3 @@ const setupDevToolsShortcuts = (mainWindow, ENABLE_DEVTOOLS) => {
     // This includes Ctrl+F (find), Ctrl+R (rename), Ctrl+S (save), etc.
   })
 }
-
-module.exports = { setupDevToolsShortcuts }

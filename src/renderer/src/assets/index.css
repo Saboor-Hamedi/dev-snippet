@@ -240,8 +240,6 @@ select:not(.theme-exempt):focus {
   border-color: var(--color-border);
 }
 
-
-
 /* Loading states and animations */
 .loading,
 .spinner,
@@ -330,11 +328,12 @@ select:not(.theme-exempt):focus {
   /* border-color: var(--color-border) !important; */
 }
 
+/* settings-panel input:focus overrides removed to allow component control */
 .settings-panel input:focus,
 .settings-panel select:focus,
 .settings-panel textarea:focus {
-  background-color: var(--color-bg-tertiary) !important;
-  border-color: var(--color-accent-primary) !important;
+  /* background-color: var(--color-bg-tertiary) !important; */
+  /* border-color: var(--color-accent-primary) !important; */
 }
 
 /* Settings cards and sections */
@@ -361,32 +360,25 @@ select:not(.theme-exempt):focus {
   background-position: right 8px center !important;
   background-size: 12px !important;
   border: none !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
-  transition: all 0.2s ease !important;
 }
 
 .settings-panel select:hover {
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
-  transform: translateY(-1px) !important;
+  /* No hover effect */
 }
 
 /* Smooth input styling */
 .settings-panel input[type='number'] {
   border: none !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
-  transition: all 0.2s ease !important;
 }
 
 .settings-panel input[type='number']:hover {
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
-  transform: translateY(-1px) !important;
+  /* No hover effect */
 }
 
 /* Remove focus outline completely */
 .settings-panel select:focus,
 .settings-panel input:focus {
   outline: none !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
 }
 
 /* ===== HEADER AND NAVIGATION FIXES ===== */
@@ -1012,7 +1004,6 @@ textarea {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
-
 
 /* CodeMirror 6 Selection Override - Aggressive */
 .cm-editor ::selection,

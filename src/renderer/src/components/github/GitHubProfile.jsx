@@ -35,8 +35,18 @@ const GitHubProfile = ({ username, onClose }) => {
             setProfile(data.profile)
             setRepos(data.repos || [])
             return
-          } catch (apiError) {
-            console.log('Main process API failed, trying direct fetch...')
+          } catch (e) {
+            // Silent fail or minimal warn
+            try {
+              // fetch directly
+              const res = await fetch(`https://api.github.com/users/${username}/repos`)
+              if (res.ok) {
+                const data = await res.json()
+                setRepos(data || [])
+              }
+            } catch (inner) {
+              // ignore
+            }
           }
         }
 
@@ -71,11 +81,8 @@ const GitHubProfile = ({ username, onClose }) => {
             const reposData = await reposResponse.json()
             setRepos(reposData)
           }
-        } catch (repoError) {
-          console.log('Could not fetch repositories')
-        }
+        } catch (repoError) {}
       } catch (err) {
-        console.error('GitHub fetch error:', err)
         // Set comprehensive fallback data
         setProfile({
           login: username,

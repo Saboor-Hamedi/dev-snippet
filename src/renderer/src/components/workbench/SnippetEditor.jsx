@@ -174,23 +174,25 @@ const SnippetEditor = ({
   const isInitialMount = useRef(true)
   const lastSnippetId = useRef(initialSnippet?.id)
 
-  // Update code if initialSnippet changes
+  // Update code if initialSnippet changes or content is lazy-loaded
   React.useEffect(() => {
     if (!initialSnippet) return
-    if (initialSnippet && initialSnippet.id !== lastSnippetId.current) {
+
+    // Case 1: Switched to a different snippet
+    if (initialSnippet.id !== lastSnippetId.current) {
       setCode(initialSnippet.code || '')
       setTitle(initialSnippet.title || '')
-
-      try {
-        setIsDirty(false)
-      } catch {}
-      try {
-        isInitialMount.current = true
-      } catch {}
+      setIsDirty(false)
+      isInitialMount.current = true
       lastSnippetId.current = initialSnippet.id
       return
     }
-  }, [initialSnippet?.id, initialSnippet?.title, isDirty])
+
+    // Case 2: Same snippet ID, but code arrived (lazy loading)
+    if (initialSnippet.code !== undefined && code === '') {
+      setCode(initialSnippet.code || '')
+    }
+  }, [initialSnippet?.id, initialSnippet?.code, initialSnippet?.title])
 
   const [namePrompt, setNamePrompt] = useState({ isOpen: false, initialName: '' })
 

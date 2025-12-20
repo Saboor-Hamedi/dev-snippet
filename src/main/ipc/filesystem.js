@@ -2,10 +2,10 @@
  * Filesystem IPC Handlers
  */
 
-const { ipcMain, dialog } = require('electron')
-const fs = require('fs/promises')
+import { ipcMain, dialog } from 'electron'
+import fs from 'fs/promises'
 
-const registerFilesystemHandlers = () => {
+export const registerFilesystemHandlers = () => {
   // Open file dialog
   ipcMain.handle('dialog:openFile', async () => {
     const result = await dialog.showOpenDialog({
@@ -62,5 +62,3 @@ const registerFilesystemHandlers = () => {
     }))
   })
 }
-
-module.exports = { registerFilesystemHandlers }

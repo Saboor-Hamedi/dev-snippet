@@ -2,9 +2,9 @@
  * Dialog IPC Handlers
  */
 
-const { ipcMain, dialog } = require('electron')
+import { ipcMain, dialog } from 'electron'
 
-const registerDialogHandlers = () => {
+export const registerDialogHandlers = () => {
   // Confirm delete dialog
   ipcMain.handle('confirm-delete', async (event, message) => {
     const res = await dialog.showMessageBox({
@@ -19,5 +19,3 @@ const registerDialogHandlers = () => {
     return res.response === 1
   })
 }
-
-module.exports = { registerDialogHandlers }

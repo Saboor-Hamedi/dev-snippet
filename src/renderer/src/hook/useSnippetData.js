@@ -6,21 +6,39 @@ export const useSnippetData = () => {
   const [selectedSnippet, setSelectedSnippetState] = useState(null)
   const { showToast } = useToast()
 
-  // Simple setter - use DB content directly
-  const setSelectedSnippet = (item) => {
+  // lazy fetch full content only when selected
+  const setSelectedSnippet = async (item) => {
+    if (!item) {
+      setSelectedSnippetState(null)
+      return
+    }
+
     try {
-      setSelectedSnippetState(item)
+      // If code is already present (e.g. from a recent save), just use it
+      if (item.code !== undefined && !item.is_draft) {
+        setSelectedSnippetState(item)
+        return
+      }
+
+      // Otherwise fetch full content from DB
+      if (window.api?.getSnippetById) {
+        const fullSnippet = await window.api.getSnippetById(item.id)
+        setSelectedSnippetState(fullSnippet || item)
+      } else {
+        setSelectedSnippetState(item)
+      }
     } catch (err) {
       setSelectedSnippetState(item)
     }
   }
 
-  // Load initial data from the main process
+  // Load initial metadata only
   useEffect(() => {
     const loadData = async () => {
       try {
         if (window.api?.getSnippets) {
-          const loadedSnippets = await window.api.getSnippets()
+          // Fetch only metadata for the sidebar/list - MUCH faster
+          const loadedSnippets = await window.api.getSnippets({ metadataOnly: true })
           setSnippets(loadedSnippets || [])
         }
       } catch (error) {

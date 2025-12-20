@@ -1,30 +1,50 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { SunMoon } from 'lucide-react'
-import { SettingSection, SettingSelect, SettingInput, SettingRow } from '../components'
+import {
+  SettingSection,
+  SettingSelect,
+  SettingInput,
+  SettingRow,
+  SettingToggle
+} from '../components'
+
+import useFontSettings from '../../../hook/settings/useFontSettings'
+import useCursorProp from '../../../hook/settings/useCursorProp'
 
 /**
  * Appearance Settings Section
- * Handles theme, fonts, and caret settings
+ * Handles theme, fonts, and cursor settings
  */
-const AppearanceSettings = ({
-  onOpenThemeModal,
-  editorFontFamily,
-  onEditorFontFamilyChange,
-  editorFontSize,
-  onEditorFontSizeChange,
-  previewFontFamily,
-  onPreviewFontFamilyChange,
-  previewFontSize,
-  onPreviewFontSizeChange,
-  caretWidth,
-  onCaretWidthChange,
-  caretStyle,
-  onCaretStyleChange
-}) => {
+const AppearanceSettings = () => {
+  const {
+    editorFontFamily,
+    updateEditorFontFamily: onEditorFontFamilyChange,
+    editorFontSize,
+    updateEditorFontSize: onEditorFontSizeChange,
+    previewFontFamily,
+    updatePreviewFontFamily: onPreviewFontFamilyChange,
+    previewFontSize,
+    updatePreviewFontSize: onPreviewFontSizeChange
+  } = useFontSettings()
+
+  const {
+    width: cursorWidth,
+    setCursorWidth: onCursorWidthChange,
+    shape: cursorShape,
+    setCursorShape: onCursorShapeChange,
+    blinking: cursorBlinking,
+    setCursorBlinking: onCursorBlinkingChange,
+    selectionBackground,
+    setSelectionBackground: onSelectionBackgroundChange,
+    activeLineBorderWidth,
+    setActiveLineBorderWidth: onActiveLineBorderWidthChange,
+    activeLineGutterBorderWidth,
+    setActiveLineGutterBorderWidth: onActiveLineGutterBorderWidthChange
+  } = useCursorProp()
+
   const fontOptions = ['JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', 'Courier New']
 
-  const caretStyleOptions = [
+  const cursorShapeOptions = [
     { value: 'bar', label: 'Bar' },
     { value: 'block', label: 'Block' },
     { value: 'underline', label: 'Underline' }
@@ -32,30 +52,6 @@ const AppearanceSettings = ({
 
   return (
     <SettingSection>
-      {/* Theme Selector */}
-      <SettingRow label="Color Theme" description="Select your preferred visual theme.">
-        <button
-          onClick={onOpenThemeModal}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-md text-xtiny font-thin transition-all"
-          style={{
-            backgroundColor: 'var(--color-bg-primary)',
-            border: '1px solid var(--color-border)',
-            color: 'var(--color-text-primary)'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = 'var(--hover-bg)'
-            e.target.style.borderColor = 'var(--color-text-secondary)'
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.backgroundColor = 'var(--color-bg-primary)'
-            e.target.style.borderColor = 'var(--color-border)'
-          }}
-        >
-          <SunMoon size={11} />
-          Change Theme
-        </button>
-      </SettingRow>
-
       {/* Editor Font Family */}
       <SettingSelect
         label="Editor Font Family"
@@ -69,10 +65,9 @@ const AppearanceSettings = ({
       <SettingInput
         label="Editor Font Size"
         description="Controls the editor font size."
-        type="number"
+        type="text"
         value={editorFontSize}
         onChange={onEditorFontSizeChange}
-        suffix="px"
       />
 
       {/* Preview Font Family */}
@@ -88,49 +83,69 @@ const AppearanceSettings = ({
       <SettingInput
         label="Preview Font Size"
         description="Controls code preview size."
-        type="number"
+        type="text"
         value={previewFontSize}
         onChange={onPreviewFontSizeChange}
-        suffix="px"
       />
 
-      {/* Caret Width */}
+      {/* Cursor Width */}
       <SettingInput
-        label="Caret Width"
+        label="Cursor Width"
         description="Thickness of the text cursor."
-        type="number"
-        value={parseInt(String(caretWidth || '3px').replace('px', ''))}
-        onChange={onCaretWidthChange}
-        suffix="px"
+        type="text"
+        value={cursorWidth}
+        onChange={onCursorWidthChange}
       />
 
-      {/* Caret Style */}
+      {/* Cursor Shape */}
       <SettingSelect
-        label="Caret Style"
+        label="Cursor Shape"
         description="Choose bar, block, or underline."
-        value={caretStyle}
-        onChange={onCaretStyleChange}
-        options={caretStyleOptions}
+        value={cursorShape}
+        onChange={onCursorShapeChange}
+        options={cursorShapeOptions}
+      />
+
+      {/* Cursor Blinking */}
+      <SettingToggle
+        label="Cursor Blinking"
+        description="Toggle text cursor blinking animation."
+        checked={cursorBlinking}
+        onChange={onCursorBlinkingChange}
+      />
+
+      {/* Selection Background */}
+      <SettingInput
+        label="Selection Highlighting"
+        description="Background color for selected text."
+        value={selectionBackground}
+        onChange={onSelectionBackgroundChange}
+        type="text"
+        placeholder="#58a6ff33"
         noBorder
+      />
+
+      <SettingInput
+        label="Active Line Border"
+        description="Left border width for the active line (0-10px)"
+        value={activeLineBorderWidth}
+        onChange={onActiveLineBorderWidthChange}
+        type="text"
+        placeholder="0"
+      />
+
+      <SettingInput
+        label="Gutter Border"
+        description="Left border width for the active line gutter (0-10px)"
+        value={activeLineGutterBorderWidth}
+        onChange={onActiveLineGutterBorderWidthChange}
+        type="text"
+        placeholder="2"
       />
     </SettingSection>
   )
 }
 
-AppearanceSettings.propTypes = {
-  onOpenThemeModal: PropTypes.func.isRequired,
-  editorFontFamily: PropTypes.string.isRequired,
-  onEditorFontFamilyChange: PropTypes.func.isRequired,
-  editorFontSize: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-  onEditorFontSizeChange: PropTypes.func.isRequired,
-  previewFontFamily: PropTypes.string.isRequired,
-  onPreviewFontFamilyChange: PropTypes.func.isRequired,
-  previewFontSize: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-  onPreviewFontSizeChange: PropTypes.func.isRequired,
-  caretWidth: PropTypes.string.isRequired,
-  onCaretWidthChange: PropTypes.func.isRequired,
-  caretStyle: PropTypes.string.isRequired,
-  onCaretStyleChange: PropTypes.func.isRequired
-}
+// No props required
 
 export default AppearanceSettings

@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react'
 import SnippetLibrary from './components/workbench/SnippetLibrary'
 import { SettingsProvider } from './hook/useSettingsContext.jsx'
+import ErrorBoundary from './components/ErrorBoundary'
 
 function App() {
   // Add a simple keyboard shortcut to restore the default window size
@@ -21,9 +22,11 @@ function App() {
   }, [])
 
   return (
-    <SettingsProvider>
-      <SnippetLibrary />
-    </SettingsProvider>
+    <ErrorBoundary>
+      <SettingsProvider>
+        <SnippetLibrary />
+      </SettingsProvider>
+    </ErrorBoundary>
   )
 }
 

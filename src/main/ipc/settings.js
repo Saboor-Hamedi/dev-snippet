@@ -2,15 +2,15 @@
  * Settings File IPC Handlers
  */
 
-const { ipcMain } = require('electron')
-const { join } = require('path')
-const fs = require('fs/promises')
-const fsSync = require('fs')
+import { ipcMain } from 'electron'
+import { join } from 'path'
+import fs from 'fs/promises'
+import fsSync from 'fs'
 
 let settingsWatcher = null
 let lastSettingsContent = null
 
-const createSettingsHandlers = (app, mainWindow) => {
+export const createSettingsHandlers = (app, mainWindow) => {
   const settingsPath = join(app.getPath('userData'), 'settings.json')
 
   // Watch settings file for external changes
@@ -97,5 +97,3 @@ const createSettingsHandlers = (app, mainWindow) => {
     }
   }
 }
-
-module.exports = { createSettingsHandlers }

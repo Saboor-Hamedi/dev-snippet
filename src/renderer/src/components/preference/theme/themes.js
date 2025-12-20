@@ -51,9 +51,8 @@ export const themes = [
         gutterBorderColor: '#d1d9e0',
         gutterBorderWidth: 1
       },
-      editor: {
-        caretColor: '#0366d6'
-        // Keep other editor settings as defaults
+      cursor: {
+        color: '#050e18ff'
       },
       livePreview: {
         bgColor: '#f6f8fa',
@@ -114,8 +113,8 @@ export const themes = [
         gutterBorderColor: '#30363d',
         gutterBorderWidth: 1
       },
-      editor: {
-        caretColor: '#58a6ff'
+      cursor: {
+        color: '#58a6ff'
       },
       livePreview: {
         bgColor: '#161b22',
@@ -176,8 +175,8 @@ export const themes = [
         gutterBorderColor: '#27272a',
         gutterBorderWidth: 1
       },
-      editor: {
-        caretColor: '#d946ef'
+      cursor: {
+        color: '#d946ef'
       },
       livePreview: {
         bgColor: '#18181b',
@@ -238,8 +237,8 @@ export const themes = [
         gutterBorderColor: '#44403c',
         gutterBorderWidth: 1
       },
-      editor: {
-        caretColor: '#22c55e'
+      cursor: {
+        color: '#22c55e'
       },
       livePreview: {
         bgColor: '#292524',

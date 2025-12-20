@@ -102,15 +102,6 @@ const buildTheme = (EditorView, options = {}) => {
       '.cm-matchingBracket': {
         backgroundColor: 'transparent !important',
         borderBottom: '1px solid var(--color-text-primary)'
-      },
-
-      // Selection background
-      '.cm-selectionBackground': {
-        backgroundColor: 'var(--selection-bg, rgba(197, 204, 217, 0.4)) !important'
-      },
-
-      '.cm-cursor': {
-        borderLeft: 'var(--caret-width, 3px) solid var(--caret-color, #fefeffff) !important'
       }
     },
     { dark: isDark }

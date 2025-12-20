@@ -2,9 +2,9 @@
  * Window Control IPC Handlers
  */
 
-const { ipcMain, BrowserWindow } = require('electron')
+import { ipcMain, BrowserWindow } from 'electron'
 
-const registerWindowHandlers = () => {
+export const registerWindowHandlers = () => {
   // Minimize window
   ipcMain.handle('window:minimize', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender)
@@ -107,5 +107,3 @@ const registerWindowHandlers = () => {
     return 1.0
   })
 }
-
-module.exports = { registerWindowHandlers }

@@ -1,13 +1,11 @@
-
 const OVERRIDABLE_SETTINGS = {
   'gutter.gutterBgColor': '--color-bg-primary',
   'gutter.gutterBorderColor': '--gutter-border-color',
   'gutter.gutterBorderWidth': '--gutter-border-width',
-  'editor.caretColor': '--caret-color',
-  'editor.caretWidth': '--caret-width',
+  'cursor.color': '--caret-color',
+  'cursor.width': '--caret-width',
   'livePreview.bgColor': '--live-preview-bg-color'
 }
-
 
 export const applyThemeOverrides = (parsedSettings, root) => {
   Object.entries(OVERRIDABLE_SETTINGS).forEach(([settingKey, cssVar]) => {

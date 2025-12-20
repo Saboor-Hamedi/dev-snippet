@@ -13,7 +13,7 @@ const SettingsModal = lazy(() => import('../SettingsModal'))
 // Hooks
 import { useKeyboardShortcuts } from '../../hook/useKeyboardShortcuts'
 import { useSettings } from '../../hook/useSettingsContext.jsx'
-import { useFontSettings } from '../../hook/useFontSettings'
+import useFontSettings from '../../hook/settings/useFontSettings'
 import { useZoomLevel } from '../../hook/useZoomLevel'
 
 // Loading fallback component
@@ -75,6 +75,8 @@ const SnippetLibrary = () => {
     return snippets
   }, [snippets])
 
+  const previousViewStateRef = useRef({ view: 'snippets', isCreating: false, selectedId: null })
+
   // Ensure only items of current view are open
   useEffect(() => {
     // If we're actively creating and still in the editor, don't override selection.
@@ -88,13 +90,36 @@ const SnippetLibrary = () => {
   }, [activeView, activeSnippet, isCreatingSnippet])
 
   const handleOpenSettings = () => {
+    // Save current state for restoration before opening settings
+    if (activeView !== 'settings') {
+      previousViewStateRef.current = {
+        view: activeView,
+        isCreating: isCreatingSnippet,
+        selectedId: selectedSnippet?.id
+      }
+    }
+
     // Ensure we are not in create/editor mode so Workbench won't override the view
     if (isCreatingSnippet) setIsCreatingSnippet(false)
     setActiveView('settings')
   }
 
   const handleCloseSettings = () => {
-    setActiveView('snippets')
+    // Restore previous state
+    const { view, isCreating, selectedId } = previousViewStateRef.current
+
+    if (isCreating) {
+      setIsCreatingSnippet(true)
+    }
+
+    // If we had a specific snippet selected, try to restore selection
+    // (though state might have preserved it)
+    if (selectedId && !isCreating) {
+      const recovered = snippets.find((s) => s.id === selectedId)
+      if (recovered) setSelectedSnippet(recovered)
+    }
+
+    setActiveView(view || 'snippets')
   }
 
   // Helper: create a new draft snippet and select it (extracted to avoid duplication)
@@ -216,7 +241,9 @@ const SnippetLibrary = () => {
       setActiveView('snippets')
     },
 
+    //  Don open command palette if in settings view
     onToggleCommandPalette: () => {
+      if (activeView === 'settings') return
       setIsCommandPaletteOpen((prev) => !prev)
     },
 

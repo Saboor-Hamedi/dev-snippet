@@ -16,10 +16,13 @@ const Sidebar = ({ isOpen = true }) => {
   return (
     <aside
       className={`
-        h-full border-r flex flex-col transition-all duration-300 ease-in-out
-        ${isOpen ? 'w-64 opacity-100 p-2' : 'w-0 opacity-0 overflow-hidden'}
+        h-full flex flex-col transition-all duration-300 ease-in-out
+        ${isOpen ? 'w-64 opacity-100' : 'w-0 opacity-0 overflow-hidden'}
       `}
-      style={{ backgroundColor: 'var(--sidebar-bg)', borderColor: 'var(--sidebar-border)' }}
+      style={{
+        backgroundColor: 'var(--sidebar-bg)',
+        borderRight: '1px solid var(--sidebar-border)'
+      }}
     >
       {/* Header / Brand */}
       {/* Header */}
@@ -41,7 +44,6 @@ const Sidebar = ({ isOpen = true }) => {
       <ThemeSelector />
 
       {/* Bottom Profile Card */}
-      
     </aside>
   )
 }

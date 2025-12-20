@@ -3,14 +3,14 @@
  * Registers all IPC handlers from different modules
  */
 
-const { registerWindowHandlers } = require('./window')
-const { registerDatabaseHandlers } = require('./database')
-const { registerFilesystemHandlers } = require('./filesystem')
-const { createSettingsHandlers } = require('./settings')
-const { registerBackupHandlers } = require('./backup')
-const { registerDialogHandlers } = require('./dialog')
+import { registerWindowHandlers } from './window'
+import { registerDatabaseHandlers } from './database'
+import { registerFilesystemHandlers } from './filesystem'
+import { createSettingsHandlers } from './settings'
+import { registerBackupHandlers } from './backup'
+import { registerDialogHandlers } from './dialog'
 
-const registerAllHandlers = (app, mainWindow, db, preparedStatements, getDB) => {
+export const registerAllHandlers = (app, mainWindow, db, preparedStatements, getDB) => {
   // Register all IPC handlers
   registerWindowHandlers()
   registerDatabaseHandlers(db, preparedStatements)
@@ -22,5 +22,3 @@ const registerAllHandlers = (app, mainWindow, db, preparedStatements, getDB) => 
     settingsHandlers
   }
 }
-
-module.exports = { registerAllHandlers }

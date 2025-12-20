@@ -88,7 +88,6 @@ const SplitPane = ({
 
     const handleMouseUp = () => {
       if (draggingRef.current) {
-        console.log('Drag ended') // Debug log
         draggingRef.current = false
         document.body.style.cursor = ''
         document.body.style.userSelect = ''
@@ -104,12 +103,11 @@ const SplitPane = ({
     }
   }, [minLeft, minRight])
 
-  const startDrag = (e) => {
+  const handleMouseDown = (e) => {
     e.preventDefault()
     draggingRef.current = true
     document.body.style.cursor = 'col-resize'
     document.body.style.userSelect = 'none'
-    console.log('Drag started') // Debug log
   }
 
   useEffect(() => {

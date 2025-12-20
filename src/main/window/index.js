@@ -2,11 +2,12 @@
  * Window Creation and Management
  */
 
-const { BrowserWindow, Menu, shell } = require('electron')
-const { getWindowConfig } = require('./config')
-const { setupDevToolsShortcuts } = require('./shortcuts')
+import { BrowserWindow, Menu, shell } from 'electron'
+import { join } from 'path'
+import { getWindowConfig } from './config'
+import { setupDevToolsShortcuts } from './shortcuts'
 
-const createWindow = (app, ENABLE_DEVTOOLS) => {
+export const createWindow = (app, ENABLE_DEVTOOLS) => {
   const config = getWindowConfig(app, ENABLE_DEVTOOLS)
   const mainWindow = new BrowserWindow(config)
 
@@ -42,11 +43,9 @@ const createWindow = (app, ENABLE_DEVTOOLS) => {
   if (ENABLE_DEVTOOLS && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
-    const { join } = require('path')
-    mainWindow.loadFile(join(__dirname, '../../renderer/index.html'))
+    // Note: In bundled code, file resolution depends on build structure
+    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
 
   return mainWindow
 }
-
-module.exports = { createWindow }

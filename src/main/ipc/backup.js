@@ -2,13 +2,13 @@
  * Backup Management IPC Handlers
  */
 
-const { ipcMain } = require('electron')
-const { join } = require('path')
-const fs = require('fs/promises')
-const fsSync = require('fs')
-const Database = require('better-sqlite3')
+import { ipcMain } from 'electron'
+import { join } from 'path'
+import fs from 'fs/promises'
+import fsSync from 'fs'
+import Database from 'better-sqlite3'
 
-const registerBackupHandlers = (app, getDB) => {
+export const registerBackupHandlers = (app, getDB) => {
   // List available backups
   ipcMain.handle('backup:list', async () => {
     try {
@@ -113,5 +113,3 @@ const registerBackupHandlers = (app, getDB) => {
     }
   })
 }
-
-module.exports = { registerBackupHandlers }

@@ -1,4 +1,5 @@
 import buildTheme from './buildTheme'
+import { premiumTypingBundle } from './premiumFeatures'
 
 const buildExtensions = async (options, handlers = {}) => {
   const {
@@ -8,7 +9,8 @@ const buildExtensions = async (options, handlers = {}) => {
     fontSize = '14px',
     wordWrap = 'on',
     language = 'markdown',
-    isLargeFile = false // NEW: Flag for large files
+    isLargeFile = false, // NEW: Flag for large files,
+    cursorBlinking = true
   } = options
   const { liveZoomRef, applyZoomToDOM, debouncedSaveZoom, setStoredZoomLevel } = handlers
 
@@ -139,14 +141,23 @@ const buildExtensions = async (options, handlers = {}) => {
     return exts
   }
 
-  // THEME
+  // THEME & PREMIUM FEEL
   exts.push(buildTheme(EditorView, { isDark, caretColor, fontSize }))
+
+  // High-performance typing animations (skip for large files)
+  if (!isLargeFile) {
+    exts.push(...premiumTypingBundle)
+  }
 
   // CORE UI EXTENSIONS (Critical for stability)
   try {
     const { drawSelection, dropCursor, highlightActiveLine } = await import('@codemirror/view')
     // Uses custom drawn selection (better for mixed font sizes/rich text)
-    exts.push(drawSelection())
+    exts.push(
+      drawSelection({
+        cursorBlinkRate: cursorBlinking ? 1200 : 0
+      })
+    )
     exts.push(dropCursor())
     // highlightActiveLine helps visual context
     exts.push(highlightActiveLine())
@@ -192,7 +203,8 @@ const buildExtensions = async (options, handlers = {}) => {
 
       // 2. Official Markdown Extension (with disabled keymap to prevent jumps)
       const { markdown } = await import('@codemirror/lang-markdown')
-      exts.push(markdown({ addKeymap: false }))
+      const { languages } = await import('@codemirror/language-data') // Dynamic load standard langs
+      exts.push(markdown({ addKeymap: false, codeLanguages: languages }))
     } catch (e) {
       console.error('Failed to load markdown extensions', e)
     }

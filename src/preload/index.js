@@ -28,7 +28,9 @@ const api = {
   },
 
   // Database
-  getSnippets: () => electronAPI.ipcRenderer.invoke('db:getSnippets'),
+  getSnippets: (options) => electronAPI.ipcRenderer.invoke('db:getSnippets', options),
+  getSnippetById: (id) => electronAPI.ipcRenderer.invoke('db:getSnippetById', id),
+  searchSnippets: (query) => electronAPI.ipcRenderer.invoke('db:searchSnippets', query),
   saveSnippet: (snippet) => electronAPI.ipcRenderer.invoke('db:saveSnippet', snippet),
   deleteSnippet: (id) => electronAPI.ipcRenderer.invoke('db:deleteSnippet', id),
   getSetting: (key) => electronAPI.ipcRenderer.invoke('db:getSetting', key),

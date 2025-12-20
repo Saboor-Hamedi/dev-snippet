@@ -11,9 +11,9 @@ const ENABLE_DEVTOOLS = true // <-- CHANGE THIS FOR YOUR NEEDS
 const { app, BrowserWindow } = require('electron')
 
 // Import modules
-const { initDB, getDB, getPreparedStatements } = require('./database')
-const { createWindow } = require('./window')
-const { registerAllHandlers } = require('./ipc')
+import { initDB, getDB, getPreparedStatements } from './database'
+import { createWindow } from './window'
+import { registerAllHandlers } from './ipc'
 
 // Main window reference
 let mainWindow = null
@@ -26,6 +26,9 @@ app.whenReady().then(() => {
   if (process.platform === 'win32') {
     app.setAppUserModelId('dev-dialect.quick-snippets')
   }
+
+  // App User Data Path verification
+  console.log('📂 User Data Path:', app.getPath('userData'))
 
   // Initialize database
   const db = initDB(app)

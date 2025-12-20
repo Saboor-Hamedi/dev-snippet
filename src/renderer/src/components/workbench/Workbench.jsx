@@ -7,7 +7,7 @@ import Header from '../layout/Header'
 import SystemStatusFooter from '../SystemStatusFooter'
 import SidebarTheme from '../preference/SidebarTheme'
 import { File } from 'lucide-react'
-import useGeneralProp from '../../hook/useGeneralProp.js'
+import useGeneralProp from '../../hook/settings/useGeneralProp.js'
 
 const Workbench = ({
   activeView,

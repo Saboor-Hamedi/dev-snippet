@@ -12,10 +12,16 @@ export const DEFAULT_SETTINGS = {
     wordWrap: 'on',
     overlayMode: false,
     tabSize: 2,
-    theme: 'dark',
-    caretWidth: 3,
-    caretColor: '#fefeffff',
-    caretStyle: 'bar'
+    theme: 'dark'
+  },
+  cursor: {
+    width: 3,
+    color: '#58a6ff',
+    shape: 'bar',
+    blinking: true,
+    selectionBackground: '#58a6ff33',
+    activeLineBorderWidth: 0,
+    activeLineGutterBorderWidth: 0
   },
   gutter: {
     gutterBgColor: '#232731',

@@ -23,7 +23,6 @@ class SettingManager {
           try {
             // Validation on zoom level
             if (!data || data.trim() === '') {
-              console.debug('[Settings] Skipping empty update')
               return
             }
             const newSettings = JSON.parse(data)
@@ -42,7 +41,8 @@ class SettingManager {
               'advanced',
               'gutter',
               'livePreview',
-              'welcome'
+              'welcome',
+              'cursor'
             ]) {
               if (DEFAULT_SETTINGS[key] && typeof DEFAULT_SETTINGS[key] === 'object') {
                 this.settings[key] = {
@@ -52,17 +52,12 @@ class SettingManager {
               }
             }
             this.notifyListeners()
-          } catch (err) {
-            console.warn('Failed to parse settings from file during live update:', err)
-          }
+          } catch (err) {}
         })
         // Mark as watching
         this.watchingEnabled = true
-        // console.log('✅ Settings file watching enabled')
       }
-    } catch (err) {
-      console.error('Failed to start watching settings file:', err)
-    }
+    } catch (err) {}
   }
 
   // Stop watching
@@ -75,10 +70,7 @@ class SettingManager {
         this.unsubscribeWatcher = null
       }
       this.watchingEnabled = false
-      console.log('⏹️ Settings file watching disabled')
-    } catch (err) {
-      console.warn('Failed to stop settings watching:', err)
-    }
+    } catch (err) {}
   }
 
   // Load settings from JSON file
@@ -104,7 +96,8 @@ class SettingManager {
               'advanced',
               'gutter',
               'livePreview',
-              'welcome'
+              'welcome',
+              'cursor'
             ]
             for (const key of sections) {
               if (DEFAULT_SETTINGS[key] && typeof DEFAULT_SETTINGS[key] === 'object') {
@@ -118,7 +111,6 @@ class SettingManager {
             this.settings = nextSettings
             this.notifyListeners()
           } catch (parseErr) {
-            console.error('Settings parse error:', parseErr)
             this.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS))
             this.notifyListeners()
           }
@@ -131,7 +123,6 @@ class SettingManager {
       }
       this.startWatching()
     } catch (error) {
-      console.error('Settings load error:', error)
       this.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS))
       this.notifyListeners()
       this.startWatching()
@@ -148,9 +139,7 @@ class SettingManager {
           const json = JSON.stringify(this.settings, null, 2)
           await window.api.writeSettingsFile(json)
         }
-      } catch (e) {
-        console.error('Settings save failed:', e)
-      }
+      } catch (e) {}
     }
 
     if (immediate) {
