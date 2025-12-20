@@ -1,12 +1,18 @@
 import React, { useState } from 'react'
 import PropTypes from 'prop-types'
-import { ChevronLeft, Settings as SettingsIcon, FileJson } from 'lucide-react'
+import { ChevronLeft, Settings as SettingsIcon, FileJson, RefreshCw } from 'lucide-react'
 import { useSettings } from '../../hook/useSettingsContext'
 import { useToast } from '../../hook/useToast'
 import ToastNotification from '../../utils/ToastNotification'
 import UserSettings from '../preference/UserSettings.jsx'
 import cleanErrorJson from '../../hook/useCleanErrorJson.js'
-import { AppearanceSettings, EditorSettings, KeyboardShortcuts, DataSettings } from './sections'
+import {
+  AppearanceSettings,
+  EditorSettings,
+  KeyboardShortcuts,
+  DataSettings,
+  UpdateSettings
+} from './sections'
 
 /**
  * Main Settings Panel Component
@@ -33,7 +39,7 @@ const SettingsPanel = ({ onClose }) => {
 
   // UI state
   const hideWelcomePage = getSetting('ui.hideWelcomePage') || false
-  const [activeTab, setActiveTab] = useState('appearance')
+  const [activeTab, setActiveTab] = useState('updates')
   const [jsonContent, setJsonContent] = useState('')
   const [isJsonDirty, setIsJsonDirty] = useState(false)
 
@@ -126,45 +132,105 @@ const SettingsPanel = ({ onClose }) => {
           borderColor: 'var(--color-border)'
         }}
       >
-        <div className="flex items-center gap-2 px-5 text-sm font-bold opacity-80 uppercase tracking-wider border-b border-[var(--color-border)] mb-2 pb-4">
-          <SettingsIcon size={16} />
-          <span>Settings</span>
-        </div>
-
-        <div className="flex flex-col w-full">
-          {/* Navigation Buttons */}
-          <div className="flex flex-col w-full">
-            {[
-              { id: 'appearance', label: 'Appearance', icon: null },
-              { id: 'editor', label: 'Editor', icon: null },
-              { id: 'shortcuts', label: 'Shortcuts', icon: null },
-              { id: 'system', label: 'System & Data', icon: null },
-              { id: 'json', label: 'Edit JSON', icon: FileJson }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => {
-                  if (tab.id === 'json') handleOpenJson()
-                  else setActiveTab(tab.id)
-                }}
-                className={`w-full flex items-center gap-3 px-5 py-2.5 text-xs font-medium transition-all ${
-                  activeTab === tab.id
-                    ? 'border-l-2 bg-[var(--color-bg-primary)]'
-                    : 'border-l-2 border-transparent hover:bg-black/5 dark:hover:bg-white/5 opacity-70 hover:opacity-100'
-                }`}
-                style={{
-                  borderColor: activeTab === tab.id ? 'var(--color-accent-primary)' : 'transparent',
-                  color:
-                    activeTab === tab.id
-                      ? 'var(--color-text-primary)'
-                      : 'var(--color-text-secondary)'
-                }}
-              >
-                {tab.icon && <tab.icon size={13} />}
-                <span>{tab.label}</span>
-              </button>
-            ))}
+        {/* Sections */}
+        <div className="flex flex-col w-full overflow-y-auto custom-scrollbar flex-1 pb-4">
+          {/* Main Group: System */}
+          <div className="px-5 py-3 text-[10px] font-bold opacity-40 uppercase tracking-[2px]">
+            Maintenance
           </div>
+          <button
+            onClick={() => setActiveTab('updates')}
+            className={`w-full flex items-center gap-3 px-5 py-2.5 text-xs font-medium transition-all ${
+              activeTab === 'updates'
+                ? 'border-l-2 bg-[var(--color-bg-primary)]'
+                : 'border-l-2 border-transparent hover:bg-black/5 dark:hover:bg-white/5 opacity-70 hover:opacity-100'
+            }`}
+            style={{
+              borderColor: activeTab === 'updates' ? 'var(--color-accent-primary)' : 'transparent',
+              color:
+                activeTab === 'updates'
+                  ? 'var(--color-text-primary)'
+                  : 'var(--color-text-secondary)'
+            }}
+          >
+            <RefreshCw
+              size={13}
+              className={activeTab === 'updates' ? 'text-[var(--color-accent-primary)]' : ''}
+            />
+            <span>Software Update</span>
+          </button>
+
+          {/* Group: Configuration */}
+          <div className="px-5 py-3 mt-4 text-[10px] font-bold opacity-40 uppercase tracking-[2px]">
+            Preferences
+          </div>
+          {[
+            { id: 'appearance', label: 'Appearance' },
+            { id: 'editor', label: 'Editor' },
+            { id: 'shortcuts', label: 'Shortcuts' }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`w-full flex items-center gap-3 px-5 py-2.5 text-xs font-medium transition-all ${
+                activeTab === tab.id
+                  ? 'border-l-2 bg-[var(--color-bg-primary)]'
+                  : 'border-l-2 border-transparent hover:bg-black/5 dark:hover:bg-white/5 opacity-70 hover:opacity-100'
+              }`}
+              style={{
+                borderColor: activeTab === tab.id ? 'var(--color-accent-primary)' : 'transparent',
+                color:
+                  activeTab === tab.id ? 'var(--color-text-primary)' : 'var(--color-text-secondary)'
+              }}
+            >
+              <div
+                className={`w-1 h-1 rounded-full ${activeTab === tab.id ? 'bg-[var(--color-accent-primary)]' : 'bg-current opacity-20'}`}
+              />
+              <span>{tab.label}</span>
+            </button>
+          ))}
+
+          {/* Group: Advanced */}
+          <div className="px-5 py-3 mt-4 text-[10px] font-bold opacity-40 uppercase tracking-[2px]">
+            Advanced
+          </div>
+          <button
+            onClick={() => setActiveTab('system')}
+            className={`w-full flex items-center gap-3 px-5 py-2.5 text-xs font-medium transition-all ${
+              activeTab === 'system'
+                ? 'border-l-2 bg-[var(--color-bg-primary)]'
+                : 'border-l-2 border-transparent hover:bg-black/5 dark:hover:bg-white/5 opacity-70 hover:opacity-100'
+            }`}
+            style={{
+              borderColor: activeTab === 'system' ? 'var(--color-accent-primary)' : 'transparent',
+              color:
+                activeTab === 'system' ? 'var(--color-text-primary)' : 'var(--color-text-secondary)'
+            }}
+          >
+            <div
+              className={`w-1 h-1 rounded-full ${activeTab === 'system' ? 'bg-[var(--color-accent-primary)]' : 'bg-current opacity-20'}`}
+            />
+            <span>System & Data</span>
+          </button>
+          <button
+            onClick={handleOpenJson}
+            className={`w-full flex items-center gap-3 px-5 py-2.5 text-xs font-medium transition-all ${
+              activeTab === 'json'
+                ? 'border-l-2 bg-[var(--color-bg-primary)]'
+                : 'border-l-2 border-transparent hover:bg-black/5 dark:hover:bg-white/5 opacity-70 hover:opacity-100'
+            }`}
+            style={{
+              borderColor: activeTab === 'json' ? 'var(--color-accent-primary)' : 'transparent',
+              color:
+                activeTab === 'json' ? 'var(--color-text-primary)' : 'var(--color-text-secondary)'
+            }}
+          >
+            <FileJson
+              size={13}
+              className={activeTab === 'json' ? 'text-[var(--color-accent-primary)]' : 'opacity-50'}
+            />
+            <span>Edit JSON</span>
+          </button>
         </div>
 
         <div className="mt-auto border-t border-[var(--color-border)] ">
@@ -183,6 +249,8 @@ const SettingsPanel = ({ onClose }) => {
       <div className="flex-1 flex flex-col overflow-hidden bg-[var(--color-bg-primary)]">
         <div className="flex-1 overflow-y-auto p-6">
           <div className="max-w-2xl mx-auto">
+            {activeTab === 'updates' && <UpdateSettings />}
+
             {activeTab === 'appearance' && <AppearanceSettings />}
 
             {activeTab === 'editor' && (
