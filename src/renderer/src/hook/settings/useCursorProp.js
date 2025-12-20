@@ -13,6 +13,9 @@ export const DEFAULT_CURSOR_COLOR = '#58a6ff'
 export const DEFAULT_CURSOR_STYLE = 'bar'
 export const DEFAULT_ACTIVE_LINE_BORDER_WIDTH = 0
 export const DEFAULT_ACTIVE_LINE_GUTTER_BORDER_WIDTH = 0
+export const DEFAULT_BLINKING_SPEED = 500
+export const MIN_BLINKING_SPEED = 500
+export const MAX_BLINKING_SPEED = 1000
 export const ALLOWED_CURSOR_SHAPES = ['bar', 'block', 'underline']
 
 export const useCursorProp = () => {
@@ -32,6 +35,7 @@ export const useCursorProp = () => {
   const shape = ALLOWED_CURSOR_SHAPES.includes(rawShape) ? rawShape : DEFAULT_CURSOR_STYLE
 
   const blinking = getSetting('cursor.blinking') ?? true
+  const blinkingSpeed = getSetting('cursor.blinkingSpeed') ?? DEFAULT_BLINKING_SPEED
   const selectionBackground = getSetting('cursor.selectionBackground') ?? '#58a6ff33'
 
   const rawActiveLineBorderWidth =
@@ -50,8 +54,7 @@ export const useCursorProp = () => {
 
   // 2. Setters
   const setCursorWidth = (value) => {
-    const clamped = Math.max(MIN_CURSOR_WIDTH, Math.min(MAX_CURSOR_WIDTH, Number(value)))
-    updateSetting('cursor.width', clamped)
+    updateSetting('cursor.width', value)
   }
 
   const setCursorColor = (value) => updateSetting('cursor.color', value)
@@ -62,19 +65,17 @@ export const useCursorProp = () => {
     updateSetting('cursor.style', undefined)
   }
   const setCursorBlinking = (value) => updateSetting('cursor.blinking', !!value)
+  const setBlinkingSpeed = (value) => {
+    updateSetting('cursor.blinkingSpeed', value)
+  }
   const setSelectionBackground = (value) => updateSetting('cursor.selectionBackground', value)
 
   const setActiveLineBorderWidth = (value) => {
-    // Allow 0 to hide, otherwise clamp between MIN and MAX
-    const val = Number(value)
-    const clamped = val === 0 ? 0 : Math.max(MIN_CURSOR_WIDTH, Math.min(MAX_CURSOR_WIDTH, val))
-    updateSetting('cursor.activeLineBorderWidth', clamped)
+    updateSetting('cursor.activeLineBorderWidth', value)
   }
 
   const setActiveLineGutterBorderWidth = (value) => {
-    const val = Number(value)
-    const clamped = val === 0 ? 0 : Math.max(MIN_CURSOR_WIDTH, Math.min(MAX_CURSOR_WIDTH, val))
-    updateSetting('cursor.activeLineGutterBorderWidth', clamped)
+    updateSetting('cursor.activeLineGutterBorderWidth', value)
   }
 
   // 3. GLOBAL APPLICATION (SOLID)
@@ -86,6 +87,10 @@ export const useCursorProp = () => {
       root.style.setProperty('--caret-color', color)
       root.style.setProperty('--caret-shape', shape)
       root.style.setProperty('--cursor-blinking', blinking ? '1' : '0')
+      root.style.setProperty(
+        '--cursor-blinking-speed',
+        `${clamp(blinkingSpeed, MIN_BLINKING_SPEED, MAX_BLINKING_SPEED)}ms`
+      )
       root.style.setProperty('--selection-background', selectionBackground)
       root.style.setProperty('--active-line-border-width', `${activeLineBorderWidth}px`)
       root.style.setProperty(
@@ -104,7 +109,7 @@ export const useCursorProp = () => {
   ])
 
   return {
-    width,
+    width: getSetting('cursor.width') ?? DEFAULT_CURSOR_WIDTH,
     setCursorWidth,
     color,
     setCursorColor,
@@ -112,11 +117,15 @@ export const useCursorProp = () => {
     setCursorShape,
     blinking,
     setCursorBlinking,
+    blinkingSpeed: getSetting('cursor.blinkingSpeed') ?? DEFAULT_BLINKING_SPEED,
+    setBlinkingSpeed,
     selectionBackground,
     setSelectionBackground,
-    activeLineBorderWidth,
+    activeLineBorderWidth:
+      getSetting('cursor.activeLineBorderWidth') ?? DEFAULT_ACTIVE_LINE_BORDER_WIDTH,
     setActiveLineBorderWidth,
-    activeLineGutterBorderWidth,
+    activeLineGutterBorderWidth:
+      getSetting('cursor.activeLineGutterBorderWidth') ?? DEFAULT_ACTIVE_LINE_GUTTER_BORDER_WIDTH,
     setActiveLineGutterBorderWidth
   }
 }

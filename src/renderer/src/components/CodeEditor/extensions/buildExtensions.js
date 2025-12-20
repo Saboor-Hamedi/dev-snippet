@@ -155,7 +155,7 @@ const buildExtensions = async (options, handlers = {}) => {
     // Uses custom drawn selection (better for mixed font sizes/rich text)
     exts.push(
       drawSelection({
-        cursorBlinkRate: cursorBlinking ? 1200 : 0
+        cursorBlinkRate: 0
       })
     )
     exts.push(dropCursor())

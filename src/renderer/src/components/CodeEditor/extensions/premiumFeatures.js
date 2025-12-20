@@ -8,7 +8,7 @@ import { ViewPlugin, EditorView } from '@codemirror/view'
 export const cursorStyles = EditorView.theme({
   /* 1. VISIBILITY (Blinking) */
   '&[data-cursor-blinking="true"] .cm-cursor': {
-    animation: 'cm-cursor-blink 1s steps(1) infinite !important'
+    animation: 'cm-cursor-blink var(--cursor-blinking-speed, 500ms) step-end infinite !important'
   },
 
   /* 2. SHAPE (Style) */
@@ -40,7 +40,7 @@ export const cursorStyles = EditorView.theme({
 
   /* Animation Keyframes */
   '@keyframes cm-cursor-blink': {
-    '0%, 100%': { opacity: 1 },
+    '0%': { opacity: 1 },
     '50%': { opacity: 0 }
   }
 })

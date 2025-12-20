@@ -19,6 +19,7 @@ export const DEFAULT_SETTINGS = {
     color: '#58a6ff',
     shape: 'bar',
     blinking: true,
+    blinkingSpeed: 500,
     selectionBackground: '#58a6ff33',
     activeLineBorderWidth: 0,
     activeLineGutterBorderWidth: 0

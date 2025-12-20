@@ -34,6 +34,8 @@ const AppearanceSettings = () => {
     setCursorShape: onCursorShapeChange,
     blinking: cursorBlinking,
     setCursorBlinking: onCursorBlinkingChange,
+    blinkingSpeed: blinkingSpeed,
+    setBlinkingSpeed: onBlinkingSpeedChange,
     selectionBackground,
     setSelectionBackground: onSelectionBackgroundChange,
     activeLineBorderWidth,
@@ -112,6 +114,15 @@ const AppearanceSettings = () => {
         description="Toggle text cursor blinking animation."
         checked={cursorBlinking}
         onChange={onCursorBlinkingChange}
+      />
+
+      {/* Cursor Blinking Speed */}
+      <SettingInput
+        label="Blinking Speed"
+        description="Controls how fast the cursor blinks (ms)."
+        type="text"
+        value={blinkingSpeed}
+        onChange={onBlinkingSpeedChange}
       />
 
       {/* Selection Background */}
