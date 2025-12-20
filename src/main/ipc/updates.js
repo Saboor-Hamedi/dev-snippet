@@ -8,6 +8,7 @@ import { ipcMain } from 'electron'
 export const registerUpdatesHandlers = (mainWindow) => {
   // Manual download flow for better UI control
   autoUpdater.autoDownload = false
+  autoUpdater.allowPrerelease = true
   autoUpdater.logger = console
 
   // 1. Check for updates
