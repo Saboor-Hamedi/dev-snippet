@@ -1,6 +1,6 @@
 {
   "name": "dev-snippet",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "An Electron application with React",
   "author": "example.com",
   "homepage": "https://electron-vite.org",
@@ -20,7 +20,7 @@
     "build:mac": "npm run build && electron-builder --mac",
     "build:linux": "npm run build && electron-builder --linux",
     "dist": "npm run build && electron-builder --win --x64",
-    "dist:publish": "npm run build && electron-builder --win --x64 --publish=always",
+    "dist:publish": "node scripts/publish.js",
     "make:icons": "npx electron-icon-maker --input src/renderer/public/icon.png --output build"
   },
   "dependencies": {
@@ -62,6 +62,7 @@
     "@testing-library/user-event": "^14.6.1",
     "@vitejs/plugin-react": "^5.0.3",
     "autoprefixer": "^10.4.22",
+    "dotenv": "^17.2.3",
     "electron": "^39.2.4",
     "electron-builder": "^26.0.12",
     "electron-vite": "^4.0.1",

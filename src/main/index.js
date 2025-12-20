@@ -24,7 +24,7 @@ let mainWindow = null
 app.whenReady().then(() => {
   // Set app user model id for windows
   if (process.platform === 'win32') {
-    app.setAppUserModelId('dev-dialect.quick-snippets')
+    app.setAppUserModelId('com.devsnippet.app')
   }
 
   // App User Data Path verification

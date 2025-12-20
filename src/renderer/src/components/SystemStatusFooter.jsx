@@ -6,6 +6,11 @@ import { useSettings } from '../hook/useSettingsContext'
 const SystemStatusFooter = ({ snippets = [] }) => {
   const { getSetting, updateSetting } = useSettings()
   const hideWelcomePage = getSetting('ui.hideWelcomePage') || false
+  const [version, setVersion] = React.useState('...')
+
+  React.useEffect(() => {
+    window.api?.getVersion().then(setVersion)
+  }, [])
 
   return (
     <div className="flex items-center justify-between py-1 select-none bg-[var(--welcome-bg)]">
@@ -17,7 +22,7 @@ const SystemStatusFooter = ({ snippets = [] }) => {
         </div>
         {/* Version - Using 'px-1 py-0.5' */}
         <div className="px-1 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-default opacity-80">
-          <span className="font-mono tabular-nums">v1.2.0</span>
+          <span className="font-mono tabular-nums">v{version}</span>
         </div>
       </div>
 

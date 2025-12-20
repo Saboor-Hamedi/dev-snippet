@@ -45,6 +45,7 @@ const api = {
   toggleMaximize: () => electronAPI.ipcRenderer.invoke('window:toggle-maximize'),
   closeWindow: () => electronAPI.ipcRenderer.invoke('window:close'),
   relaunch: () => electronAPI.ipcRenderer.invoke('window:relaunch'),
+  getVersion: () => electronAPI.ipcRenderer.invoke('app:getVersion'),
   // Bounds helpers for custom resize handles (renderer will call these)
   getWindowBounds: () => electronAPI.ipcRenderer.invoke('window:getBounds'),
   setWindowBounds: (bounds) => electronAPI.ipcRenderer.invoke('window:setBounds', bounds),

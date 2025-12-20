@@ -17,9 +17,14 @@ const UpdateManager = () => {
   const [error, setError] = useState(null)
   const [updateInfo, setUpdateInfo] = useState(null)
   const [showRestartModal, setShowRestartModal] = useState(false)
+  const [currentVersion, setCurrentVersion] = useState('Checking...')
 
   useEffect(() => {
-    // Check if the update API is available (avoiding crashes before restart)
+    // 0. Get current version from package.json/main process
+    // We can use a simple trick to get it or just assume it's stable.
+    // For now, let's keep it simple.
+
+    // Check if the update API is available
     if (!window.api?.onUpdateAvailable) {
       console.warn('Update service not available yet. Please restart the application.')
       setStatus('error')
@@ -52,7 +57,12 @@ const UpdateManager = () => {
 
     // 5. Update Error
     const unsubError = window.api.onUpdateError((err) => {
-      setError(err)
+      // Clean up common error messages for better UX
+      let msg = err
+      if (err.includes('404')) msg = 'No releases found on GitHub.'
+      if (err.includes('not-packed')) msg = 'Updater only works in installed version.'
+
+      setError(msg)
       setStatus('error')
     })
 
@@ -66,7 +76,6 @@ const UpdateManager = () => {
   }, [])
 
   const handleCheck = async () => {
-    // If API is missing, show the "Nice Modal" instead of just a console log
     if (!window.api?.checkForUpdates) {
       setShowRestartModal(true)
       return
@@ -75,17 +84,23 @@ const UpdateManager = () => {
     try {
       setError(null)
       setStatus('checking')
-      // Small artificial delay for visual feedback if on fast connection
+
+      // Artificial delay for visual feedback
       setTimeout(async () => {
         try {
-          await window.api.checkForUpdates()
+          // checkForUpdates returns the updateInfo if found
+          const info = await window.api.checkForUpdates()
+          if (!info) {
+            // If info is null, usually means it triggered not-available event
+          }
         } catch (e) {
-          setError('Update service unavailable')
+          // If it throws, it's an actual error (network, config, etc)
+          setError(e.message || 'Connection failed')
           setStatus('error')
         }
-      }, 800)
+      }, 700)
     } catch (err) {
-      setError('Failed to check for updates.')
+      setError('Communication error')
       setStatus('error')
     }
   }
@@ -104,7 +119,6 @@ const UpdateManager = () => {
     window.api.installUpdate()
   }
 
-  // Common button styles to match SettingsPanel
   const buttonBaseClass =
     'flex items-center justify-center gap-2 px-4 py-1.5 border rounded-[5px] text-xs transition-all min-w-[140px]'
   const buttonStyles = {
@@ -118,7 +132,7 @@ const UpdateManager = () => {
       case 'idle':
         return (
           <button onClick={handleCheck} className={buttonBaseClass} style={buttonStyles}>
-            <RefreshCw size={14} />
+            <RefreshCw size={14} className={status === 'checking' ? 'animate-spin' : ''} />
             check for update...
           </button>
         )
@@ -133,10 +147,10 @@ const UpdateManager = () => {
         return (
           <button
             onClick={handleDownload}
-            className={`${buttonBaseClass} bg-blue-500/10 border-blue-500/30 text-blue-400`}
+            className={`${buttonBaseClass} bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20`}
           >
             <Download size={14} />
-            Download {updateInfo?.version || ''}
+            Update and Download
           </button>
         )
       case 'downloading':
@@ -148,31 +162,31 @@ const UpdateManager = () => {
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <span className="text-[10px] opacity-60">{progress}% Downloaded</span>
+            <span className="text-[10px] opacity-60 font-mono italic">{progress}% Downloaded</span>
           </div>
         )
       case 'downloaded':
         return (
           <button
             onClick={handleInstall}
-            className={`${buttonBaseClass} animate-pulse bg-green-500/10 border-green-500/50 text-green-400`}
+            className={`${buttonBaseClass} animate-pulse bg-emerald-600 border-emerald-500 text-white shadow-lg shadow-emerald-500/20`}
           >
             <RotateCcw size={14} />
-            Restart to Update
+            Update and Restart
           </button>
         )
       case 'no-update':
         return (
-          <div className="flex items-center gap-2 text-green-500/80 text-xs py-1.5 px-3">
+          <div className="flex items-center gap-2 text-emerald-500 text-xs py-1.5 px-3">
             <CheckCircle size={14} />
-            <span>App is up to date</span>
+            <span className="font-medium">Everything's up to date!</span>
           </div>
         )
       case 'error':
         return (
           <button
             onClick={handleCheck}
-            className={`${buttonBaseClass} border-red-500/30 text-red-400`}
+            className={`${buttonBaseClass} border-red-500/30 text-red-500 hover:bg-red-500/5 transition-colors`}
           >
             <AlertCircle size={14} />
             Retry Check
@@ -188,11 +202,15 @@ const UpdateManager = () => {
       <SettingRow
         label="Software Updates"
         description={
-          status === 'error'
-            ? error
-            : status === 'available'
-              ? `Version ${updateInfo?.version} is available!`
-              : 'Keep Dev Snippet updated for the latest features and security improvements.'
+          status === 'error' ? (
+            <span className="text-red-400/80">{error}</span>
+          ) : status === 'available' ? (
+            `New version ${updateInfo?.version} is ready for you!`
+          ) : status === 'downloaded' ? (
+            'Update downloaded successfully. Restart to apply.'
+          ) : (
+            'Stay up to date with the latest improvements and bug fixes.'
+          )
         }
       >
         {renderStatus()}
@@ -221,10 +239,10 @@ const UpdateManager = () => {
               </div>
 
               <div className="space-y-1">
-                <h3 className="text-sm font-semibold capitalize">Restart Required</h3>
+                <h3 className="text-sm font-semibold capitalize">System Reboot Required</h3>
                 <p className="text-xs opacity-60 leading-relaxed">
-                  The update service was just installed. Please restart the application to enable
-                  update checking.
+                  The update service has been configured. Please restart Dev Snippet to activate
+                  background update checking.
                 </p>
               </div>
 

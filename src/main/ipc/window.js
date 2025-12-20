@@ -114,4 +114,10 @@ export const registerWindowHandlers = () => {
     } catch (err) {}
     return 1.0
   })
+
+  // Get App Version
+  ipcMain.handle('app:getVersion', () => {
+    const { app } = require('electron')
+    return app.getVersion()
+  })
 }

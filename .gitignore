@@ -14,3 +14,4 @@ nsis-*
 .vscode/
 .github/
 .idea/
+.env
