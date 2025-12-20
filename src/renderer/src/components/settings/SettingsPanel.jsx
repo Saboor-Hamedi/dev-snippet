@@ -132,12 +132,8 @@ const SettingsPanel = ({ onClose }) => {
           borderColor: 'var(--color-border)'
         }}
       >
-        {/* Sections */}
+        {/* Navigation List */}
         <div className="flex flex-col w-full overflow-y-auto custom-scrollbar flex-1 pb-4">
-          {/* Main Group: System */}
-          <div className="px-5 py-3 text-[10px] font-bold opacity-40 uppercase tracking-[2px]">
-            Maintenance
-          </div>
           <button
             onClick={() => setActiveTab('updates')}
             className={`w-full flex items-center gap-3 px-5 py-2.5 text-xs font-medium transition-all ${
@@ -160,10 +156,6 @@ const SettingsPanel = ({ onClose }) => {
             <span>Software Update</span>
           </button>
 
-          {/* Group: Configuration */}
-          <div className="px-5 py-3 mt-4 text-[10px] font-bold opacity-40 uppercase tracking-[2px]">
-            Preferences
-          </div>
           {[
             { id: 'appearance', label: 'Appearance' },
             { id: 'editor', label: 'Editor' },
@@ -190,10 +182,6 @@ const SettingsPanel = ({ onClose }) => {
             </button>
           ))}
 
-          {/* Group: Advanced */}
-          <div className="px-5 py-3 mt-4 text-[10px] font-bold opacity-40 uppercase tracking-[2px]">
-            Advanced
-          </div>
           <button
             onClick={() => setActiveTab('system')}
             className={`w-full flex items-center gap-3 px-5 py-2.5 text-xs font-medium transition-all ${
