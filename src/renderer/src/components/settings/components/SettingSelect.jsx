@@ -27,7 +27,13 @@ const SettingSelect = ({ label, description, value, onChange, options = [] }) =>
   const ref = useRef()
   useOnClickOutside(ref, () => setIsOpen(false))
 
-  const selectedLabel = options.find((opt) => (opt.value || opt) === value)?.label || value
+  // Find the label for the current value
+  const selectedOption = options.find((opt) => {
+    const optValue = typeof opt === 'object' && opt !== null ? opt.value : opt
+    return optValue === value
+  })
+  const selectedLabel =
+    selectedOption?.label || (typeof selectedOption === 'string' ? selectedOption : value)
 
   return (
     <div className="flex items-center justify-between p-3 gap-4">
@@ -44,6 +50,7 @@ const SettingSelect = ({ label, description, value, onChange, options = [] }) =>
 
       <div className="relative" ref={ref}>
         <button
+          type="button"
           onClick={() => setIsOpen(!isOpen)}
           className="w-36 flex items-center justify-between rounded-[5px] px-2 py-1.5 text-xs border outline-none transition-none"
           style={{
@@ -65,14 +72,16 @@ const SettingSelect = ({ label, description, value, onChange, options = [] }) =>
             }}
           >
             <div className="max-h-60 overflow-y-auto custom-scrollbar">
-              {options.map((option) => {
-                const optValue = option.value || option
-                const optLabel = option.label || option
+              {options.map((option, idx) => {
+                const optValue =
+                  typeof option === 'object' && option !== null ? option.value : option
+                const optLabel =
+                  typeof option === 'object' && option !== null ? option.label : option
                 const isSelected = optValue === value
 
                 return (
                   <div
-                    key={optValue}
+                    key={`${optValue}-${idx}`}
                     onClick={() => {
                       onChange(optValue)
                       setIsOpen(false)

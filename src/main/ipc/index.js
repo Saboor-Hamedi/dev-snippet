@@ -9,6 +9,7 @@ import { registerFilesystemHandlers } from './filesystem'
 import { createSettingsHandlers } from './settings'
 import { registerBackupHandlers } from './backup'
 import { registerDialogHandlers } from './dialog'
+import { registerUpdatesHandlers } from './updates'
 
 export const registerAllHandlers = (app, mainWindow, db, preparedStatements, getDB) => {
   // Register all IPC handlers
@@ -18,6 +19,7 @@ export const registerAllHandlers = (app, mainWindow, db, preparedStatements, get
   const settingsHandlers = createSettingsHandlers(app, mainWindow)
   registerBackupHandlers(app, getDB)
   registerDialogHandlers()
+  registerUpdatesHandlers(mainWindow)
   return {
     settingsHandlers
   }

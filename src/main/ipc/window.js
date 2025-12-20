@@ -46,6 +46,14 @@ export const registerWindowHandlers = () => {
     return true
   })
 
+  // Relaunch app
+  ipcMain.handle('window:relaunch', (event) => {
+    const { app } = require('electron')
+    app.relaunch()
+    app.exit(0)
+    return true
+  })
+
   // Get window bounds
   ipcMain.handle('window:getBounds', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender)

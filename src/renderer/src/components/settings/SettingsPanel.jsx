@@ -123,7 +123,6 @@ const SettingsPanel = ({ onClose }) => {
       <div
         className="w-full md:w-48 flex-shrink-0 flex flex-col border-r pt-4"
         style={{
-          borderColor: 'var(--color-border)',
           borderColor: 'var(--color-border)'
         }}
       >

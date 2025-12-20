@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { FileDown } from 'lucide-react'
 import { SettingSection, SettingToggle, SettingRow } from '../components'
+import UpdateManager from '../components/UpdateManager'
 import BackupRestorePanel from '../../BackupRestorePanel'
 
 /**
@@ -11,6 +12,9 @@ import BackupRestorePanel from '../../BackupRestorePanel'
 const DataSettings = ({ hideWelcomePage, onWelcomePageToggle, onExportData }) => {
   return (
     <SettingSection title="System & Data">
+      {/* Update Manager */}
+      <UpdateManager />
+
       {/* Show Welcome Page Toggle */}
       <SettingToggle
         label="Show Welcome Page"

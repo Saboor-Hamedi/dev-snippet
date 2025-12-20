@@ -9,7 +9,7 @@ import Workbench from './Workbench'
 const CommandPalette = lazy(() => import('../CommandPalette'))
 const RenameModal = lazy(() => import('../modal/RenameModal'))
 const DeleteModel = lazy(() => import('../modal/DeleteModel'))
-const SettingsModal = lazy(() => import('../SettingsModal'))
+// SettingsModal removed
 // Hooks
 import { useKeyboardShortcuts } from '../../hook/useKeyboardShortcuts'
 import { useSettings } from '../../hook/useSettingsContext.jsx'
@@ -41,7 +41,7 @@ const SnippetLibrary = () => {
   // Modals
   const [isCreatingSnippet, setIsCreatingSnippet] = useState(false)
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  // isSettingsOpen removed
   const { toast, showToast } = useToast()
   const [activeSnippet, setActiveSnippet] = useState(null)
   // Autosave status: null | 'pending' | 'saving' | 'saved'
@@ -177,17 +177,15 @@ const SnippetLibrary = () => {
   // Focus management effect
   useEffect(() => {
     // Re-focus when palette, settings, or modals close
-    if (!isCommandPaletteOpen && !isSettingsOpen && !renameModal.isOpen && !deleteModal.isOpen) {
+    if (
+      !isCommandPaletteOpen &&
+      activeView !== 'settings' &&
+      !renameModal.isOpen &&
+      !deleteModal.isOpen
+    ) {
       focusEditor()
     }
-  }, [
-    isCommandPaletteOpen,
-    isSettingsOpen,
-    renameModal.isOpen,
-    deleteModal.isOpen,
-    activeView,
-    isCreatingSnippet
-  ])
+  }, [isCommandPaletteOpen, activeView, renameModal.isOpen, deleteModal.isOpen, isCreatingSnippet])
 
   // Use the keyboard shortcuts hook here
   useKeyboardShortcuts({
@@ -207,8 +205,8 @@ const SnippetLibrary = () => {
         setIsCommandPaletteOpen(false)
         handled = true
       }
-      if (isSettingsOpen) {
-        setIsSettingsOpen(false)
+      if (activeView === 'settings') {
+        handleCloseSettings()
         handled = true
       }
       return handled
@@ -249,11 +247,10 @@ const SnippetLibrary = () => {
 
     onToggleSettings: () => {
       if (activeView === 'settings') {
-        setActiveView('snippets')
+        handleCloseSettings()
       } else {
         handleOpenSettings()
       }
-      setIsSettingsOpen(false)
     },
 
     onCopyToClipboard: () => {
@@ -501,16 +498,6 @@ const SnippetLibrary = () => {
             setIsCreatingSnippet(false)
             setActiveView('snippets')
           }}
-        />
-      </Suspense>
-
-      {/* Settings Modal - Lazy Loaded */}
-      <Suspense fallback={<ModalLoader />}>
-        <SettingsModal
-          isOpen={isSettingsOpen}
-          onClose={() => setIsSettingsOpen(false)}
-          currentSettings={settings}
-          onSettingsChange={updateSettings}
         />
       </Suspense>
     </div>
