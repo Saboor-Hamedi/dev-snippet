@@ -22,7 +22,7 @@
   letter-spacing: 0;
   max-width: 100%;
   overflow-wrap: break-word;
-  padding: 0 !important;
+  padding: 0 0 20px 0 !important; /* Added 100px bottom padding to prevent cutoff */
   border: none !important;
   outline: none !important;
   box-shadow: none !important;
@@ -48,16 +48,16 @@
   font-size: 30px !important;
   padding-bottom: 0.3em !important;
   border-bottom: 1px solid var(--color-border, #30363d) !important;
-  margin-top: 24px !important;
-  margin-bottom: 16px !important;
+  margin-top: 16px !important;
+  margin-bottom: 8px !important;
 }
 
 .markdown-body h2 {
   font-size: 24px !important;
   padding-bottom: 0.3em !important;
   border-bottom: 1px solid var(--color-border, #30363d) !important;
-  margin-top: 24px !important;
-  margin-bottom: 16px !important;
+  margin-top: 16px !important;
+  margin-bottom: 8px !important;
 }
 
 .markdown-body h3 {
@@ -76,20 +76,21 @@
 
 /* Paragraphs and lists */
 .markdown-body p {
-  margin: 8px 0 !important;
+  margin: 4px 0 !important;
   color: var(--text-main) !important;
-  line-height: 1.7 !important;
+  line-height: 1.6 !important;
+  white-space: pre-wrap !important; /* Keep for internal paragraph spacing only */
 }
 
 .markdown-body li {
-  margin: 8px 0 !important;
+  margin: 2px 0 !important;
   color: var(--text-main) !important;
 }
 
 .markdown-body ul,
 .markdown-body ol {
   padding-left: 24px !important;
-  margin: 16px 0 !important;
+  margin: 8px 0 !important;
 }
 
 .markdown-body ul {

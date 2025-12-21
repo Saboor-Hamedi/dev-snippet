@@ -53,8 +53,7 @@ export const beautySelection = EditorView.theme({
   },
   '.cm-activeLineGutter': {
     borderLeft: 'var(--active-line-gutter-border-width, 0px) solid var(--caret-color) !important',
-    backgroundColor: 'transparent !important',
-    transition: 'all 0.1s ease'
+    backgroundColor: 'transparent !important'
   }
 })
 

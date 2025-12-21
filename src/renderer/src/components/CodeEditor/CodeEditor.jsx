@@ -134,13 +134,31 @@ const CodeEditor = ({
 
   // adjustOverflow removed (legacy layout logic)
 
-  // Detect large files
+  // Detect large files (Optimized for zero typing lag)
+  const lastLargeState = useRef(false)
   useEffect(() => {
-    const lineCount = (value || '').split('\n').length
-    const charCount = (value || '').length
-    const isLarge = lineCount > 10000 || charCount > 500000
-    setIsLargeFile(isLarge)
-    if (onLargeFileChange) onLargeFileChange(isLarge)
+    // Only check if content is actually semi-large (over 100k chars)
+    // Small files should never trigger this logic
+    if ((value || '').length < 100000) {
+      if (lastLargeState.current) {
+        lastLargeState.current = false
+        setIsLargeFile(false)
+      }
+      return
+    }
+
+    const handler = setTimeout(() => {
+      const charCount = (value || '').length
+      const lineCount = value.split('\n').length
+      const isLarge = lineCount > 10000 || charCount > 500000
+
+      if (isLarge !== lastLargeState.current) {
+        lastLargeState.current = isLarge
+        setIsLargeFile(isLarge)
+      }
+    }, 2000)
+
+    return () => clearTimeout(handler)
   }, [value, onLargeFileChange])
 
   // 4. Load Full Extensions (Lazy + Progressive)

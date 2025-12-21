@@ -1,6 +1,19 @@
 import buildTheme from './buildTheme'
 import { premiumTypingBundle } from './premiumFeatures'
 
+// Pre-load or cache language data to avoid micro-lag during extension rebuilds
+let cachedLanguages = null
+const getLanguages = async () => {
+  if (cachedLanguages) return cachedLanguages
+  try {
+    const { languages } = await import('@codemirror/language-data')
+    cachedLanguages = languages
+    return languages
+  } catch (e) {
+    return []
+  }
+}
+
 const buildExtensions = async (options, handlers = {}) => {
   const {
     EditorView,
@@ -198,14 +211,14 @@ const buildExtensions = async (options, handlers = {}) => {
   // Markdown Support (Skip rich decorations for large files)
   if (!isLargeFile && language === 'markdown') {
     try {
-      // 1. Load Custom Syntax Highlighting (Colors only, no strange fonts/sizes)
+      // 1. Official Markdown Extension (Must come before custom styles for stability)
+      const { markdown } = await import('@codemirror/lang-markdown')
+      const languages = await getLanguages()
+      exts.push(markdown({ addKeymap: false, codeLanguages: languages }))
+
+      // 2. Load Custom Syntax Highlighting (Colors only)
       const { richMarkdownExtension } = await import('./richMarkdown.js')
       exts.push(richMarkdownExtension)
-
-      // 2. Official Markdown Extension (with disabled keymap to prevent jumps)
-      const { markdown } = await import('@codemirror/lang-markdown')
-      const { languages } = await import('@codemirror/language-data') // Dynamic load standard langs
-      exts.push(markdown({ addKeymap: false, codeLanguages: languages }))
     } catch (e) {
       console.error('Failed to load markdown extensions', e)
     }
