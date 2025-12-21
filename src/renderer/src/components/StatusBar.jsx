@@ -1,36 +1,36 @@
 import React from 'react'
 import { Settings } from 'lucide-react'
+import PropTypes from 'prop-types'
 
-// Always return .md for markdown snippets
-const getExtension = () => '.md'
-
-// Always return 'Markdown' for language name
-const getLanguageName = () => 'Markdown'
-
-const StatusBar = ({ onSettingsClick }) => {
-  // Only show Markdown extension and name
-  const ext = getExtension()
-  const canonical = getLanguageName()
+const StatusBar = ({ onSettingsClick, zoomLevel = 1, title, isLargeFile = false }) => {
   return (
-    <div
-      className="h-8 px-2 flex items-center justify-between text-xs text-slate-600 dark:text-slate-300 flex-shrink-0 z-50 relative"
-      style={{
-        backgroundColor: 'var(--header-bg)',
-        borderTop: '1px solid var(--border-color)'
-      }}
-    >
-      <div className="flex items-center gap-2">
-        {/* Show extension with same hover behavior as header buttons */}
+    <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 flex-shrink-1">
+      {/* Language/Extension display removed as per user request */}
+      <span className="px-1 py-0.5 rounded text-xs text-slate-500 dark:text-slate-400">
+        {title?.split('.').pop() || 'Untitled'}
+      </span>
+
+      {/* Show zoom level - Always visible for clarity during debug */}
+      <span
+        className="px-1 py-0.5 rounded text-xs text-slate-500 dark:text-slate-400"
+        title="Zoom Level (Ctrl/Cmd + +/- to adjust, Ctrl/Cmd + 0 to reset)"
+      >
+        {Math.round(zoomLevel * 100)}%
+      </span>
+
+      {/* Large File Performance Mode Indicator */}
+      {isLargeFile && (
         <span
-          className="px-1 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          title={canonical}
+          className="px-1.5 py-0.5 rounded text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
+          title="Performance Mode: Some features disabled for large files"
         >
-          {ext ? ext : ''}
+          ⚡ Performance
         </span>
-      </div>
+      )}
+
       <button
         onClick={onSettingsClick}
-        className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors cursor-pointer z-50 relative"
+        className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors cursor-pointer"
         title="Settings"
       >
         <Settings className="w-3 h-3" />
@@ -40,3 +40,10 @@ const StatusBar = ({ onSettingsClick }) => {
 }
 
 export default React.memo(StatusBar)
+
+StatusBar.propTypes = {
+  onSettingsClick: PropTypes.func.isRequired,
+  zoomLevel: PropTypes.number,
+  title: PropTypes.string,
+  isLargeFile: PropTypes.bool
+}

@@ -1,12 +1,14 @@
 /* ===== MARKDOWN PREVIEW THEME ===== */
-
+@import './variables.css';
 /* Code block wrapper - Clean, borderless design */
 .code-block-wrapper {
   display: block;
   overflow: hidden;
   box-shadow: none; /* Remove shadow for cleaner look */
   margin: 0 !important;
-  border-radius: 5px;
+  /* border-radius: 5px; */
+  border-top-right-radius: 5px;
+  border-top-left-radius: 5px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -106,7 +108,7 @@
 /* Inline code - Clean, minimal */
 .markdown-body code {
   background-color: rgba(0, 0, 0, 0.05) !important;
-  color: var(--text-main) !important;
+  color: rgb(161, 145, 161) !important;
   font-size: 14px !important;
   font-weight: 500 !important;
   padding: 2px 5px !important;
@@ -131,6 +133,7 @@
   padding: 0 !important;
   border-radius: 0 !important;
   border: none !important;
+  color: purple !important;
   font-size: 14px !important;
   line-height: 1.5 !important;
   display: block;
@@ -139,11 +142,10 @@
   box-shadow: none !important;
 }
 
-/* Tables - Clean, readable */
+/* Tables - Full Width ('Full Screen') */
 .markdown-body table {
-  display: block;
-  width: 100%;
-  overflow: auto;
+  display: table !important; /* Force full table layout behavior */
+  width: 100% !important;    /* Force full width */
   margin: 24px 0 !important;
   border-collapse: collapse;
   border-spacing: 0;
@@ -152,10 +154,10 @@
 .markdown-body table th,
 .markdown-body table td {
   padding: 12px 16px !important;
-  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  /* Use CSS variable */
+  border: 1px solid var(--border-color) !important; 
   text-align: left;
   color: var(--text-main) !important;
- 
 }
 
 .markdown-body table th {
@@ -175,7 +177,7 @@
 /* Horizontal rule - Minimal */
 .markdown-body hr {
   height: 1px;
-  background-color: rgba(0, 0, 0, 0.1) !important;
+  background-color: var(--border-color) !important;
   border: none !important;
   margin: 32px 0 !important;
 }
@@ -203,6 +205,14 @@
 /* Task lists */
 .markdown-body .task-list-item {
   list-style-type: none !important;
+  display: flex !important; /* Ensure alignment */
+  align-items: center; 
+}
+
+/* Ensure checkbox alignment */
+.markdown-body .task-list-item input[type="checkbox"] {
+  margin: 0 .4em .25em -1.6em !important;
+  vertical-align: middle;
 }
 
 .markdown-body .task-list-item-checkbox {
@@ -217,25 +227,28 @@
   align-items: center;
   padding: 0;
   border: none !important;
-  font-size: 12px;
   font-weight: 600;
   color: var(--text-secondary);
+  /* background-color: var(--color-bg-primary); */
+  background-color: #1b232c;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
   opacity: 0.8;
   transition: opacity 0.2s ease;
   outline: none !important;
   box-shadow: none !important;
 }
 
-.code-block-wrapper:hover .code-block-header {
+/* .code-block-wrapper:hover .code-block-header {
   opacity: 1;
-}
+} */
 
 .code-language {
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
-  font-size: 11px;
+  font-size: var(--font-size-xtiny);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   opacity: 0.7;
+  margin-left: 10px;
 }
 
 /* Copy button - Minimal, integrated */
@@ -247,7 +260,7 @@
   border: none;
   border-radius: 4px;
   padding: 6px 12px;
-  font-size: 11px;
+   font-size: var(--font-size-xtiny);
   cursor: pointer;
   color: var(--text-secondary);
   transition: all 0.2s ease;
@@ -288,7 +301,7 @@
 .markdown-preview-container h5,
 .markdown-preview-container h6 {
   margin: 28px 0 16px 0;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text-main);
   line-height: 1.25;
 }
@@ -296,13 +309,13 @@
 .markdown-preview-container h1 {
   font-size: 32px;
   padding-bottom: 12px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .markdown-preview-container h2 {
   font-size: 26px;
   padding-bottom: 8px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .markdown-preview-container h3 { font-size: 22px; }
@@ -325,7 +338,7 @@
   border-radius: 4px;
   font-family: 'SFMono-Regular', Consolas, monospace;
   font-size: 14px;
-  color: var(--text-main);
+  color: purple;
 }
 
 .markdown-preview-container pre {
@@ -341,6 +354,7 @@
   padding: 0;
   border-radius: 0;
   font-size: 14px;
+  color: purple;
 }
 
 .markdown-preview-container blockquote {
@@ -373,7 +387,7 @@
 
 .markdown-preview-container hr {
   height: 1px;
-  background: rgba(0, 0, 0, 0.1);
+  background: var(--border-color);
   border: none;
   margin: 32px 0;
 }
@@ -387,7 +401,7 @@
 .markdown-preview-container th,
 .markdown-preview-container td {
   padding: 12px 16px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-color);
   text-align: left;
 }
 
@@ -406,7 +420,7 @@
   --bg-secondary: var(--bg-secondary);
   --text-main: var(--text-main);
   --text-secondary: var(--text-main);
-  --border-color: rgba(0, 0, 0, 0.1);
+  --border-color: rgba(0, 0, 0, 0.2); /* INCREASED OPACITY FOR CLARITY */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -415,7 +429,7 @@
     --bg-secondary: var(--bg-secondary);
     --text-main: var(--text-main);
     --text-secondary: var(--text-main);
-    --border-color: rgba(255, 255, 255, 0.1);
+    --border-color: rgba(255, 255, 255, 0.2); /* INCREASED OPACITY */
   }
   
   /* Dark theme adjustments */
@@ -430,7 +444,7 @@
   
   .markdown-body h1,
   .markdown-body h2 {
-    border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+    border-bottom-color: var(--border-color) !important;
   }
   
   .markdown-body table tr:nth-child(2n) {
@@ -438,7 +452,7 @@
   }
   
   .markdown-body hr {
-    background-color: rgba(255, 255, 255, 0.1) !important;
+    background-color: var(--border-color) !important;
   }
   
   .markdown-body a {
@@ -505,4 +519,11 @@
   .copy-code-btn {
     transition: none;
   }
+}
+
+/* Remove extra top margin on the first rendered element so preview aligns
+   with the editor's internal padding (editor uses 16px padding). */
+.markdown-body > :first-child {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
 }

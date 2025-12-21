@@ -1,6 +1,7 @@
 export const handleRenameSnippet = async ({
   renameModal,
   saveSnippet,
+  renameSnippet,
   setSelectedSnippet,
   setRenameModal,
   setIsCreatingSnippet,
@@ -10,47 +11,65 @@ export const handleRenameSnippet = async ({
     if (showToast) showToast('❌ Cannot rename: No snippet selected.', 'error')
     setRenameModal({ isOpen: false, item: null })
     return
-  } // Prevent multiple renames at once
+  }
+
+  // Clean up name
   let baseName = (renameModal.newName || renameModal.item.title || '').trim() || 'Untitled'
-  // Preserve extension logic for language update
-  const hasExt = /\.[^\.\s]+$/.test(baseName)
-  const extMap = {
-    md: 'md'
-    //  Add more extensions and their corresponding languages as needed
+
+  // Force .md extension if missing or different
+  // User strict requirement: "by default it save .md not anything else"
+  if (!baseName.toLowerCase().endsWith('.md')) {
+    // Remove any other extension if present
+    baseName = baseName.replace(/\.[^.\\/]+$/, '')
+    baseName = `${baseName}.md`
   }
-  let lang = renameModal.item.language
-  if (hasExt) {
-    const ext = baseName.split('.').pop().toLowerCase()
-    lang = extMap[ext] || lang
-  } else {
-    lang = 'md'
-  }
+
+  // Force language to markdown
+  const lang = 'markdown'
 
   const updatedItem = {
     ...renameModal.item,
     title: baseName,
-    language: lang
+    language: lang,
+    is_draft: false
   }
+
   // Update the selected item immediately (optimistic update)
   if (setSelectedSnippet) {
     setSelectedSnippet(updatedItem)
   }
-  // If nothing changed, skip saving and close modal
+
+  // If nothing changed (logic might have normalized it back to original), skip
   if (renameModal.item.title === baseName) {
-    if (showToast) showToast('No changes', 'info')
-    setRenameModal({ isOpen: false, item: null })
-    setIsCreatingSnippet(false)
-    return
+    // Check if we need to force save due to language change even if title is same?
+    // Unlikely if we enforce MD everywhere.
+    // But if title is identical, we might just close.
+    // However, if the user typed "foo" and we made it "foo.md", and it was already "foo.md", then we skip.
+
+    // Actually, let's just proceed to ensure consistency.
+    // But if truly identical including language...
+    if (renameModal.item.language === 'markdown') {
+      if (showToast) showToast(`No changes made`, 'info')
+      setRenameModal({ isOpen: false, item: null })
+      setIsCreatingSnippet(false)
+      return
+    }
   }
 
   try {
-    await saveSnippet(updatedItem)
+    if (typeof renameSnippet === 'function') {
+      renameSnippet(updatedItem.id, updatedItem)
+    } else {
+      await saveSnippet(updatedItem)
+    }
+
     if (showToast) showToast('✓ Snippet renamed successfully', 'success')
-  
   } catch (error) {
-    console.error('Failed to save item after rename:', error)
+    console.error('Rename error:', error)
+
     if (showToast) showToast('❌ Failed to rename snippet.', 'error')
-    // Revert the optimistic update if save failed
+
+    // Rollback optimistic update
     if (setSelectedSnippet) {
       setSelectedSnippet(renameModal.item)
     }

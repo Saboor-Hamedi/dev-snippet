@@ -8,27 +8,16 @@ export const useKeyboardShortcuts = (shortcuts) => {
     shortcutsRef.current = shortcuts
   }, [shortcuts])
 
-  
   useEffect(() => {
-    
-    
     const handleKeyDown = (e) => {
-      
-
-
       /*
-       * This will basically stop other handlers when a modal is open
-       * For example, if a delete confirmation modal is open, we don't want
-       * the global shortcuts to trigger actions in the background.
-      */
+       * Handle Escape key - check if menus are open first
+       */
       if (e.key === 'Escape' || e.key === 'Esc') {
-        // Prefer a context-aware escape handler if provided. If it
-        // returns a truthy value we treat the event as handled and
-        // stop further processing so other components (e.g., editor)
-        // don't also react to Escape.
-        if (shortcutsRef.current.onEscapeWithContext) {
+        // Only close modals and menus with plain Escape, don't close editor
+        if (shortcutsRef.current.onEscapeMenusOnly) {
           try {
-            const handled = shortcutsRef.current.onEscapeWithContext(e)
+            const handled = shortcutsRef.current.onEscapeMenusOnly(e)
             if (handled) {
               try {
                 e.preventDefault()
@@ -38,14 +27,18 @@ export const useKeyboardShortcuts = (shortcuts) => {
             }
           } catch {}
         }
+      }
 
-        // Fallback: generic onEscape handler (non-contextual)
-        if (shortcutsRef.current.onEscape) {
+      // Ctrl+Shift+W to close editor/go to welcome (like closing a tab)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'w') {
+        e.preventDefault()
+        if (shortcutsRef.current.onCloseEditor) {
           try {
-            shortcutsRef.current.onEscape(e)
+            shortcutsRef.current.onCloseEditor(e)
           } catch {}
         }
       }
+
       // Ctrl+S save
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         if (shortcutsRef.current.onSave) {
@@ -53,6 +46,15 @@ export const useKeyboardShortcuts = (shortcuts) => {
           shortcutsRef.current.onSave()
         }
       }
+
+      // Ctrl+Shift+S save (alternative)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 's') {
+        if (shortcutsRef.current.onSave) {
+          e.preventDefault()
+          shortcutsRef.current.onSave()
+        }
+      }
+
       // Ctrl+N creates new snippet
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'n' && !e.shiftKey) {
         e.preventDefault()
@@ -60,13 +62,7 @@ export const useKeyboardShortcuts = (shortcuts) => {
           shortcutsRef.current.onCreateSnippet()
         }
       }
-      // Ctrl+Shift+W goes to Welcome page
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'w') {
-        e.preventDefault()
-        if (shortcutsRef.current.onGoToWelcome) {
-          shortcutsRef.current.onGoToWelcome()
-        }
-      }
+
       // Ctrl+P toggles Command Palette
       if ((e.ctrlKey || e.metaKey) && e.key?.toLowerCase() === 'p' && !e.shiftKey) {
         e.preventDefault()
@@ -74,6 +70,15 @@ export const useKeyboardShortcuts = (shortcuts) => {
           shortcutsRef.current.onToggleCommandPalette()
         }
       }
+
+      // Ctrl+, toggles Settings
+      if ((e.ctrlKey || e.metaKey) && e.key === ',') {
+        e.preventDefault()
+        if (shortcutsRef.current.onToggleSettings) {
+          shortcutsRef.current.onToggleSettings()
+        }
+      }
+
       // Ctrl+Shift+C copies selected snippet to clipboard
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'c') {
         e.preventDefault()
@@ -81,10 +86,11 @@ export const useKeyboardShortcuts = (shortcuts) => {
           shortcutsRef.current.onCopyToClipboard()
         }
       }
-      // Ctrl+Shift+\ toggles live preview. Support multiple key/code variants
-      // to handle different keyboard layouts (Backslash, IntlBackslash, '|' with Shift).
+
+      // Ctrl+Shift+\ toggles live preview
       if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
-        const isBackslashKey = e.key === '\\' || e.key === '|' || e.code === 'Backslash' || e.code === 'IntlBackslash'
+        const isBackslashKey =
+          e.key === '\\' || e.key === '|' || e.code === 'Backslash' || e.code === 'IntlBackslash'
         if (isBackslashKey) {
           try {
             e.preventDefault()
@@ -96,13 +102,20 @@ export const useKeyboardShortcuts = (shortcuts) => {
           }
         }
       }
+
       // Ctrl+R rename selected snippet
       if ((e.ctrlKey || e.metaKey) && e.key?.toLowerCase() === 'r' && !e.shiftKey) {
         e.preventDefault()
+        e.stopPropagation()
         if (shortcutsRef.current.onRenameSnippet) {
-          shortcutsRef.current.onRenameSnippet()
+          try {
+            shortcutsRef.current.onRenameSnippet()
+          } catch (err) {
+            console.error('❌ Error in onRenameSnippet:', err)
+          }
         }
       }
+
       // Ctrl+delete delete selected snippet
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'd') {
         e.preventDefault()
@@ -110,9 +123,75 @@ export const useKeyboardShortcuts = (shortcuts) => {
           shortcutsRef.current.onDeleteSnippet()
         }
       }
+
+      // Zoom In
+      const isZoomIn =
+        (e.ctrlKey || e.metaKey) &&
+        (e.key === '=' ||
+          e.key === '+' ||
+          e.code === 'Equal' ||
+          e.code === 'NumpadAdd' ||
+          e.key === 'Add')
+
+      if (isZoomIn) {
+        e.preventDefault()
+        if (shortcutsRef.current.onZoomIn) {
+          shortcutsRef.current.onZoomIn()
+        }
+      }
+
+      // Zoom Out
+      const isZoomOut =
+        (e.ctrlKey || e.metaKey) &&
+        (e.key === '-' ||
+          e.key === '_' ||
+          e.code === 'Minus' ||
+          e.code === 'NumpadSubtract' ||
+          e.key === 'Subtract')
+
+      if (isZoomOut) {
+        e.preventDefault()
+        if (shortcutsRef.current.onZoomOut) {
+          shortcutsRef.current.onZoomOut()
+        }
+      }
+
+      // Reset Zoom
+      const isZoomReset =
+        (e.ctrlKey || e.metaKey) && (e.key === '0' || e.code === 'Digit0' || e.code === 'Numpad0')
+
+      if (isZoomReset) {
+        e.preventDefault()
+        if (shortcutsRef.current.onZoomReset) {
+          shortcutsRef.current.onZoomReset()
+        }
+      }
+    }
+
+    // VS Code-style smooth wheel zoom
+    let wheelAccumulator = 0
+    const WHEEL_THRESHOLD = 100
+
+    const handleWheel = (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault()
+        wheelAccumulator += e.deltaY
+        if (Math.abs(wheelAccumulator) >= WHEEL_THRESHOLD) {
+          if (wheelAccumulator > 0) {
+            if (shortcutsRef.current.onZoomOut) shortcutsRef.current.onZoomOut()
+          } else {
+            if (shortcutsRef.current.onZoomIn) shortcutsRef.current.onZoomIn()
+          }
+          wheelAccumulator = 0
+        }
+      }
     }
 
     window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
+    window.addEventListener('wheel', handleWheel, { passive: false })
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('wheel', handleWheel)
+    }
   }, [])
 }

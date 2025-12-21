@@ -3,19 +3,45 @@ import { useToast } from './useToast'
 export const useSnippetData = () => {
   const [snippets, setSnippets] = useState([])
   const [projects, setProjects] = useState([])
-  const [selectedSnippet, setSelectedSnippet] = useState(null)
+  const [selectedSnippet, setSelectedSnippetState] = useState(null)
   const { showToast } = useToast()
 
-  // Load initial data from the main process
+  // lazy fetch full content only when selected
+  const setSelectedSnippet = async (item) => {
+    if (!item) {
+      setSelectedSnippetState(null)
+      return
+    }
+
+    try {
+      // If code is already present (e.g. from a recent save), just use it
+      if (item.code !== undefined && !item.is_draft) {
+        setSelectedSnippetState(item)
+        return
+      }
+
+      // Otherwise fetch full content from DB
+      if (window.api?.getSnippetById) {
+        const fullSnippet = await window.api.getSnippetById(item.id)
+        setSelectedSnippetState(fullSnippet || item)
+      } else {
+        setSelectedSnippetState(item)
+      }
+    } catch (err) {
+      setSelectedSnippetState(item)
+    }
+  }
+
+  // Load initial metadata only
   useEffect(() => {
     const loadData = async () => {
       try {
         if (window.api?.getSnippets) {
-          const loadedSnippets = await window.api.getSnippets()
+          // Fetch only metadata for the sidebar/list - MUCH faster
+          const loadedSnippets = await window.api.getSnippets({ metadataOnly: true })
           setSnippets(loadedSnippets || [])
         }
       } catch (error) {
-        console.error('Failed to load data:', error)
         showToast('❌ Failed to load data')
       }
     }
@@ -26,28 +52,39 @@ export const useSnippetData = () => {
   // Save or update a snippet
   const saveSnippet = async (snippet, options = {}) => {
     try {
-      if (window.api?.saveSnippet) {
-        // Enforce type 'snippet'
-        const payload = { ...snippet, type: 'snippet', sort_index: snippet.sort_index ?? null }
-        await window.api.saveSnippet(payload)
-        // Update local list in-place to avoid flicker
-        setSnippets((prev) => {
-          const exists = prev.some((s) => s.id === payload.id)
-          return exists
-            ? prev.map((s) => (s.id === payload.id ? { ...s, ...payload } : s))
-            : [{ ...payload }, ...prev]
-        })
-        // C. IMPORTANT: Update the Active View Immediately!
-        // If the item we just saved is the one currently open, update the state.
-        if (!options.skipSelectedUpdate) {
-          if (selectedSnippet && selectedSnippet.id === payload.id) {
-            setSelectedSnippet(payload)
-          }
-        }
-        showToast('✓ Snippet saved successfully')
+      const fullText = snippet?.code || ''
+
+      // Simple DB-only storage for all snippets
+      const payload = {
+        ...snippet,
+        type: 'snippet',
+        sort_index: snippet.sort_index ?? null,
+        code: fullText,
+        is_draft: false // Explicitly mark as saved (not draft)
       }
+
+      // Save to database
+      await window.api.saveSnippet(payload)
+
+      // Update local list in-place to avoid flicker
+      setSnippets((prev) => {
+        const exists = prev.some((s) => s.id === snippet.id)
+        const updatedItem = { ...snippet, code: fullText, is_draft: false } // Keep full content in local state and mark as saved
+        return exists
+          ? prev.map((s) => (s.id === snippet.id ? { ...s, ...updatedItem } : s))
+          : [updatedItem, ...prev]
+      })
+
+      // Update the active view immediately to refresh snippet data for rename functionality
+      if (!options.skipSelectedUpdate) {
+        if (selectedSnippet && selectedSnippet.id === snippet.id) {
+          // Force refresh the selected snippet with updated data
+          const refreshedSnippet = { ...snippet, code: fullText, is_draft: false }
+          setSelectedSnippetState(refreshedSnippet)
+        }
+      }
+      showToast('✓ Snippet saved successfully')
     } catch (error) {
-      console.error('Failed to save snippet:', error)
       showToast('❌ Failed to save snippet')
     }
   }
@@ -80,7 +117,6 @@ export const useSnippetData = () => {
         }
       }
     } catch (error) {
-      console.error('Failed to delete item:', error)
       showToast('❌ Failed to delete item')
     }
   }

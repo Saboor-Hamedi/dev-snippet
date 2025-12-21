@@ -1,0 +1,85 @@
+:root {
+  /* NEW — REQUIRED */
+  --caret-width: 3px;
+  --caret-color: #fefeffff;
+  --editor-font-size: 14px; /* NOT 1rem — absolute units only */
+  --zoom-level: 1;
+  --gutter-bg-color: #232731;
+  --gutter-border-color: #232731;
+  --gutter-border-width: 1px;
+  --bg-color: #232731;
+  --border-color: #232731;
+  --border-width: 0;
+  --border-round: 0;
+}
+/* 
+.cm-editor-wrapper {
+  --zoom-level: 1;
+  transition: all 140ms cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 100vh !important;
+}
+
+.cm-scroller {
+  background-color: transparent !important;
+  min-height: 100vh !important;
+}
+
+.cm-editor.cm-focused {
+  outline: none !important;
+}
+
+.cm-editor {
+  font-size: calc(var(--editor-font-size) * var(--zoom-level));
+  background-color: var(--color-bg-primary, transparent) !important;
+  min-width: 100% !important;
+  min-height: 100% !important;
+  line-height: 1.6 !important;
+}
+
+.cm-content {
+  font-size: calc(var(--editor-font-size) * var(--zoom-level)) !important;
+  line-height: 1.6 !important;
+  min-height: 150vh !important;
+  padding-bottom: 50vh !important;
+}
+
+.cm-gutters {
+  background: var(--color-bg-secondary, transparent) !important;
+  border-right: 1px solid var(--color-border, transparent) !important;
+  font-family: inherit !important;
+  font-size: inherit !important;
+  line-height: 1.6 !important;
+  min-width: calc(40px * var(--zoom-level, 1)) !important;
+}
+
+.cm-lineNumbers {
+  padding-right: 8px !important;
+  line-height: 1.6 !important;
+} */
+
+/*  GITHUB */
+/* 1. The highlighted line where the cursor acts */
+
+/* GPU-Accelerated Caret for Smooth Performance */
+.cm-cursor,
+.cm-cursor-primary {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Optimize editor rendering */
+.cm-editor {
+  will-change: scroll-position;
+  transform: translateZ(0);
+}
+
+/* Smooth scrolling */
+.cm-scroller {
+  scroll-behavior: smooth;
+}
+
+/* Reduce paint on selection */
+.cm-selectionBackground {
+  will-change: transform;
+}

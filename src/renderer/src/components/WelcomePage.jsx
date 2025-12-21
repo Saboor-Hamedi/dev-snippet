@@ -1,150 +1,257 @@
-import React from 'react'
+import { useState, memo, lazy, Suspense } from 'react'
 import PropTypes from 'prop-types'
-import { FileCode, Folder, Command, Keyboard } from 'lucide-react'
+import { Folder, Command, Plus, Settings, Github } from 'lucide-react'
+import SystemStatusFooter from './SystemStatusFooter'
+import useGeneralProp from '../hook/settings/useGeneralProp.js'
 
-const WelcomePage = ({ onNewSnippet, onNewProject }) => {
+// Lazy load GitHub components
+const GitHubProfile = lazy(() => import('./github').then((m) => ({ default: m.GitHubProfile })))
+const GitHubSettings = lazy(() => import('./github').then((m) => ({ default: m.GitHubSettings })))
+
+const WelcomePage = ({
+  onNewSnippet,
+  onNewProject,
+  onOpenSettings,
+  onSelectSnippet,
+  snippets = []
+}) => {
+  // GitHub profile state
+  const [showGitHubProfile, setShowGitHubProfile] = useState(false)
+  const [showGitHubSettings, setShowGitHubSettings] = useState(false)
+  const [showAllRecents, setShowAllRecents] = useState(false)
+  const { welcomeBg } = useGeneralProp() // Get welcome background color
+
+  const [githubUsername, setGitHubUsername] = useState(() => {
+    try {
+      return localStorage.getItem('githubUsername') || 'Saboor-Hamedi'
+    } catch (e) {
+      return 'Saboor-Hamedi'
+    }
+  })
+
+  // Get recent files
+  const allRecentSnippets = snippets
+    .filter((snippet) => !snippet.is_draft)
+    .sort((a, b) => b.timestamp - a.timestamp)
+
+  const recentFiles = showAllRecents ? allRecentSnippets.slice(0, 5) : allRecentSnippets.slice(0, 3)
+
+  const handleSaveGitHubUsername = (username) => {
+    try {
+      localStorage.setItem('githubUsername', username)
+      setGitHubUsername(username)
+      setShowGitHubSettings(false)
+      setShowGitHubProfile(true)
+    } catch (e) {
+      console.error('Failed to save GitHub username')
+    }
+  }
+
   return (
-    <div className="h-full flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-colors duration-200">
-      <div className="max-w-xl sm:max-w-2xl mx-auto px-4 sm:px-8 text-center">
-        {/* Logo/Icon */}
-        <div className="mb-4 flex justify-center">
-          <div className="relative">
-            <div className="absolute inset-0 bg-primary-500/20 blur-3xl rounded-full"></div>
-            <FileCode size={12} className="text-primary-600 dark:text-primary-400 relative" strokeWidth={1.5} />
-          </div>
-        </div>
+    <>
+      <div className="h-full overflow-y-auto" style={{ backgroundColor: welcomeBg }}>
+        <div className="h-full flex flex-col">
+          {/* Clean Header Bar */}
+          <div className="px-6 py-4 border-b border-[var(--color-border)]/20">
+            <div className="flex items-center justify-between">
+              {/* Left: GitHub Profile */}
+              <button
+                onClick={() => {
+                  if (githubUsername) {
+                    setShowGitHubProfile(true)
+                  } else {
+                    setShowGitHubSettings(true)
+                  }
+                }}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--color-border)]/30 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-accent)]/30 transition-all group"
+              >
+                <div className="w-6 h-6 rounded-full bg-[var(--color-bg-secondary)] flex items-center justify-center group-hover:bg-[var(--color-accent)]/10 transition-colors">
+                  <Github size={14} className="group-hover:text-[var(--color-accent)]" />
+                </div>
+                <span className="text-sm font-medium">
+                  {githubUsername ? `@${githubUsername}` : 'Connect GitHub'}
+                </span>
+              </button>
 
-        {/* Title */}
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-3">
-          Welcome to Quick Snippets
-        </h1>
-        <p className="text-sm sm:text-base md:text-lg text-slate-600 dark:text-slate-400 mb-8 md:mb-12">
-          Your personal code snippet manager. Store, organize, and access your code snippets
-          instantly.
-        </p>
+              {/* Right: Stats & Settings */}
+              <div className="flex items-center gap-4">
+                <div className="text-center px-3 py-1">
+                  <div className="text-2xl font-bold text-[var(--color-accent)] tabular-nums">
+                    {snippets.length}
+                  </div>
+                  <div className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wide">
+                    Snippets
+                  </div>
+                </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6 md:mb-12">
-          <button
-            onClick={onNewSnippet}
-            className="group relative overflow-hidden bg-white dark:bg-slate-800 hover:bg-primary-50 dark:hover:bg-primary-900/20 border-2 border-slate-200 dark:border-slate-700 hover:border-primary-500 dark:hover:border-primary-500 rounded-xl p-3 sm:p-4 md:p-6 transition-all duration-200 text-left"
-          >
-            <div className="flex items-start gap-4">
-              <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg group-hover:scale-110 transition-transform">
-                <FileCode size={12} className="text-primary-600 dark:text-primary-400" />
+                <div className="w-px h-8 bg-[var(--color-border)]/30"></div>
+
+                <button
+                  onClick={onOpenSettings}
+                  className="p-2 rounded-lg hover:bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] transition-all"
+                  title="Settings"
+                >
+                  <Settings size={18} />
+                </button>
               </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-slate-900 dark:text-white mb-1">New Snippet</h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  Create a new code snippet
+            </div>
+          </div>
+
+          {/* Main Content Area */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="max-w-5xl mx-auto px-12 py-16">
+              {/* Hero Section */}
+              <div className="mb-16">
+                <h1 className="text-5xl font-light text-[var(--color-text-primary)] mb-2">
+                  Dev Snippet
+                </h1>
+                <p className="text-xl text-[var(--color-text-secondary)] font-light">
+                  Your code, organized and accessible
                 </p>
               </div>
-            </div>
-          </button>
 
-          <button
-            onClick={onNewProject}
-            className="group relative overflow-hidden bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-[#161b22] border-2 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-[#30363d] rounded-xl p-3 sm:p-4 md:p-6 transition-all duration-200 text-left"
-          >
-            <div className="flex items-start gap-4">
-              <div className="p-2 bg-slate-100 dark:bg-[#161b22] rounded-lg group-hover:scale-110 transition-transform">
-                <Folder size={12} className="text-slate-600 dark:text-slate-300" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-slate-900 dark:text-white mb-1">New Project</h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400">Create a new project</p>
+              {/* Two Column Layout */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                {/* Left Column: Quick Actions */}
+                <div>
+                  <h2 className="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide mb-4">
+                    Start
+                  </h2>
+                  <div className="space-y-2">
+                    <button
+                      onClick={onNewSnippet}
+                      className="w-full group flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[var(--color-bg-secondary)]/50 text-left transition-all"
+                    >
+                      <div className="p-2 rounded-md bg-[var(--color-accent)]/10 text-[var(--color-accent)] group-hover:bg-[var(--color-accent)]/20 transition-colors">
+                        <Plus size={16} />
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-[var(--color-text-primary)]">
+                          New Snippet
+                        </div>
+                        <div className="text-xs text-[var(--color-text-secondary)]">
+                          Create a new code snippet
+                        </div>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={onNewProject}
+                      className="w-full group flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[var(--color-bg-secondary)]/50 text-left transition-all"
+                    >
+                      <div className="p-2 rounded-md bg-blue-500/10 text-blue-500 group-hover:bg-blue-500/20 transition-colors">
+                        <Folder size={16} />
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-[var(--color-text-primary)]">
+                          Open Project
+                        </div>
+                        <div className="text-xs text-[var(--color-text-secondary)]">
+                          Browse your projects
+                        </div>
+                      </div>
+                    </button>
+
+                    <button className="w-full group flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[var(--color-bg-secondary)]/50 text-left transition-all">
+                      <div className="p-2 rounded-md bg-purple-500/10 text-purple-500 group-hover:bg-purple-500/20 transition-colors">
+                        <Command size={16} />
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-[var(--color-text-primary)]">
+                          Command Palette
+                        </div>
+                        <div className="text-xs text-[var(--color-text-secondary)]">
+                          Press Ctrl+P to open
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Right Column: Recent Snippets */}
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">
+                      Recent
+                    </h2>
+                    {allRecentSnippets.length > 3 && (
+                      <button
+                        onClick={() => setShowAllRecents(!showAllRecents)}
+                        className="text-xs text-[var(--color-accent)] hover:underline"
+                      >
+                        {showAllRecents ? 'Show less' : 'Show more'}
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="space-y-1">
+                    {recentFiles.length > 0 ? (
+                      recentFiles.map((snippet) => (
+                        <button
+                          key={snippet.id}
+                          onClick={() => onSelectSnippet && onSelectSnippet(snippet)}
+                          className="w-full group flex items-center justify-between px-4 py-3 rounded-lg hover:bg-[var(--color-bg-secondary)]/50 text-left transition-all"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium text-[var(--color-text-primary)] truncate group-hover:text-[var(--color-accent)] transition-colors">
+                              {snippet.title || 'Untitled'}
+                            </div>
+                            <div className="text-xs text-[var(--color-text-secondary)] font-mono">
+                              {snippet.language}
+                            </div>
+                          </div>
+                          <div className="text-xs text-[var(--color-text-secondary)] opacity-0 group-hover:opacity-100 transition-opacity">
+                            {new Date(snippet.timestamp).toLocaleDateString()}
+                          </div>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-4 py-8 text-center">
+                        <p className="text-sm text-[var(--color-text-secondary)] opacity-60">
+                          No recent snippets
+                        </p>
+                        <p className="text-xs text-[var(--color-text-secondary)] opacity-40 mt-1">
+                          Create your first snippet to get started
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
-          </button>
-        </div>
-
-        {/* Keyboard Shortcuts */}
-        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Keyboard size={12} className="text-slate-600 dark:text-slate-400" />
-            <h3 className="font-semibold text-slate-900 dark:text-white">Keyboard Shortcuts</h3>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-            <div className="flex items-center justify-between p-2 rounded hover:bg-slate-50 dark:hover:bg-slate-700/50">
-              <span className="text-slate-600 dark:text-slate-400">New Snippet</span>
-              <div className="flex items-center gap-1">
-                <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-xs font-mono">
-                  Ctrl
-                </kbd>
-                <span className="text-slate-400">+</span>
-                <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-xs font-mono">
-                  N
-                </kbd>
-              </div>
-            </div>
-            <div className="flex items-center justify-between p-2 rounded hover:bg-slate-50 dark:hover:bg-slate-700/50">
-              <span className="text-slate-600 dark:text-slate-400">Save Snippet</span>
-              <div className="flex items-center gap-1">
-                <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-xs font-mono">
-                  Ctrl
-                </kbd>
-                <span className="text-slate-400">+</span>
-                <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-xs font-mono">
-                  S
-                </kbd>
-              </div>
-            </div>
-            <div className="flex items-center justify-between p-2 rounded hover:bg-slate-50 dark:hover:bg-slate-700/50">
-              <span className="text-slate-600 dark:text-slate-400">Command Palette</span>
-              <div className="flex items-center gap-1">
-                <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-xs font-mono">
-                  Ctrl
-                </kbd>
-                <span className="text-slate-400">+</span>
-                <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-xs font-mono">
-                  P
-                </kbd>
-              </div>
-            </div>
-            <div className="flex items-center justify-between p-2 rounded hover:bg-slate-50 dark:hover:bg-slate-700/50">
-              <span className="text-slate-600 dark:text-slate-400">Toggle Sidebar</span>
-              <div className="flex items-center gap-1">
-                <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-xs font-mono">
-                  Ctrl
-                </kbd>
-                <span className="text-slate-400">+</span>
-                <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-xs font-mono">
-                  B
-                </kbd>
-              </div>
-            </div>
-            <div className="flex items-center justify-between p-2 rounded hover:bg-slate-50 dark:hover:bg-slate-700/50">
-              <span className="text-slate-600 dark:text-slate-400">Copy Snippet</span>
-              <div className="flex items-center gap-1">
-                <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-xs font-mono">
-                  Ctrl
-                </kbd>
-                <span className="text-slate-400">+</span>
-                <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-xs font-mono">
-                  Shift
-                </kbd>
-                <span className="text-slate-400">+</span>
-                <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-xs font-mono">
-                  C
-                </kbd>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Footer Tip */}
-        <p className="mt-8 text-sm text-slate-500 dark:text-slate-600">
-          Tip: Use <Command className="w-3 h-3 inline" /> Ctrl+P to quickly search and open any
-          snippet
-        </p>
+          <SystemStatusFooter snippets={snippets} />
+        </div>
       </div>
-    </div>
+
+      {/* GitHub Profile Modal - Lazy Loaded */}
+      {showGitHubProfile && githubUsername && (
+        <Suspense fallback={<div className="fixed inset-0 z-50 bg-black/20" />}>
+          <GitHubProfile username={githubUsername} onClose={() => setShowGitHubProfile(false)} />
+        </Suspense>
+      )}
+
+      {/* GitHub Settings Modal - Lazy Loaded */}
+      {showGitHubSettings && (
+        <Suspense fallback={<div className="fixed inset-0 z-50 bg-black/20" />}>
+          <GitHubSettings
+            currentUsername={githubUsername}
+            onSave={handleSaveGitHubUsername}
+            onCancel={() => setShowGitHubSettings(false)}
+          />
+        </Suspense>
+      )}
+    </>
   )
 }
 
 WelcomePage.propTypes = {
   onNewSnippet: PropTypes.func.isRequired,
-  onNewProject: PropTypes.func.isRequired
+  onNewProject: PropTypes.func.isRequired,
+  onOpenSettings: PropTypes.func,
+  onSelectSnippet: PropTypes.func,
+  snippets: PropTypes.array
 }
 
-export default WelcomePage
+export default memo(WelcomePage)

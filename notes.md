@@ -1,1 +1,0 @@
-npm install lucide-react

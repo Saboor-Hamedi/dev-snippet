@@ -4,10 +4,15 @@ import SnippetEditor from './SnippetEditor'
 import SettingsPanel from '../SettingsPanel'
 import WelcomePage from '../WelcomePage'
 import Header from '../layout/Header'
+import SystemStatusFooter from '../SystemStatusFooter'
+import SidebarTheme from '../preference/SidebarTheme'
+import { File } from 'lucide-react'
+import useGeneralProp from '../../hook/settings/useGeneralProp.js'
 
 const Workbench = ({
   activeView,
   selectedSnippet,
+  snippets,
   showPreview,
   onTogglePreview,
   onSave,
@@ -15,6 +20,7 @@ const Workbench = ({
   onCancelEditor,
   onDeleteRequest,
   onNewSnippet,
+  onSelectSnippet,
   currentContext,
   onOpenSettings,
   onCloseSettings,
@@ -22,17 +28,33 @@ const Workbench = ({
   onToggleCompact,
   autosaveStatus,
   onAutosave,
-  showToast
+  showToast,
+  hideWelcomePage
 }) => {
   const handleSave = (snippet) => {
     onSave(snippet)
   }
+  const { welcomeBg } = useGeneralProp() // Get welcome background color
 
+  // Toggle sidebarTheme.
+  const [isSidebarThemeOpen, setIsSidebarThemeOpen] = React.useState(false)
   const handleSettingsClick = () => {
     if (onOpenSettings) {
       onOpenSettings()
     }
   }
+  React.useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Check for Ctrl+B (Windows/Linux) or Cmd+B (Mac)
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault() // Prevent default browser behavior (bold text etc.)
+        setIsSidebarThemeOpen((prev) => !prev)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   // Determine header title based on current view
   const getHeaderTitle = () => {
@@ -51,6 +73,8 @@ const Workbench = ({
   }
 
   const renderContent = () => {
+    // SidebarTheme here, it will everhwhere.
+
     // Priority 0: Settings
     if (activeView === 'settings') {
       return <SettingsPanel onClose={onCloseSettings} />
@@ -97,15 +121,58 @@ const Workbench = ({
       )
     }
 
-    // FINAL FALLBACK: Welcome page
-    return <WelcomePage onNewSnippet={onNewSnippet} activeView={activeView} />
+    // FINAL FALLBACK: Welcome page or Empty State
+    if (hideWelcomePage) {
+      return (
+        <div className="h-full w-full flex flex-col " style={{ backgroundColor: welcomeBg }}>
+          {/* Main Content Container - Max width for better reading experience on large screens */}
+          <div className="flex-1 flex justify-center overflow-auto">
+            {/* Original Action Block (Optional: kept as secondary/alternative actions) */}
+            <div className=" p-2 m-auto flex items-center">
+              <div>
+                <h1 className="text-4xl font-light text-[var(--color-text-primary)] mb-1">
+                  Div Snippet
+                </h1>
+                <p className="text-xl text-center text-[var(--color-text-secondary)] font-light opacity-80">
+                  Editing evolved
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer for Empty State */}
+          <SystemStatusFooter snippets={snippets || []} />
+        </div>
+      )
+    }
+
+    return (
+      <WelcomePage
+        onNewSnippet={onNewSnippet}
+        onNewProject={() => {
+          /* TODO: Implement project creation */
+        }}
+        onOpenSettings={onOpenSettings}
+        onSelectSnippet={onSelectSnippet}
+        snippets={snippets || []}
+        activeView={activeView}
+      />
+    )
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <Header title={getHeaderTitle()} isCompact={isCompact} onToggleCompact={onToggleCompact} autosaveStatus={autosaveStatus} />
-      <div className="flex-1 min-h-0 overflow-hidden">
-        {renderContent()}
+    <div className="h-full flex overflow-hidden">
+      {/* This is where the sidebar theme appears.  */}
+      <SidebarTheme isOpen={isSidebarThemeOpen} />
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        <Header
+          title={getHeaderTitle()}
+          isCompact={isCompact}
+          onToggleCompact={onToggleCompact}
+          autosaveStatus={autosaveStatus}
+        />
+        <div className="flex-1 min-h-0 overflow-hidden">{renderContent()}</div>
       </div>
     </div>
   )
@@ -114,14 +181,18 @@ const Workbench = ({
 Workbench.propTypes = {
   activeView: PropTypes.string.isRequired,
   selectedSnippet: PropTypes.object,
+  snippets: PropTypes.array,
   onSave: PropTypes.func.isRequired,
   onCloseSnippet: PropTypes.func.isRequired,
   onCancelEditor: PropTypes.func,
   onDeleteRequest: PropTypes.func.isRequired,
   onNewSnippet: PropTypes.func.isRequired,
-  currentContext: PropTypes.string
-  ,
-  showToast: PropTypes.func
+  onSelectSnippet: PropTypes.func,
+  currentContext: PropTypes.string,
+  onOpenSettings: PropTypes.func,
+  onCloseSettings: PropTypes.func,
+  showToast: PropTypes.func,
+  hideWelcomePage: PropTypes.bool
 }
 
 export default Workbench

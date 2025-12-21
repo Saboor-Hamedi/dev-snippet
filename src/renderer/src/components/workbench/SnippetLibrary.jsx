@@ -1,24 +1,47 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react'
+import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react'
 import { useToast } from '../../hook/useToast'
 import ToastNotification from '../../utils/ToastNotification'
 import { useSnippetData } from '../../hook/useSnippetData'
 import { handleRenameSnippet } from '../../hook/handleRenameSnippet'
-// Components
+// Core components (loaded immediately)
 import Workbench from './Workbench'
-import CommandPalette from '../CommandPalette'
-import RenameModal from '../modal/RenameModal'
-import DeleteModel from '../modal/DeleteModel'
+// Heavy components (lazy loaded on-demand)
+const CommandPalette = lazy(() => import('../CommandPalette'))
+const RenameModal = lazy(() => import('../modal/RenameModal'))
+const DeleteModel = lazy(() => import('../modal/DeleteModel'))
+// SettingsModal removed
+// Hooks
 import { useKeyboardShortcuts } from '../../hook/useKeyboardShortcuts'
+import { useSettings } from '../../hook/useSettingsContext.jsx'
+import useFontSettings from '../../hook/settings/useFontSettings'
+import { useZoomLevel } from '../../hook/useZoomLevel'
+
+// Loading fallback component
+const ModalLoader = () => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
+    <div className="text-sm text-slate-600 dark:text-slate-400">Loading...</div>
+  </div>
+)
+
 const SnippetLibrary = () => {
+  // Apply font settings globally
+  useFontSettings()
+  const [zoomLevel, setZoomLevel] = useZoomLevel()
+
   // 1. Logic & Data (From Hook)
   const { snippets, selectedSnippet, setSelectedSnippet, setSnippets, saveSnippet, deleteItem } =
     useSnippetData()
 
   const [activeView, setActiveView] = useState('snippets')
 
+  // Settings Context
+  const { settings, updateSettings } = useSettings()
+  const hideWelcomePage = settings?.ui?.hideWelcomePage || false
+
   // Modals
   const [isCreatingSnippet, setIsCreatingSnippet] = useState(false)
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
+  // isSettingsOpen removed
   const { toast, showToast } = useToast()
   const [activeSnippet, setActiveSnippet] = useState(null)
   // Autosave status: null | 'pending' | 'saving' | 'saved'
@@ -29,14 +52,14 @@ const SnippetLibrary = () => {
   // Delete Modal State
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, snippetId: null })
 
-
+  // Name prompt is handled by SnippetEditor component
   const [isCompact, setIsCompact] = useState(() => {
     try {
       return localStorage.getItem('compactMode') === 'true'
     } catch (e) {
       return false
     }
-  }) // Compact mode state Header 
+  }) // Compact mode state Header
 
   useEffect(() => {
     try {
@@ -66,6 +89,8 @@ const SnippetLibrary = () => {
     return snippets
   }, [snippets])
 
+  const previousViewStateRef = useRef({ view: 'snippets', isCreating: false, selectedId: null })
+
   // Ensure only items of current view are open
   useEffect(() => {
     // If we're actively creating and still in the editor, don't override selection.
@@ -79,24 +104,47 @@ const SnippetLibrary = () => {
   }, [activeView, activeSnippet, isCreatingSnippet])
 
   const handleOpenSettings = () => {
+    // Save current state for restoration before opening settings
+    if (activeView !== 'settings') {
+      previousViewStateRef.current = {
+        view: activeView,
+        isCreating: isCreatingSnippet,
+        selectedId: selectedSnippet?.id
+      }
+    }
+
     // Ensure we are not in create/editor mode so Workbench won't override the view
     if (isCreatingSnippet) setIsCreatingSnippet(false)
     setActiveView('settings')
   }
 
   const handleCloseSettings = () => {
-    setActiveView('snippets')
+    // Restore previous state
+    const { view, isCreating, selectedId } = previousViewStateRef.current
+
+    if (isCreating) {
+      setIsCreatingSnippet(true)
+    }
+
+    // If we had a specific snippet selected, try to restore selection
+    // (though state might have preserved it)
+    if (selectedId && !isCreating) {
+      const recovered = snippets.find((s) => s.id === selectedId)
+      if (recovered) setSelectedSnippet(recovered)
+    }
+
+    setActiveView(view || 'snippets')
   }
 
   // Helper: create a new draft snippet and select it (extracted to avoid duplication)
   const createDraftSnippet = () => {
     const draft = {
-      id: `draft-${Date.now()}`,
+      id: Date.now().toString(),
       title: '',
       code: '',
-      language: 'md',
+      language: 'markdown', // Force md
       timestamp: Date.now(),
-      type: 'snippet',
+      type: 'snippet', // Keep logic simple
       is_draft: true
     }
     // Keep draft in memory and open editor directly so it isn't accidentally
@@ -108,20 +156,54 @@ const SnippetLibrary = () => {
     setActiveView('editor')
     return draft
   }
-  // Adding focus management for our textarea after search found 
-  useEffect(() =>{
-    if (isCommandPaletteOpen) return
-    setTimeout(() => {
-      try {
-        const ta = document.querySelector('.editor-container textarea')
-        if (ta && typeof ta.focus === 'function') ta.focus()
-      } catch (err) {}
-    }, 100)
-  }, [isCommandPaletteOpen])
+  // Helper: Force focus back to editor
+  const focusEditor = () => {
+    // Only focus if we're in editor view or creating a snippet
+    if (activeView !== 'editor' && !isCreatingSnippet) return
 
-  // Use the keyboard shortcuts hook here 
+    const attemptFocus = () => {
+      try {
+        // Prefer CodeMirror 6 content area
+        const cmContent = document.querySelector('.editor-container .cm-content')
+        if (cmContent && typeof cmContent.focus === 'function') {
+          cmContent.focus()
+          return true
+        }
+
+        // Fallback to standard textarea
+        const ta = document.querySelector('.editor-container textarea')
+        if (ta && typeof ta.focus === 'function') {
+          ta.focus()
+          return true
+        }
+        return false
+      } catch (err) {
+        return false
+      }
+    }
+
+    // Multiple attempts to ensure focus is captured after UI transitions
+    setTimeout(attemptFocus, 50)
+    setTimeout(attemptFocus, 150)
+    setTimeout(attemptFocus, 400)
+  }
+
+  // Focus management effect
+  useEffect(() => {
+    // Re-focus when palette, settings, or modals close
+    if (
+      !isCommandPaletteOpen &&
+      activeView !== 'settings' &&
+      !renameModal.isOpen &&
+      !deleteModal.isOpen
+    ) {
+      focusEditor()
+    }
+  }, [isCommandPaletteOpen, activeView, renameModal.isOpen, deleteModal.isOpen, isCreatingSnippet])
+
+  // Use the keyboard shortcuts hook here
   useKeyboardShortcuts({
-    onEscapeWithContext: () => {
+    onEscapeMenusOnly: () => {
       // Close ephemeral UI first (modals, palette). Return true if
       // we handled the event so other listeners (like editor) don't
       // also close the editor.
@@ -138,18 +220,22 @@ const SnippetLibrary = () => {
         setIsCommandPaletteOpen(false)
         handled = true
       }
-      if (isCreatingSnippet) {
-        setIsCreatingSnippet(false)
+      if (isCreatingSnippet || activeView === 'settings') {
+        if (isCreatingSnippet) setIsCreatingSnippet(false)
+        if (activeView === 'settings') handleCloseSettings()
         handled = true
       }
       return handled
     },
-    onEscape: () => {
-      // Fallback escape: if nothing contextual is open, toggle selection/view state
-      if (renameModal.isOpen) setRenameModal({ ...renameModal, isOpen: false })
-      if (deleteModal.isOpen) setDeleteModal({ isOpen: false, snippetId: null })
-      if (isCreatingSnippet) setIsCreatingSnippet(false)
-      if (isCommandPaletteOpen) setIsCommandPaletteOpen(false)
+    onCloseEditor: () => {
+      // Ctrl+Shift+W: Close editor and go to appropriate view
+      if (isCreatingSnippet) {
+        setIsCreatingSnippet(false)
+        setActiveView(hideWelcomePage ? 'snippets' : 'welcome')
+      } else if (activeView === 'editor' || selectedSnippet) {
+        setSelectedSnippet(null)
+        setActiveView('snippets')
+      }
     },
     onToggleCompact: () => {
       setIsCompact((prev) => !prev)
@@ -165,11 +251,22 @@ const SnippetLibrary = () => {
     onGoToWelcome: () => {
       setSelectedSnippet(null)
       setIsCreatingSnippet(false)
-      setActiveView('welcome')
+      setIsCreatingSnippet(false)
+      setActiveView('snippets')
     },
 
+    //  Don open command palette if in settings view
     onToggleCommandPalette: () => {
+      if (activeView === 'settings') return
       setIsCommandPaletteOpen((prev) => !prev)
+    },
+
+    onToggleSettings: () => {
+      if (activeView === 'settings') {
+        handleCloseSettings()
+      } else {
+        handleOpenSettings()
+      }
     },
 
     onCopyToClipboard: () => {
@@ -186,13 +283,13 @@ const SnippetLibrary = () => {
     },
 
     onRenameSnippet: () => {
-      if (selectedSnippet && activeView === 'snippets') {
-        setRenameModal({ isOpen: true, item: selectedSnippet })
+      if (selectedSnippet && (activeView === 'snippets' || activeView === 'editor')) {
+        handleRenameOrSave() //  call the new unified handler
       }
     },
     onDeleteSnippet: () => {
-      if (activeView === 'snippets' && selectedSnippet) {
-        setDeleteModal({ isOpen: true, snippetId: selectedSnippet.id }) // ✅ show modal first
+      if ((activeView === 'snippets' || activeView === 'editor') && selectedSnippet) {
+        setDeleteModal({ isOpen: true, snippetId: selectedSnippet.id })
       }
     },
     // You can also keep the Ctrl+S save if you want
@@ -203,7 +300,7 @@ const SnippetLibrary = () => {
         // viewing an existing snippet in the editor), dispatch 'force-save'
         // so the editor flushes its local state and performs the change
         // detection. This avoids saving from the parent when nothing changed.
-        const editorPresent = !!document.querySelector('.editor-container textarea')
+        const editorPresent = !!document.querySelector('.editor-container .cm-editor')
         if (editorPresent || activeView === 'editor' || isCreatingSnippet) {
           try {
             window.__forceSave = true
@@ -223,41 +320,36 @@ const SnippetLibrary = () => {
           return
         }
         saveSnippet(selectedSnippet)
+        focusEditor()
       }
+    },
+    onZoomIn: () => {
+      setZoomLevel((prev) => prev + 0.1)
+    },
+    onZoomOut: () => {
+      setZoomLevel((prev) => prev - 0.1)
+    },
+    onZoomReset: () => {
+      setZoomLevel(1.0)
     }
   })
 
-  // Note: save-toasts are emitted by `useSnippetData.saveSnippet` to avoid duplicates.
-
-  // 3. Global Actions (e.g. Opening a file from OS)
-  const handleOpenFile = async () => {
-    try {
-      if (window.api?.openFile) {
-        const path = await window.api.openFile()
-        if (path) {
-          const content = await window.api.readFile(path)
-          const fileName = path.split('\\').pop().split('/').pop()
-          const extension = fileName.split('.').pop()?.toLowerCase()
-
-          const newEntry = {
-            id: Date.now().toString(),
-            title: fileName,
-            code: content,
-            language: extension || 'text',
-            timestamp: Date.now(),
-            type: 'snippet'
-          }
-
-          // Use the hook to save it
-          await saveSnippet(newEntry)
-        }
-      }
-    } catch (error) {
-      showToast('❌ Failed to open file')
+  // Handle rename - only allow if snippet has a title (is saved)
+  const handleRenameOrSave = async () => {
+    if (!selectedSnippet?.title || !selectedSnippet.title.trim()) {
+      showToast(' Please save the snippet first before renaming', 'info')
+      return
     }
+
+    // Display the rename modal
+    setRenameModal({ isOpen: true, item: selectedSnippet })
   }
-
-
+  function renameSnippet(oldId, updatedItem) {
+    setSnippets((prev) => [
+      ...prev.filter((snippet) => snippet.id !== oldId), // Remove old draft
+      updatedItem // Add updated snippet with new id
+    ])
+  }
   // 5. Rename Logic
   const handleRename = async (newName) => {
     await handleRenameSnippet({
@@ -266,10 +358,12 @@ const SnippetLibrary = () => {
       setSelectedSnippet,
       setRenameModal,
       setIsCreatingSnippet,
+      renameSnippet,
       showToast
     })
+    focusEditor()
   }
- 
+
   const handleDeleteSnippet = async (id) => {
     try {
       // Cancel any pending autosave for this snippet
@@ -305,7 +399,7 @@ const SnippetLibrary = () => {
         }
       }
     } catch (error) {
-      console.error('Failed to delete item:', error)
+      // Delete failed silently
     }
   }
 
@@ -314,7 +408,6 @@ const SnippetLibrary = () => {
       <ToastNotification toast={toast} />
       {/* Main Workbench */}
       <div className="flex-1 flex flex-col items-stretch min-h-0 overflow-hidden bg-slate-50 dark:bg-slate-900 transition-colors duration-200">
-      
         <Workbench
           activeView={isCreatingSnippet ? 'editor' : activeView}
           currentContext={activeView}
@@ -327,35 +420,36 @@ const SnippetLibrary = () => {
           showPreview={showPreview}
           onTogglePreview={() => setShowPreview((s) => !s)}
           showToast={showToast}
+          hideWelcomePage={hideWelcomePage}
           onSave={async (item) => {
-                  try {
-                    const wasForce = !!window.__forceSave
-                    if (!wasForce) setAutosaveStatus('saving')
-                    await saveSnippet(item)
-                    setActiveSnippet(item)
-                    // If we were creating a new snippet, switch to viewing/editing it
-                    if (isCreatingSnippet) {
-                      setSelectedSnippet(item)
-                      setIsCreatingSnippet(false)
-                    }
-                    // If this was a forced save, editor already set 'saved' optimistically.
-                    if (wasForce) {
-                      try {
-                        window.__forceSave = false
-                      } catch {}
-                      setAutosaveStatus('saved')
-                      setTimeout(() => setAutosaveStatus(null), 1200)
-                    } else {
-                      setAutosaveStatus('saved')
-                      setTimeout(() => setAutosaveStatus(null), 1200)
-                    }
-                  } catch (err) {
-                    try {
-                      window.__forceSave = false
-                    } catch {}
-                    setAutosaveStatus(null)
-                  }
-            }}
+            try {
+              const wasForce = !!window.__forceSave
+              if (!wasForce) setAutosaveStatus('saving')
+              await saveSnippet(item)
+              setActiveSnippet(item)
+              // If we were creating a new snippet, switch to viewing/editing it
+              if (isCreatingSnippet) {
+                setSelectedSnippet(item)
+                setIsCreatingSnippet(false)
+              }
+              // If this was a forced save, editor already set 'saved' optimistically.
+              if (wasForce) {
+                try {
+                  window.__forceSave = false
+                } catch {}
+                setAutosaveStatus('saved')
+                setTimeout(() => setAutosaveStatus(null), 1200)
+              } else {
+                setAutosaveStatus('saved')
+                setTimeout(() => setAutosaveStatus(null), 1200)
+              }
+            } catch (err) {
+              try {
+                window.__forceSave = false
+              } catch {}
+              setAutosaveStatus(null)
+            }
+          }}
           autosaveStatus={autosaveStatus}
           onAutosave={(s) => {
             setAutosaveStatus(s)
@@ -365,6 +459,10 @@ const SnippetLibrary = () => {
           onNewSnippet={() => {
             setIsCreatingSnippet(true)
             createDraftSnippet()
+          }}
+          onSelectSnippet={(snippet) => {
+            setSelectedSnippet(snippet)
+            setActiveView('editor')
           }}
           onOpenSettings={handleOpenSettings}
           onCloseSettings={handleCloseSettings}
@@ -378,41 +476,46 @@ const SnippetLibrary = () => {
         />
       </div>
 
-      {/* Rename Modal Component */}
-      <RenameModal
-        isOpen={renameModal.isOpen}
-        item={renameModal.item}
-        onClose={() => setRenameModal({ isOpen: false, item: null })}
-        onRename={handleRename}
-      />
+      {/* Rename Modal - Lazy Loaded */}
+      <Suspense fallback={<ModalLoader />}>
+        <RenameModal
+          isOpen={renameModal.isOpen}
+          item={renameModal.item}
+          onClose={() => setRenameModal({ isOpen: false, item: null })}
+          onRename={handleRename}
+        />
+      </Suspense>
 
-      {/* Delete Modal  */}
+      {/* Delete Modal - Lazy Loaded */}
+      <Suspense fallback={<ModalLoader />}>
+        <DeleteModel
+          isOpen={deleteModal.isOpen}
+          onClose={() => setDeleteModal({ isOpen: false, snippetId: null })}
+          onConfirm={async () => {
+            await handleDeleteSnippet(deleteModal.snippetId) // ✅ triggers  full logic
+            setDeleteModal({ isOpen: false, snippetId: null })
+          }}
+          snippetTitle={deleteModal.title}
+        />
+      </Suspense>
 
-      <DeleteModel
-        isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal({ isOpen: false, snippetId: null })}
-        onConfirm={async () => {
-          await handleDeleteSnippet(deleteModal.snippetId) // ✅ triggers  full logic
-          setDeleteModal({ isOpen: false, snippetId: null })
-        }}
-        snippetTitle={deleteModal.title}
-      />
-
-      {/* Command Palette */}
-      <CommandPalette
-        isOpen={isCommandPaletteOpen}
-        onClose={() => setIsCommandPaletteOpen(false)}
-        snippets={snippets} // Pass raw snippets array directly
-        onSelect={(item) => {
-          // If user selects from search/palette, cancel create-mode so the
-          // selected snippet replaces any open draft/editor.
-          setSelectedSnippet(item)
-          setActiveSnippet(item)
-          setIsCommandPaletteOpen(false)
-          setIsCreatingSnippet(false)
-          setActiveView('snippets')
-        }}
-      />
+      {/* Command Palette - Lazy Loaded */}
+      <Suspense fallback={<ModalLoader />}>
+        <CommandPalette
+          isOpen={isCommandPaletteOpen}
+          onClose={() => setIsCommandPaletteOpen(false)}
+          snippets={snippets} // Pass raw snippets array directly
+          onSelect={(item) => {
+            // If user selects from search/palette, cancel create-mode so the
+            // selected snippet replaces any open draft/editor.
+            setSelectedSnippet(item)
+            setActiveSnippet(item)
+            setIsCommandPaletteOpen(false)
+            setIsCreatingSnippet(false)
+            setActiveView('snippets')
+          }}
+        />
+      </Suspense>
     </div>
   )
 }

@@ -1,26 +1,9 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect } from 'react'
 import SnippetLibrary from './components/workbench/SnippetLibrary'
-import { useTheme } from './hook/useTheme'
-import { useFontSettings } from './hook/useFontSettings'
+import { SettingsProvider } from './hook/useSettingsContext.jsx'
+import ErrorBoundary from './components/ErrorBoundary'
 
 function App() {
-  const { setTheme } = useTheme()
-  useFontSettings()
-  useEffect(() => {
-    const load = async () => {
-      try {
-        if (window.api?.getTheme) {
-          const row = await window.api.getTheme()
-          if (row && row.colors) {
-            const colors = JSON.parse(row.colors)
-            setTheme(row.name, colors)
-          }
-        }
-      } catch {}
-    }
-    load()
-  }, [])
-
   // Add a simple keyboard shortcut to restore the default window size
   // (Ctrl/Cmd + Shift + R). This is lightweight and does not affect
   // runtime performance.
@@ -38,7 +21,13 @@ function App() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  return <SnippetLibrary />
+  return (
+    <ErrorBoundary>
+      <SettingsProvider>
+        <SnippetLibrary />
+      </SettingsProvider>
+    </ErrorBoundary>
+  )
 }
 
 export default App
