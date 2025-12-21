@@ -24,7 +24,9 @@ const buildExtensions = async (options, handlers = {}) => {
     language = 'markdown',
     isLargeFile = false, // NEW: Flag for large files,
     cursorBlinking = true,
-    cursorBlinkingSpeed = 500
+    cursorBlinkingSpeed = 500,
+    cursorWidth = 2,
+    cursorShape = 'bar'
   } = options
   const { liveZoomRef, applyZoomToDOM, debouncedSaveZoom, setStoredZoomLevel } = handlers
 
@@ -156,7 +158,7 @@ const buildExtensions = async (options, handlers = {}) => {
   }
 
   // THEME & PREMIUM FEEL
-  exts.push(buildTheme(EditorView, { isDark, caretColor, fontSize }))
+  exts.push(buildTheme(EditorView, { isDark, caretColor, fontSize, cursorWidth, cursorShape }))
 
   // High-performance typing animations (skip for large files)
   if (!isLargeFile) {

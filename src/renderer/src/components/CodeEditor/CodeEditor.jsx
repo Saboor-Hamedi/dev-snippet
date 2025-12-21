@@ -91,40 +91,12 @@ const CodeEditor = ({
 
   // Avoid calling `requestMeasure` during render — move to effect below
 
-  // 3. Dynamic Editor Attributes (The fix for styles not applying)
+  // 3. Dynamic Editor Attributes (Source of Truth)
   const attributesExtension = useMemo(() => {
     return EditorView.editorAttributes.of({
-      'data-caret-shape': cursorShape,
-      'data-cursor-blinking': cursorBlinking ? 'true' : 'false',
-      style: `
-        --caret-width: ${cursorWidth}px;
-        --caret-color: ${cursorColor};
-        --cursor-blinking-speed: ${cursorBlinkingSpeed}ms;
-        --selection-background: ${cursorSelectionBg};
-        --gutter-bg-color: ${gutterBgColor};
-        --gutter-border-color: ${gutterBorderColor};
-        --gutter-border-width: ${gutterBorderWidth}px;
-        --active-line-border-width: ${cursorActiveLineBorder}px;
-        --active-line-gutter-border-width: ${cursorActiveLineGutterBorder}px;
-        --active-line-bg: ${cursorActiveLineBg};
-        --shadow-box-bg: ${cursorShadowBoxColor};
-      `
+      class: 'premium-editor-engine'
     })
-  }, [
-    cursorShape,
-    cursorBlinking,
-    cursorBlinkingSpeed,
-    cursorWidth,
-    cursorColor,
-    cursorSelectionBg,
-    gutterBgColor,
-    gutterBorderColor,
-    gutterBorderWidth,
-    cursorActiveLineBorder,
-    cursorActiveLineGutterBorder,
-    cursorActiveLineBg,
-    cursorShadowBoxColor
-  ])
+  }, [])
 
   // Merge extensions
   const allExtensions = useMemo(
@@ -161,13 +133,24 @@ const CodeEditor = ({
     return () => clearTimeout(handler)
   }, [value, onLargeFileChange])
 
-  // 4. Load Full Extensions (Lazy + Progressive)
+  /**
+   * 🚀 THE PERFORMANCE ENGINE (The "Extension Freezing" Logic)
+   *
+   * In standard React-CodeMirror, changing any prop usually causes the editor to
+   * "re-evaluate" its entire brain. For 60fps typing, we can't let that happen.
+   *
+   * This Effect only fires when 'Critical' settings change (like wordWrap or DarkMode).
+   * It skips running during normal typing or local state changes.
+   */
   useEffect(() => {
     let mounted = true
     let timeoutId = null
 
-    const load = async () => {
+    const loadFullEditorEngine = async () => {
+      console.log('🔄 Reloading Editor Engine. Blinking:', cursorBlinking)
       try {
+        // Build the configuration object - Only shared once per 'Hard Refresh'
+        const isBlinking = Boolean(cursorBlinking) // Explicit cast
         const options = {
           EditorView,
           isDark:
@@ -176,14 +159,17 @@ const CodeEditor = ({
                 document.documentElement.getAttribute('data-theme') === 'dark')) ||
             false,
           caretColor: cursorColor,
+          cursorWidth,
+          cursorShape,
           fontSize: 'var(--editor-font-size, 14px)',
-          cursorBlinking, // Pass blinking state
-          cursorBlinkingSpeed, // Pass blinking speed
-          wordWrap: isLargeFile ? 'off' : wordWrap, // Disable wrapping for large files
-          language: isLargeFile ? 'plaintext' : 'markdown', // Plain text for large files
-          isLargeFile // Pass flag to buildExtensions
+          cursorBlinking: isBlinking,
+          cursorBlinkingSpeed,
+          wordWrap: isLargeFile ? 'off' : wordWrap,
+          language: isLargeFile ? 'plaintext' : 'markdown',
+          isLargeFile
         }
 
+        // Call our specialized extension builder
         const exts = await buildExtensions(options, {
           debouncedSaveZoom
         })
@@ -191,18 +177,23 @@ const CodeEditor = ({
         if (mounted) {
           setCmExtensions(exts)
           setExtensionsLoaded(true)
+          console.log('💎 Editor engine synchronized with new settings.')
         }
-      } catch (e) {
-        console.error(e)
+      } catch (err) {
+        console.error('❌ Failed to load editor engine:', err)
       }
     }
 
-    // Lazy load: Start with base extensions, load full set after idle
+    /**
+     * PROGRESSIVE LOADING:
+     * We start with basic text rendering first, then "Lazy Load" the heavy
+     * Markdown parser and Premium features 150ms later. This keeps the initial
+     * app launch feel instant!
+     */
     if (!extensionsLoaded) {
-      timeoutId = setTimeout(load, 150)
+      timeoutId = setTimeout(loadFullEditorEngine, 150)
     } else {
-      // Already loaded, just update if dependencies change
-      load()
+      loadFullEditorEngine()
     }
 
     return () => {
@@ -210,13 +201,19 @@ const CodeEditor = ({
       if (timeoutId) clearTimeout(timeoutId)
     }
   }, [
+    // WE STRATEGICALLY REMOVE 'value' FROM HERE!
+    // This is how we achieve the VS Code feel. Re-building the engine
+    // on every keystroke (value change) is what causes the lag.
     wordWrap,
     cursorWidth,
+    cursorShape, // RE-ADD: Essential for theme rebuilds
     cursorActiveLineBg,
     cursorShadowBoxColor,
     cursorColor,
+    // 🚀 CRITICAL: We include blinking settings here to ensure the
+    // internal CM blink rate is reset to 0 when toggled.
     cursorBlinking,
-    cursorBlinkingSpeed, // Add dependency
+    cursorBlinkingSpeed,
     gutterBgColor,
     debouncedSaveZoom,
     isLargeFile,
@@ -224,7 +221,25 @@ const CodeEditor = ({
   ])
 
   return (
-    <div className="cm-editor-wrapper h-full" ref={editorDomRef}>
+    <div
+      className="cm-editor-container h-full relative"
+      data-cursor-blinking={cursorBlinking.toString()}
+      data-caret-shape={cursorShape}
+      style={{
+        '--caret-width': `${cursorWidth}px`,
+        '--caret-color': cursorColor,
+        '--cursor-blinking-speed': `${cursorBlinkingSpeed}ms`,
+        '--selection-background': cursorSelectionBg,
+        '--active-line-border-width': `${cursorActiveLineBorder}px`,
+        '--active-line-gutter-border-width': `${cursorActiveLineGutterBorder}px`,
+        '--active-line-bg': cursorActiveLineBg,
+        '--shadow-box-bg': cursorShadowBoxColor,
+        '--gutter-bg-color': gutterBgColor,
+        '--gutter-border-color': gutterBorderColor,
+        '--gutter-border-width': `${gutterBorderWidth}px`
+      }}
+      ref={editorDomRef}
+    >
       <CodeMirror
         key={`cm-${cursorBlinking}-${cursorBlinkingSpeed}`}
         value={value || ''}

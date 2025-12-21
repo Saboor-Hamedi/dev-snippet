@@ -29,9 +29,16 @@ export const useCursorProp = () => {
   const cursorColor = getSetting('cursor.cursorColor') ?? DEFAULT_CURSOR_COLOR
   const rawCursorShape = getSetting('cursor.cursorShape') || 'bar'
   const cursorShape = ALLOWED_CURSOR_SHAPES.includes(rawCursorShape) ? rawCursorShape : 'bar'
-  const cursorBlinking = getSetting('cursor.cursorBlinking') ?? true
+  const rawBlinking = getSetting('cursor.cursorBlinking')
+  // Force a clean boolean to prevent "string trap" logic bugs
+  const cursorBlinking = rawBlinking !== false && rawBlinking !== 'false' && rawBlinking !== 0
+
   const rawBlinkingSpeed = getSetting('cursor.cursorBlinkingSpeed') ?? DEFAULT_BLINKING_SPEED
-  const cursorBlinkingSpeed = clamp(rawBlinkingSpeed, MIN_BLINKING_SPEED, MAX_BLINKING_SPEED)
+  const cursorBlinkingSpeed = clamp(
+    Number(rawBlinkingSpeed),
+    MIN_BLINKING_SPEED,
+    MAX_BLINKING_SPEED
+  )
   const cursorSelectionBg = getSetting('cursor.cursorSelectionBg') ?? '#58a6ff33'
   const cursorActiveLineBg = getSetting('cursor.cursorActiveLineBg') ?? DEFAULT_ACTIVE_LINE_BG
   const rawActiveLineBorder =

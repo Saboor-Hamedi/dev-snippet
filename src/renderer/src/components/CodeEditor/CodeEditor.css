@@ -27,17 +27,18 @@
   }
 }
 
-/* Base cursor style for blinking */
-.cm-cursor,
-.cm-cursor-primary,
-.cm-cursor-secondary {
-  transition: opacity 0.1s ease-in-out;
+/* Cursor Blinking Logic - GPU Optimized */
+.cm-editor-container[data-cursor-blinking='true'] .cm-cursor {
+  animation: cm-cursor-blink var(--cursor-blinking-speed, 500ms) step-end infinite !important;
 }
 
-[data-cursor-blinking='true'] .cm-cursor,
-[data-cursor-blinking='true'] .cm-cursor-primary,
-[data-cursor-blinking='true'] .cm-cursor-secondary {
-  animation: cm-cursor-blink var(--cursor-blinking-speed, 500ms) step-end infinite !important;
+/* Force Stop Blinking */
+.cm-editor-container[data-cursor-blinking='false'] .cm-cursor,
+.cm-editor-container[data-cursor-blinking='false'] .cm-cursor-primary,
+.cm-editor-container[data-cursor-blinking='false'] .cm-cursor-secondary {
+  animation: none !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 /* VS CODE STYLE: Active Line Background (Base) */
 .cm-editor .cm-activeLine {
@@ -119,16 +120,28 @@
   font-size: inherit !important;
 }
 
-/* Stabilize cursor rendering (NO GPU LAYERS) */
+/* Stabilize cursor rendering (GPU HARDWARE ACCELERATED) */
+/* This is the VS Code 'secret sauce' - offloading cursor moves to the GPU */
 .cm-cursor,
 .cm-cursor-primary,
 .cm-cursor-secondary {
-  will-change: auto !important;
-  transform: none !important;
-  backface-visibility: visible !important;
+  will-change: transform, opacity !important;
+  transform: translateZ(0) !important; /* Move to GPU layer */
+  backface-visibility: hidden !important;
+  perspective: 1000 !important;
+}
+
+/* GPU Accelerated Active Line */
+/* Sliding a 'sticker' is faster than redrawing pixels on every keystroke */
+.cm-activeLine,
+.cm-activeLineGutter {
+  will-change: transform, background-color !important;
+  transform: translateZ(0) !important;
+  backface-visibility: hidden !important;
 }
 
 /* Smooth but stable scroller */
 .cm-scroller {
-  scroll-behavior: auto !important; /* Disable smooth scroll to prevent sync issues */
+  scroll-behavior: auto !important; /* Disable browser 'smooth scroll' which lags parser sync */
+  will-change: scroll-position !important;
 }
