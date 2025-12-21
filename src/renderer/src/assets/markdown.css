@@ -584,6 +584,64 @@
   animation: fadeIn 0.3s ease;
 }
 
+/* Tags and Mentions styling in live preview */
+.markdown-body .preview-tag,
+.markdown-body .preview-mention {
+  display: inline-block !important;
+  padding: 0px 6px !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: #d1d5db !important; /* gray-300 */
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 4px !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  margin: 0 2px !important;
+  cursor: default !important;
+  transition: all 0.15s ease !important;
+  user-select: none !important;
+  font-family: var(--editor-font-family, monospace) !important;
+  vertical-align: baseline !important;
+  line-height: 1.4 !important;
+}
+
+.markdown-body .preview-tag:hover,
+.markdown-body .preview-mention:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Specific style for mentions - keep it subtle */
+.markdown-body .preview-mention {
+  border-style: dashed !important;
+  background-color: rgba(88, 166, 255, 0.03) !important;
+}
+
+/* QuickLinks [[Link]] styling - Human readable, sleek design */
+.markdown-body .preview-quicklink {
+  color: #58a6ff !important;
+  text-decoration: none !important;
+  background-color: rgba(88, 166, 255, 0.08) !important;
+  padding: 1px 6px !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  font-weight: 400 !important;
+  font-size: 11px !important;
+  border: 1px solid rgba(88, 166, 255, 0.15) !important;
+  transition: all 0.15s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  vertical-align: middle !important;
+  margin: 0 1px !important;
+}
+
+.markdown-body .preview-quicklink:hover {
+  background-color: rgba(88, 166, 255, 0.2) !important;
+  color: #79c0ff !important;
+  border-color: #58a6ff !important;
+  transform: translateY(-0.5px);
+}
+
 /* ===== FOCUS STATES ===== */
 .markdown-body :focus-visible {
   outline: 2px solid #0366d6;

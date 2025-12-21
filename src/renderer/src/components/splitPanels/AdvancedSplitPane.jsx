@@ -227,10 +227,10 @@ const AdvancedSplitPane = ({
           {/* Resize knob */}
           <div className="shrink-0 relative flex items-center justify-center">
             <div
-              className="w-8 h-12 flex items-center justify-center 
-             bg-slate-700/50 hover:bg-slate-600/70 
+              className="w-4 h-6 flex items-center justify-center 
+             bg-slate-700/30 hover:bg-slate-700/60 
              transition-all duration-200 
-             rounded-md p-2 cursor-col-resize select-none"
+             rounded-[4px] cursor-col-resize select-none border border-white/5"
               role="separator"
               aria-orientation="vertical"
               onMouseDown={startDrag}
@@ -243,8 +243,8 @@ const AdvancedSplitPane = ({
               }}
             >
               <GripVertical
-                className="text-slate-600 dark:text-slate-300 pointer-events-none"
-                size={16}
+                className="text-slate-500 dark:text-slate-400 pointer-events-none"
+                size={12}
               />
             </div>
           </div>

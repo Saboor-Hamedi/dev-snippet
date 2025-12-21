@@ -91,6 +91,34 @@ const SnippetLibrary = () => {
 
   const previousViewStateRef = useRef({ view: 'snippets', isCreating: false, selectedId: null })
 
+  /**
+   * Internal Navigation Listener
+   * Listens for 'app:open-snippet' events (dispatched by QuickLinks in LivePreview).
+   * This allows wiki-style linking [[title]] between different snippets.
+   */
+  useEffect(() => {
+    const handleOpenRequest = (e) => {
+      const { title } = e.detail
+      if (!title) return
+
+      // Find snippet by title (case-insensitive, trimmed)
+      const target = snippets.find(
+        (s) => (s.title || '').toLowerCase().trim() === title.toLowerCase().trim()
+      )
+
+      if (target) {
+        setSelectedSnippet(target)
+        setActiveSnippet(target)
+        setActiveView('editor') // Open in editor mode
+      } else {
+        showToast(`Snippet "${title}" not found`, 'info')
+      }
+    }
+
+    window.addEventListener('app:open-snippet', handleOpenRequest)
+    return () => window.removeEventListener('app:open-snippet', handleOpenRequest)
+  }, [snippets, setSelectedSnippet, showToast])
+
   // Ensure only items of current view are open
   useEffect(() => {
     // If we're actively creating and still in the editor, don't override selection.

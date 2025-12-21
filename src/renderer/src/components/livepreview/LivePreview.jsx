@@ -5,7 +5,120 @@ import Admonition from '../admonition/Admonition'
 
 // ... existing imports
 
-// Custom renderer for blockquotes/divs handled by remarkAlert
+/**
+ * Component for rendering semantic tags (#tag) and mentions (@name).
+ */
+const Tag = ({ children, type }) => (
+  <span className={type === 'mention' ? 'preview-mention' : 'preview-tag'}>{children}</span>
+)
+
+/**
+ * Component for rendering internal wiki-style links [[Snippet Title]].
+ * Dispatches a 'app:open-snippet' event when clicked.
+ */
+const QuickLink = ({ title }) => {
+  const handleClick = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    // Dispatch custom event to be caught by SnippetLibrary
+    window.dispatchEvent(new CustomEvent('app:open-snippet', { detail: { title } }))
+  }
+
+  return (
+    <span className="preview-quicklink" onClick={handleClick} title={`Jump to ${title}`}>
+      {title}
+    </span>
+  )
+}
+
+/**
+ * Splits a text string into an array of strings and React components
+ * (Tags, Mentions, or QuickLinks) based on regex patterns.
+ *
+ * @param {string} text - The text to process.
+ * @returns {Array|string} - An array containing string parts and React components.
+ */
+const processTextWithTags = (text) => {
+  if (typeof text !== 'string') return text
+
+  // Match #tag, @mention, or [[Snippet Title]]
+  // Grouping ensures the split() includes the matching parts in the result array
+  const splitRegex = /([#@][a-zA-Z0-9_-]+|\[\[.*?\]\])/g
+  const parts = text.split(splitRegex)
+
+  // Exact match patterns for identifying which type a part is
+  const tagRegex = /^[#@][a-zA-Z0-9_-]+$/
+  const wikiLinkRegex = /^\[\[(.*?)\]\]$/
+
+  return parts.map((part, i) => {
+    // Check for Wiki Link [[title]]
+    const wikiMatch = part.match(wikiLinkRegex)
+    if (wikiMatch) {
+      const title = wikiMatch[1]
+      return <QuickLink key={i} title={title} />
+    }
+
+    // Check for standard #tag or @mention
+    if (tagRegex.test(part)) {
+      const type = part.startsWith('@') ? 'mention' : 'tag'
+      return (
+        <Tag key={i} type={type}>
+          {part}
+        </Tag>
+      )
+    }
+    return part
+  })
+}
+
+/**
+ * Recursively walks down the React component tree to find raw strings
+ * and process them for tags/mentions/links. This allows tags to work
+ * inside bold, italic, or even nested elements.
+ *
+ * @param {React.ReactNode} children - The children to walk.
+ * @returns {React.ReactNode} - The processed children.
+ */
+const recursiveProcessTags = (children) => {
+  return React.Children.map(children, (child) => {
+    if (typeof child === 'string') {
+      return processTextWithTags(child)
+    }
+    if (React.isValidElement(child) && child.props.children) {
+      return React.cloneElement(child, {
+        children: recursiveProcessTags(child.props.children)
+      })
+    }
+    return child
+  })
+}
+
+/**
+ * Custom renderer for Paragraphs to support tag highlighting.
+ */
+const ParagraphRenderer = ({ children }) => {
+  return <p>{recursiveProcessTags(children)}</p>
+}
+
+/**
+ * Custom renderer for List Items to support tag highlighting.
+ */
+const ListRenderer = ({ children }) => {
+  return <li>{recursiveProcessTags(children)}</li>
+}
+
+/**
+ * Custom renderer for Headers (H1-H6) to support tag highlighting.
+ */
+const HeadingRenderer = ({ level, children }) => {
+  const TagName = `h${level}`
+  return <TagName>{recursiveProcessTags(children)}</TagName>
+}
+
+/**
+ * Custom renderer for Blockquotes.
+ * Integrates with remark-github-blockquote-alert for Admonitions.
+ */
 const BlockquoteRenderer = ({ className, children, ...props }) => {
   if (className?.includes('markdown-alert')) {
     const type = className.replace('markdown-alert markdown-alert-', '')
@@ -172,7 +285,15 @@ const LivePreview = React.memo(({ code = '', language = 'markdown' }) => {
         return <button {...props} onClick={undefined} />
       },
       code: CodeBlockRenderer,
-      blockquote: BlockquoteRenderer
+      blockquote: BlockquoteRenderer,
+      p: ParagraphRenderer,
+      li: ListRenderer,
+      h1: (props) => <HeadingRenderer level={1} {...props} />,
+      h2: (props) => <HeadingRenderer level={2} {...props} />,
+      h3: (props) => <HeadingRenderer level={3} {...props} />,
+      h4: (props) => <HeadingRenderer level={4} {...props} />,
+      h5: (props) => <HeadingRenderer level={5} {...props} />,
+      h6: (props) => <HeadingRenderer level={6} {...props} />
     }),
     []
   )
