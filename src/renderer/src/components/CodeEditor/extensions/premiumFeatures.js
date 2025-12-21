@@ -6,11 +6,6 @@ import { ViewPlugin, EditorView } from '@codemirror/view'
  * Replaces the old "smoothCursor" with a standard performant implementation.
  */
 export const cursorStyles = EditorView.theme({
-  /* 1. VISIBILITY (Blinking) */
-  '&[data-cursor-blinking="true"] .cm-cursor': {
-    animation: 'cm-cursor-blink var(--cursor-blinking-speed, 500ms) step-end infinite !important'
-  },
-
   /* 2. SHAPE (Style) */
   /* Bar Style - uses border-left */
   '&[data-caret-shape="bar"] .cm-cursor': {
@@ -36,12 +31,6 @@ export const cursorStyles = EditorView.theme({
     borderLeft: 'none !important',
     borderBottom: 'var(--caret-width, 2px) solid var(--caret-color) !important',
     marginBottom: '-2px'
-  },
-
-  /* Animation Keyframes */
-  '@keyframes cm-cursor-blink': {
-    '0%': { opacity: 1 },
-    '50%': { opacity: 0 }
   }
 })
 
@@ -58,7 +47,7 @@ export const beautySelection = EditorView.theme({
     borderRadius: '2px'
   },
   '.cm-activeLine': {
-    backgroundColor: 'rgba(88, 166, 255, 0.03) !important',
+    backgroundColor: 'var(--active-line-bg) !important',
     borderLeftWidth: 'var(--active-line-border-width, 0px) !important',
     borderLeftColor: 'var(--caret-color) !important',
     borderLeftStyle: 'solid !important',

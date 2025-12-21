@@ -10,7 +10,8 @@ const buildExtensions = async (options, handlers = {}) => {
     wordWrap = 'on',
     language = 'markdown',
     isLargeFile = false, // NEW: Flag for large files,
-    cursorBlinking = true
+    cursorBlinking = true,
+    cursorBlinkingSpeed = 500
   } = options
   const { liveZoomRef, applyZoomToDOM, debouncedSaveZoom, setStoredZoomLevel } = handlers
 
@@ -155,7 +156,7 @@ const buildExtensions = async (options, handlers = {}) => {
     // Uses custom drawn selection (better for mixed font sizes/rich text)
     exts.push(
       drawSelection({
-        cursorBlinkRate: 0
+        cursorBlinkRate: 0 // Disable internal blinking to use CSS animation
       })
     )
     exts.push(dropCursor())

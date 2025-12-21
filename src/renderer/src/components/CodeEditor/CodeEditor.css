@@ -2,6 +2,8 @@
   /* NEW — REQUIRED */
   --caret-width: 3px;
   --caret-color: #fefeffff;
+  --cursor-blinking-speed: 500ms;
+  --cursor-blinking: true;
   --editor-font-size: 14px; /* NOT 1rem — absolute units only */
   --zoom-level: 1;
   --gutter-bg-color: #232731;
@@ -11,6 +13,33 @@
   --border-color: #232731;
   --border-width: 0;
   --border-round: 0;
+  --active-line-bg: #232731;
+}
+
+@keyframes cm-cursor-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+/* Base cursor style for blinking */
+.cm-cursor,
+.cm-cursor-primary,
+.cm-cursor-secondary {
+  transition: opacity 0.1s ease-in-out;
+}
+
+[data-cursor-blinking='true'] .cm-cursor,
+[data-cursor-blinking='true'] .cm-cursor-primary,
+[data-cursor-blinking='true'] .cm-cursor-secondary {
+  animation: cm-cursor-blink var(--cursor-blinking-speed, 500ms) step-end infinite !important;
+}
+.cm-activeLine {
+  background-color: transparent !important;
 }
 /* 
 .cm-editor-wrapper {
@@ -57,29 +86,35 @@
   line-height: 1.6 !important;
 } */
 
-/*  GITHUB */
-/* 1. The highlighted line where the cursor acts */
+/* Layout Reset: Ensure no global CSS affects the editor internals */
+.cm-content,
+.cm-content *,
+.cm-line,
+.cm-line * {
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1.6 !important;
+  box-sizing: border-box !important;
+}
 
-/* GPU-Accelerated Caret for Smooth Performance */
+/* Specific fix for the "huge space" caused by triple backticks */
+.cm-content pre,
+.cm-content code,
+.cm-codeBlock {
+  display: contents !important; /* Forces the block to not act as a container */
+  background: transparent !important;
+}
+
+/* Stabilize cursor rendering (NO GPU LAYERS) */
 .cm-cursor,
-.cm-cursor-primary {
-  will-change: transform;
-  transform: translateZ(0);
-  backface-visibility: hidden;
+.cm-cursor-primary,
+.cm-cursor-secondary {
+  will-change: auto !important;
+  transform: none !important;
+  backface-visibility: visible !important;
 }
 
-/* Optimize editor rendering */
-.cm-editor {
-  will-change: scroll-position;
-  transform: translateZ(0);
-}
-
-/* Smooth scrolling */
+/* Smooth but stable scroller */
 .cm-scroller {
-  scroll-behavior: smooth;
-}
-
-/* Reduce paint on selection */
-.cm-selectionBackground {
-  will-change: transform;
+  scroll-behavior: auto !important; /* Disable smooth scroll to prevent sync issues */
 }

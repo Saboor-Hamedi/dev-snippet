@@ -17,6 +17,7 @@ export const DEFAULT_SETTINGS = {
   cursor: {
     width: 3,
     color: '#58a6ff',
+    activeLineBg: '#232731',
     shape: 'bar',
     blinking: true,
     blinkingSpeed: 500,

@@ -38,9 +38,11 @@ const CodeEditor = ({
     color: cursorColor,
     shape: cursorShape,
     blinking: cursorBlinking,
+    blinkingSpeed: cursorBlinkingSpeed,
     selectionBackground,
     activeLineBorderWidth,
-    activeLineGutterBorderWidth
+    activeLineGutterBorderWidth,
+    activeLineBg
   } = useCursorProp()
   const { gutterBgColor, gutterBorderColor, gutterBorderWidth } = useGutterProp()
   const viewRef = useRef(null)
@@ -96,17 +98,20 @@ const CodeEditor = ({
       style: `
         --caret-width: ${cursorWidth}px;
         --caret-color: ${cursorColor};
+        --cursor-blinking-speed: ${cursorBlinkingSpeed}ms;
         --selection-background: ${selectionBackground};
         --gutter-bg-color: ${gutterBgColor};
         --gutter-border-color: ${gutterBorderColor};
         --gutter-border-width: ${gutterBorderWidth}px;
         --active-line-border-width: ${activeLineBorderWidth}px;
         --active-line-gutter-border-width: ${activeLineGutterBorderWidth}px;
+        --active-line-bg: ${activeLineBg};
       `
     })
   }, [
     cursorShape,
     cursorBlinking,
+    cursorBlinkingSpeed,
     cursorWidth,
     cursorColor,
     selectionBackground,
@@ -114,7 +119,8 @@ const CodeEditor = ({
     gutterBorderColor,
     gutterBorderWidth,
     activeLineBorderWidth,
-    activeLineGutterBorderWidth
+    activeLineGutterBorderWidth,
+    activeLineBg
   ])
 
   // Merge extensions
@@ -151,6 +157,7 @@ const CodeEditor = ({
           caretColor: cursorColor,
           fontSize: 'var(--editor-font-size, 14px)',
           cursorBlinking, // Pass blinking state
+          cursorBlinkingSpeed, // Pass blinking speed
           wordWrap: isLargeFile ? 'off' : wordWrap, // Disable wrapping for large files
           language: isLargeFile ? 'plaintext' : 'markdown', // Plain text for large files
           isLargeFile // Pass flag to buildExtensions
@@ -184,8 +191,10 @@ const CodeEditor = ({
   }, [
     wordWrap,
     cursorWidth,
+    activeLineBg,
     cursorColor,
-    cursorBlinking, // Add dependency
+    cursorBlinking,
+    cursorBlinkingSpeed, // Add dependency
     gutterBgColor,
     debouncedSaveZoom,
     isLargeFile,
@@ -195,6 +204,7 @@ const CodeEditor = ({
   return (
     <div className="cm-editor-wrapper h-full" ref={editorDomRef}>
       <CodeMirror
+        key={`cm-${cursorBlinking}-${cursorBlinkingSpeed}`}
         value={value || ''}
         onChange={onChange}
         extensions={allExtensions}

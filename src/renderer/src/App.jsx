@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import SnippetLibrary from './components/workbench/SnippetLibrary'
-import { SettingsProvider } from './hook/useSettingsContext.jsx'
+import { SettingsProvider } from './hook/useSettingsContext'
 import ErrorBoundary from './components/ErrorBoundary'
 
 function App() {

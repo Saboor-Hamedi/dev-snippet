@@ -227,10 +227,11 @@ class SettingManager {
   // Sanitize input values
   sanitizeValue(value) {
     if (typeof value === 'string') {
-      return value.slice(0, 1000) // Prevent extremely long strings
+      return value.slice(0, 10000) // Prevent extremely long strings
     }
     if (typeof value === 'number') {
-      return Math.max(-1000, Math.min(1000, value)) // Reasonable bounds
+      // Relaxed bounds: 100MB max for any numeric setting (like maxFileSize)
+      return Math.max(-100000000, Math.min(100000000, value))
     }
     if (typeof value === 'boolean') {
       return value

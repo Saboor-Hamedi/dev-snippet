@@ -12,7 +12,7 @@ const DeleteModel = lazy(() => import('../modal/DeleteModel'))
 // SettingsModal removed
 // Hooks
 import { useKeyboardShortcuts } from '../../hook/useKeyboardShortcuts'
-import { useSettings } from '../../hook/useSettingsContext.jsx'
+import { useSettings } from '../../hook/useSettingsContext'
 import useFontSettings from '../../hook/settings/useFontSettings'
 import { useZoomLevel } from '../../hook/useZoomLevel'
 
