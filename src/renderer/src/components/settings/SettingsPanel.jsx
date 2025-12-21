@@ -74,7 +74,6 @@ const SettingsPanel = ({ onClose }) => {
       showToast('❌ Failed to export data')
     }
   }
-
   const handleOpenJson = async () => {
     setActiveTab('json')
     if (window.api?.readSettingsFile) {
