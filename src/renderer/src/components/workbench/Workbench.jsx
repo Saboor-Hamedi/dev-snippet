@@ -130,11 +130,11 @@ const Workbench = ({
             {/* Original Action Block (Optional: kept as secondary/alternative actions) */}
             <div className=" p-2 m-auto flex items-center">
               <div>
-                <h1 className="text-4xl font-light text-[var(--color-text-primary)] mb-1">
-                  Div Snippet
+                <h1 className="text-3xl font-light text-[var(--color-text-primary)] mb-1 text-center">
+                  Dev Snippet
                 </h1>
-                <p className="text-xl text-center text-[var(--color-text-secondary)] font-light opacity-80">
-                  Editing evolved
+                <p className="text-sm text-center text-[var(--color-text-secondary)] font-light opacity-60">
+                  Your code, organized and accessible
                 </p>
               </div>
             </div>

@@ -22,11 +22,11 @@ const CodeEditor = ({
   onChange,
   height = '100%',
   className = 'h-full',
-  // language prop removed/ignored
   onZoomChange,
   wordWrap = 'on',
-  onEditorReady, // NEW: callback to pass editor view to parent
-  onLargeFileChange // NEW: callback when large file mode changes
+  onEditorReady,
+  onLargeFileChange,
+  readOnly = false
 }) => {
   // Zoom level is now managed globally by useZoomLevel at the root/SettingsProvider level.
   // Individual components consume the result via CSS variables.
@@ -50,8 +50,6 @@ const CodeEditor = ({
 
   // Determine dark mode
   const [isDark, setIsDark] = useState(false)
-
-  // Gutter background color
 
   useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -86,11 +84,6 @@ const CodeEditor = ({
     [onZoomChange]
   )
 
-  // Zoom application is now handled entirely by the useZoomLevel hook at the root level.
-  // This prevents conflicts between parent and child zoom handlers.
-
-  // Avoid calling `requestMeasure` during render — move to effect below
-
   // 3. Dynamic Editor Attributes (Source of Truth)
   const attributesExtension = useMemo(() => {
     return EditorView.editorAttributes.of({
@@ -104,8 +97,6 @@ const CodeEditor = ({
     [cmExtensions, attributesExtension]
   )
 
-  // adjustOverflow removed (legacy layout logic)
-
   // Detect large files (Optimized for zero typing lag)
   const lastLargeState = useRef(false)
   useEffect(() => {
@@ -115,6 +106,7 @@ const CodeEditor = ({
       if (lastLargeState.current) {
         lastLargeState.current = false
         setIsLargeFile(false)
+        if (onLargeFileChange) onLargeFileChange(false)
       }
       return
     }
@@ -127,6 +119,7 @@ const CodeEditor = ({
       if (isLarge !== lastLargeState.current) {
         lastLargeState.current = isLarge
         setIsLargeFile(isLarge)
+        if (onLargeFileChange) onLargeFileChange(isLarge)
       }
     }, 2000)
 
@@ -135,19 +128,12 @@ const CodeEditor = ({
 
   /**
    * 🚀 THE PERFORMANCE ENGINE (The "Extension Freezing" Logic)
-   *
-   * In standard React-CodeMirror, changing any prop usually causes the editor to
-   * "re-evaluate" its entire brain. For 60fps typing, we can't let that happen.
-   *
-   * This Effect only fires when 'Critical' settings change (like wordWrap or DarkMode).
-   * It skips running during normal typing or local state changes.
    */
   useEffect(() => {
     let mounted = true
     let timeoutId = null
 
     const loadFullEditorEngine = async () => {
-      console.log('🔄 Reloading Editor Engine. Blinking:', cursorBlinking)
       try {
         // Build the configuration object - Only shared once per 'Hard Refresh'
         const isBlinking = Boolean(cursorBlinking) // Explicit cast
@@ -177,7 +163,6 @@ const CodeEditor = ({
         if (mounted) {
           setCmExtensions(exts)
           setExtensionsLoaded(true)
-          console.log('💎 Editor engine synchronized with new settings.')
         }
       } catch (err) {
         console.error('❌ Failed to load editor engine:', err)
@@ -201,17 +186,12 @@ const CodeEditor = ({
       if (timeoutId) clearTimeout(timeoutId)
     }
   }, [
-    // WE STRATEGICALLY REMOVE 'value' FROM HERE!
-    // This is how we achieve the VS Code feel. Re-building the engine
-    // on every keystroke (value change) is what causes the lag.
     wordWrap,
     cursorWidth,
-    cursorShape, // RE-ADD: Essential for theme rebuilds
+    cursorShape,
     cursorActiveLineBg,
     cursorShadowBoxColor,
     cursorColor,
-    // 🚀 CRITICAL: We include blinking settings here to ensure the
-    // internal CM blink rate is reset to 0 when toggled.
     cursorBlinking,
     cursorBlinkingSpeed,
     gutterBgColor,
@@ -244,6 +224,7 @@ const CodeEditor = ({
         key={`cm-${cursorBlinking}-${cursorBlinkingSpeed}`}
         value={value || ''}
         onChange={onChange}
+        readOnly={readOnly}
         extensions={allExtensions}
         height="100%"
         theme={isDark ? 'dark' : 'light'}
@@ -254,8 +235,8 @@ const CodeEditor = ({
           if (onEditorReady) {
             onEditorReady(view)
           }
-          // adjustOverflow() removed
         }}
+        editable={!readOnly}
       />
     </div>
   )

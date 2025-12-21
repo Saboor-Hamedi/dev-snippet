@@ -63,7 +63,7 @@ const SettingsPanel = ({ onClose }) => {
         if (path) {
           const data = {
             exportDate: new Date().toISOString(),
-            version: '1.1.3',
+            version: '1.1.4',
             snippets
           }
           await window.api.writeFile(path, JSON.stringify(data, null, 2))
