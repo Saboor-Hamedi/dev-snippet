@@ -16,13 +16,17 @@ The application is built on three core pillars:
 ## 2. Editor and Writing Experience
 
 ### Intelligent Markdown
+
 Dev Snippet optimizes the Markdown experience:
+
 - **Auto-Formatting**: When you create a snippet without an extension, the system automatically appends .md and enables the rich renderer.
 - **Syntax Highlighting**: Over 100 languages are supported within code blocks, providing professional-grade readability.
 - **Large File Handling**: The editor includes a high-performance mode that automatically disables expensive decorations for massive files to ensure smooth typing.
 
 ### Reliability and Autosave
+
 The application includes a background persistence engine:
+
 - **Five-Second Delay**: Changes are automatically committed to the database after five seconds of inactivity.
 - **Visual Feedback**: A status indicator in the header notifies you when the app is "Saving" or has "Saved" your work.
 - **Plain Text Fidelity**: For non-markdown files like .txt or .log, the preview window uses a specialized Pre-tag renderer to maintain perfect whitespace and indentation.
@@ -67,29 +71,53 @@ Enhance your documentation with standardized admonitions. Use the following synt
 ## 4. Organization and Discovery
 
 ### Interactive Tagging and Mentions
+
 Dev Snippet supports a social-style tagging system that works anywhere in your text:
+
 - **Hashtags**: Use #work or #todo to categorize snippets. These are automatically extracted for search.
 - **Mentions**: Use @urgent or @review to highlight priority items.
 - **Visual Pills**: In the Live Preview, tags and mentions are automatically converted into sleek, non-distracting visual pills.
 
 ### Wiki-Style Quick Links
-Create a networked knowledge base by linking snippets together:
-- **Syntax**: Use [[Snippet Title]] to create an internal link.
-- **Navigation**: Clicking an internal link in the Live Preview will instantly switch the editor to the referenced document.
-- **Intelligent Matching**: The link system is case-insensitive and handles document titles automatically.
+
+Wiki-style links allow you to build a personal knowledge base by connecting snippets together using a simple syntax.
+
+#### Usage and Syntax
+
+- **Create a Link**: Type `[[Snippet Title]]` anywhere in a Markdown file.
+- **Navigation**: Click the rendered link in the Live Preview to jump immediately to that snippet.
+- **Auto-Formatting**: The system automatically resolves titles case-insensitively and maps them to the correct files.
+
+#### Ghost Links (Visual Validation)
+
+A "Ghost Link" is a reference to a snippet that has not yet been created.
+- **Appearance**: Ghost links are rendered with a **dashed border** and a muted gray color in the Live Preview.
+- **On-Demand Creation**: Clicking a ghost link will instantly generate a new draft with that title and open it in the editor. This allows for a "bottom-up" documentation workflow where you can link to concepts before they exist.
+- **Validation**: Once a snippet with the matching title is saved, the ghost link automatically converts into a solid, active link.
+
+#### Link Autocompletion
+
+To speed up your workflow, the editor includes intelligent autocompletion for wiki-links:
+- **Trigger**: Type `[[` to open the suggestion menu.
+- **Fuzzy Search**: Continue typing the name of an existing snippet to filter the list.
+- **Auto-Insert**: Select a snippet to insert its title and automatically close the brackets.
 
 ### Command Palette
+
 Press Ctrl + P from anywhere in the app to open the Command Palette. This is your central hub for:
-- Full-text search across titles.
-- Searching for specific tags.
-- Instant navigation between snippets.
+
+- **Deep Context Search**: Search across titles, tags, and the actual code content.
+- **Instant Navigation**: Quickly jump between snippets with fuzzy-like adaptive matching.
+- **Visual Feedback**: Real-time indicators show if a match was found in the title or deep within the content.
 
 ---
 
 ## 5. Interface Customization
 
 ### Splitting and Preview
+
 You can customize your workspace layout through the Settings Panel:
+
 - **Simple Mode**: A classic side-by-side or overlaid preview.
 - **Advanced Mode**: Professional-grade preview with custom backgrounds, borders, and viewport presets (Mobile, Tablet, Desktop).
 - **Compact List**: Toggle the sidebar into a high-density mode for managing hundreds of snippets at once.
@@ -104,6 +132,7 @@ You can customize your workspace layout through the Settings Panel:
 | **New Snippet** | Ctrl + N |
 | **Save Now** | Ctrl + S |
 | **Rename Snippet**| Ctrl + R |
+| **Copy Code** | Ctrl + Shift + C |
 | **Toggle Preview**| Ctrl + Shift + \ |
 | **Toggle Compact List**| Ctrl + , |
 | **Delete Snippet**| Ctrl + Shift + D |

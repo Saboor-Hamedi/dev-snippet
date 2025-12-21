@@ -17,8 +17,24 @@ function App() {
         } catch {}
       }
     }
+
+    const onUnhandledRejection = (event) => {
+      console.error('Unhandled Promise Rejection:', event.reason)
+    }
+
+    const onGlobalError = (event) => {
+      console.error('Global Window Error:', event.error || event.message)
+    }
+
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    window.addEventListener('unhandledrejection', onUnhandledRejection)
+    window.addEventListener('error', onGlobalError)
+
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      window.removeEventListener('unhandledrejection', onUnhandledRejection)
+      window.removeEventListener('error', onGlobalError)
+    }
   }, [])
 
   return (

@@ -26,7 +26,8 @@ const buildExtensions = async (options, handlers = {}) => {
     cursorBlinking = true,
     cursorBlinkingSpeed = 500,
     cursorWidth = 2,
-    cursorShape = 'bar'
+    cursorShape = 'bar',
+    snippetTitles = []
   } = options
   const { liveZoomRef, applyZoomToDOM, debouncedSaveZoom, setStoredZoomLevel } = handlers
 
@@ -238,6 +239,10 @@ const buildExtensions = async (options, handlers = {}) => {
       if (!isLargeFile) {
         const { richMarkdownExtension } = await import('./richMarkdown.js')
         exts.push(richMarkdownExtension)
+
+        // 3. WikiLink Autocomplete
+        const { default: wikiLinkCompletion } = await import('./wikiLinkCompletion.js')
+        exts.push(wikiLinkCompletion(snippetTitles))
       }
     } catch (e) {
       console.error('Failed to load markdown extensions', e)

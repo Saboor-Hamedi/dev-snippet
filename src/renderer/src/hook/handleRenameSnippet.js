@@ -1,3 +1,5 @@
+import { normalizeSnippet } from '../utils/snippetUtils'
+
 export const handleRenameSnippet = async ({
   renameModal,
   saveSnippet,
@@ -14,25 +16,13 @@ export const handleRenameSnippet = async ({
   }
 
   // Clean up name
-  let baseName = (renameModal.newName || renameModal.item.title || '').trim() || 'Untitled'
+  const baseName = (renameModal.newName || renameModal.item.title || '').trim() || 'Untitled'
 
-  // Force .md extension if missing or different
-  // User strict requirement: "by default it save .md not anything else"
-  if (!baseName.toLowerCase().endsWith('.md')) {
-    // Remove any other extension if present
-    baseName = baseName.replace(/\.[^.\\/]+$/, '')
-    baseName = `${baseName}.md`
-  }
-
-  // Force language to markdown
-  const lang = 'markdown'
-
-  const updatedItem = {
+  const updatedItem = normalizeSnippet({
     ...renameModal.item,
     title: baseName,
-    language: lang,
     is_draft: false
-  }
+  })
 
   // Update the selected item immediately (optimistic update)
   if (setSelectedSnippet) {
@@ -57,10 +47,12 @@ export const handleRenameSnippet = async ({
   }
 
   try {
+    // 1. Persist to Database (This is the heavy part that triggers the spinner)
+    await saveSnippet(updatedItem)
+
+    // 2. Sync local list state (Handle ID/title swap in SnippetLibrary)
     if (typeof renameSnippet === 'function') {
       renameSnippet(updatedItem.id, updatedItem)
-    } else {
-      await saveSnippet(updatedItem)
     }
 
     if (showToast) showToast('✓ Snippet renamed successfully', 'success')

@@ -7,8 +7,7 @@ import { handleRenameSnippet } from '../../hook/handleRenameSnippet'
 import Workbench from './Workbench'
 // Heavy components (lazy loaded on-demand)
 const CommandPalette = lazy(() => import('../CommandPalette'))
-const RenameModal = lazy(() => import('../modal/RenameModal'))
-const DeleteModel = lazy(() => import('../modal/DeleteModel'))
+const Prompt = lazy(() => import('../modal/Prompt'))
 // SettingsModal removed
 // Hooks
 import { useKeyboardShortcuts } from '../../hook/useKeyboardShortcuts'
@@ -101,17 +100,25 @@ const SnippetLibrary = () => {
       const { title } = e.detail
       if (!title) return
 
+      const cleanTitle = title.trim()
+      const searchTitle = cleanTitle.toLowerCase()
+
       // Find snippet by title (case-insensitive, trimmed)
-      const target = snippets.find(
-        (s) => (s.title || '').toLowerCase().trim() === title.toLowerCase().trim()
-      )
+      const target = snippets.find((s) => (s.title || '').toLowerCase().trim() === searchTitle)
 
       if (target) {
         setSelectedSnippet(target)
         setActiveSnippet(target)
         setActiveView('editor') // Open in editor mode
       } else {
-        showToast(`Snippet "${title}" not found`, 'info')
+        // Ghost Link Handling:
+        // 1. Check if user already typed this title but it's not saved (draft in memory)
+        const finalTitle = cleanTitle.toLowerCase().endsWith('.md')
+          ? cleanTitle
+          : `${cleanTitle}.md`
+
+        showToast(`Navigating to ${finalTitle}...`, 'info')
+        createDraftSnippet(finalTitle)
       }
     }
 
@@ -165,10 +172,10 @@ const SnippetLibrary = () => {
   }
 
   // Helper: create a new draft snippet and select it (extracted to avoid duplication)
-  const createDraftSnippet = () => {
+  const createDraftSnippet = (initialTitle = '') => {
     const draft = {
       id: Date.now().toString(),
-      title: '',
+      title: initialTitle,
       code: '',
       language: 'markdown', // Force md
       timestamp: Date.now(),
@@ -504,26 +511,46 @@ const SnippetLibrary = () => {
         />
       </div>
 
-      {/* Rename Modal - Lazy Loaded */}
+      {/* Rename Prompt - Lazy Loaded */}
       <Suspense fallback={<ModalLoader />}>
-        <RenameModal
+        <Prompt
           isOpen={renameModal.isOpen}
-          item={renameModal.item}
+          title="Rename Snippet"
+          message={`Rename "${renameModal.item?.title || ''}"`}
+          confirmLabel="Rename"
+          showInput={true}
+          inputValue={renameModal.newName || ''}
+          onInputChange={(val) => setRenameModal((prev) => ({ ...prev, newName: val }))}
           onClose={() => setRenameModal({ isOpen: false, item: null })}
-          onRename={handleRename}
+          onConfirm={() => handleRename(renameModal.newName)}
         />
       </Suspense>
 
-      {/* Delete Modal - Lazy Loaded */}
+      {/* Delete Prompt - Lazy Loaded */}
       <Suspense fallback={<ModalLoader />}>
-        <DeleteModel
+        <Prompt
           isOpen={deleteModal.isOpen}
+          variant="danger"
+          title="Delete Snippet"
+          message={
+            <span>
+              This action is permanent. Delete{' '}
+              <span className="font-bold text-slate-800 dark:text-slate-100">
+                "
+                {deleteModal.snippetId
+                  ? snippets.find((s) => s.id === deleteModal.snippetId)?.title
+                  : 'this'}
+                "
+              </span>
+              ?
+            </span>
+          }
+          confirmLabel="Delete"
           onClose={() => setDeleteModal({ isOpen: false, snippetId: null })}
           onConfirm={async () => {
-            await handleDeleteSnippet(deleteModal.snippetId) // ✅ triggers  full logic
+            await handleDeleteSnippet(deleteModal.snippetId)
             setDeleteModal({ isOpen: false, snippetId: null })
           }}
-          snippetTitle={deleteModal.title}
         />
       </Suspense>
 

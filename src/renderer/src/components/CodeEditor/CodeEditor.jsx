@@ -26,11 +26,15 @@ const CodeEditor = ({
   wordWrap = 'on',
   onEditorReady,
   onLargeFileChange,
-  readOnly = false
+  readOnly = false,
+  snippets = []
 }) => {
   // Zoom level is now managed globally by useZoomLevel at the root/SettingsProvider level.
   // Individual components consume the result via CSS variables.
   const editorDomRef = useRef(null)
+  const snippetTitles = useMemo(() => {
+    return snippets.map((s) => (s.title || '').trim()).filter(Boolean)
+  }, [snippets])
 
   // CONSUME SETTINGS VIA REFACTOR HOOKS (SOLID)
   const {
@@ -152,7 +156,8 @@ const CodeEditor = ({
           cursorBlinkingSpeed,
           wordWrap: isLargeFile ? 'off' : wordWrap,
           language: isLargeFile ? 'plaintext' : 'markdown',
-          isLargeFile
+          isLargeFile,
+          snippetTitles
         }
 
         // Call our specialized extension builder
@@ -197,7 +202,8 @@ const CodeEditor = ({
     gutterBgColor,
     debouncedSaveZoom,
     isLargeFile,
-    extensionsLoaded
+    extensionsLoaded,
+    snippetTitles
   ])
 
   return (

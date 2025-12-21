@@ -2,13 +2,12 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import PropTypes from 'prop-types'
 import { useKeyboardShortcuts } from '../../hook/useKeyboardShortcuts.js'
 import { useEditorFocus } from '../../hook/useEditorFocus.js'
-import extractTags from '../../hook/extractTags.js'
 import { useZoomLevel } from '../../hook/useZoomLevel'
 import WelcomePage from '../WelcomePage.jsx'
 import StatusBar from '../StatusBar.jsx'
 import CodeEditor from '../CodeEditor/CodeEditor.jsx'
 import LivePreview from '../livepreview/LivePreview.jsx'
-import NamePrompt from '../modal/NamePrompt.jsx'
+import Prompt from '../modal/Prompt.jsx'
 import { useSettings } from '../../hook/useSettingsContext'
 import AdvancedSplitPane from '../splitPanels/AdvancedSplitPane'
 
@@ -25,7 +24,8 @@ const SnippetEditor = ({
   showToast,
   isCompact,
   onToggleCompact,
-  showPreview
+  showPreview,
+  snippets = []
 }) => {
   const [code, setCode] = useState(initialSnippet?.code || '')
   const [isDirty, setIsDirty] = useState(false)
@@ -202,48 +202,46 @@ const SnippetEditor = ({
     }
   })
 
-  const handleSave = (forceSave = false) => {
-    ;(async () => {
-      if ((initialSnippet?.id && !initialSnippet?.is_draft && title !== '') || forceSave) {
-        const unchanged = lastSavedCode.current === code && lastSavedTitle.current === title
-        if (unchanged) {
-          showToast?.('No changes to save', 'info')
-          return
-        }
-      }
+  const handleSave = async (forceSave = false, customTitle = null) => {
+    const finalTitle = customTitle || title
 
-      if (!title || title.toLowerCase() === 'untitled') {
-        setNamePrompt({ isOpen: true, initialName: '' })
+    if ((initialSnippet?.id && !initialSnippet?.is_draft && finalTitle !== '') || forceSave) {
+      const unchanged =
+        lastSavedCode.current === code && lastSavedTitle.current === (finalTitle || title)
+      if (unchanged) {
+        showToast?.('No changes to save', 'info')
         return
       }
+    }
 
-      const payload = {
-        id: initialSnippet?.id || Date.now().toString(),
-        title: title,
-        code: code,
-        language: 'markdown',
-        timestamp: Date.now(),
-        type: 'snippet',
-        tags: extractTags(code),
-        is_draft: false
-      }
+    if (!finalTitle || finalTitle.toLowerCase() === 'untitled') {
+      setNamePrompt({ isOpen: true, initialName: '' })
+      return
+    }
 
-      if (saveTimerRef.current) {
-        clearTimeout(saveTimerRef.current)
-        saveTimerRef.current = null
-      }
+    const payload = {
+      id: initialSnippet?.id || Date.now().toString(),
+      title: finalTitle,
+      code: code,
+      is_draft: false
+    }
 
-      try {
-        onAutosave && onAutosave('saved')
-        await onSave(payload)
-        window.dispatchEvent(new CustomEvent('autosave:complete', { detail: { id: payload.id } }))
-        setIsDirty(false)
-        lastSavedCode.current = code
-        lastSavedTitle.current = title
-      } catch (err) {
-        onAutosave && onAutosave('error')
-      }
-    })()
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current)
+      saveTimerRef.current = null
+    }
+
+    try {
+      onAutosave && onAutosave('saving')
+      await onSave(payload)
+      window.dispatchEvent(new CustomEvent('autosave:complete', { detail: { id: payload.id } }))
+      setIsDirty(false)
+      lastSavedCode.current = code
+      lastSavedTitle.current = finalTitle
+      setTitle(finalTitle) // Sync state
+    } catch (err) {
+      onAutosave && onAutosave('error')
+    }
   }
 
   useEffect(() => {
@@ -297,34 +295,48 @@ const SnippetEditor = ({
                     height="100%"
                     className="h-full"
                     textareaRef={textareaRef}
+                    snippets={snippets}
                   />
                 </div>
               }
               right={
                 <div className="h-full p-4">
                   {useMemo(() => {
-                    const detectedLang = title?.split('.').pop() || 'markdown'
-                    return <LivePreview code={debouncedCode} language={detectedLang} />
-                  }, [debouncedCode, title])}
+                    const ext = title?.includes('.') ? title.split('.').pop()?.toLowerCase() : null
+                    const detectedLang = ext || 'plaintext'
+                    return (
+                      <LivePreview
+                        code={debouncedCode}
+                        language={detectedLang}
+                        snippets={snippets}
+                      />
+                    )
+                  }, [debouncedCode, title, snippets])}
                 </div>
               }
             />
           </div>
 
-          <NamePrompt
-            open={namePrompt.isOpen}
-            value={namePrompt.initialName}
-            onChange={(val) => setNamePrompt((prev) => ({ ...prev, initialName: val }))}
-            onCancel={() => setNamePrompt({ isOpen: false, initialName: '' })}
-            onConfirm={() => {
+          <Prompt
+            isOpen={namePrompt.isOpen}
+            title="Name Snippet"
+            message="Your snippet needs a name before it can be saved."
+            confirmLabel="Save"
+            showInput={true}
+            inputValue={namePrompt.initialName || ''}
+            onInputChange={(val) => setNamePrompt((prev) => ({ ...prev, initialName: val }))}
+            onClose={() => setNamePrompt({ isOpen: false, initialName: '' })}
+            onConfirm={async () => {
               const entered = (namePrompt.initialName || '').trim()
               if (!entered) return
-              const fullTitle = entered.toLowerCase().endsWith('.md') ? entered : `${entered}.md`
-              setTitle(fullTitle)
-              setIsDirty(true)
+
+              // Await saving - normalization happens inside the hook
+              await handleSave(true, entered)
+
               setNamePrompt({ isOpen: false, initialName: '' })
               setJustRenamed(true)
             }}
+            placeholder="e.g. hello.js or notes"
           />
 
           <div
@@ -360,7 +372,8 @@ SnippetEditor.propTypes = {
   showToast: PropTypes.func,
   isCompact: PropTypes.bool,
   onToggleCompact: PropTypes.func,
-  showPreview: PropTypes.bool
+  showPreview: PropTypes.bool,
+  snippets: PropTypes.array
 }
 
 export default React.memo(SnippetEditor)

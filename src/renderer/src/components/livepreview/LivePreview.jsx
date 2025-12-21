@@ -1,9 +1,12 @@
-import React, { useState, useEffect, Component } from 'react'
+import React, { useState, useEffect, Component, useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
-import { remarkAlert } from 'remark-github-blockquote-alert'
-import Admonition from '../admonition/Admonition'
-
-// ... existing imports
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { dark } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import CopyButton from '../CopyButton'
+import PropTypes from 'prop-types'
+import remarkGfm from 'remark-gfm'
+import remarkBreaks from 'remark-breaks'
+import rehypeRaw from 'rehype-raw'
 
 /**
  * Component for rendering semantic tags (#tag) and mentions (@name).
@@ -15,8 +18,9 @@ const Tag = ({ children, type }) => (
 /**
  * Component for rendering internal wiki-style links [[Snippet Title]].
  * Dispatches a 'app:open-snippet' event when clicked.
+ * Indicates 'ghost' status if the snippet doesn't exist.
  */
-const QuickLink = ({ title }) => {
+const QuickLink = ({ title, exists = true }) => {
   const handleClick = (e) => {
     e.preventDefault()
     e.stopPropagation()
@@ -25,7 +29,11 @@ const QuickLink = ({ title }) => {
   }
 
   return (
-    <span className="preview-quicklink" onClick={handleClick} title={`Jump to ${title}`}>
+    <span
+      className={`preview-quicklink ${!exists ? 'is-ghost' : ''}`}
+      onClick={handleClick}
+      title={exists ? `Jump to ${title}` : `Snippet "${title}" not created yet (Click to create)`}
+    >
       {title}
     </span>
   )
@@ -38,7 +46,7 @@ const QuickLink = ({ title }) => {
  * @param {string} text - The text to process.
  * @returns {Array|string} - An array containing string parts and React components.
  */
-const processTextWithTags = (text) => {
+const processTextWithTags = (text, existingTitles = []) => {
   if (typeof text !== 'string') return text
 
   // Match #tag, @mention, or [[Snippet Title]]
@@ -50,19 +58,20 @@ const processTextWithTags = (text) => {
   const tagRegex = /^[#@][a-zA-Z0-9_-]+$/
   const wikiLinkRegex = /^\[\[(.*?)\]\]$/
 
-  return parts.map((part, i) => {
+  return parts.filter(Boolean).map((part, i) => {
     // Check for Wiki Link [[title]]
     const wikiMatch = part.match(wikiLinkRegex)
     if (wikiMatch) {
       const title = wikiMatch[1]
-      return <QuickLink key={i} title={title} />
+      const exists = existingTitles.some((t) => t.toLowerCase() === title.toLowerCase().trim())
+      return <QuickLink key={`wiki-${i}`} title={title} exists={exists} />
     }
 
     // Check for standard #tag or @mention
     if (tagRegex.test(part)) {
       const type = part.startsWith('@') ? 'mention' : 'tag'
       return (
-        <Tag key={i} type={type}>
+        <Tag key={`tag-${i}`} type={type}>
           {part}
         </Tag>
       )
@@ -79,14 +88,17 @@ const processTextWithTags = (text) => {
  * @param {React.ReactNode} children - The children to walk.
  * @returns {React.ReactNode} - The processed children.
  */
-const recursiveProcessTags = (children) => {
+const recursiveProcessTags = (children, existingTitles = [], depth = 0) => {
+  // Safety: Prevent excessive recursion depth which can freeze the UI on malformed inputs
+  if (depth > 5) return children
+
   return React.Children.map(children, (child) => {
     if (typeof child === 'string') {
-      return processTextWithTags(child)
+      return processTextWithTags(child, existingTitles)
     }
     if (React.isValidElement(child) && child.props.children) {
       return React.cloneElement(child, {
-        children: recursiveProcessTags(child.props.children)
+        children: recursiveProcessTags(child.props.children, existingTitles, depth + 1)
       })
     }
     return child
@@ -94,63 +106,75 @@ const recursiveProcessTags = (children) => {
 }
 
 /**
+ * Global prop sanitizer to prevent hazardous raw HTML attributes from crashing React.
+ * Blocks string-based event handlers and React-specific metadata.
+ */
+const sanitizeProps = (allProps) => {
+  if (!allProps) return {}
+  const { node, existingTitles, isContentMatch, ...props } = allProps
+  const safe = {}
+  Object.keys(props).forEach((k) => {
+    // 1. Block event handlers that are strings (from raw HTML)
+    if (k.startsWith('on') && typeof props[k] === 'string') return
+    // 2. Block React special props and internal metadata
+    if (k === 'key' || k === 'ref') return
+    // 3. Block JSX-style spread names that are interpreted as literal attributes (e.g. {...props})
+    if (k.includes('{') || k.includes('}') || k.includes('.')) return
+    safe[k] = props[k]
+  })
+  return safe
+}
+
+/**
  * Custom renderer for Paragraphs to support tag highlighting.
  */
-const ParagraphRenderer = ({ children }) => {
-  return <p>{recursiveProcessTags(children)}</p>
+const ParagraphRenderer = ({ children, existingTitles, ...props }) => {
+  const safeProps = sanitizeProps(props)
+  return <p {...safeProps}>{recursiveProcessTags(children, existingTitles)}</p>
 }
 
 /**
  * Custom renderer for List Items to support tag highlighting.
  */
-const ListRenderer = ({ children }) => {
-  return <li>{recursiveProcessTags(children)}</li>
+const ListRenderer = ({ children, existingTitles, ...props }) => {
+  const safeProps = sanitizeProps(props)
+  return <li {...safeProps}>{recursiveProcessTags(children, existingTitles)}</li>
 }
 
 /**
  * Custom renderer for Headers (H1-H6) to support tag highlighting.
  */
-const HeadingRenderer = ({ level, children }) => {
+const HeadingRenderer = ({ level, children, existingTitles, ...props }) => {
   const TagName = `h${level}`
-  return <TagName>{recursiveProcessTags(children)}</TagName>
+  const safeProps = sanitizeProps(props)
+  return <TagName {...safeProps}>{recursiveProcessTags(children, existingTitles)}</TagName>
 }
 
 /**
  * Custom renderer for Blockquotes.
- * Integrates with remark-github-blockquote-alert for Admonitions.
  */
-const BlockquoteRenderer = ({ className, children, ...props }) => {
-  if (className?.includes('markdown-alert')) {
-    const type = className.replace('markdown-alert markdown-alert-', '')
-    const titleMatch = children?.find?.(
-      (child) => child?.props?.className === 'markdown-alert-title'
-    )
-    const title = titleMatch?.props?.children
-
-    // Filter out the title from children to avoid double rendering
-    const content = React.Children.toArray(children).filter(
-      (child) => child?.props?.className !== 'markdown-alert-title'
-    )
-
-    return (
-      <Admonition type={type} title={title}>
-        {content}
-      </Admonition>
-    )
-  }
+const BlockquoteRenderer = ({ className, children, node, ...props }) => {
+  const safeProps = sanitizeProps(props)
   return (
-    <blockquote className={className} {...props}>
+    <blockquote className={className} {...safeProps}>
       {children}
     </blockquote>
   )
 }
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { dark } from 'react-syntax-highlighter/dist/esm/styles/prism'
-import CopyButton from '../CopyButton'
-import PropTypes from 'prop-types'
-import remarkGfm from 'remark-gfm'
-import remarkBreaks from 'remark-breaks'
-import rehypeRaw from 'rehype-raw'
+
+/**
+ * Common HTML element renderers sanitized to prevent string-based event handlers
+ * from crashing React when processing raw HTML.
+ */
+const SafeDiv = (allProps) => {
+  const props = sanitizeProps(allProps)
+  return <div {...props} />
+}
+
+const SafeSpan = (allProps) => {
+  const props = sanitizeProps(allProps)
+  return <span {...props} />
+}
 
 class PreviewErrorBoundary extends Component {
   constructor(props) {
@@ -181,7 +205,6 @@ class PreviewErrorBoundary extends Component {
 }
 
 // Lazy load Mermaid to keep preview light
-// Lazy load Mermaid to keep preview light
 const MermaidDiagram = React.lazy(() => import('../mermaid/MermaidDiagram'))
 
 // Extract CodeBlockRenderer to prevent re-creation on every render
@@ -206,10 +229,12 @@ const CodeBlockRenderer = React.memo(({ className, children, node, ...rest }) =>
   }
 
   // PERFORMANCE HACK: If the code block is too large, Prism will freeze the UI.
-  // We skip highlighting for blocks over 50,000 chars or 2000 lines.
-  const isMassive = codeContent.length > 50000 || codeContent.split('\n').length > 2000
+  // We skip highlighting for blocks over 500,000 chars or 2000 lines.
+  const isMassive = codeContent.length > 500000 || codeContent.split('\n').length > 2000
 
   if (match && !isMassive) {
+    // eslint-disable-next-line no-unused-vars
+    const { key: _key, onMouseDown, ...safeRest } = rest
     return (
       <div className="code-block-wrapper">
         <div className="code-block-header">
@@ -239,7 +264,7 @@ const CodeBlockRenderer = React.memo(({ className, children, node, ...rest }) =>
               textShadow: 'none'
             }}
             wrapLongLines={true}
-            {...rest}
+            {...safeRest}
           >
             {codeContent}
           </SyntaxHighlighter>
@@ -255,9 +280,11 @@ const CodeBlockRenderer = React.memo(({ className, children, node, ...rest }) =>
     )
   }
 
+  // eslint-disable-next-line no-unused-vars
+  const { key: _key, onMouseDown, ...safeRest } = rest
   return (
     <code
-      {...rest}
+      {...safeRest}
       className={className}
       style={
         isMassive
@@ -275,32 +302,81 @@ const CodeBlockRenderer = React.memo(({ className, children, node, ...rest }) =>
   )
 })
 
-const LivePreview = React.memo(({ code = '', language = 'markdown' }) => {
+const LivePreview = React.memo(({ code = '', language = 'markdown', snippets = [] }) => {
+  // Extract titles for ghost link validation
+  const existingTitles = useMemo(() => {
+    return snippets.map((s) => (s.title || '').trim()).filter(Boolean)
+  }, [snippets])
+
   // Memoize components object to prevent ReactMarkdown from remounting children
-  const components = React.useMemo(
+  const components = useMemo(
     () => ({
       // Strip event handlers from buttons to prevent React errors
-      // eslint-disable-next-line no-unused-vars
-      button({ onClick, ...props }) {
-        return <button {...props} onClick={undefined} />
+      button(props) {
+        const safeProps = sanitizeProps(props)
+        return <button {...safeProps} />
       },
       code: CodeBlockRenderer,
       blockquote: BlockquoteRenderer,
-      p: ParagraphRenderer,
-      li: ListRenderer,
-      h1: (props) => <HeadingRenderer level={1} {...props} />,
-      h2: (props) => <HeadingRenderer level={2} {...props} />,
-      h3: (props) => <HeadingRenderer level={3} {...props} />,
-      h4: (props) => <HeadingRenderer level={4} {...props} />,
-      h5: (props) => <HeadingRenderer level={5} {...props} />,
-      h6: (props) => <HeadingRenderer level={6} {...props} />
+      div: SafeDiv,
+      span: SafeSpan,
+      p: (props) => <ParagraphRenderer {...props} existingTitles={existingTitles} />,
+      li: (props) => <ListRenderer {...props} existingTitles={existingTitles} />,
+      h1: (props) => <HeadingRenderer level={1} {...props} existingTitles={existingTitles} />,
+      h2: (props) => <HeadingRenderer level={2} {...props} existingTitles={existingTitles} />,
+      h3: (props) => <HeadingRenderer level={3} {...props} existingTitles={existingTitles} />,
+      h4: (props) => <HeadingRenderer level={4} {...props} existingTitles={existingTitles} />,
+      h5: (props) => <HeadingRenderer level={5} {...props} existingTitles={existingTitles} />,
+      h6: (props) => <HeadingRenderer level={6} {...props} existingTitles={existingTitles} />,
+      // Silence unrecognized tag warnings from project-internal code pastes
+      copybutton: () => null,
+      mermaiddiagram: () => null,
+      previewerrorboundary: ({ children }) => <>{children}</>,
+      prompt: () => null,
+      snippeteditor: () => null,
+      workbench: () => null,
+      commandpalette: () => null,
+      statusbar: () => null,
+      info: () => null,
+      fileedit: () => null,
+      trash2: () => null,
+      alertcircle: () => null,
+      safediv: () => null,
+      safespan: () => null,
+      customicon: () => null,
+      select: (props) => {
+        const safeProps = sanitizeProps(props)
+        return <select {...safeProps} />
+      },
+      option: (allProps) => {
+        // eslint-disable-next-line no-unused-vars
+        const { selected, ...props } = allProps
+        const safeProps = sanitizeProps(props)
+        return <option {...safeProps} />
+      }
     }),
-    []
+    [existingTitles]
   )
-
   const normalizedLang = (language || 'markdown').toLowerCase()
   const isMarkdown = normalizedLang === 'markdown' || normalizedLang === 'md'
   const isPlainFormat = !isMarkdown
+
+  // PERFORMANCE SAFETY: rehype-raw is powerful but can hang the entire app if the input has
+  // thousands of unclosed tags (common when pasting JSX or large complex code).
+  // We disable it for very large snippets to ensure the app stays responsive.
+  const RAW_HTML_LIMIT = 500000
+  const isOverRawLimit = code.length > RAW_HTML_LIMIT
+  const safeRehypePlugins = useMemo(() => {
+    return isOverRawLimit ? [] : [rehypeRaw]
+  }, [isOverRawLimit])
+
+  useEffect(() => {
+    if (isOverRawLimit) {
+      console.warn(
+        `[LivePreview] Large content detected (${code.length} chars). Disabling raw HTML support for performance safety.`
+      )
+    }
+  }, [isOverRawLimit, code.length])
 
   if (isPlainFormat) {
     return (
@@ -325,8 +401,8 @@ const LivePreview = React.memo(({ code = '', language = 'markdown' }) => {
     <div className="markdown-body">
       <PreviewErrorBoundary>
         <ReactMarkdown
-          remarkPlugins={[remarkGfm, remarkBreaks, remarkAlert]}
-          rehypePlugins={[rehypeRaw]}
+          remarkPlugins={[remarkGfm, remarkBreaks]}
+          rehypePlugins={safeRehypePlugins}
           components={components}
         >
           {code}

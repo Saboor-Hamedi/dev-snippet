@@ -10,6 +10,17 @@ const ENABLE_DEVTOOLS = true // <-- CHANGE THIS FOR YOUR NEEDS
 
 const { app, BrowserWindow } = require('electron')
 
+// --- GLOBAL ERROR HANDLING (Prevent App Collapse) ---
+process.on('uncaughtException', (error) => {
+  console.error('🔴 CRITICAL MAIN PROCESS ERROR (Uncaught):', error)
+  // We don't exit here immediately to allow some self-healing or logging
+})
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('🔴 UNHANDLED PROMISE REJECTION in Main Process:', reason)
+})
+// ----------------------------------------------------
+
 // Import modules
 import { initDB, getDB, getPreparedStatements } from './database'
 import { createWindow } from './window'

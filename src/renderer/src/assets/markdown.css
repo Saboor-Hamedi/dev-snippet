@@ -642,6 +642,20 @@
   transform: translateY(-0.5px);
 }
 
+/* Ghost Link - When the target doesn't exist yet */
+.markdown-body .preview-quicklink.is-ghost {
+  color: #8b949e !important;
+  background-color: rgba(139, 148, 158, 0.05) !important;
+  border: 1px dashed rgba(139, 148, 158, 0.3) !important;
+  opacity: 0.8 !important;
+}
+
+.markdown-body .preview-quicklink.is-ghost:hover {
+  color: #c9d1d9 !important;
+  background-color: rgba(139, 148, 158, 0.15) !important;
+  border-color: rgba(139, 148, 158, 0.5) !important;
+}
+
 /* ===== FOCUS STATES ===== */
 .markdown-body :focus-visible {
   outline: 2px solid #0366d6;

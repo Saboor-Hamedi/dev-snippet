@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useToast } from './useToast'
+import { normalizeSnippet } from '../utils/snippetUtils'
+
 export const useSnippetData = () => {
   const [snippets, setSnippets] = useState([])
   const [projects, setProjects] = useState([])
@@ -52,35 +54,29 @@ export const useSnippetData = () => {
   // Save or update a snippet
   const saveSnippet = async (snippet, options = {}) => {
     try {
-      const fullText = snippet?.code || ''
+      // 1. Normalize payload using centralized utility (DRY)
+      const payload = normalizeSnippet(snippet)
+      const fullText = payload.code
 
-      // Simple DB-only storage for all snippets
-      const payload = {
-        ...snippet,
-        type: 'snippet',
-        sort_index: snippet.sort_index ?? null,
-        code: fullText,
-        is_draft: false // Explicitly mark as saved (not draft)
-      }
-
-      // Save to database
+      // 2. Save to database
       await window.api.saveSnippet(payload)
 
-      // Update local list in-place to avoid flicker
+      // 3. Update local list in-place to avoid flicker
       setSnippets((prev) => {
-        const exists = prev.some((s) => s.id === snippet.id)
-        const updatedItem = { ...snippet, code: fullText, is_draft: false } // Keep full content in local state and mark as saved
+        const exists = prev.some((s) => s.id === payload.id)
+        // CRITICAL PERFORMANCE: Remove code from the list metadata to keep the sidebar fast
+        // eslint-disable-next-line no-unused-vars
+        const { code, ...metadataOnly } = payload
         return exists
-          ? prev.map((s) => (s.id === snippet.id ? { ...s, ...updatedItem } : s))
-          : [updatedItem, ...prev]
+          ? prev.map((s) => (s.id === payload.id ? { ...s, ...metadataOnly } : s))
+          : [metadataOnly, ...prev]
       })
 
       // Update the active view immediately to refresh snippet data for rename functionality
       if (!options.skipSelectedUpdate) {
-        if (selectedSnippet && selectedSnippet.id === snippet.id) {
+        if (selectedSnippet && selectedSnippet.id === payload.id) {
           // Force refresh the selected snippet with updated data
-          const refreshedSnippet = { ...snippet, code: fullText, is_draft: false }
-          setSelectedSnippetState(refreshedSnippet)
+          setSelectedSnippetState(payload)
         }
       }
       showToast('✓ Snippet saved successfully')

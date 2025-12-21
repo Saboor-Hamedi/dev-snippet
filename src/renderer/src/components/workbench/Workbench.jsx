@@ -86,6 +86,7 @@ const Workbench = ({
         <SnippetEditor
           key={selectedSnippet?.id || 'create-mode-editor'}
           initialSnippet={selectedSnippet}
+          snippets={snippets}
           onSave={onSave}
           onCancel={onCancelEditor}
           onNew={onNewSnippet}
@@ -107,6 +108,7 @@ const Workbench = ({
         <SnippetEditor
           key={selectedSnippet.id}
           initialSnippet={selectedSnippet}
+          snippets={snippets}
           onSave={handleSave}
           onNew={onNewSnippet}
           onCancel={onCloseSnippet}
