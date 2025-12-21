@@ -8,6 +8,8 @@ import Header from '../layout/Header'
 const Workbench = ({
   activeView,
   selectedSnippet,
+  showPreview,
+  onTogglePreview,
   onSave,
   onCloseSnippet,
   onCancelEditor,
@@ -70,6 +72,7 @@ const Workbench = ({
           onToggleCompact={onToggleCompact}
           onAutosave={onAutosave}
           showToast={showToast}
+          showPreview={showPreview}
         />
       )
     }
@@ -89,6 +92,7 @@ const Workbench = ({
           onToggleCompact={onToggleCompact}
           onAutosave={onAutosave}
           showToast={showToast}
+          showPreview={showPreview}
         />
       )
     }

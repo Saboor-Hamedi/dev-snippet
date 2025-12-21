@@ -42,7 +42,7 @@ const ActivityBar = ({ activeView, setActiveView, toggleSidebar }) => {
         label="Snippets"
         active={activeView === 'snippets'}
         onClick={() => handleItemClick('snippets')}
-        icon={<Files />}
+        icon={<Files size={12} />}
       />
 
       {/* Projects */}
@@ -50,7 +50,7 @@ const ActivityBar = ({ activeView, setActiveView, toggleSidebar }) => {
         label="Projects"
         active={activeView === 'projects'}
         onClick={() => handleItemClick('projects')}
-        icon={<FolderKanban />}
+        icon={<FolderKanban size={12} />}
       />
 
       {/* --- SPACER --- */}
@@ -60,7 +60,7 @@ const ActivityBar = ({ activeView, setActiveView, toggleSidebar }) => {
         label="Settings"
         active={activeView === 'settings'}
         onClick={() => setActiveView('settings')}
-        icon={<Settings />}
+        icon={<Settings size={12} />}
       />
     </div>
   )

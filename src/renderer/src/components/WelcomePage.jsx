@@ -10,10 +10,7 @@ const WelcomePage = ({ onNewSnippet, onNewProject }) => {
         <div className="mb-4 flex justify-center">
           <div className="relative">
             <div className="absolute inset-0 bg-primary-500/20 blur-3xl rounded-full"></div>
-            <FileCode
-              className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 text-primary-600 dark:text-primary-400 relative"
-              strokeWidth={1.5}
-            />
+            <FileCode size={12} className="text-primary-600 dark:text-primary-400 relative" strokeWidth={1.5} />
           </div>
         </div>
 
@@ -34,7 +31,7 @@ const WelcomePage = ({ onNewSnippet, onNewProject }) => {
           >
             <div className="flex items-start gap-4">
               <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg group-hover:scale-110 transition-transform">
-                <FileCode className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-primary-600 dark:text-primary-400" />
+                <FileCode size={12} className="text-primary-600 dark:text-primary-400" />
               </div>
               <div className="flex-1">
                 <h3 className="font-semibold text-slate-900 dark:text-white mb-1">New Snippet</h3>
@@ -51,7 +48,7 @@ const WelcomePage = ({ onNewSnippet, onNewProject }) => {
           >
             <div className="flex items-start gap-4">
               <div className="p-2 bg-slate-100 dark:bg-[#161b22] rounded-lg group-hover:scale-110 transition-transform">
-                <Folder className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-slate-600 dark:text-slate-300" />
+                <Folder size={12} className="text-slate-600 dark:text-slate-300" />
               </div>
               <div className="flex-1">
                 <h3 className="font-semibold text-slate-900 dark:text-white mb-1">New Project</h3>
@@ -64,7 +61,7 @@ const WelcomePage = ({ onNewSnippet, onNewProject }) => {
         {/* Keyboard Shortcuts */}
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6">
           <div className="flex items-center gap-2 mb-4">
-            <Keyboard className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+            <Keyboard size={12} className="text-slate-600 dark:text-slate-400" />
             <h3 className="font-semibold text-slate-900 dark:text-white">Keyboard Shortcuts</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">

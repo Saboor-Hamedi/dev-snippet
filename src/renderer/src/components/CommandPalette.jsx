@@ -93,7 +93,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
       >
         {/* Search Input */}
         <div className="flex items-center px-4 py-3 border-b border-slate-200 dark:border-slate-800">
-          <Search className="w-5 h-5 text-slate-400 mr-3" />
+          <Search size={12} className="text-slate-400 mr-3" />
           <input
             ref={inputRef}
             type="text"
@@ -126,15 +126,15 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
                       : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
                   }`}
                 >
-                  <div className="p-2 rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
-                    <FileCode size={18} />
+                    <div className="p-2 rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
+                    <FileCode size={12} />
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-0.5">
                       <span className="font-medium truncate">{item.title}</span>
                       {index === selectedIndex && (
-                        <ArrowRight size={14} className="text-primary-500" />
+                        <ArrowRight size={12} className="text-primary-500" />
                       )}
                     </div>
                     <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">

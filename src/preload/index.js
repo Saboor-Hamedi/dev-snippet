@@ -28,6 +28,10 @@ const api = {
   unmaximize: () => electronAPI.ipcRenderer.invoke('window:unmaximize'),
   toggleMaximize: () => electronAPI.ipcRenderer.invoke('window:toggle-maximize'),
   closeWindow: () => electronAPI.ipcRenderer.invoke('window:close'),
+  // Bounds helpers for custom resize handles (renderer will call these)
+  getWindowBounds: () => electronAPI.ipcRenderer.invoke('window:getBounds'),
+  setWindowBounds: (bounds) => electronAPI.ipcRenderer.invoke('window:setBounds', bounds),
+  restoreDefaultSize: () => electronAPI.ipcRenderer.invoke('window:restore-default-size'),
   
 }
 

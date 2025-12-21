@@ -21,15 +21,29 @@ export const useKeyboardShortcuts = (shortcuts) => {
        * For example, if a delete confirmation modal is open, we don't want
        * the global shortcuts to trigger actions in the background.
       */
-      if (e.key === 'Escape'){
-        if (shortcutsRef.current.onEscape) {
-          shortcutsRef.current.onEscapeWithContext()
+      if (e.key === 'Escape' || e.key === 'Esc') {
+        // Prefer a context-aware escape handler if provided. If it
+        // returns a truthy value we treat the event as handled and
+        // stop further processing so other components (e.g., editor)
+        // don't also react to Escape.
+        if (shortcutsRef.current.onEscapeWithContext) {
+          try {
+            const handled = shortcutsRef.current.onEscapeWithContext(e)
+            if (handled) {
+              try {
+                e.preventDefault()
+                e.stopImmediatePropagation()
+              } catch {}
+              return
+            }
+          } catch {}
         }
-      }
-      // Escape close
-      if (e.key === 'Escape') {
+
+        // Fallback: generic onEscape handler (non-contextual)
         if (shortcutsRef.current.onEscape) {
-          shortcutsRef.current.onEscape()
+          try {
+            shortcutsRef.current.onEscape(e)
+          } catch {}
         }
       }
       // Ctrl+S save
@@ -65,6 +79,21 @@ export const useKeyboardShortcuts = (shortcuts) => {
         e.preventDefault()
         if (shortcutsRef.current.onCopyToClipboard) {
           shortcutsRef.current.onCopyToClipboard()
+        }
+      }
+      // Ctrl+Shift+\ toggles live preview. Support multiple key/code variants
+      // to handle different keyboard layouts (Backslash, IntlBackslash, '|' with Shift).
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
+        const isBackslashKey = e.key === '\\' || e.key === '|' || e.code === 'Backslash' || e.code === 'IntlBackslash'
+        if (isBackslashKey) {
+          try {
+            e.preventDefault()
+          } catch {}
+          if (shortcutsRef.current.onTogglePreview) {
+            try {
+              shortcutsRef.current.onTogglePreview()
+            } catch {}
+          }
         }
       }
       // Ctrl+R rename selected snippet
