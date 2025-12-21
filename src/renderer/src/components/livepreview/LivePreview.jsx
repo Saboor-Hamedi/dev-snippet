@@ -64,29 +64,38 @@ const LivePreview = React.memo(({ code = '', language = 'markdown' }) => {
                 return (
                   <div className="code-block-wrapper">
                     <div className="code-block-header">
-                      <span className="code-language">Code • {match[1]}</span>
+                      <span className="code-language">{match[1]}</span>
                       <CopyButton text={codeContent} />
                     </div>
-                    <SyntaxHighlighter
-                      PreTag="div"
-                      language={match[1]}
-                      style={dark}
-                      customStyle={{
-                        margin: 0,
-                        width: '100%',
-                        background: 'var(--color-bg-primary)',
-                        borderTop: 'none',
-                        borderTopLeftRadius: '0',
-                        borderTopRightRadius: '0',
-                        border: 'none',
-                        outline: 'none',
-                        boxShadow: 'none'
-                      }}
-                      wrapLongLines={true}
-                      {...rest}
-                    >
-                      {codeContent}
-                    </SyntaxHighlighter>
+                    <div className="code-block-body ">
+                      <SyntaxHighlighter
+                        PreTag="div"
+                        language={match[1]}
+                        style={dark}
+                        customStyle={{
+                          margin: 0,
+                          width: '100%',
+                          background: 'transparent',
+                          padding: '1.25rem',
+                          border: 'none',
+                          borderRadius: '0',
+                          boxShadow: 'none',
+                          textShadow: 'none'
+                          // fontSize: '0.85rem'
+                        }}
+                        wrapLongLines={true}
+                        {...rest}
+                      >
+                        {codeContent}
+                      </SyntaxHighlighter>
+                    </div>
+                    <div className="code-block-footer">
+                      <div className="footer-meta">
+                        <span>{codeContent.split('\n').length} lines</span>
+                        <span className="separator">•</span>
+                        <span>{Math.round(new Blob([codeContent]).size / 10.24) / 100} KB</span>
+                      </div>
+                    </div>
                   </div>
                 )
               }

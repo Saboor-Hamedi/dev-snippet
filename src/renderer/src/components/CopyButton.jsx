@@ -1,41 +1,38 @@
-// components/CopyButton.tsx
+import React, { useState } from 'react'
 import { Copy, Check } from 'lucide-react'
-import { useState } from 'react'
-export default function CopyButton({ text }) {
+
+const CopyButton = ({ text }) => {
   const [copied, setCopied] = useState(false)
 
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(text)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+  const handleCopy = async (e) => {
+    e.stopPropagation()
+    try {
+      if (typeof window !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(text)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      }
+    } catch (err) {
+      console.error('Failed to copy:', err)
+    }
   }
 
   return (
     <button
       onClick={handleCopy}
-      className="relative flex h-8 w-20 items-center 
-                    justify-center overflow-hidden rounded-md
-                 bg-white/10 text-gray-300 transition-all duration-200
-                 hover:bg-white/20 active:scale-95"
-      aria-label={copied ? 'Copied' : 'Copy to clipboard'}
+      className={`
+        p-1 transition-all duration-200
+        ${
+          copied
+            ? 'text-emerald-400 bg-emerald-400/10'
+            : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
+        }
+      `}
+      title={copied ? 'Copied!' : 'Copy code'}
     >
-      {/* "Copy" state */}
-      <span
-        className={`flex items-center gap-1.5 text-xs font-medium transition-all duration-300
-        ${copied ? '-translate-x-full opacity-0' : 'translate-x-0 opacity-100'}`}
-      >
-        <Copy size={14} />
-        Copy
-      </span>
-
-      {/* "Copied!" state */}
-      <span
-        className={`absolute flex items-center gap-1.5 text-xs font-medium text-green-300 transition-all duration-300
-        ${copied ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}`}
-      >
-        <Check size={14} />
-        Copied!
-      </span>
+      {copied ? <Check size={14} /> : <Copy size={14} />}
     </button>
   )
 }
+
+export default CopyButton
