@@ -52,7 +52,7 @@ const UserSettings = ({
                 }`}
               >
                 <div className={`${viewMode === 'default' ? 'text-blue-400' : 'opacity-70'}`}>
-                  <BookOpen size={13} />
+                  <BookOpen size={12} />
                 </div>
                 <span>defaultSettings.json</span>
                 <span className="text-[10px] opacity-50 ml-1">(Read Only)</span>

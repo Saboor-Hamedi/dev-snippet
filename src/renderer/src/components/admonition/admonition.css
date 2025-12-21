@@ -1,0 +1,113 @@
+/* GitHub Alert Styles */
+.markdown-body .admonition {
+  margin: 1rem 0;
+  border-left: 4px solid;
+  border-radius: 0 8px 8px 0;
+  overflow: hidden;
+  font-family: inherit;
+}
+
+.markdown-body .admonition-header {
+  display: flex !important;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  user-select: none;
+}
+
+.markdown-body .admonition-header svg {
+  stroke: currentColor !important;
+  color: inherit !important;
+}
+
+.markdown-body .admonition-content {
+  padding: 0.5rem 1rem;
+  font-size: 0.95rem;
+  opacity: 0.9;
+}
+
+.markdown-body .admonition-content p:first-child {
+  margin-top: 0;
+}
+.markdown-body .admonition-content p:last-child {
+  margin-bottom: 0.5rem;
+}
+
+/* Note (Blue) */
+.markdown-body .admonition-note {
+  border-color: #3b82f6 !important;
+  background-color: rgba(59, 130, 246, 0.1) !important;
+}
+.markdown-body .admonition-note .admonition-header {
+  color: #2563eb !important;
+}
+.dark .markdown-body .admonition-note .admonition-header {
+  color: #60a5fa !important;
+}
+.dark .markdown-body .admonition-note {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+}
+
+/* Tip (Green/Yellow) */
+.markdown-body .admonition-tip {
+  border-color: #10b981 !important;
+  background-color: rgba(16, 185, 129, 0.1) !important;
+}
+.markdown-body .admonition-tip .admonition-header {
+  color: #059669 !important;
+}
+.dark .markdown-body .admonition-tip .admonition-header {
+  color: #facc15 !important;
+}
+.dark .markdown-body .admonition-tip {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+}
+
+/* Important (Purple) */
+.markdown-body .admonition-important {
+  border-color: #a855f7 !important;
+  background-color: rgba(168, 85, 247, 0.1) !important;
+}
+.markdown-body .admonition-important .admonition-header {
+  color: #9333ea !important;
+}
+.dark .markdown-body .admonition-important .admonition-header {
+  color: #c084fc !important;
+}
+.dark .markdown-body .admonition-important {
+  background-color: rgba(168, 85, 247, 0.15) !important;
+}
+
+/* Warning (Amber/Yellow) */
+.markdown-body .admonition-warning {
+  border-color: #f59e0b !important;
+  background-color: rgba(245, 158, 11, 0.1) !important;
+}
+.markdown-body .admonition-warning .admonition-header {
+  color: #d97706 !important;
+}
+.dark .markdown-body .admonition-warning .admonition-header {
+  color: #facc15 !important;
+}
+.dark .markdown-body .admonition-warning {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+}
+
+/* Caution (Red) */
+.markdown-body .admonition-caution {
+  border-color: #ef4444 !important;
+  background-color: rgba(239, 68, 68, 0.1) !important;
+}
+.markdown-body .admonition-caution .admonition-header {
+  color: #dc2626 !important;
+}
+.dark .markdown-body .admonition-caution .admonition-header {
+  color: #f87171 !important;
+}
+.dark .markdown-body .admonition-caution {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+}

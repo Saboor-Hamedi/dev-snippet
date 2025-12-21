@@ -1,6 +1,6 @@
 {
   "name": "dev-snippet",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "An Electron application with React",
   "author": "example.com",
   "homepage": "https://electron-vite.org",
@@ -43,6 +43,7 @@
     "github-markdown-css": "^5.8.1",
     "lucide": "^0.555.0",
     "lucide-react": "^0.555.0",
+    "mermaid": "^11.12.2",
     "preact": "^10.28.0",
     "prop-types": "^15.8.1",
     "react-markdown": "^10.1.0",
@@ -51,7 +52,9 @@
     "react-window": "^2.2.3",
     "rehype-raw": "^7.0.0",
     "remark-breaks": "^4.0.0",
-    "remark-gfm": "^4.0.1"
+    "remark-directive": "^4.0.0",
+    "remark-gfm": "^4.0.1",
+    "remark-github-blockquote-alert": "^2.0.1"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config": "^2.1.0",

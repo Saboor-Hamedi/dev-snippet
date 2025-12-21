@@ -302,12 +302,10 @@ const SnippetEditor = ({
               }
               right={
                 <div className="h-full p-4">
-                  {useMemo(
-                    () => (
-                      <LivePreview code={debouncedCode} language="markdown" />
-                    ),
-                    [debouncedCode]
-                  )}
+                  {useMemo(() => {
+                    const detectedLang = title?.split('.').pop() || 'markdown'
+                    return <LivePreview code={debouncedCode} language={detectedLang} />
+                  }, [debouncedCode, title])}
                 </div>
               }
             />
@@ -323,6 +321,7 @@ const SnippetEditor = ({
               if (!entered) return
               const fullTitle = entered.toLowerCase().endsWith('.md') ? entered : `${entered}.md`
               setTitle(fullTitle)
+              setIsDirty(true)
               setNamePrompt({ isOpen: false, initialName: '' })
               setJustRenamed(true)
             }}

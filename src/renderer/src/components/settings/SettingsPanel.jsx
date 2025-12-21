@@ -63,7 +63,7 @@ const SettingsPanel = ({ onClose }) => {
         if (path) {
           const data = {
             exportDate: new Date().toISOString(),
-            version: '1.1.4',
+            version: '1.1.5',
             snippets
           }
           await window.api.writeFile(path, JSON.stringify(data, null, 2))
@@ -215,7 +215,10 @@ const SettingsPanel = ({ onClose }) => {
               </h1>
             </div>
 
-            {activeTab === 'updates' && <UpdateSettings />}
+            {/* Persist UpdateSettings to keep download active when switching tabs */}
+            <div style={{ display: activeTab === 'updates' ? 'block' : 'none' }}>
+              <UpdateSettings />
+            </div>
 
             {activeTab === 'appearance' && <AppearanceSettings />}
 
