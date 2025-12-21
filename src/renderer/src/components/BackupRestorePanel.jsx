@@ -22,6 +22,27 @@ const BackupRestorePanel = () => {
     }
   }
 
+  // Create manual backup
+  const handleCreateBackup = async () => {
+    setLoading(true)
+    setMessage(null)
+    try {
+      if (window.api?.createBackup) {
+        const result = await window.api.createBackup()
+        if (result.success) {
+          setMessage({ type: 'success', text: '✓ Backup created successfully' })
+          loadBackups()
+        } else {
+          setMessage({ type: 'error', text: result.message || 'Failed to create backup' })
+        }
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: `Failed to create backup: ${error.message}` })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // Restore from backup (MERGE, not replace)
   const handleRestore = async (backupPath) => {
     if (
@@ -38,7 +59,7 @@ const BackupRestorePanel = () => {
         const result = await window.api.restoreBackup(backupPath)
         setMessage({
           type: 'success',
-          text: `✓ Restored ${result.added} snippets, skipped ${result.skipped} duplicates`
+          text: `✓ Restored ${result.added} snippets, ${result.settingsMerged || 0} settings merged`
         })
         // Refresh the page to show new data
         setTimeout(() => window.location.reload(), 2000)
@@ -73,17 +94,27 @@ const BackupRestorePanel = () => {
             Backup & Restore
           </h3>
           <p className="text-xs text-[var(--color-text-secondary)] mt-1">
-            Restore snippets from automatic backups
+            Create or restore snippets from backups
           </p>
         </div>
-        <button
-          onClick={loadBackups}
-          disabled={loading}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
-        >
-          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleCreateBackup}
+            disabled={loading}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs bg-[var(--color-accent)] text-white hover:opacity-90 transition-opacity disabled:opacity-50"
+          >
+            <Download size={14} className={loading && !restoring ? 'animate-bounce' : ''} />
+            Create Backup
+          </button>
+          <button
+            onClick={loadBackups}
+            disabled={loading}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
+          >
+            <RefreshCw size={14} className={loading && !restoring ? 'animate-spin' : ''} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Message */}
@@ -139,12 +170,23 @@ const BackupRestorePanel = () => {
                 key={index}
                 className="flex items-center justify-between p-3 rounded-lg bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
               >
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-medium text-[var(--color-text-primary)] truncate">
-                    {backup.name}
+                <div className="flex-1 min-w-0 mr-4">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-xs font-semibold text-[var(--color-text-primary)]">
+                      {formatDate(backup.timestamp)}
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] border border-[var(--color-border)]">
+                      {backup.snippetCount || 0} snippets
+                    </span>
                   </div>
-                  <div className="text-xs text-[var(--color-text-secondary)] mt-0.5">
-                    {formatDate(backup.timestamp)} • {backup.size}
+                  <div
+                    className="text-[11px] text-[var(--color-text-secondary)] truncate opacity-80"
+                    title={backup.preview}
+                  >
+                    {backup.preview || 'No snippets found'}
+                  </div>
+                  <div className="text-[10px] text-[var(--color-text-tertiary)] mt-0.5">
+                    {backup.size} • {backup.name}
                   </div>
                 </div>
                 <button

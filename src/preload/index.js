@@ -55,6 +55,7 @@ const api = {
   // Backup Management
   listBackups: () => electronAPI.ipcRenderer.invoke('backup:list'),
   restoreBackup: (backupPath) => electronAPI.ipcRenderer.invoke('backup:restore', backupPath),
+  createBackup: () => electronAPI.ipcRenderer.invoke('backup:create'),
 
   // Auto-Update
   checkForUpdates: () => electronAPI.ipcRenderer.invoke('updates:check'),

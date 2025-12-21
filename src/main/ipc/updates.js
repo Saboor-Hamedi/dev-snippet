@@ -8,6 +8,7 @@ import { ipcMain } from 'electron'
 export const registerUpdatesHandlers = (mainWindow) => {
   // Manual download flow for better UI control
   autoUpdater.autoDownload = false
+  autoUpdater.autoInstallOnAppQuit = true // Install on quit too (VS Code style)
   autoUpdater.allowPrerelease = true
   autoUpdater.logger = console
 
@@ -34,7 +35,7 @@ export const registerUpdatesHandlers = (mainWindow) => {
 
   // 3. Install update
   ipcMain.handle('updates:install', () => {
-    autoUpdater.quitAndInstall()
+    autoUpdater.quitAndInstall(true, true) // isSilent, isForceRunAfter
   })
 
   // --- Listeners to push events to renderer ---

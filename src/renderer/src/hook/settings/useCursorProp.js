@@ -31,7 +31,7 @@ export const useCursorProp = () => {
   const cursorShape = ALLOWED_CURSOR_SHAPES.includes(rawCursorShape) ? rawCursorShape : 'bar'
   const rawBlinking = getSetting('cursor.cursorBlinking')
   // Force a clean boolean to prevent "string trap" logic bugs
-  const cursorBlinking = rawBlinking !== false && rawBlinking !== 'false' && rawBlinking !== 0
+  const cursorBlinking = rawBlinking !== false && rawBlinking !== 'false' && a !== 0
 
   const rawBlinkingSpeed = getSetting('cursor.cursorBlinkingSpeed') ?? DEFAULT_BLINKING_SPEED
   const cursorBlinkingSpeed = clamp(
