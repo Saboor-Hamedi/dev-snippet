@@ -13,7 +13,8 @@
   --border-color: #232731;
   --border-width: 0;
   --border-round: 0;
-  --active-line-bg: #232731;
+  --active-line-bg: rgba(88, 166, 255, 0.1);
+  --shadow-box-color: #58a6ff;
 }
 
 @keyframes cm-cursor-blink {
@@ -38,9 +39,19 @@
 [data-cursor-blinking='true'] .cm-cursor-secondary {
   animation: cm-cursor-blink var(--cursor-blinking-speed, 500ms) step-end infinite !important;
 }
-.cm-activeLine {
-  background-color: transparent !important;
+/* VS CODE STYLE: Active Line Background (Base) */
+.cm-editor .cm-activeLine {
+  background-color: var(--active-line-bg) !important;
+  transition: all 0.1s ease !important;
 }
+
+/* VS CODE BEHAVIOR: Hide active line background and indicator when text is selected */
+.cm-editor[data-has-selection='true'] .cm-activeLine {
+  background-color: transparent !important;
+  border-left-color: transparent !important;
+  box-shadow: none !important;
+}
+
 /* 
 .cm-editor-wrapper {
   --zoom-level: 1;

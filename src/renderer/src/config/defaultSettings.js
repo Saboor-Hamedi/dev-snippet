@@ -15,15 +15,16 @@ export const DEFAULT_SETTINGS = {
     theme: 'dark'
   },
   cursor: {
-    width: 3,
-    color: '#58a6ff',
-    activeLineBg: '#232731',
-    shape: 'bar',
-    blinking: true,
-    blinkingSpeed: 500,
-    selectionBackground: '#58a6ff33',
-    activeLineBorderWidth: 0,
-    activeLineGutterBorderWidth: 0
+    cursorWidth: 3,
+    cursorColor: '#58a6ff',
+    cursorShape: 'bar',
+    cursorBlinking: true,
+    cursorBlinkingSpeed: 500,
+    cursorSelectionBg: '#58a6ff33',
+    cursorActiveLineBg: 'rgba(88, 166, 255, 0.1)',
+    cursorActiveLineBorder: 0,
+    cursorActiveLineGutterBorder: 0,
+    cursorShadowBoxColor: '#58a6ff'
   },
   gutter: {
     gutterBgColor: '#232731',

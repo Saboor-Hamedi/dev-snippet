@@ -87,10 +87,8 @@ const buildTheme = (EditorView, options = {}) => {
         minWidth: '100%'
       },
 
-      // Active line
-      '.cm-activeLine': {
-        backgroundColor: 'transparent !important'
-      },
+      // Active line - Handled in CodeEditor.css
+      '.cm-activeLine': {},
       '.cm-activeLineGutter': {
         color: 'var(--color-text-primary, #e2e8f0) !important'
       },

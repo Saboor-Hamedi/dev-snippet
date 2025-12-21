@@ -28,20 +28,24 @@ const AppearanceSettings = () => {
   } = useFontSettings()
 
   const {
-    width: cursorWidth,
+    cursorWidth,
     setCursorWidth: onCursorWidthChange,
-    shape: cursorShape,
+    cursorShape,
     setCursorShape: onCursorShapeChange,
-    blinking: cursorBlinking,
+    cursorBlinking,
     setCursorBlinking: onCursorBlinkingChange,
-    blinkingSpeed: blinkingSpeed,
-    setBlinkingSpeed: onBlinkingSpeedChange,
-    selectionBackground,
-    setSelectionBackground: onSelectionBackgroundChange,
-    activeLineBorderWidth,
-    setActiveLineBorderWidth: onActiveLineBorderWidthChange,
-    activeLineGutterBorderWidth,
-    setActiveLineGutterBorderWidth: onActiveLineGutterBorderWidthChange
+    cursorBlinkingSpeed,
+    setCursorBlinkingSpeed: onCursorBlinkingSpeedChange,
+    cursorSelectionBg,
+    setCursorSelectionBg: onCursorSelectionBgChange,
+    cursorActiveLineBorder,
+    setCursorActiveLineBorder: onCursorActiveLineBorderChange,
+    cursorActiveLineGutterBorder,
+    setCursorActiveLineGutterBorder: onCursorActiveLineGutterBorderChange,
+    cursorActiveLineBg,
+    setCursorActiveLineBg: onCursorActiveLineBgChange,
+    cursorShadowBoxColor,
+    setCursorShadowBoxColor: onCursorShadowBoxColorChange
   } = useCursorProp()
 
   const fontOptions = ['JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', 'Courier New']
@@ -121,16 +125,16 @@ const AppearanceSettings = () => {
         label="Blinking Speed"
         description="Controls how fast the cursor blinks (ms)."
         type="text"
-        value={blinkingSpeed}
-        onChange={onBlinkingSpeedChange}
+        value={cursorBlinkingSpeed}
+        onChange={onCursorBlinkingSpeedChange}
       />
 
       {/* Selection Background */}
       <SettingInput
         label="Selection Highlighting"
         description="Background color for selected text."
-        value={selectionBackground}
-        onChange={onSelectionBackgroundChange}
+        value={cursorSelectionBg}
+        onChange={onCursorSelectionBgChange}
         type="text"
         placeholder="#58a6ff33"
         noBorder
@@ -139,8 +143,8 @@ const AppearanceSettings = () => {
       <SettingInput
         label="Active Line Border"
         description="Left border width for the active line (0-10px)"
-        value={activeLineBorderWidth}
-        onChange={onActiveLineBorderWidthChange}
+        value={cursorActiveLineBorder}
+        onChange={onCursorActiveLineBorderChange}
         type="text"
         placeholder="0"
       />
@@ -148,10 +152,29 @@ const AppearanceSettings = () => {
       <SettingInput
         label="Gutter Border"
         description="Left border width for the active line gutter (0-10px)"
-        value={activeLineGutterBorderWidth}
-        onChange={onActiveLineGutterBorderWidthChange}
+        value={cursorActiveLineGutterBorder}
+        onChange={onCursorActiveLineGutterBorderChange}
         type="text"
         placeholder="2"
+      />
+
+      <SettingInput
+        label="Active Line Background"
+        description="Background color for the current active line."
+        value={cursorActiveLineBg}
+        onChange={onCursorActiveLineBgChange}
+        type="text"
+        placeholder="rgba(88, 166, 255, 0.1)"
+        noBorder
+      />
+      <SettingInput
+        label="Shadow Box Background"
+        description="Glow color (shadow) for the active line."
+        value={cursorShadowBoxColor}
+        onChange={onCursorShadowBoxColorChange}
+        type="text"
+        placeholder="#58a6ff"
+        noBorder
       />
     </SettingSection>
   )

@@ -47,22 +47,38 @@ export const beautySelection = EditorView.theme({
     borderRadius: '2px'
   },
   '.cm-activeLine': {
-    backgroundColor: 'var(--active-line-bg) !important',
-    borderLeftWidth: 'var(--active-line-border-width, 0px) !important',
-    borderLeftColor: 'var(--caret-color) !important',
-    borderLeftStyle: 'solid !important',
-    boxShadow: 'inset 10px 0 20px -15px var(--caret-color)',
+    borderLeft: 'var(--active-line-border-width, 2px) solid var(--caret-color) !important',
+    boxShadow: 'inset 10px 0 20px -15px var(--shadow-box-bg)',
     position: 'relative'
   },
   '.cm-activeLineGutter': {
-    backgroundColor: 'rgba(88, 166, 255, 0.05) !important',
-    color: 'var(--caret-color) !important',
-    borderLeftWidth: 'var(--active-line-gutter-border-width, 0px) !important',
-    borderLeftColor: 'var(--caret-color) !important',
-    borderLeftStyle: 'solid !important',
-    transition: 'all 0.2s ease'
+    borderLeft: 'var(--active-line-gutter-border-width, 0px) solid var(--caret-color) !important',
+    backgroundColor: 'transparent !important',
+    transition: 'all 0.1s ease'
   }
 })
+
+/**
+ * 3. INTELLIGENT SELECTION WATCHER
+ * Hides the active line highlight when text is being selected (VS Code Standard)
+ */
+export const selectionWatcher = ViewPlugin.fromClass(
+  class {
+    constructor(view) {
+      // Set initial state
+      const hasSelection = !view.state.selection.main.empty
+      view.dom.setAttribute('data-has-selection', hasSelection ? 'true' : 'false')
+    }
+
+    update(update) {
+      if (update.selectionSet || update.docChanged) {
+        const hasSelection = !update.state.selection.main.empty
+        // Apply data attribute for robust CSS targeting
+        update.view.dom.setAttribute('data-has-selection', hasSelection ? 'true' : 'false')
+      }
+    }
+  }
+)
 
 /**
  * 3. TACTILE AUDIO FEEDBACK (Synthesized)
@@ -118,4 +134,4 @@ export const tactileTyping = ViewPlugin.fromClass(
 /**
  * MASTER PREMIUM BUNDLE
  */
-export const premiumTypingBundle = [cursorStyles, beautySelection, tactileTyping]
+export const premiumTypingBundle = [cursorStyles, beautySelection, tactileTyping, selectionWatcher]

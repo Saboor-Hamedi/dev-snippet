@@ -34,15 +34,16 @@ const CodeEditor = ({
 
   // CONSUME SETTINGS VIA REFACTOR HOOKS (SOLID)
   const {
-    width: cursorWidth,
-    color: cursorColor,
-    shape: cursorShape,
-    blinking: cursorBlinking,
-    blinkingSpeed: cursorBlinkingSpeed,
-    selectionBackground,
-    activeLineBorderWidth,
-    activeLineGutterBorderWidth,
-    activeLineBg
+    cursorWidth,
+    cursorColor,
+    cursorShape,
+    cursorBlinking,
+    cursorBlinkingSpeed,
+    cursorSelectionBg,
+    cursorActiveLineBorder,
+    cursorActiveLineGutterBorder,
+    cursorActiveLineBg,
+    cursorShadowBoxColor
   } = useCursorProp()
   const { gutterBgColor, gutterBorderColor, gutterBorderWidth } = useGutterProp()
   const viewRef = useRef(null)
@@ -99,13 +100,14 @@ const CodeEditor = ({
         --caret-width: ${cursorWidth}px;
         --caret-color: ${cursorColor};
         --cursor-blinking-speed: ${cursorBlinkingSpeed}ms;
-        --selection-background: ${selectionBackground};
+        --selection-background: ${cursorSelectionBg};
         --gutter-bg-color: ${gutterBgColor};
         --gutter-border-color: ${gutterBorderColor};
         --gutter-border-width: ${gutterBorderWidth}px;
-        --active-line-border-width: ${activeLineBorderWidth}px;
-        --active-line-gutter-border-width: ${activeLineGutterBorderWidth}px;
-        --active-line-bg: ${activeLineBg};
+        --active-line-border-width: ${cursorActiveLineBorder}px;
+        --active-line-gutter-border-width: ${cursorActiveLineGutterBorder}px;
+        --active-line-bg: ${cursorActiveLineBg};
+        --shadow-box-bg: ${cursorShadowBoxColor};
       `
     })
   }, [
@@ -114,13 +116,14 @@ const CodeEditor = ({
     cursorBlinkingSpeed,
     cursorWidth,
     cursorColor,
-    selectionBackground,
+    cursorSelectionBg,
     gutterBgColor,
     gutterBorderColor,
     gutterBorderWidth,
-    activeLineBorderWidth,
-    activeLineGutterBorderWidth,
-    activeLineBg
+    cursorActiveLineBorder,
+    cursorActiveLineGutterBorder,
+    cursorActiveLineBg,
+    cursorShadowBoxColor
   ])
 
   // Merge extensions
@@ -191,7 +194,8 @@ const CodeEditor = ({
   }, [
     wordWrap,
     cursorWidth,
-    activeLineBg,
+    cursorActiveLineBg,
+    cursorShadowBoxColor,
     cursorColor,
     cursorBlinking,
     cursorBlinkingSpeed, // Add dependency
