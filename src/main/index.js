@@ -6,7 +6,7 @@
 // Set this to true for development, false for production
 // When true: DevTools can be opened manually with Ctrl+Shift+I or F12
 // When false: DevTools are completely disabled and cannot be opened
-const ENABLE_DEVTOOLS = false // <-- CHANGE THIS FOR YOUR NEEDS
+const ENABLE_DEVTOOLS = true // <-- CHANGE THIS FOR YOUR NEEDS
 
 const { app, BrowserWindow } = require('electron')
 
