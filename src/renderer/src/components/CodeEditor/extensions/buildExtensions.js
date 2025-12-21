@@ -211,25 +211,39 @@ const buildExtensions = async (options, handlers = {}) => {
   }
 
   // Markdown Support (Skip rich decorations for large files)
-  if (!isLargeFile && language === 'markdown') {
+  if (language === 'markdown') {
     try {
-      // 1. Official Markdown Extension (Must come before custom styles for stability)
       const { markdown } = await import('@codemirror/lang-markdown')
-      const languages = await getLanguages()
-      exts.push(markdown({ addKeymap: false, codeLanguages: languages }))
 
-      // 2. Load Custom Syntax Highlighting (Colors only)
-      const { richMarkdownExtension } = await import('./richMarkdown.js')
-      exts.push(richMarkdownExtension)
+      // Load languages safely for nested code blocks
+      let languages = []
+      if (!isLargeFile) {
+        try {
+          languages = (await getLanguages()) || []
+        } catch (err) {
+          console.warn('Failed to load code languages:', err)
+        }
+      }
+
+      // 1. Official Markdown Extension
+      exts.push(
+        markdown({
+          addKeymap: false,
+          codeLanguages: languages,
+          defaultCodeLanguage: undefined // Let it guess or fallback
+        })
+      )
+
+      // 2. Load Custom Syntax Highlighting (Colors only) - Only for small files
+      if (!isLargeFile) {
+        const { richMarkdownExtension } = await import('./richMarkdown.js')
+        exts.push(richMarkdownExtension)
+      }
     } catch (e) {
       console.error('Failed to load markdown extensions', e)
+      // Fallback: Just load basic line wrapping if markdown fails
+      exts.push(EditorView.lineWrapping)
     }
-  } else if (language === 'markdown' && isLargeFile) {
-    // For large files, use basic markdown without rich decorations
-    try {
-      const { markdown } = await import('@codemirror/lang-markdown')
-      exts.push(markdown({ addKeymap: false }))
-    } catch (e) {}
   }
 
   return exts
