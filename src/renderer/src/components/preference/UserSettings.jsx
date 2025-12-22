@@ -1,112 +1,112 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { Save, Code, Sliders } from 'lucide-react'
+import { useSettings } from '../../hook/useSettingsContext'
 import CodeEditor from '../CodeEditor/CodeEditor'
-import { Save, FileJson, BookOpen } from 'lucide-react'
-import { DEFAULT_SETTINGS } from '../../config/defaultSettings'
+import SettingsForm from '../settings/SettingsForm'
 
-const UserSettings = ({
-  activeTab,
-  jsonContent,
-  isJsonDirty,
-  handleSaveJson,
-  setJsonContent,
-  setIsJsonDirty
-}) => {
-  const [viewMode, setViewMode] = useState('user') // 'user' | 'default'
+const UserSettings = () => {
+  const { settings, updateSettings, resetSettings } = useSettings()
 
-  // Format default settings string on render (it's static)
-  const defaultSettingsString = JSON.stringify(DEFAULT_SETTINGS, null, 2)
+  // 'ui' or 'json'
+  const [mode, setMode] = useState('ui')
+
+  // Local state for the JSON editor string
+  const [jsonText, setJsonText] = useState('')
+
+  // Sync jsonText when settings change or when switching to JSON mode
+  // This ensures we always see the latest settings when opening the JSON tab
+  useEffect(() => {
+    if (settings && mode === 'json') {
+      setJsonText(JSON.stringify(settings, null, 2))
+    }
+  }, [settings, mode])
+
+  const handleJsonSave = () => {
+    try {
+      const parsed = JSON.parse(jsonText)
+      updateSettings(parsed)
+      // Optional: Add toast or success indicator here
+    } catch (e) {
+      console.error('Invalid JSON', e)
+      alert('Invalid JSON: ' + e.message)
+    }
+  }
+
+  const handleReset = () => {
+    if (confirm('Are you sure you want to reset to defaults?')) {
+      if (resetSettings) resetSettings()
+      else console.error('resetSettings function is missing from context')
+    }
+  }
 
   return (
-    <>
-      {activeTab === 'json' && (
-        <div className="flex flex-col h-full bg-[var(--color-bg-primary)]">
-          {/* Header with Tabs */}
-          {/* Tab Bar Header - VS Code Style */}
-          <div className="flex items-center justify-between bg-[var(--color-bg-secondary)] border-b border-[var(--color-border)] select-none">
-            <div className="flex items-end">
-              {/* User Settings Tab */}
-              <button
-                onClick={() => setViewMode('user')}
-                className={`px-4 py-2.5 text-xs font-medium flex items-center gap-2 transition-colors border-r border-[var(--color-border)]/30 ${
-                  viewMode === 'user'
-                    ? 'bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] border-t-2 border-t-[var(--color-accent)]'
-                    : 'bg-transparent text-[var(--color-text-tertiary)] hover:bg-[var(--color-bg-primary)]/50 border-t-2 border-t-transparent'
-                }`}
-              >
-                <div className={`${viewMode === 'user' ? 'text-amber-400' : 'opacity-70'}`}>
-                  <FileJson size={13} />
-                </div>
-                <span>settings.json</span>
-                {isJsonDirty && (
-                  <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-text-secondary)] opacity-80" />
-                )}
-              </button>
+    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0d1117] text-slate-900 dark:text-slate-100 transition-colors duration-300">
+      {/* Settings Header */}
+      <div className="flex items-center justify-between px-8 py-6 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0d1117]">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Manage your editor preferences and configurations.
+          </p>
+        </div>
 
-              {/* Default Settings Tab */}
-              <button
-                onClick={() => setViewMode('default')}
-                className={`px-4 py-2.5 text-xs font-medium flex items-center gap-2 transition-colors border-r border-[var(--color-border)]/30 ${
-                  viewMode === 'default'
-                    ? 'bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] border-t-2 border-t-[var(--color-accent)]'
-                    : 'bg-transparent text-[var(--color-text-tertiary)] hover:bg-[var(--color-bg-primary)]/50 border-t-2 border-t-transparent'
-                }`}
-              >
-                <div className={`${viewMode === 'default' ? 'text-blue-400' : 'opacity-70'}`}>
-                  <BookOpen size={12} />
-                </div>
-                <span>defaultSettings.json</span>
-                <span className="text-[10px] opacity-50 ml-1">(Read Only)</span>
-              </button>
+        {/* Mode Switcher */}
+        <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+          <button
+            onClick={() => setMode('ui')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              mode === 'ui'
+                ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+            }`}
+          >
+            <Sliders size={16} />
+            <span>Visual</span>
+          </button>
+          <button
+            onClick={() => setMode('json')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              mode === 'json'
+                ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+            }`}
+          >
+            <Code size={16} />
+            <span>JSON</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Content Area */}
+      <div className="flex-1 overflow-auto">
+        {mode === 'ui' ? (
+          <SettingsForm key="visual-settings" />
+        ) : (
+          <div className="h-full flex flex-col" key="json-settings">
+            <div className="flex-1 relative">
+              <CodeEditor code={jsonText} onChange={setJsonText} language="json" lineNumbers="on" />
             </div>
 
-            {/* Actions Toolbar */}
-            {viewMode === 'user' && (
-              <div className="pr-3 py-1">
-                <button
-                  onClick={handleSaveJson}
-                  disabled={!isJsonDirty}
-                  title="Save Changes (Ctrl+S)"
-                  className={`flex items-center gap-2 px-3 py-1 text-[11px] font-bold tracking-wide uppercase transition-all duration-200 ${
-                    isJsonDirty
-                      ? 'text-[var(--color-accent)] hover:bg-[var(--color-accent)]/10'
-                      : 'text-[var(--color-text-tertiary)] opacity-50 cursor-not-allowed'
-                  }`}
-                >
-                  <Save size={14} className={isJsonDirty ? '' : ''} />
-                  <span>Save</span>
-                </button>
-              </div>
-            )}
+            {/* Toolbar for JSON Mode */}
+            <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#161b22] flex justify-end gap-3">
+              <button
+                onClick={handleReset}
+                className="px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+              >
+                Reset to Defaults
+              </button>
+              <button
+                onClick={handleJsonSave}
+                className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors shadow-sm"
+              >
+                <Save size={16} />
+                <span>Save Changes</span>
+              </button>
+            </div>
           </div>
-
-          <div
-            className="flex-1 overflow-hidden border-t-0"
-            style={{ borderColor: 'var(--color-border)' }}
-          >
-            {viewMode === 'user' ? (
-              <CodeEditor
-                key="user-settings-editor"
-                value={jsonContent}
-                language="json"
-                onChange={(newVal) => {
-                  setJsonContent(newVal)
-                  setIsJsonDirty(true)
-                }}
-                className="h-full"
-              />
-            ) : (
-              <CodeEditor
-                key="default-settings-editor"
-                value={defaultSettingsString}
-                language="json"
-                readOnly={true}
-                className="h-full opacity-80"
-              />
-            )}
-          </div>
-        </div>
-      )}
-    </>
+        )}
+      </div>
+    </div>
   )
 }
 

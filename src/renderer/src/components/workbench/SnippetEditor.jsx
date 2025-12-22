@@ -170,6 +170,22 @@ const SnippetEditor = ({
           })
         )
       }
+
+      // Re-dispatch shortcuts from iframe
+      if (event.data?.type === 'app:keydown') {
+        const { key, code, ctrlKey, metaKey, shiftKey, altKey } = event.data
+        const syntheticEvent = new KeyboardEvent('keydown', {
+          key,
+          code,
+          ctrlKey,
+          metaKey,
+          shiftKey,
+          altKey,
+          bubbles: true,
+          cancelable: true
+        })
+        window.dispatchEvent(syntheticEvent)
+      }
     }
 
     window.addEventListener('message', handleMessage)
@@ -378,7 +394,26 @@ const SnippetEditor = ({
                 <div className="h-full p-0">
                   {useMemo(() => {
                     const ext = title?.includes('.') ? title.split('.').pop()?.toLowerCase() : null
-                    const detectedLang = ext || 'plaintext'
+
+                    // Default detection from extension
+                    let detectedLang = ext || 'plaintext'
+
+                    // Heuristic: If untitled/no-extension, check content for Markdown indicators
+                    if (!ext && debouncedCode) {
+                      const trimmed = debouncedCode.trim()
+                      if (
+                        trimmed.startsWith('# ') ||
+                        trimmed.startsWith('## ') ||
+                        trimmed.startsWith('### ') ||
+                        trimmed.startsWith('- ') ||
+                        trimmed.startsWith('* ') ||
+                        trimmed.startsWith('```') ||
+                        trimmed.startsWith('>')
+                      ) {
+                        detectedLang = 'markdown'
+                      }
+                    }
+
                     return (
                       <LivePreview
                         code={debouncedCode}
@@ -391,7 +426,7 @@ const SnippetEditor = ({
                         onExportPDF={handleExportPDF}
                       />
                     )
-                  }, [debouncedCode, title, snippets, currentTheme])}
+                  }, [debouncedCode, title, snippets, currentTheme, settings?.editor?.fontFamily])}
                 </div>
               }
             />

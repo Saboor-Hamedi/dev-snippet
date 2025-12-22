@@ -92,6 +92,11 @@ export const SettingsProvider = ({ children }) => {
 
       root.style.setProperty('--editor-font-size', sizeVal)
       root.style.setProperty('--editor-font-family', fontFamily)
+
+      // Apply Editor Background Color from settings
+      if (settings.editor.editorBgColor) {
+        root.style.setProperty('--editor-bg', settings.editor.editorBgColor)
+      }
     }
   }, [settings])
 
@@ -126,6 +131,15 @@ export const SettingsProvider = ({ children }) => {
     }
   }
 
+  // Reset to defaults
+  const resetSettings = async () => {
+    await settingsManager.set('appearance', DEFAULT_SETTINGS.appearance)
+    await settingsManager.set('editor', DEFAULT_SETTINGS.editor)
+    await settingsManager.set('ui', DEFAULT_SETTINGS.ui)
+    // Force set state to defaults to ensure UI reflects it immediately
+    setSettings(DEFAULT_SETTINGS)
+  }
+
   return (
     <SettingsContext.Provider
       value={{
@@ -133,6 +147,7 @@ export const SettingsProvider = ({ children }) => {
         getSetting,
         updateSetting,
         updateSettings,
+        resetSettings,
         zoom,
         setZoom
       }}

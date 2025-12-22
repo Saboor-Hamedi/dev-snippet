@@ -163,18 +163,19 @@ const buildExtensions = async (options, handlers = {}) => {
 
   // High-performance typing animations (skip for large files)
   if (!isLargeFile) {
-    exts.push(...premiumTypingBundle)
+    // exts.push(...premiumTypingBundle)
   }
 
   // CORE UI EXTENSIONS (Critical for stability)
   try {
-    const { drawSelection, dropCursor, highlightActiveLine } = await import('@codemirror/view')
+    const { /* drawSelection, */ dropCursor, highlightActiveLine } =
+      await import('@codemirror/view')
     // Uses custom drawn selection (better for mixed font sizes/rich text)
-    exts.push(
-      drawSelection({
-        cursorBlinkRate: 0 // Disable internal blinking to use CSS animation
-      })
-    )
+    // exts.push(
+    //   drawSelection({
+    //     cursorBlinkRate: 0 // Disable internal blinking to use CSS animation
+    //   })
+    // )
     exts.push(dropCursor())
     // highlightActiveLine helps visual context
     exts.push(highlightActiveLine())
@@ -227,23 +228,23 @@ const buildExtensions = async (options, handlers = {}) => {
       }
 
       // 1. Official Markdown Extension
-      exts.push(
-        markdown({
-          addKeymap: false,
-          codeLanguages: languages,
-          defaultCodeLanguage: undefined // Let it guess or fallback
-        })
-      )
+      // exts.push(
+      //   markdown({
+      //     addKeymap: false,
+      //     codeLanguages: languages,
+      //     defaultCodeLanguage: undefined // Let it guess or fallback
+      //   })
+      // )
 
       // 2. Load Custom Syntax Highlighting (Colors only) - Only for small files
-      if (!isLargeFile) {
-        const { richMarkdownExtension } = await import('./richMarkdown.js')
-        exts.push(richMarkdownExtension)
-
-        // 3. WikiLink Autocomplete
-        const { default: wikiLinkCompletion } = await import('./wikiLinkCompletion.js')
-        exts.push(wikiLinkCompletion(snippetTitles))
-      }
+      // if (!isLargeFile) {
+      //   const { richMarkdownExtension } = await import('./richMarkdown.js')
+      //   exts.push(richMarkdownExtension)
+      //
+      //   // 3. WikiLink Autocomplete
+      //   const { default: wikiLinkCompletion } = await import('./wikiLinkCompletion.js')
+      //   exts.push(wikiLinkCompletion(snippetTitles))
+      // }
     } catch (e) {
       console.error('Failed to load markdown extensions', e)
       // Fallback: Just load basic line wrapping if markdown fails

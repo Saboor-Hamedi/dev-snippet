@@ -3,6 +3,9 @@ import PropTypes from 'prop-types'
 import { GripVertical, Smartphone, Tablet, Monitor, Image } from 'lucide-react'
 import useAdvancedSplitPane from './useAdvancedSplitPane.js'
 
+// Export Context for children to control the pane
+export const SplitPaneContext = React.createContext(null)
+
 const AdvancedSplitPane = ({
   left,
   right,
@@ -119,8 +122,13 @@ const AdvancedSplitPane = ({
     }
   }, [overlayMode, initialLeft])
 
+  const contextValue = React.useMemo(
+    () => ({ overlayMode, overlayWidth, setOverlayWidth }),
+    [overlayMode, overlayWidth]
+  )
+
   return (
-    <>
+    <SplitPaneContext.Provider value={contextValue}>
       {rightHidden ? (
         <div
           ref={containerRef}
@@ -153,64 +161,18 @@ const AdvancedSplitPane = ({
                   borderRadius: `${borderRound}px`
                 }}
               >
-                {/* Toolbar */}
-                <div className="flex items-center justify-end px-2 py-1 gap-1 border-b border-black/5 dark:border-white/5 bg-slate-50/50 dark:bg-slate-800/50 shrink-0">
-                  <button
-                    onClick={() => {
-                      setOverlayWidth(25)
-                      localStorage.setItem('overlayWidth', 25)
-                    }}
-                    className={`p-1.5 text-xs rounded transition-colors flex items-center justify-center ${
-                      overlayWidth === 25
-                        ? 'bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-500'
-                        : 'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200'
-                    }`}
-                    title="Mobile View (25%)"
-                  >
-                    <Smartphone size={10} />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setOverlayWidth(50)
-                      localStorage.setItem('overlayWidth', 50)
-                    }}
-                    className={`p-1.5 text-xs rounded transition-colors flex items-center justify-center ${
-                      overlayWidth === 50
-                        ? 'bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-500'
-                        : 'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200'
-                    }`}
-                    title="Tablet View (50%)"
-                  >
-                    <Tablet size={10} />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setOverlayWidth(75)
-                      localStorage.setItem('overlayWidth', 75)
-                    }}
-                    className={`p-1.5 text-xs rounded transition-colors flex items-center justify-center ${
-                      overlayWidth === 75
-                        ? 'bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-500'
-                        : 'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200'
-                    }`}
-                    title="Desktop View (75%)"
-                  >
-                    <Monitor size={10} />
-                  </button>
-                </div>
-
                 {/* Resize handle */}
                 <div
                   className="absolute left-0 top-0 bottom-0 w-2 cursor-col-resize
-                 hover:bg-blue-500/20 transition-colors flex items-center justify-center z-20"
+                 hover:bg-blue-500/20 transition-colors flex items-center justify-center z-20 group"
                   onMouseDown={startDrag}
                 >
-                  <div className="w-1 h-8 bg-slate-400 dark:bg-slate-500 rounded-full opacity-50 hover:opacity-100"></div>
+                  <div className="w-1 h-8 bg-slate-400 dark:bg-slate-500 rounded-full opacity-30 group-hover:opacity-100 transition-opacity"></div>
                 </div>
 
                 {/* Content */}
                 <div
-                  className={`flex-1 ml-2 overflow-auto relative ${isDragging ? 'pointer-events-none' : ''}`}
+                  className={`flex-1 overflow-auto relative ${isDragging ? 'pointer-events-none' : ''}`}
                 >
                   {right}
                 </div>
@@ -265,7 +227,7 @@ const AdvancedSplitPane = ({
           </div>
         </div>
       )}
-    </>
+    </SplitPaneContext.Provider>
   )
 }
 

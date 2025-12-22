@@ -132,6 +132,7 @@
 
       // Handle Clicks
       document.addEventListener('click', (e) => {
+        // 1. Copy Code Button
         const btn = e.target.closest('.copy-code-btn');
         if (btn) {
           const raw = btn.dataset.code.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
@@ -141,9 +142,53 @@
             btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
             setTimeout(() => { btn.classList.remove('success'); btn.innerHTML = old; }, 2000);
           });
+          return;
         }
-        const link = e.target.closest('.preview-quicklink');
-        if (link) window.parent.postMessage({ type: 'app:open-snippet', title: link.dataset.title }, '*');
+
+        // 2. Quick Links (Internal Wiki Links)
+        const quickLink = e.target.closest('.preview-quicklink');
+        if (quickLink) {
+          window.parent.postMessage({ type: 'app:open-snippet', title: quickLink.dataset.title }, '*');
+          return; 
+        }
+
+        // 3. Standard Anchor Links
+        const link = e.target.closest('a');
+        if (link) {
+          e.preventDefault();
+          const href = link.getAttribute('href');
+          
+          if (!href) return;
+
+          // Hash Link (Scroll to ID)
+          if (href.startsWith('#')) {
+             const targetId = href.substring(1);
+             // Decode URI in case ID has special chars
+             try {
+               const element = document.getElementById(decodeURIComponent(targetId));
+               if (element) {
+                 element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+               }
+             } catch(err) { console.warn('Scroll failed', err); }
+          } 
+          // External Link (http/https)
+          else if (href.startsWith('http') || href.startsWith('mailto:')) {
+            window.parent.postMessage({ type: 'app:open-external', url: href }, '*');
+          }
+        }
+      });
+
+      // Forward keydown events to parent for shortcuts
+      document.addEventListener('keydown', (e) => {
+        window.parent.postMessage({
+          type: 'app:keydown',
+          key: e.key,
+          code: e.code,
+          ctrlKey: e.ctrlKey,
+          metaKey: e.metaKey,
+          shiftKey: e.shiftKey,
+          altKey: e.altKey
+        }, '*');
       });
     </script>
   </body>

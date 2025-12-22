@@ -28,17 +28,19 @@
 }
 
 /* Cursor Blinking Logic - GPU Optimized */
-.cm-editor-container[data-cursor-blinking='true'] .cm-cursor {
-  animation: cm-cursor-blink var(--cursor-blinking-speed, 500ms) step-end infinite !important;
+.cm-cursor {
+  border-left-color: var(--caret-color, white) !important;
+  border-left-width: 2px !important;
+}
+
+.cm-editor.cm-focused .cm-cursor {
+  animation: cm-cursor-blink var(--cursor-blinking-speed, 500ms) step-end infinite;
 }
 
 /* Force Stop Blinking */
-.cm-editor-container[data-cursor-blinking='false'] .cm-cursor,
-.cm-editor-container[data-cursor-blinking='false'] .cm-cursor-primary,
-.cm-editor-container[data-cursor-blinking='false'] .cm-cursor-secondary {
+.cm-editor-container[data-cursor-blinking='false'] .cm-cursor {
   animation: none !important;
   opacity: 1 !important;
-  visibility: visible !important;
 }
 /* VS CODE STYLE: Active Line Background (Base) */
 .cm-editor .cm-activeLine {
@@ -98,47 +100,16 @@
 } */
 
 /* Layout Reset: Ensure no global CSS affects the editor internals */
-.cm-content,
-.cm-content *,
-.cm-line,
-.cm-line * {
+.cm-content {
   margin: 0 !important;
-  padding: 0 !important;
+  /* padding: 0 !important;  <-- REMOVED: This breaks internal CM measurements if it overrides theme padding */
   line-height: 1.6 !important;
   box-sizing: border-box !important;
 }
 
-/* Specific fix for the "huge space" caused by triple backticks */
-.cm-content pre,
-.cm-content code,
-.cm-codeBlock {
-  display: block !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  background: transparent !important;
-  font-family: inherit !important;
-  font-size: inherit !important;
-}
+/* Removed destructive display:block !important on .cm-content pre/code/cm-codeBlock - this breaks CM layout engine */
 
-/* Stabilize cursor rendering (GPU HARDWARE ACCELERATED) */
-/* This is the VS Code 'secret sauce' - offloading cursor moves to the GPU */
-.cm-cursor,
-.cm-cursor-primary,
-.cm-cursor-secondary {
-  will-change: transform, opacity !important;
-  transform: translateZ(0) !important; /* Move to GPU layer */
-  backface-visibility: hidden !important;
-  perspective: 1000 !important;
-}
-
-/* GPU Accelerated Active Line */
-/* Sliding a 'sticker' is faster than redrawing pixels on every keystroke */
-.cm-activeLine,
-.cm-activeLineGutter {
-  will-change: transform, background-color !important;
-  transform: translateZ(0) !important;
-  backface-visibility: hidden !important;
-}
+/* Removed empty cursor and activeLine rulesets */
 
 /* Smooth but stable scroller */
 .cm-scroller {

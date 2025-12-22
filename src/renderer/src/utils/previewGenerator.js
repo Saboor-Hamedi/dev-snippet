@@ -244,29 +244,31 @@ export const generatePreviewHtml = ({
   const isDark = forPrint ? false : theme !== 'solar-dawn'
   const currentTheme = forPrint ? 'solar-dawn' : theme
 
+  if (!code || !code.trim()) {
+    return `<!DOCTYPE html><html class="${isDark ? 'dark' : ''}"><head><meta charset="utf-8"><style>${variableStyles} html,body{background:transparent !important;}</style></head><body></body></html>`
+  }
+
   let contentHtml = ''
   if (isMarkdown) {
     contentHtml = fastMarkdownToHtml(code, existingTitles)
   } else {
-    // Escaped content for general snippets
+    // Escaped content for general snippets (Code or Text)
     const escaped = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+    // Use a cleaner simple pre for plaintext to differentiate from "Source Code"
     contentHtml = `
-      <div class="code-block-wrapper">
-        <div class="code-block-header">
-          <span class="code-language font-bold">SOURCE</span>
-          <button class="copy-code-btn" data-code="${escaped}" title="Copy code">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-          </button>
-        </div>
-        <pre><code class="language-plaintext">${escaped}</code></pre>
+      <div class="code-block-wrapper is-plaintext">
+         <div class="code-block-header">
+           <span class="code-language font-bold" style="opacity:0.6">Raw Text</span>
+           <button class="copy-code-btn" data-code="${escaped}" title="Copy text">
+             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+           </button>
+         </div>
+         <pre style="white-space: pre-wrap; word-wrap: break-word;"><code class="language-plaintext" style="background:transparent !important; padding:0 !important;">${escaped}</code></pre>
       </div>`
   }
 
   const mermaidConfig = getMermaidConfig(isDark, fontFamily)
-
-  if (!code.trim()) {
-    return `<!DOCTYPE html><html class="${isDark ? 'dark' : ''}"><body style="background: white;"></body></html>`
-  }
 
   return `
 <!DOCTYPE html>

@@ -179,10 +179,10 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
                       onSelect(item)
                       onClose()
                     }}
-                    className={`group relative px-4 py-2 rounded-xl flex items-center gap-4 cursor-pointer transition-all duration-150 ${
+                    className={`group relative px-4 py-2.5 rounded-sm flex items-center gap-4 cursor-pointer transition-all duration-150 ${
                       isSelected
-                        ? 'bg-emerald-600 shadow-lg shadow-emerald-500/20'
-                        : 'hover:bg-slate-50 dark:hover:bg-slate-800/20'
+                        ? 'bg-slate-100 dark:bg-slate-800/80 border-l-[3px] border-emerald-500 pl-[13px]' /* Compensate padding for border */
+                        : 'hover:bg-slate-50 dark:hover:bg-slate-800/30 border-l-[3px] border-transparent'
                     }`}
                   >
                     {/* Visual Icon Stack */}

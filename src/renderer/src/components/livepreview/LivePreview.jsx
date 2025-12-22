@@ -1,5 +1,7 @@
 import React, { useMemo, useRef, useEffect } from 'react'
 import PropTypes from 'prop-types'
+import { Smartphone, Tablet, Monitor } from 'lucide-react'
+import { SplitPaneContext } from '../splitPanels/AdvancedSplitPane'
 import { fastMarkdownToHtml } from '../../utils/fastMarkdown'
 import markdownStyles from '../../assets/markdown.css?raw'
 import variableStyles from '../../assets/variables.css?raw'
@@ -27,19 +29,22 @@ const LivePreview = ({
   onOpenMiniPreview,
   onExportPDF
 }) => {
+  // 1. Ref - Always top level
   const iframeRef = useRef(null)
 
-  if (disabled || !code.trim()) return null
+  // Access SplitPane Context for Overlay Controls
+  const splitContext = React.useContext(SplitPaneContext)
 
-  // 1. Title/Wiki-Link analysis
+  // 2. Title/Wiki-Link analysis - Always call hooks
   const existingTitles = useMemo(() => {
-    return snippets.map((s) => (s.title || '').trim()).filter(Boolean)
+    return (snippets || []).map((s) => (s.title || '').trim()).filter(Boolean)
   }, [snippets])
 
-  // 2. Generate optimized HTML with performance safety
+  // 3. Generate optimized HTML (Handle empty/disabled inside the hook, not before)
   const html = useMemo(() => {
-    // PERFORMANCE SAFETY: If content is massive (> 200k chars),
-    // we bypass complex parsing to keep the app responsive.
+    if (disabled || !code || !code.trim()) return ''
+
+    // PERFORMANCE SAFETY: If content is massive (> 200k chars)
     const isTooLarge = code.length > 200000
     if (isTooLarge) {
       const escaped = code.slice(0, 100000).replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -68,8 +73,9 @@ const LivePreview = ({
 
     // CASE 3: General Code Snippet
     const escaped = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
     return `
-      <div class="code-block-wrapper">
+      <div class="code-block-wrapper ${normalizedLang === 'plaintext' || normalizedLang === 'text' || normalizedLang === 'txt' ? 'is-plaintext' : ''}">
         <div class="code-block-header">
           <span class="code-language font-bold">${normalizedLang}</span>
           <button class="copy-code-btn" data-code="${escaped}" title="Copy code">
@@ -78,14 +84,14 @@ const LivePreview = ({
         </div>
         <pre><code class="language-${normalizedLang}">${escaped}</code></pre>
       </div>`
-  }, [code, language, existingTitles])
+  }, [code, language, existingTitles, disabled])
 
   const isDark = theme !== 'polaris'
 
-  // 3. Mirror content to IFrame via postMessage
+  // 4. Mirror content to IFrame via postMessage
   useEffect(() => {
     const iframe = iframeRef.current
-    if (!iframe) return
+    if (!iframe || !html) return
 
     const syncContent = () => {
       // Create a style override for the font family
@@ -115,24 +121,87 @@ const LivePreview = ({
     syncContent()
 
     // Ensure sync after load
-    iframe.addEventListener('load', syncContent)
-    return () => iframe.removeEventListener('load', syncContent)
-  }, [html, theme, isDark])
+    const onLoad = () => syncContent()
+    iframe.addEventListener('load', onLoad)
+    return () => iframe.removeEventListener('load', onLoad)
+  }, [html, theme, isDark, fontFamily])
+
+  // 5. Handle messages from IFrame (External Links)
+  useEffect(() => {
+    const handleMessage = (event) => {
+      // Security check: ensure message comes from our iframe
+      // (Optional strict check if needed, but for local iframe it's usually fine)
+
+      if (event.data?.type === 'app:open-external' && event.data.url) {
+        if (window.api && window.api.openExternal) {
+          window.api.openExternal(event.data.url)
+        } else {
+          window.open(event.data.url, '_blank')
+        }
+      }
+    }
+
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [])
 
   return (
     <div className="w-full h-full flex flex-col bg-transparent overflow-hidden">
       {/* Premium Preview Toolbar */}
       {/* Premium Mac-Style Toolbar */}
-      <div className="flex items-center justify-between px-3 py-2 bg-white/80 dark:bg-[#0d1117]/80 border-b border-slate-200 dark:border-slate-800 backdrop-blur-md z-10 sticky top-0 transition-colors duration-300">
+      <div
+        className="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-[#0d1117] border-b border-slate-200 dark:border-slate-800 z-10 sticky top-0 transition-colors duration-300 overflow-x-auto"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
         {/* Left: Window Controls decoration */}
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 tracking-wider select-none uppercase opacity-80 pl-1">
-            PREVIEW ENGINE
-          </span>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {!splitContext?.overlayMode && (
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 tracking-wider select-none uppercase opacity-80 pl-1">
+              PREVIEW ENGINE
+            </span>
+          )}
+
+          {/* Integrated Overlay Resize Controls */}
+          {splitContext?.overlayMode && (
+            <div
+              className={`flex items-center gap-1 h-4 ${!splitContext?.overlayMode ? 'ml-3 pl-3 border-l border-slate-300 dark:border-slate-700' : ''}`}
+            >
+              <button
+                onClick={() => {
+                  splitContext.setOverlayWidth(25)
+                  localStorage.setItem('overlayWidth', 25)
+                }}
+                className={`p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${splitContext.overlayWidth === 25 ? 'text-blue-500 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`}
+                title="Mobile (25%)"
+              >
+                <Smartphone size={14} strokeWidth={2.5} />
+              </button>
+              <button
+                onClick={() => {
+                  splitContext.setOverlayWidth(50)
+                  localStorage.setItem('overlayWidth', 50)
+                }}
+                className={`p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${splitContext.overlayWidth === 50 ? 'text-blue-500 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`}
+                title="Tablet (50%)"
+              >
+                <Tablet size={14} strokeWidth={2.5} />
+              </button>
+              <button
+                onClick={() => {
+                  splitContext.setOverlayWidth(75)
+                  localStorage.setItem('overlayWidth', 75)
+                }}
+                className={`p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${splitContext.overlayWidth === 75 ? 'text-blue-500 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`}
+                title="Desktop (75%)"
+              >
+                <Monitor size={14} strokeWidth={2.5} />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Right: Action Area */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-shrink-0 ml-4">
           {/* Mini Preview Button */}
           <button
             onClick={onOpenMiniPreview}

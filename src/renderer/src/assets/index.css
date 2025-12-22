@@ -1006,6 +1006,7 @@ textarea {
 }
 
 /* CodeMirror 6 Selection Override - Aggressive */
+/* 
 .cm-editor ::selection,
 .cm-editor *::selection,
 .cm-content ::selection,
@@ -1017,8 +1018,10 @@ textarea {
   text-shadow: none !important;
   -webkit-text-fill-color: inherit !important;
 }
+*/
 
 /* Firefox Support */
+/*
 .cm-editor ::-moz-selection,
 .cm-editor *::-moz-selection,
 .cm-content ::-moz-selection {
@@ -1027,6 +1030,7 @@ textarea {
   color: inherit !important;
   text-shadow: none !important;
 }
+*/
 
 /* Fallback for native selection in other areas if needed */
 ::selection {

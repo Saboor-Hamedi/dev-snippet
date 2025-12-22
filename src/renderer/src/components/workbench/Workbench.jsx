@@ -165,7 +165,10 @@ const Workbench = ({
   return (
     <div className="h-full flex overflow-hidden">
       {/* This is where the sidebar theme appears.  */}
-      <SidebarTheme isOpen={isSidebarThemeOpen} />
+      <SidebarTheme
+        isOpen={isSidebarThemeOpen}
+        onToggle={() => setIsSidebarThemeOpen(!isSidebarThemeOpen)}
+      />
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         <Header

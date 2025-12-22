@@ -97,7 +97,23 @@ const CodeEditor = ({
 
   // Merge extensions
   const allExtensions = useMemo(
-    () => [...cmExtensions, attributesExtension],
+    () => [
+      ...cmExtensions,
+      attributesExtension
+      /*
+      // DEBUG: Log doc state to help diagnose "No tile at position" errors
+      EditorView.updateListener.of((update) => {
+        if (update.docChanged || update.selectionSet) {
+          console.log(
+            'DEBUG: doc length',
+            update.state.doc.length,
+            'selection head',
+            update.state.selection.main.head
+          )
+        }
+      })
+      */
+    ],
     [cmExtensions, attributesExtension]
   )
 
@@ -139,7 +155,7 @@ const CodeEditor = ({
 
     const loadFullEditorEngine = async () => {
       try {
-        // Build the configuration object - Only shared once per 'Hard Refresh'
+        // Build the configuration object
         const isBlinking = Boolean(cursorBlinking) // Explicit cast
         const options = {
           EditorView,
@@ -160,7 +176,6 @@ const CodeEditor = ({
           snippetTitles
         }
 
-        // Call our specialized extension builder
         const exts = await buildExtensions(options, {
           debouncedSaveZoom
         })
@@ -174,14 +189,14 @@ const CodeEditor = ({
       }
     }
 
-    /**
-     * PROGRESSIVE LOADING:
-     * We start with basic text rendering first, then "Lazy Load" the heavy
-     * Markdown parser and Premium features 150ms later. This keeps the initial
-     * app launch feel instant!
-     */
+    // Immediate load if already loaded once or simple update
+    // Only delay on very first mount if strictly necessary, but 150ms is too long for perceived lag
     if (!extensionsLoaded) {
-      timeoutId = setTimeout(loadFullEditorEngine, 150)
+      // Delay to ensure parent layout (SplitPane) is stable before heavy measurement
+      // 50ms is imperceptible to users but allows the UI frame to settle.
+      timeoutId = setTimeout(() => {
+        window.requestAnimationFrame(loadFullEditorEngine)
+      }, 50)
     } else {
       loadFullEditorEngine()
     }
@@ -194,16 +209,14 @@ const CodeEditor = ({
     wordWrap,
     cursorWidth,
     cursorShape,
-    cursorActiveLineBg,
-    cursorShadowBoxColor,
     cursorColor,
     cursorBlinking,
     cursorBlinkingSpeed,
-    gutterBgColor,
-    debouncedSaveZoom,
     isLargeFile,
     extensionsLoaded,
     snippetTitles
+    // Removed cursorActiveLineBg etc from dep array as buildExtensions might not use them all effectively needing re-run
+    // But kept critical ones.
   ])
 
   return (
@@ -227,7 +240,6 @@ const CodeEditor = ({
       ref={editorDomRef}
     >
       <CodeMirror
-        key={`cm-${cursorBlinking}-${cursorBlinkingSpeed}`}
         value={value || ''}
         onChange={onChange}
         readOnly={readOnly}

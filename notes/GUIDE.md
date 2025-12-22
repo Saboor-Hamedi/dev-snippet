@@ -4,29 +4,29 @@ Welcome to the comprehensive documentation for **Dev Snippet**, a high-performan
 
 ---
 
-## 📚 Table of Contents
-1. [User Guide](#1-user-guide)
-2. [Technical Architecture](#2-technical-architecture)
-3. [Data Flow Diagrams](#3-data-flow-diagrams)
-4. [Project Structure](#4-project-structure)
+## 1. Table of Contents
+1. [User Guide](#2-user-guide)
+2. [Technical Architecture](#3-technical-architecture)
+3. [Core Layer Architecture](#4-core-layer-architecture)
+4. [Project Structure](#5-project-structure)
 
 ---
 
-## 1. User Guide
+## 2. User Guide
 
-### 🚀 Core Principles
+### Core Principles
 1.  **Markdown First**: Optimized for technical writing with GFM support.
-2.  **Local Privacy**: 100% offline, data stored in `better-sqlite3`.
+2.  **Local Privacy**: 100% offline, data stored in local database.
 3.  **Speed**: Keyboard-centric workflow with instant search.
 
-### ✨ Key Features
+### Key Features
 -   **Smart Editor**: Auto-detects languages, supports 100+ syntax highlights.
 -   **Live Preview**: Real-time rendering with **Mermaid** diagrams and **MathJax**.
 -   **Wiki-Links**: Connect snippets using `[[WikiLink]]` syntax.
 -   **PDF Export**: Pro-grade `A4` PDF generation with custom margins.
 -   **Mini Browser**: Detach the preview into a floating "Always on Top" window.
 
-### ⌨️ Keyboard Shortcuts
+### Keyboard Shortcuts
 | Action | Shortcut |
 | :--- | :--- |
 | **Quick Open** | `Ctrl + P` |
@@ -38,11 +38,11 @@ Welcome to the comprehensive documentation for **Dev Snippet**, a high-performan
 
 ---
 
-## 2. Technical Architecture
+## 3. Technical Architecture
 
 Dev Snippet follows a secure **Electron** architecture with strict separation between the **Main Process** (Backend) and **Renderer Process** (Frontend).
 
-### 🏗️ System Overview
+### System Overview
 
 ```mermaid
 graph TD
@@ -70,14 +70,14 @@ graph TD
     Preview -->|postMessage| Sandbox
 ```
 
-### 🧠 Core Modules
+### Core Modules
 
 #### 1. Main Process (`src/main`)
 -   **`index.js`**: Application entry point. Handles lifecycle and window creation.
 -   **`ipc/`**: Modularized IPC handlers (`database.js`, `export.js`, `window.js`).
 -   **`database/`**: Manages the local `snippets.db` using `better-sqlite3`.
 
-##### 🗄️ Database Schema (ER Diagram)
+##### Database Schema (ER Diagram)
 
 ```mermaid
 erDiagram
@@ -114,84 +114,85 @@ erDiagram
 
 ---
 
-## 3. Data Flow Diagrams
+## 4. Core Layer Architecture
 
-### 💾 1. Autosave Workflow
-The app uses a "lazy save" mechanism to prevent database thrashing.
+This section details the interaction between the three critical layers: Typing, System, and Sandbox.
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant Editor
-    participant Timer
-    participant IPC
-    participant DB
-
-    User->>Editor: Type Character
-    Editor->>Timer: Reset 5s Timer
-    
-    note right of Timer: User stops typing
-    
-    Timer->>Editor: Timeout Fired
-    Editor->>IPC: invoke('db:saveSnippet')
-    IPC->>DB: UPDATE snippets...
-    DB-->>IPC: Success
-    IPC-->>Editor: Acknowledge
-    Editor->>User: Show "Saved" Indicator
-```
-
-### 📄 2. PDF Export Pipeline
-How we generate pixel-perfect PDFs from raw Markdown/Mermaid.
+### Typing Code System & Sandbox Layer
 
 ```mermaid
-sequenceDiagram
-    participant User
-    participant Renderer
-    participant PreviewGen
-    participant Main
-    participant HiddenWin as Hidden Window
-    participant FS as File System
+flowchart TD
+    subgraph Typing_Layer ["Typing Layer (React Renderer)"]
+        direction TB
+        UserInput(User Input) --> EditorComp[SnippetEditor.jsx]
+        EditorComp -->|State Update| ReactState[React State]
+        ReactState -->|Debounce 5s| Timer[Autosave Timer]
+        ReactState -->|Immediate| PreviewMgr[LivePreview.jsx]
+    end
 
-    User->>Renderer: Click "Export PDF"
-    Renderer->>PreviewGen: generateFullHtml(forPrint: true)
-    PreviewGen-->>Renderer: Returns Clean HTML (No UI, White BG)
+    subgraph System_Layer ["System Layer (Electron Main)"]
+        direction TB
+        Timer -->|IPC Invoke| IPCHandler[IPC Main Handler]
+        IPCHandler -->|SQL Transaction| SQLite[(Local DB)]
+        IPCHandler -->|Write File| PDFEngine[PDF Export Engine]
+    end
+
+    subgraph Sandbox_Layer ["Sandbox Layer (Isolated Iframe)"]
+        direction TB
+        PreviewMgr -->|postMessage JSON| IframeWindow[preview.html]
+        IframeWindow -->|Event Listener| Script[previewScript.js]
+        Script -->|Parse| FastMD[FastMarkdown Engine]
+        Script -->|Render| DOM[DOM Tree]
+        
+        DOM -.->|Reflow| Mermaid[Mermaid Diagrams]
+        DOM -.->|Paint| HLJS[Syntax Highlighting]
+    end
+
+    %% Data Flow Connections
+    ReactState == Real-time Sync ==> PreviewMgr
+    PreviewMgr == Secure Message ==> IframeWindow
+    IPCHandler == Acknowledge ==> EditorComp
     
-    Renderer->>Main: invoke('export:pdf', html)
-    Main->>HiddenWin: Create & Load HTML
-    
-    note over HiddenWin: Wait 2s for Mermaid/Highlight.js
-    
-    HiddenWin->>HiddenWin: printToPDF({ margins: 'default' })
-    HiddenWin-->>Main: Buffer
-    Main->>FS: writeFile(userPath.pdf)
-    Main-->>Renderer: Success
-    Renderer->>User: Show Toast "Export Complete"
+    %% Styling Definitions - Saturated Colors to avoid "White Layer" look
+    classDef react fill:#b3e5fc,stroke:#01579b,stroke-width:2px,color:black;
+    classDef electron fill:#ffe0b2,stroke:#e65100,stroke-width:2px,color:black;
+    classDef sandbox fill:#c8e6c9,stroke:#1b5e20,stroke-width:2px,color:black;
+    classDef storage fill:#cfd8dc,stroke:#37474f,stroke-width:2px,stroke-dasharray: 5 5,color:black;
+
+    %% Subgraph Styling - Transparent Backgrounds
+    style Typing_Layer fill:none,stroke:#0277bd,stroke-width:2px,color:#0277bd
+    style System_Layer fill:none,stroke:#ef6c00,stroke-width:2px,color:#ef6c00
+    style Sandbox_Layer fill:none,stroke:#2e7d32,stroke-width:2px,color:#2e7d32
+
+    %% Apply Styles
+    class EditorComp,ReactState,PreviewMgr,UserInput react;
+    class IPCHandler,PDFEngine electron;
+    class IframeWindow,Script,FastMD,DOM,Mermaid,HLJS sandbox;
+    class Timer,SQLite,DB storage;
 ```
 
-### 🖼️ 3. Live Preview & Sandboxing
-Ensures user code runs safely without freezing the main UI.
+### Layer Descriptions
 
-```mermaid
-graph LR
-    subgraph "React Context"
-        Editor[SnippetEditor] -- Raw Code --> LivePreview
-    end
+1.  **Typing Layer**:
+    *   Handles high-frequency user input events.
+    *   Manages React state for the editor UI.
+    *   Debounces saves to prevent database thrashing.
+    *   Immediately propagates changes to the Preview Manager.
 
-    subgraph "Sandboxing Boundary"
-        LivePreview -- postMessage(html, theme) --> Iframe[preview.html]
-    end
+2.  **System Layer**:
+    *   Operates in the Electron Main Process (Node.js environment).
+    *   Handles file system access and database persistence.
+    *   Executes heavy operations like PDF generation off the main UI thread.
 
-    subgraph "Iframe Environment"
-        Iframe --> Script[previewScript.js]
-        Script --> Mermaid[Mermaid Engine]
-        Script --> HLJS[Highlight.js]
-        Mermaid --> DOM[Rendered SVG]
-    end
-```
+3.  **Sandbox Layer**:
+    *   A completely isolated `iframe` environment.
+    *   Receives content via `postMessage` protocol (Zero shared state).
+    *   Renders unsafe HTML/Markdown locally without risking the main application's security.
+    *   Runs heavy rendering scripts (Mermaid, Highlight.js) independently.
 
 ---
 
-## 4. Project Structure (Mindmap)
+## 5. Project Structure (Mindmap)
 
 ```mermaid
 mindmap

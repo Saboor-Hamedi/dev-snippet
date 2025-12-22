@@ -15,6 +15,28 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Plaintext: Invisible wrapper for clean text display */
+.code-block-wrapper.is-plaintext {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+}
+.code-block-wrapper.is-plaintext .code-block-header {
+  display: none !important;
+}
+.code-block-wrapper.is-plaintext pre {
+  padding: 0.5rem !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+.code-block-wrapper.is-plaintext pre code {
+  font-family: inherit !important; /* Use UI/Markdown font, not Mono */
+  color: inherit !important;
+  padding: 0 !important;
+}
+
 .code-block-header {
   display: flex;
   align-items: center;

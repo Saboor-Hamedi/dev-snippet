@@ -46,8 +46,8 @@ class ErrorBoundary extends React.Component {
       return (
         <div className="fixed inset-0 z-[100000] flex items-center justify-center p-6 bg-slate-950/40 backdrop-blur-xl transition-all duration-500">
           <div className="relative w-full max-w-lg bg-white/95 dark:bg-[#0d1117]/95 rounded-[5px] shadow-[0_25px_70px_-15px_rgba(0,0,0,0.6)] border border-slate-200 dark:border-slate-800/60 overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
-            {/* Header / Graphic */}
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 to-amber-500" />
+            {/* Header / Graphic - Removed top border as requested */}
+            {/* <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 to-amber-500" /> */}
 
             {/* Close Button / Dismiss */}
             <button
@@ -59,7 +59,7 @@ class ErrorBoundary extends React.Component {
             </button>
 
             <div className="p-8 pb-6 flex flex-col items-center text-center">
-              <div className="w-16 h-16 rounded-[5px] bg-red-500/10 flex items-center justify-center text-red-500 mb-6 group">
+              <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-500 mb-6 group ring-1 ring-red-500/20">
                 <ShieldAlert
                   size={32}
                   className="group-hover:scale-110 transition-transform duration-300"
@@ -69,7 +69,7 @@ class ErrorBoundary extends React.Component {
               <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">
                 Application Interrupted
               </h2>
-              <p className="text-[13px] text-slate-500 dark:text-slate-400 mb-8 leading-relaxed max-w-[340px]">
+              <p className="text-[14px] text-slate-500 dark:text-slate-400 mb-8 leading-relaxed max-w-[340px]">
                 An unexpected system glitch occurred. Your data is likely safe, but we need to
                 restart the engine or dismiss this alert to continue.
               </p>
@@ -78,14 +78,14 @@ class ErrorBoundary extends React.Component {
               <div className="flex flex-col sm:flex-row gap-3 w-full">
                 <button
                   onClick={this.handleReload}
-                  className="flex-1 h-[42px] flex items-center justify-center gap-2 bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 rounded-[5px] text-[13px] font-bold shadow-sm hover:shadow-md transition-all active:scale-95"
+                  className="flex-1 h-[42px] flex items-center justify-center gap-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg text-[13px] font-bold shadow-lg shadow-slate-900/10 hover:shadow-xl transition-all active:scale-95 hover:bg-slate-800 dark:hover:bg-slate-200"
                 >
                   <RefreshCw size={14} className="animate-spin-slow" />
                   Restore Application
                 </button>
                 <button
                   onClick={() => this.setState({ showDetails: !this.state.showDetails })}
-                  className="px-6 h-[42px] flex items-center justify-center gap-2 text-[13px] font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 transition-colors border border-slate-200 dark:border-slate-800 rounded-[5px]"
+                  className="px-6 h-[42px] flex items-center justify-center gap-2 text-[13px] font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 transition-colors border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50"
                 >
                   <Terminal size={14} />
                   {this.state.showDetails ? 'Hide Log' : 'Dev Trace'}
@@ -96,13 +96,15 @@ class ErrorBoundary extends React.Component {
             {/* Expandable Error Details */}
             {this.state.showDetails && (
               <div className="px-8 pb-8 animate-in slide-in-from-top-4 duration-300">
-                <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 font-mono text-[11px] overflow-auto max-h-[180px] text-red-400/90 custom-scrollbar selection:bg-red-500/30">
-                  <div className="flex items-center gap-2 mb-2 text-slate-500 text-[10px] uppercase tracking-widest font-bold">
-                    <Info size={12} />
+                <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 font-mono text-[13px] overflow-auto max-h-[300px] text-red-400/90 custom-scrollbar selection:bg-red-500/30 shadow-inner">
+                  <div className="flex items-center gap-2 mb-3 text-slate-500 text-[11px] uppercase tracking-widest font-bold border-b border-slate-800 pb-2">
+                    <Info size={14} />
                     Stack Trace
                   </div>
-                  <strong>{this.state.error?.toString()}</strong>
-                  <pre className="mt-2 text-slate-400 opacity-80 leading-relaxed whitespace-pre-wrap">
+                  <strong className="block mb-2 text-red-300">
+                    {this.state.error?.toString()}
+                  </strong>
+                  <pre className="text-slate-400 opacity-90 leading-relaxed whitespace-pre-wrap">
                     {this.state.errorInfo?.componentStack}
                   </pre>
                 </div>
@@ -110,7 +112,7 @@ class ErrorBoundary extends React.Component {
             )}
 
             {/* Footer */}
-            <div className="px-8 py-4 bg-slate-50/50 dark:bg-slate-900/40 border-t border-slate-100 dark:border-slate-800 flex justify-center text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase tracking-widest">
+            <div className="px-8 py-4 bg-slate-50/50 dark:bg-slate-900/40 border-t border-slate-100 dark:border-slate-800 flex justify-center text-[11px] font-bold text-slate-400 dark:text-slate-600 uppercase tracking-widest">
               Safe Recovery Mode • v1.1.5
             </div>
           </div>
