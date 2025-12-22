@@ -163,22 +163,14 @@ const buildExtensions = async (options, handlers = {}) => {
 
   // High-performance typing animations (skip for large files)
   if (!isLargeFile) {
-    // exts.push(...premiumTypingBundle)
+    exts.push(...premiumTypingBundle)
   }
 
   // CORE UI EXTENSIONS (Critical for stability)
   try {
-    const { /* drawSelection, */ dropCursor, highlightActiveLine } =
-      await import('@codemirror/view')
-    // Uses custom drawn selection (better for mixed font sizes/rich text)
-    // exts.push(
-    //   drawSelection({
-    //     cursorBlinkRate: 0 // Disable internal blinking to use CSS animation
-    //   })
-    // )
+    const { dropCursor /*, highlightActiveLine */ } = await import('@codemirror/view')
     exts.push(dropCursor())
-    // highlightActiveLine helps visual context
-    exts.push(highlightActiveLine())
+    // exts.push(highlightActiveLine())
   } catch (e) {}
 
   // HISTORY (Undo/Redo)
@@ -215,39 +207,42 @@ const buildExtensions = async (options, handlers = {}) => {
   // Markdown Support (Skip rich decorations for large files)
   if (language === 'markdown') {
     try {
+      /*
       const { markdown } = await import('@codemirror/lang-markdown')
 
-      // Load languages safely for nested code blocks
+      // Load languages for nested code blocks
       let languages = []
       if (!isLargeFile) {
         try {
           languages = (await getLanguages()) || []
-        } catch (err) {
-          console.warn('Failed to load code languages:', err)
-        }
+        } catch (err) {}
       }
-
-      // 1. Official Markdown Extension
-      // exts.push(
-      //   markdown({
-      //     addKeymap: false,
-      //     codeLanguages: languages,
-      //     defaultCodeLanguage: undefined // Let it guess or fallback
-      //   })
-      // )
+      exts.push(
+        markdown({
+          addKeymap: false,
+          codeLanguages: languages,
+          defaultCodeLanguage: undefined
+        })
+      )
 
       // 2. Load Custom Syntax Highlighting (Colors only) - Only for small files
-      // if (!isLargeFile) {
-      //   const { richMarkdownExtension } = await import('./richMarkdown.js')
-      //   exts.push(richMarkdownExtension)
-      //
-      //   // 3. WikiLink Autocomplete
-      //   const { default: wikiLinkCompletion } = await import('./wikiLinkCompletion.js')
-      //   exts.push(wikiLinkCompletion(snippetTitles))
-      // }
+      if (!isLargeFile) {
+        try {
+          const { richMarkdownExtension } = await import('./richMarkdown.js')
+          exts.push(richMarkdownExtension)
+        } catch (e) {
+          console.warn('Failed to load rich markdown styles', e)
+        }
+
+        // 3. WikiLink Autocomplete
+        try {
+          const { default: wikiLinkCompletion } = await import('./wikiLinkCompletion.js')
+          exts.push(wikiLinkCompletion(snippetTitles))
+        } catch (e) {}
+      }
+      */
     } catch (e) {
       console.error('Failed to load markdown extensions', e)
-      // Fallback: Just load basic line wrapping if markdown fails
       exts.push(EditorView.lineWrapping)
     }
   }
