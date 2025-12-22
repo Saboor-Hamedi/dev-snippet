@@ -280,6 +280,7 @@ const SnippetLibrary = () => {
     },
     onCreateSnippet: () => {
       setIsCreatingSnippet(true)
+      setShowPreview(false) // Hide preview for new snippets
       const draft = createDraftSnippet()
     },
 

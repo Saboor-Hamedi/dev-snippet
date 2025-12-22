@@ -4,6 +4,15 @@
 
 import { ipcMain } from 'electron'
 
+const transformRow = (row) => {
+  if (!row) return row
+  return {
+    ...row,
+    tags: row.tags ? row.tags.split(',').filter(Boolean) : [],
+    is_draft: !!row.is_draft
+  }
+}
+
 export const registerDatabaseHandlers = (db, preparedStatements) => {
   // Get snippets (all or paginated)
   ipcMain.handle('db:getSnippets', (event, options = {}) => {
@@ -11,24 +20,21 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
 
     // Choose the statement based on whether we want full text or just metadata
     const stmt = metadataOnly ? preparedStatements.getMetadata : preparedStatements.getAll
-    const paginatedStmt = metadataOnly
-      ? preparedStatements.getMetadataPaginated
-      : preparedStatements.getAll // Note: I didn't create getAllPaginated but we could if needed
 
     if (limit !== undefined && offset !== undefined) {
       if (metadataOnly) {
-        return preparedStatements.getMetadataPaginated.all(limit, offset)
+        return preparedStatements.getMetadataPaginated.all(limit, offset).map(transformRow)
       }
       // Fallback for full-paginated if needed (can be added later)
-      return db.prepare(`${stmt.source} LIMIT ? OFFSET ?`).all(limit, offset)
+      return db.prepare(`${stmt.source} LIMIT ? OFFSET ?`).all(limit, offset).map(transformRow)
     }
 
-    return stmt.all()
+    return stmt.all().map(transformRow)
   })
 
   // Get single snippet by ID (full content)
   ipcMain.handle('db:getSnippetById', (event, id) => {
-    return preparedStatements.getById.get(id)
+    return transformRow(preparedStatements.getById.get(id))
   })
 
   // Full-text search using FTS5
@@ -57,7 +63,7 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
         )
         .all(ftsQuery)
 
-      return results
+      return results.map(transformRow)
     } catch (e) {
       console.warn('FTS search failed, falling back to LIKE:', e.message)
       const likeQuery = `%${query}%`
@@ -72,17 +78,26 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
       `
         )
         .all(likeQuery, likeQuery, likeQuery)
+        .map(transformRow)
     }
   })
 
   // Save snippet
   ipcMain.handle('db:saveSnippet', (event, snippet) => {
-    preparedStatements.save.run({
-      ...snippet,
-      tags: snippet.tags || '',
-      is_draft: snippet.is_draft ? 1 : 0
-    })
-    return true
+    try {
+      const dbPayload = {
+        ...snippet,
+        // Ensure tags is a string for storage
+        tags: Array.isArray(snippet.tags) ? snippet.tags.join(',') : snippet.tags || '',
+        is_draft: snippet.is_draft ? 1 : 0,
+        sort_index: snippet.sort_index ?? null
+      }
+      preparedStatements.save.run(dbPayload)
+      return true
+    } catch (err) {
+      console.error('Failed to save snippet to DB:', err)
+      throw err
+    }
   })
 
   // Delete snippet

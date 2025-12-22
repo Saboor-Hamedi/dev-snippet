@@ -1,0 +1,157 @@
+/* 1. Main Container - Premium Framing */
+.mermaid-diagram,
+.mermaid-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 1.5rem 0;
+  padding: 1.5rem;
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  overflow: auto;
+  min-height: 50px;
+}
+
+/* Hide raw text until processed */
+.mermaid-diagram:not([data-processed]) {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+
+.mermaid-diagram[data-processed] {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.mermaid-wrapper:hover {
+  border-color: var(--color-accent-primary);
+}
+
+.mermaid svg {
+  background-color: transparent !important;
+}
+
+/* 2. SVG Path Styles - Smooth & Glowing */
+.mermaid .edgePaths .edgePath path {
+  stroke-width: 2px !important;
+  stroke-linecap: round !important;
+}
+
+.mermaid .marker {
+  fill: var(--color-accent-primary) !important;
+  stroke: var(--color-accent-primary) !important;
+}
+
+/* 3. Node Styles - Modern & Round */
+.mermaid g.node rect,
+.mermaid g.node polygon,
+.mermaid g.node circle,
+.mermaid g.node ellipse,
+.mermaid g.node path {
+  rx: 10px !important; /* Extra round nodes */
+  ry: 10px !important;
+  stroke-width: 2px !important;
+  transition: all 0.2s ease;
+}
+
+.mermaid g.node:hover rect,
+.mermaid g.node:hover polygon {
+  filter: brightness(1.1);
+  stroke-width: 2.5px !important;
+}
+
+/* 4. Text - High Legibility */
+.mermaid .node label,
+.mermaid .edgeLabel,
+.mermaid .cluster-label,
+.mermaid .actor {
+  font-family: 'Outfit', 'Inter', sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  letter-spacing: -0.02em;
+}
+
+.mermaid .edgeLabel {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  background-color: var(--color-bg-primary) !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+}
+
+/* 5. Error UI - Sophisticated Feedback */
+.mermaid-error-container {
+  padding: 1.5rem;
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 12px;
+  color: #ef4444;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.mermaid-error-title {
+  text-transform: uppercase;
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+  opacity: 0.8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 6. Sequence Numbers - Premium Badges */
+.mermaid .sequenceNumber {
+  fill: #ffffff !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-weight: 800 !important;
+}
+
+.mermaid rect.sequenceNumber {
+  fill: var(--color-accent-primary) !important;
+  rx: 50% !important; /* Circular badges */
+  ry: 50% !important;
+}
+
+/* 7. Success Pulse - Micro-interaction */
+@keyframes mermaid-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.01);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.mermaid-wrapper.is-rendering {
+  opacity: 0.5;
+  filter: blur(2px);
+  pointer-events: none;
+}
+
+.mermaid-standalone-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.mermaid svg,
+.mermaid-diagram svg,
+.mermaid-wrapper svg {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}

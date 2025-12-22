@@ -25,7 +25,9 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
     return snippets
       .map((item) => {
         const title = (item.title || '').toLowerCase()
-        const tags = (item.tags || '').toLowerCase()
+        const tags = Array.isArray(item.tags)
+          ? item.tags.join(' ').toLowerCase()
+          : (item.tags || '').toLowerCase()
         const lang = (item.language || '').toLowerCase()
         const code = (item.code || '').toLowerCase()
         let score = 0
@@ -218,12 +220,17 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
                         </span>
                         {item.tags && (
                           <div className="flex items-center gap-3 truncate">
-                            {item.tags
-                              .split(/[\s,]+/)
+                            {(Array.isArray(item.tags)
+                              ? item.tags
+                              : (item.tags || '').split(/[\s,]+/)
+                            )
                               .filter(Boolean)
                               .slice(0, 3)
                               .map((tag, idx) => (
-                                <span key={idx} className="flex items-center">
+                                <span
+                                  key={idx}
+                                  className="flex items-center text-inherit opacity-85"
+                                >
                                   <Hash size={10} className="opacity-40 -mr-0.5" />
                                   {tag}
                                 </span>

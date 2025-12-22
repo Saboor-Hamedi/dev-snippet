@@ -50,6 +50,8 @@ const AdvancedSplitPane = ({
     }
   })
 
+  const [isDragging, setIsDragging] = useState(false)
+
   useEffect(() => {
     const handleMouseMove = (e) => {
       if (!draggingRef.current || !containerRef.current) return
@@ -83,6 +85,7 @@ const AdvancedSplitPane = ({
     const handleMouseUp = () => {
       if (draggingRef.current) {
         draggingRef.current = false
+        setIsDragging(false)
         document.body.style.cursor = ''
         document.body.style.userSelect = ''
       }
@@ -100,6 +103,7 @@ const AdvancedSplitPane = ({
   const startDrag = (e) => {
     e.preventDefault()
     draggingRef.current = true
+    setIsDragging(true)
     document.body.style.cursor = 'col-resize'
     document.body.style.userSelect = 'none'
   }
@@ -205,7 +209,11 @@ const AdvancedSplitPane = ({
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 ml-2 overflow-auto relative">{right}</div>
+                <div
+                  className={`flex-1 ml-2 overflow-auto relative ${isDragging ? 'pointer-events-none' : ''}`}
+                >
+                  {right}
+                </div>
               </div>
             </>
           )}
@@ -249,7 +257,10 @@ const AdvancedSplitPane = ({
             </div>
           </div>
 
-          <div className="min-h-0 overflow-auto" style={{ width: `${100 - sideBySideLeft}%` }}>
+          <div
+            className={`min-h-0 overflow-auto ${isDragging ? 'pointer-events-none' : ''}`}
+            style={{ width: `${100 - sideBySideLeft}%` }}
+          >
             {right}
           </div>
         </div>

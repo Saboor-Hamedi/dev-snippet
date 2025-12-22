@@ -27,9 +27,14 @@ export const ensureExtension = (name, ext = '.md') => {
  */
 export const extractTags = (text) => {
   if (!text) return []
-  const matches = text.match(/#(\w+)/g)
-  if (!matches) return []
-  return [...new Set(matches.map((tag) => tag.substring(1)))]
+  const tags = new Set()
+  const re = /(?:^|\s)[#@]([a-zA-Z0-9_-]+)/g
+  let m
+  const str = String(text)
+  while ((m = re.exec(str))) {
+    tags.add(m[1].toLowerCase())
+  }
+  return Array.from(tags)
 }
 
 /**

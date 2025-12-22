@@ -52,6 +52,8 @@ const api = {
   restoreDefaultSize: () => electronAPI.ipcRenderer.invoke('window:restore-default-size'),
   setZoom: (factor) => electronAPI.ipcRenderer.invoke('window:setZoom', factor),
   getZoom: () => electronAPI.ipcRenderer.invoke('window:getZoom'),
+  openMiniBrowser: (htmlContent) =>
+    electronAPI.ipcRenderer.invoke('window:openMiniBrowser', htmlContent),
   // Backup Management
   listBackups: () => electronAPI.ipcRenderer.invoke('backup:list'),
   restoreBackup: (backupPath) => electronAPI.ipcRenderer.invoke('backup:restore', backupPath),
@@ -85,7 +87,9 @@ const api = {
     const sub = (e, message) => callback(message)
     electronAPI.ipcRenderer.on('updates:error', sub)
     return () => electronAPI.ipcRenderer.removeListener('updates:error', sub)
-  }
+  },
+  // Generic invoke for non-wrapped IPC channels
+  invoke: (channel, ...args) => electronAPI.ipcRenderer.invoke(channel, ...args)
 }
 
 if (process.contextIsolated) {

@@ -10,6 +10,7 @@ import { createSettingsHandlers } from './settings'
 import { registerBackupHandlers } from './backup'
 import { registerDialogHandlers } from './dialog'
 import { registerUpdatesHandlers } from './updates'
+import { registerExportHandlers } from './export'
 
 export const registerAllHandlers = (app, mainWindow, db, preparedStatements, getDB) => {
   // Register all IPC handlers
@@ -20,6 +21,8 @@ export const registerAllHandlers = (app, mainWindow, db, preparedStatements, get
   registerBackupHandlers(app, getDB)
   registerDialogHandlers()
   registerUpdatesHandlers(mainWindow)
+  console.log('✅ Registering Export Handlers...')
+  registerExportHandlers()
   return {
     settingsHandlers
   }

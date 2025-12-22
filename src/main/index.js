@@ -49,6 +49,7 @@ app.whenReady().then(() => {
   mainWindow = createWindow(app, ENABLE_DEVTOOLS)
 
   // Register all IPC handlers
+  console.log('📦 Initializing all IPC handlers...')
   registerAllHandlers(app, mainWindow, db, preparedStatements, () => getDB(app))
 
   // macOS: Re-create window when dock icon is clicked

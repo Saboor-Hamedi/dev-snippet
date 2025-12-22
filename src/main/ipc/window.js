@@ -120,4 +120,35 @@ export const registerWindowHandlers = () => {
     const { app } = require('electron')
     return app.getVersion()
   })
+
+  // Open in a Mini Browser (internal Electron window)
+  ipcMain.handle('window:openMiniBrowser', async (event, htmlContent) => {
+    const { app } = require('electron')
+    const path = require('path')
+    const fs = require('fs/promises')
+
+    try {
+      const tempPath = path.join(app.getPath('temp'), 'dev-snippet-mini-preview.html')
+      await fs.writeFile(tempPath, htmlContent, 'utf-8')
+
+      const miniWin = new BrowserWindow({
+        width: 800,
+        height: 900,
+        title: 'Snippet Preview',
+        autoHideMenuBar: true,
+        webPreferences: {
+          nodeIntegration: false,
+          contextIsolation: true
+        }
+      })
+
+      miniWin.setMenu(null)
+      await miniWin.loadFile(tempPath)
+      miniWin.show()
+      return true
+    } catch (err) {
+      console.error('Failed to open mini browser preview:', err)
+      return false
+    }
+  })
 }

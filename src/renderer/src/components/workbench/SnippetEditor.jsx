@@ -9,7 +9,10 @@ import CodeEditor from '../CodeEditor/CodeEditor.jsx'
 import LivePreview from '../livepreview/LivePreview.jsx'
 import Prompt from '../modal/Prompt.jsx'
 import { useSettings } from '../../hook/useSettingsContext'
+import { useTheme } from '../../hook/useTheme'
 import AdvancedSplitPane from '../splitPanels/AdvancedSplitPane'
+import { extractTags } from '../../utils/snippetUtils.js'
+import { generatePreviewHtml } from '../../utils/previewGenerator'
 
 const SnippetEditor = ({
   onSave,
@@ -31,6 +34,7 @@ const SnippetEditor = ({
   const [isDirty, setIsDirty] = useState(false)
   const [zoomLevel] = useZoomLevel()
   const { settings, getSetting } = useSettings()
+  const { currentTheme } = useTheme()
 
   const [title, setTitle] = useState(initialSnippet?.title || '')
   const [justRenamed, setJustRenamed] = useState(false)
@@ -155,6 +159,23 @@ const SnippetEditor = ({
     return () => window.removeEventListener('autosave:toggle', onToggle)
   }, [])
 
+  // Listen for navigation requests from the Sandboxed Preview (iframe bridge)
+  useEffect(() => {
+    const handleMessage = (event) => {
+      if (event.data?.type === 'app:open-snippet') {
+        const { title } = event.data
+        window.dispatchEvent(
+          new CustomEvent('app:open-snippet', {
+            detail: { title }
+          })
+        )
+      }
+    }
+
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [])
+
   const isInitialMount = useRef(true)
   const lastSnippetId = useRef(initialSnippet?.id)
 
@@ -260,6 +281,60 @@ const SnippetEditor = ({
     }
   }, [justRenamed, namePrompt.isOpen])
 
+  // Helper to generate the complete HTML for external/mini previews
+  const generateFullHtml = useCallback(
+    (forPrint = false) => {
+      const ext = title?.includes('.') ? title.split('.').pop()?.toLowerCase() : null
+      const isMarkdown = !ext || ext === 'markdown' || ext === 'md'
+      const existingTitles = snippets.map((s) => (s.title || '').trim()).filter(Boolean)
+
+      return generatePreviewHtml({
+        code,
+        title: title || 'Untitled Snippet',
+        theme: currentTheme,
+        existingTitles,
+        isMarkdown,
+        fontFamily: settings?.editor?.fontFamily,
+        forPrint
+      })
+    },
+    [code, title, snippets, currentTheme, settings?.editor?.fontFamily]
+  )
+
+  const handleOpenExternalPreview = useCallback(async () => {
+    const fullHtml = await generateFullHtml()
+    if (window.api?.invoke) {
+      await window.api.invoke('shell:previewInBrowser', fullHtml)
+    }
+  }, [generateFullHtml])
+
+  const handleOpenMiniPreview = useCallback(async () => {
+    const fullHtml = await generateFullHtml()
+    if (window.api?.openMiniBrowser) {
+      await window.api.openMiniBrowser(fullHtml)
+    }
+  }, [generateFullHtml])
+
+  const handleExportPDF = useCallback(async () => {
+    try {
+      // Generate HTML specifically optimized for PDF (White theme, no UI toolbars)
+      const fullHtml = await generateFullHtml(true)
+      if (window.api?.invoke) {
+        const sanitizedTitle = (title || 'snippet').replace(/[^a-z0-9]/gi, '_').toLowerCase()
+        const success = await window.api.invoke('export:pdf', fullHtml, sanitizedTitle)
+        if (success) {
+          showToast?.('Snippet exported to PDF successfully!', 'success')
+        } else {
+          // Could be cancelled by user or internal error
+          console.log('PDF Export was cancelled or failed internally.')
+        }
+      }
+    } catch (err) {
+      console.error('PDF Export Error:', err)
+      showToast?.('Failed to export PDF. Please check the logs.', 'error')
+    }
+  }, [generateFullHtml, title, showToast])
+
   return (
     <>
       {!isCreateMode && (!initialSnippet || !initialSnippet.id) && !hideWelcomePage ? (
@@ -300,7 +375,7 @@ const SnippetEditor = ({
                 </div>
               }
               right={
-                <div className="h-full p-4">
+                <div className="h-full p-0">
                   {useMemo(() => {
                     const ext = title?.includes('.') ? title.split('.').pop()?.toLowerCase() : null
                     const detectedLang = ext || 'plaintext'
@@ -309,9 +384,14 @@ const SnippetEditor = ({
                         code={debouncedCode}
                         language={detectedLang}
                         snippets={snippets}
+                        theme={currentTheme}
+                        fontFamily={settings?.editor?.fontFamily}
+                        onOpenExternal={handleOpenExternalPreview}
+                        onOpenMiniPreview={handleOpenMiniPreview}
+                        onExportPDF={handleExportPDF}
                       />
                     )
-                  }, [debouncedCode, title, snippets])}
+                  }, [debouncedCode, title, snippets, currentTheme])}
                 </div>
               }
             />

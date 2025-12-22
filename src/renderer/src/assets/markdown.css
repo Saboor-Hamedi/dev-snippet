@@ -1,31 +1,148 @@
 /* ===== MARKDOWN PREVIEW THEME ===== */
 @import './variables.css';
-/* Code block wrapper - Clean, borderless design */
+/* Code block wrapper - Premium Mac-style design */
 .code-block-wrapper {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  /* margin: 1.5rem 0 !important; */
   width: 100%;
   box-sizing: border-box;
-  background-color: #0d1117;
-  border: none !important;
-  border-radius: 0 !important;
+  background-color: var(--color-bg-tertiary, #161b22) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 12px !important;
+  margin: 0.75rem 0 !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.code-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 18px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.code-language {
+  font-family: 'Outfit', sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--color-accent-primary, #58a6ff) !important;
+  opacity: 0.9;
+}
+
+.code-block-wrapper:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+  border-color: var(--color-accent-primary) !important;
 }
 
 /* GitHub markdown theme override - Authentic markdown feel */
 .markdown-body {
   background-color: transparent !important;
-  color: var(--text-main) !important;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
-  line-height: 1.7 !important;
-  letter-spacing: 0;
+  color: var(--color-text-primary) !important;
+  font-family:
+    'Outfit',
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif !important;
+  line-height: 1.6 !important;
+  letter-spacing: -0.01em;
   max-width: 100%;
   overflow-wrap: break-word;
-  padding: 0 0 20px 0 !important; /* Added 100px bottom padding to prevent cutoff */
+  padding: 5px !important; /* Compact document padding */
   border: none !important;
   outline: none !important;
   box-shadow: none !important;
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+}
+
+.markdown-body ::selection {
+  background-color: rgba(var(--color-accent-primary-rgb), 0.2) !important;
+  color: inherit !important;
+}
+
+.markdown-body > *:first-child {
+  margin-top: 0 !important;
+}
+
+/* GitHub Alerts - Premium Admonitions */
+.markdown-alert {
+  padding: 16px 20px !important;
+  margin: 24px 0 !important;
+  color: inherit !important;
+  border-left: 4px solid var(--color-border);
+  border-radius: 8px;
+  background-color: rgba(139, 148, 158, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.markdown-alert:hover {
+  transform: translateX(2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.markdown-alert-title {
+  display: flex;
+  align-items: center;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  margin-bottom: 12px !important;
+  font-size: 13px !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.markdown-alert-note {
+  border-left-color: #58a6ff !important;
+  background: linear-gradient(to right, rgba(88, 166, 255, 0.1), transparent);
+}
+.markdown-alert-note .markdown-alert-title {
+  color: #58a6ff !important;
+}
+
+.markdown-alert-tip {
+  border-left-color: #3fb950 !important;
+  background: linear-gradient(to right, rgba(63, 185, 80, 0.1), transparent);
+}
+.markdown-alert-tip .markdown-alert-title {
+  color: #3fb950 !important;
+}
+
+.markdown-alert-important {
+  border-left-color: #ab7df8 !important;
+  background: linear-gradient(to right, rgba(171, 125, 248, 0.1), transparent);
+}
+.markdown-alert-important .markdown-alert-title {
+  color: #ab7df8 !important;
+}
+
+.markdown-alert-warning {
+  border-left-color: #d29922 !important;
+  background: linear-gradient(to right, rgba(210, 153, 34, 0.1), transparent);
+}
+.markdown-alert-warning .markdown-alert-title {
+  color: #d29922 !important;
+}
+
+.markdown-alert-caution {
+  border-left-color: #f85149 !important;
+  background: linear-gradient(to right, rgba(248, 81, 73, 0.1), transparent);
+}
+.markdown-alert-caution .markdown-alert-title {
+  color: #f85149 !important;
 }
 
 /* Typography - Clean, readable headers */
@@ -35,29 +152,26 @@
 .markdown-body h4,
 .markdown-body h5,
 .markdown-body h6 {
-  color: var(--text-main) !important;
+  color: var(--color-text-primary, #e6edf3) !important;
   border: none !important;
-  margin-top: 0 !important;
-  margin-bottom: 8px !important;
-  font-weight: 500 !important;
+  margin-top: 1.5rem !important;
+  margin-bottom: 1rem !important;
+  font-weight: 600 !important;
   line-height: 1.25 !important;
   position: relative;
 }
 
 .markdown-body h1 {
-  font-size: 30px !important;
+  font-size: 32px !important;
   padding-bottom: 0.3em !important;
   border-bottom: 1px solid var(--color-border, #30363d) !important;
-  margin-top: 16px !important;
-  margin-bottom: 8px !important;
+  margin-top: 0 !important; /* Top header should be flush */
 }
 
 .markdown-body h2 {
-  font-size: 24px !important;
+  font-size: 26px !important;
   padding-bottom: 0.3em !important;
   border-bottom: 1px solid var(--color-border, #30363d) !important;
-  margin-top: 16px !important;
-  margin-bottom: 8px !important;
 }
 
 .markdown-body h3 {
@@ -71,39 +185,72 @@
 }
 .markdown-body h6 {
   font-size: 14px !important;
-  color: var(--text-secondary) !important;
+  color: var(--color-text-secondary, #8b949e) !important;
 }
 
 /* Paragraphs and lists */
 .markdown-body p {
-  margin: 4px 0 !important;
-  color: var(--text-main) !important;
-  line-height: 1.6 !important;
-  white-space: pre-wrap !important; /* Keep for internal paragraph spacing only */
-}
-
-.markdown-body li {
-  margin: 2px 0 !important;
-  color: var(--text-main) !important;
+  margin: 1.25rem 0 !important;
+  color: var(--color-text-primary, #e6edf3) !important;
+  line-height: 1.8 !important;
 }
 
 .markdown-body ul,
 .markdown-body ol {
-  padding-left: 24px !important;
-  margin: 8px 0 !important;
+  padding-left: 2em !important;
+  margin: 1rem 0 !important;
+  color: var(--color-text-primary, #e6edf3) !important;
+}
+
+.markdown-body li {
+  margin: 0.4rem 0 !important;
+  line-height: 1.6 !important;
+}
+
+.markdown-body li::marker {
+  color: var(--color-accent-primary, #58a6ff) !important;
+  font-weight: 600 !important;
 }
 
 .markdown-body ul {
   list-style-type: disc !important;
 }
-
 .markdown-body ol {
   list-style-type: decimal !important;
 }
 
+/* Horizontal Rules - Subtle & Elegant */
+.markdown-body hr {
+  height: 1px !important;
+  padding: 0 !important;
+  margin: 2.5rem 0 !important;
+  background-color: var(--color-border) !important;
+  border: 0 !important;
+  opacity: 0.5;
+}
+
+/* Images - Premium framing */
+.markdown-body img {
+  max-width: 100% !important;
+  box-sizing: content-box;
+  background-color: transparent;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  margin: 1.5rem auto;
+  display: block;
+}
+
+/* Checkboxes (Task Lists) */
+.markdown-body input[type='checkbox'] {
+  margin: 0 0.4em 0.25em -1.6em !important;
+  vertical-align: middle !important;
+  accent-color: var(--color-accent-primary);
+  cursor: pointer;
+}
+
 /* Blockquotes - Subtle, elegant design */
 .markdown-body blockquote {
-  color: var(--text-main) !important;
+  color: var(--color-text-primary) !important;
   border-left: 4px solid var(--color-accent-primary, #58a6ff) !important;
   background: rgba(88, 166, 255, 0.05) !important;
   padding: 8px 24px !important;
@@ -118,7 +265,7 @@
 
 /* Inline code - Clean, minimal */
 .markdown-body code {
-  background-color: rgba(0, 0, 0, 0.05) !important;
+  /* background-color: rgba(0, 0, 0, 0.05) !important; */
   color: rgb(161, 145, 161) !important;
   font-size: 14px !important;
   font-weight: 500 !important;
@@ -128,15 +275,102 @@
   letter-spacing: -0.2px;
 }
 
-/* Code blocks - Modern, borderless design */
+/* Code blocks - Refined, modern look */
 .markdown-body pre {
-  background-color: var(--bg-secondary) !important;
-  border: none !important;
-  border-radius: 0 !important;
-  padding: 16px 0 !important;
-  margin: 0 !important;
+  background-color: var(--color-bg-tertiary, #161b22) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 10px !important;
+  padding: 20px !important;
+  margin: 1.5rem 0 !important;
   overflow: auto;
   position: relative;
+  line-height: 1.6;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.markdown-body pre:hover {
+  border-color: rgba(88, 166, 255, 0.4) !important;
+  box-shadow: 0 4px 20px rgba(88, 166, 255, 0.1);
+}
+
+/* Syntax Highlighting Colors - Ultra-Vibrant IDE Palette */
+.hljs-comment,
+.hljs-quote {
+  color: #5c6370 !important;
+  font-style: italic !important;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-doctag {
+  color: #c678dd !important; /* Vivid Purple */
+  font-weight: 600 !important;
+}
+
+.hljs-string,
+.hljs-type,
+.hljs-built_in,
+.hljs-bullet,
+.hljs-addition {
+  color: #98c379 !important; /* Emerald Green */
+}
+
+.hljs-title,
+.hljs-section,
+.hljs-function,
+.hljs-selector-id,
+.hljs-selector-class {
+  color: #61afef !important; /* Electric Blue */
+}
+
+.hljs-variable,
+.hljs-template-variable,
+.hljs-attribute,
+.hljs-tag,
+.hljs-name,
+.hljs-regexp,
+.hljs-link,
+.hljs-name,
+.hljs-selector-attr,
+.hljs-selector-pseudo {
+  color: #e06c75 !important; /* Soft Red/Coral */
+}
+
+.hljs-number,
+.hljs-literal,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-meta {
+  color: #d19a66 !important; /* Golden Orange */
+}
+
+.hljs-params {
+  color: #abb2bf !important; /* Muted White */
+}
+
+.hljs-operator {
+  color: #56b6c2 !important; /* Cyan */
+}
+
+.hljs-emphasis {
+  font-style: italic !important;
+}
+.hljs-strong {
+  font-weight: bold !important;
+}
+
+/* Remove double layer when inside wrapper */
+.code-block-wrapper pre {
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  padding: 14px 24px !important; /* Balanced padding: reduced vertical, added horizontal */
+  border-left: 3px solid rgba(88, 166, 255, 0.3); /* Subtle left accent */
 }
 
 .markdown-body pre code {
@@ -144,41 +378,104 @@
   padding: 0 !important;
   border-radius: 0 !important;
   border: none !important;
-  color: purple !important;
-  font-size: 14px !important;
-  line-height: 1.5 !important;
+  color: var(--color-text-primary);
+  font-size: 13.5px !important;
+  line-height: 1.8 !important;
   display: block;
-  font-family: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', 'SFMono-Regular', monospace;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-variant-ligatures: contextual;
   outline: none !important;
   box-shadow: none !important;
 }
 
-/* Tables - Full Width ('Full Screen') */
+/* Copy button styling in preview - Matches CopyButton.jsx */
+.copy-code-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 4px !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 4px !important;
+  color: #94a3b8 !important; /* slate-400 */
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.copy-code-btn:hover {
+  color: #e2e8f0 !important; /* slate-200 */
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.copy-code-btn.success {
+  background: rgba(52, 211, 153, 0.1) !important; /* emerald-400/10 */
+  color: #34d399 !important; /* emerald-400 */
+}
+
+/* Mermaid Diagrams - Explicit theme overrides */
+.mermaid {
+  background: transparent !important;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 2.5rem 0 !important;
+  padding: 1.5rem !important;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  background-color: rgba(var(--color-bg-secondary-rgb), 0.3) !important;
+  transition: all 0.3s ease;
+}
+
+.mermaid:hover {
+  background-color: rgba(var(--color-bg-secondary-rgb), 0.5) !important;
+  border-color: var(--color-accent-primary);
+}
+
+.mermaid g.node rect,
+.mermaid g.node polygon,
+.mermaid g.node circle,
+.mermaid g.node ellipse,
+.mermaid g.node path {
+  fill: var(--color-bg-tertiary) !important;
+  stroke: var(--color-border) !important;
+}
+
+.mermaid .node label,
+.mermaid .edgeLabel,
+.mermaid .cluster-label {
+  color: var(--text-main) !important;
+  fill: var(--text-main) !important;
+}
+
+/* Tables - Refined GFM design */
 .markdown-body table {
-  display: table !important; /* Force full table layout behavior */
-  width: 100% !important; /* Force full width */
-  margin: 24px 0 !important;
-  border-collapse: collapse;
-  border-spacing: 0;
+  display: table !important;
+  width: 100% !important;
+  margin: 1.5rem 0 !important;
+  border-collapse: collapse !important;
+  border-spacing: 0 !important;
+  background-color: transparent !important;
+  border: 1px solid var(--color-border, #30363d) !important;
+  border-radius: 6px;
+  overflow: hidden;
 }
 
 .markdown-body table th,
 .markdown-body table td {
-  padding: 12px 16px !important;
-  /* Use CSS variable */
-  border: 1px solid var(--border-color) !important;
+  padding: 10px 14px !important;
+  border: 1px solid var(--color-border, #30363d) !important;
   text-align: left;
-  color: var(--text-main) !important;
+  color: var(--color-text-primary, #c9d1d9) !important;
 }
 
 .markdown-body table th {
   font-weight: 600 !important;
-  background: var(--bg-secondary) !important;
+  background-color: var(--color-bg-secondary, #161b22) !important;
 }
 
 .markdown-body table tr {
   background-color: transparent !important;
-  border-top: none !important;
+  border-top: 1px solid var(--color-border, #30363d) !important;
 }
 
 .markdown-body table tr:nth-child(2n) {
@@ -265,29 +562,27 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1px 8px;
-  border-bottom: none !important;
-  background-color: #161b22;
-  transition: all 0.2s ease;
-  border-radius: 0 !important;
+  padding: 10px 16px;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-family: 'Inter', sans-serif;
 }
 
 .code-block-body {
-  background-color: #0d1117;
+  background-color: transparent;
   overflow: auto;
 }
 
 .code-block-footer {
   display: flex;
   justify-content: flex-end;
-  padding: 4px 12px;
-  background-color: #161b22;
-  border-top: none !important;
+  padding: 6px 16px;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-top: 1px solid rgba(255, 255, 255, 0.03);
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
-  color: var(--color-text-primary);
-  opacity: 0.9;
-  border-radius: 0 !important;
+  color: var(--text-secondary);
+  opacity: 0.8;
 }
 
 .footer-meta {
@@ -676,31 +971,49 @@
 
 /* Remove extra top margin on the first rendered element so preview aligns
    with the editor's internal padding (editor uses 16px padding). */
-/* Custom Slim Scrollbars for Code Blocks */
-.code-block-body::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* Custom Premium Scrollbars */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
 }
 
-.code-block-body::-webkit-scrollbar-track {
+::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.code-block-body::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+::-webkit-scrollbar-thumb {
+  background: rgba(139, 148, 158, 0.2);
   border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+  transition: all 0.2s ease;
 }
 
-.code-block-body::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(139, 148, 158, 0.4);
 }
 
-/* Fix for standard scrollbars in preview */
-.markdown-body::-webkit-scrollbar {
-  width: 8px;
+/* Specific Fix for Code Block Scrollbars */
+.code-block-body {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  /* Ensure the scrollbar doesn't create extra vertical space */
+  padding-bottom: 0 !important;
 }
 
-.markdown-body::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 4px;
+.code-block-body::-webkit-scrollbar {
+  height: 8px;
+}
+
+.code-block-body::-webkit-scrollbar-thumb {
+  background-color: rgba(139, 148, 158, 0.1);
+}
+
+.code-block-body:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(139, 148, 158, 0.3);
+}
+
+/* Ensure markdown-body itself doesn't have a double scrollbar if parent has one */
+.markdown-body {
+  overflow-x: hidden !important;
 }

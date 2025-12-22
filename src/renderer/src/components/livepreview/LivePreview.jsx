@@ -1,420 +1,242 @@
-import React, { useState, useEffect, Component, useMemo } from 'react'
-import ReactMarkdown from 'react-markdown'
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { dark } from 'react-syntax-highlighter/dist/esm/styles/prism'
-import CopyButton from '../CopyButton'
+import React, { useMemo, useRef, useEffect } from 'react'
 import PropTypes from 'prop-types'
-import remarkGfm from 'remark-gfm'
-import remarkBreaks from 'remark-breaks'
-import rehypeRaw from 'rehype-raw'
+import { fastMarkdownToHtml } from '../../utils/fastMarkdown'
+import markdownStyles from '../../assets/markdown.css?raw'
+import variableStyles from '../../assets/variables.css?raw'
+import mermaidStyles from '../mermaid/mermaid.css?raw'
+import { getMermaidConfig } from '../mermaid/mermaidConfig'
+import { getMermaidEngine } from '../mermaid/mermaidEngine'
 
 /**
- * Component for rendering semantic tags (#tag) and mentions (@name).
- */
-const Tag = ({ children, type }) => (
-  <span className={type === 'mention' ? 'preview-mention' : 'preview-tag'}>{children}</span>
-)
-
-/**
- * Component for rendering internal wiki-style links [[Snippet Title]].
- * Dispatches a 'app:open-snippet' event when clicked.
- * Indicates 'ghost' status if the snippet doesn't exist.
- */
-const QuickLink = ({ title, exists = true }) => {
-  const handleClick = (e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    // Dispatch custom event to be caught by SnippetLibrary
-    window.dispatchEvent(new CustomEvent('app:open-snippet', { detail: { title } }))
-  }
-
-  return (
-    <span
-      className={`preview-quicklink ${!exists ? 'is-ghost' : ''}`}
-      onClick={handleClick}
-      title={exists ? `Jump to ${title}` : `Snippet "${title}" not created yet (Click to create)`}
-    >
-      {title}
-    </span>
-  )
-}
-
-/**
- * Splits a text string into an array of strings and React components
- * (Tags, Mentions, or QuickLinks) based on regex patterns.
+ * LivePreview - Premium Sandboxed Rendering Engine.
  *
- * @param {string} text - The text to process.
- * @returns {Array|string} - An array containing string parts and React components.
+ * Replaces the old ReactMarkdown implementation with a high-performance,
+ * CSP-compliant iframe sandbox. This resolves all issues with:
+ * 1. Syntax highlighting (using Highlight.js module)
+ * 2. Visual consistency (using centralized markdown.css)
+ * 3. Security (resolves 'unsafe-inline' CSP violations)
  */
-const processTextWithTags = (text, existingTitles = []) => {
-  if (typeof text !== 'string') return text
+const LivePreview = ({
+  code = '',
+  language = 'markdown',
+  snippets = [],
+  theme = 'midnight-syntax',
+  disabled = false,
+  fontFamily = "'Outfit', 'Inter', sans-serif",
+  onOpenExternal,
+  onOpenMiniPreview,
+  onExportPDF
+}) => {
+  const iframeRef = useRef(null)
 
-  // Match #tag, @mention, or [[Snippet Title]]
-  // Grouping ensures the split() includes the matching parts in the result array
-  const splitRegex = /([#@][a-zA-Z0-9_-]+|\[\[.*?\]\])/g
-  const parts = text.split(splitRegex)
+  if (disabled || !code.trim()) return null
 
-  // Exact match patterns for identifying which type a part is
-  const tagRegex = /^[#@][a-zA-Z0-9_-]+$/
-  const wikiLinkRegex = /^\[\[(.*?)\]\]$/
-
-  return parts.filter(Boolean).map((part, i) => {
-    // Check for Wiki Link [[title]]
-    const wikiMatch = part.match(wikiLinkRegex)
-    if (wikiMatch) {
-      const title = wikiMatch[1]
-      const exists = existingTitles.some((t) => t.toLowerCase() === title.toLowerCase().trim())
-      return <QuickLink key={`wiki-${i}`} title={title} exists={exists} />
-    }
-
-    // Check for standard #tag or @mention
-    if (tagRegex.test(part)) {
-      const type = part.startsWith('@') ? 'mention' : 'tag'
-      return (
-        <Tag key={`tag-${i}`} type={type}>
-          {part}
-        </Tag>
-      )
-    }
-    return part
-  })
-}
-
-/**
- * Recursively walks down the React component tree to find raw strings
- * and process them for tags/mentions/links. This allows tags to work
- * inside bold, italic, or even nested elements.
- *
- * @param {React.ReactNode} children - The children to walk.
- * @returns {React.ReactNode} - The processed children.
- */
-const recursiveProcessTags = (children, existingTitles = [], depth = 0) => {
-  // Safety: Prevent excessive recursion depth which can freeze the UI on malformed inputs
-  if (depth > 5) return children
-
-  return React.Children.map(children, (child) => {
-    if (typeof child === 'string') {
-      return processTextWithTags(child, existingTitles)
-    }
-    if (React.isValidElement(child) && child.props.children) {
-      return React.cloneElement(child, {
-        children: recursiveProcessTags(child.props.children, existingTitles, depth + 1)
-      })
-    }
-    return child
-  })
-}
-
-/**
- * Global prop sanitizer to prevent hazardous raw HTML attributes from crashing React.
- * Blocks string-based event handlers and React-specific metadata.
- */
-const sanitizeProps = (allProps) => {
-  if (!allProps) return {}
-  const { node, existingTitles, isContentMatch, ...props } = allProps
-  const safe = {}
-  Object.keys(props).forEach((k) => {
-    // 1. Block event handlers that are strings (from raw HTML)
-    if (k.startsWith('on') && typeof props[k] === 'string') return
-    // 2. Block React special props and internal metadata
-    if (k === 'key' || k === 'ref') return
-    // 3. Block JSX-style spread names that are interpreted as literal attributes (e.g. {...props})
-    if (k.includes('{') || k.includes('}') || k.includes('.')) return
-    safe[k] = props[k]
-  })
-  return safe
-}
-
-/**
- * Custom renderer for Paragraphs to support tag highlighting.
- */
-const ParagraphRenderer = ({ children, existingTitles, ...props }) => {
-  const safeProps = sanitizeProps(props)
-  return <p {...safeProps}>{recursiveProcessTags(children, existingTitles)}</p>
-}
-
-/**
- * Custom renderer for List Items to support tag highlighting.
- */
-const ListRenderer = ({ children, existingTitles, ...props }) => {
-  const safeProps = sanitizeProps(props)
-  return <li {...safeProps}>{recursiveProcessTags(children, existingTitles)}</li>
-}
-
-/**
- * Custom renderer for Headers (H1-H6) to support tag highlighting.
- */
-const HeadingRenderer = ({ level, children, existingTitles, ...props }) => {
-  const TagName = `h${level}`
-  const safeProps = sanitizeProps(props)
-  return <TagName {...safeProps}>{recursiveProcessTags(children, existingTitles)}</TagName>
-}
-
-/**
- * Custom renderer for Blockquotes.
- */
-const BlockquoteRenderer = ({ className, children, node, ...props }) => {
-  const safeProps = sanitizeProps(props)
-  return (
-    <blockquote className={className} {...safeProps}>
-      {children}
-    </blockquote>
-  )
-}
-
-/**
- * Common HTML element renderers sanitized to prevent string-based event handlers
- * from crashing React when processing raw HTML.
- */
-const SafeDiv = (allProps) => {
-  const props = sanitizeProps(allProps)
-  return <div {...props} />
-}
-
-const SafeSpan = (allProps) => {
-  const props = sanitizeProps(allProps)
-  return <span {...props} />
-}
-
-class PreviewErrorBoundary extends Component {
-  constructor(props) {
-    super(props)
-    this.state = { hasError: false }
-  }
-
-  static getDerivedStateFromError(error) {
-    return { hasError: true }
-  }
-
-  componentDidCatch(error, errorInfo) {
-    console.error('Preview Error:', error, errorInfo)
-  }
-
-  componentDidUpdate(prevProps) {
-    if (prevProps.children !== this.props.children) {
-      this.setState({ hasError: false })
-    }
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return <div className="p-4 text-xs text-slate-500">Refreshing preview...</div>
-    }
-    return this.props.children
-  }
-}
-
-// Lazy load Mermaid to keep preview light
-const MermaidDiagram = React.lazy(() => import('../mermaid/MermaidDiagram'))
-
-// Extract CodeBlockRenderer to prevent re-creation on every render
-const CodeBlockRenderer = React.memo(({ className, children, node, ...rest }) => {
-  const match = /language-(\w+)/.exec(className || '')
-  const codeContent = String(children).replace(/\n$/, '')
-  const language = match ? match[1] : ''
-  const meta = node?.data?.meta || ''
-
-  // Parse title from meta string like: title="my-file.js"
-  const titleMatch =
-    meta.match(/title="([^"]+)"/) || meta.match(/title='([^']+)'/) || meta.match(/title=([^\s]+)/)
-  const title = titleMatch ? titleMatch[1] : null
-
-  // Special handling for Mermaid diagrams
-  if (language === 'mermaid') {
-    return (
-      <React.Suspense fallback={<div className="text-xs opacity-50 p-4">Loading Diagram...</div>}>
-        <MermaidDiagram chart={codeContent} />
-      </React.Suspense>
-    )
-  }
-
-  // PERFORMANCE HACK: If the code block is too large, Prism will freeze the UI.
-  // We skip highlighting for blocks over 500,000 chars or 2000 lines.
-  const isMassive = codeContent.length > 500000 || codeContent.split('\n').length > 2000
-
-  if (match && !isMassive) {
-    // eslint-disable-next-line no-unused-vars
-    const { key: _key, onMouseDown, ...safeRest } = rest
-    return (
-      <div className="code-block-wrapper">
-        <div className="code-block-header">
-          <div className="flex items-center gap-2 overflow-hidden">
-            <span className="code-language text-xs font-bold uppercase opacity-70">{match[1]}</span>
-            {title && (
-              <span className="text-xs opacity-50 truncate border-l pl-2 border-gray-600">
-                {title}
-              </span>
-            )}
-          </div>
-          <CopyButton text={codeContent} />
-        </div>
-        <div className="code-block-body ">
-          <SyntaxHighlighter
-            PreTag="div"
-            language={match[1]}
-            style={dark}
-            customStyle={{
-              margin: 0,
-              width: '100%',
-              background: 'transparent',
-              padding: '1.25rem',
-              border: 'none',
-              borderRadius: '0',
-              boxShadow: 'none',
-              textShadow: 'none'
-            }}
-            wrapLongLines={true}
-            {...safeRest}
-          >
-            {codeContent}
-          </SyntaxHighlighter>
-        </div>
-        <div className="code-block-footer">
-          <div className="footer-meta">
-            <span>{codeContent.split('\n').length} lines</span>
-            <span className="separator">•</span>
-            <span>{Math.round(new Blob([codeContent]).size / 10.24) / 100} KB</span>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // eslint-disable-next-line no-unused-vars
-  const { key: _key, onMouseDown, ...safeRest } = rest
-  return (
-    <code
-      {...safeRest}
-      className={className}
-      style={
-        isMassive
-          ? {
-              whiteSpace: 'pre-wrap',
-              display: 'block',
-              padding: '1em',
-              background: 'var(--color-bg-primary)'
-            }
-          : {}
-      }
-    >
-      {children}
-    </code>
-  )
-})
-
-const LivePreview = React.memo(({ code = '', language = 'markdown', snippets = [] }) => {
-  // Extract titles for ghost link validation
+  // 1. Title/Wiki-Link analysis
   const existingTitles = useMemo(() => {
     return snippets.map((s) => (s.title || '').trim()).filter(Boolean)
   }, [snippets])
 
-  // Memoize components object to prevent ReactMarkdown from remounting children
-  const components = useMemo(
-    () => ({
-      // Strip event handlers from buttons to prevent React errors
-      button(props) {
-        const safeProps = sanitizeProps(props)
-        return <button {...safeProps} />
-      },
-      code: CodeBlockRenderer,
-      blockquote: BlockquoteRenderer,
-      div: SafeDiv,
-      span: SafeSpan,
-      p: (props) => <ParagraphRenderer {...props} existingTitles={existingTitles} />,
-      li: (props) => <ListRenderer {...props} existingTitles={existingTitles} />,
-      h1: (props) => <HeadingRenderer level={1} {...props} existingTitles={existingTitles} />,
-      h2: (props) => <HeadingRenderer level={2} {...props} existingTitles={existingTitles} />,
-      h3: (props) => <HeadingRenderer level={3} {...props} existingTitles={existingTitles} />,
-      h4: (props) => <HeadingRenderer level={4} {...props} existingTitles={existingTitles} />,
-      h5: (props) => <HeadingRenderer level={5} {...props} existingTitles={existingTitles} />,
-      h6: (props) => <HeadingRenderer level={6} {...props} existingTitles={existingTitles} />,
-      // Silence unrecognized tag warnings from project-internal code pastes
-      copybutton: () => null,
-      mermaiddiagram: () => null,
-      previewerrorboundary: ({ children }) => <>{children}</>,
-      prompt: () => null,
-      snippeteditor: () => null,
-      workbench: () => null,
-      commandpalette: () => null,
-      statusbar: () => null,
-      info: () => null,
-      fileedit: () => null,
-      trash2: () => null,
-      alertcircle: () => null,
-      safediv: () => null,
-      safespan: () => null,
-      customicon: () => null,
-      select: (props) => {
-        const safeProps = sanitizeProps(props)
-        return <select {...safeProps} />
-      },
-      option: (allProps) => {
-        // eslint-disable-next-line no-unused-vars
-        const { selected, ...props } = allProps
-        const safeProps = sanitizeProps(props)
-        return <option {...safeProps} />
-      }
-    }),
-    [existingTitles]
-  )
-  const normalizedLang = (language || 'markdown').toLowerCase()
-  const isMarkdown = normalizedLang === 'markdown' || normalizedLang === 'md'
-  const isPlainFormat = !isMarkdown
+  // 2. Generate optimized HTML with performance safety
+  const html = useMemo(() => {
+    // PERFORMANCE SAFETY: If content is massive (> 200k chars),
+    // we bypass complex parsing to keep the app responsive.
+    const isTooLarge = code.length > 200000
+    if (isTooLarge) {
+      const escaped = code.slice(0, 100000).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      return `<div class="p-8 opacity-70"><p class="mb-4 text-xs font-bold uppercase tracking-widest text-blue-500">Performance Mode (Preview Truncated)</p><pre class="text-xs font-mono leading-relaxed" style="white-space: pre-wrap;">${escaped}...</pre></div>`
+    }
 
-  // PERFORMANCE SAFETY: rehype-raw is powerful but can hang the entire app if the input has
-  // thousands of unclosed tags (common when pasting JSX or large complex code).
-  // We disable it for very large snippets to ensure the app stays responsive.
-  const RAW_HTML_LIMIT = 500000
-  const isOverRawLimit = code.length > RAW_HTML_LIMIT
-  const safeRehypePlugins = useMemo(() => {
-    return isOverRawLimit ? [] : [rehypeRaw]
-  }, [isOverRawLimit])
+    const normalizedLang = (language || 'markdown').toLowerCase()
 
+    // CASE 1: Markdown
+    if (normalizedLang === 'markdown' || normalizedLang === 'md') {
+      return fastMarkdownToHtml(code, existingTitles)
+    }
+
+    // CASE 2: Standalone Mermaid Diagram
+    if (normalizedLang === 'mermaid') {
+      const escaped = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      return `
+        <div class="code-block-header mb-4" style="border: none; background: transparent;">
+          <span class="code-language font-bold" style="color: var(--color-accent-primary); opacity: 0.6;">Diagram Preview</span>
+          <button class="copy-code-btn" data-code="${escaped}" title="Copy Mermaid Source">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+          </button>
+        </div>
+        <div class="mermaid-diagram">${escaped}</div>`
+    }
+
+    // CASE 3: General Code Snippet
+    const escaped = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    return `
+      <div class="code-block-wrapper">
+        <div class="code-block-header">
+          <span class="code-language font-bold">${normalizedLang}</span>
+          <button class="copy-code-btn" data-code="${escaped}" title="Copy code">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+          </button>
+        </div>
+        <pre><code class="language-${normalizedLang}">${escaped}</code></pre>
+      </div>`
+  }, [code, language, existingTitles])
+
+  const isDark = theme !== 'polaris'
+
+  // 3. Mirror content to IFrame via postMessage
   useEffect(() => {
-    if (isOverRawLimit) {
-      console.warn(
-        `[LivePreview] Large content detected (${code.length} chars). Disabling raw HTML support for performance safety.`
+    const iframe = iframeRef.current
+    if (!iframe) return
+
+    const syncContent = () => {
+      // Create a style override for the font family
+      const fontOverride = `
+        .markdown-body, .mermaid-wrapper, .mermaid-diagram, .actor, .node label { 
+          font-family: ${fontFamily}, sans-serif !important; 
+        }
+        pre code { font-family: 'JetBrains Mono', 'Cascadia Code', monospace !important; }
+      `
+
+      iframe.contentWindow.postMessage(
+        {
+          type: 'render',
+          html,
+          theme,
+          isDark,
+          isLive: true,
+          styles: `${variableStyles}\n${markdownStyles}\n${mermaidStyles}\n${fontOverride}`,
+          mermaidConfig: getMermaidConfig(isDark, fontFamily),
+          mermaidEngine: getMermaidEngine()
+        },
+        '*'
       )
     }
-  }, [isOverRawLimit, code.length])
 
-  if (isPlainFormat) {
-    return (
-      <div className="p-4 bg-transparent h-full overflow-auto">
-        <pre
-          className="font-mono text-sm outline-none"
-          style={{
-            whiteSpace: 'pre-wrap',
-            wordBreak: 'break-word',
-            lineHeight: '1.5',
-            margin: 0,
-            fontFamily: 'Consolas, Monaco, "Courier New", monospace'
-          }}
-        >
-          {code}
-        </pre>
-      </div>
-    )
-  }
+    // Attempt instant sync
+    syncContent()
+
+    // Ensure sync after load
+    iframe.addEventListener('load', syncContent)
+    return () => iframe.removeEventListener('load', syncContent)
+  }, [html, theme, isDark])
 
   return (
-    <div className="markdown-body">
-      <PreviewErrorBoundary>
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm, remarkBreaks]}
-          rehypePlugins={safeRehypePlugins}
-          components={components}
-        >
-          {code}
-        </ReactMarkdown>
-      </PreviewErrorBoundary>
+    <div className="w-full h-full flex flex-col bg-transparent overflow-hidden">
+      {/* Premium Preview Toolbar */}
+      {/* Premium Mac-Style Toolbar */}
+      <div className="flex items-center justify-between px-3 py-2 bg-white/80 dark:bg-[#0d1117]/80 border-b border-slate-200 dark:border-slate-800 backdrop-blur-md z-10 sticky top-0 transition-colors duration-300">
+        {/* Left: Window Controls decoration */}
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 tracking-wider select-none uppercase opacity-80 pl-1">
+            PREVIEW ENGINE
+          </span>
+        </div>
+
+        {/* Right: Action Area */}
+        <div className="flex items-center gap-1">
+          {/* Mini Preview Button */}
+          <button
+            onClick={onOpenMiniPreview}
+            className="flex items-center justify-center w-7 h-7 rounded-md transition-all
+            text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400
+            hover:bg-slate-100 dark:hover:bg-slate-800/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+            title="Pop out Mini Preview"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+              <line x1="15" x2="15" y1="3" y2="21" />
+            </svg>
+          </button>
+
+          {/* System Browser Button */}
+          <button
+            onClick={onOpenExternal}
+            className="flex items-center justify-center w-7 h-7 rounded-md transition-all
+            text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400
+            hover:bg-slate-100 dark:hover:bg-slate-800/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            title="Open in System Browser"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              <polyline points="15 3 21 3 21 9" />
+              <line x1="10" x2="21" y1="14" y2="3" />
+            </svg>
+          </button>
+
+          <div className="h-4 w-px bg-slate-300 dark:bg-slate-700 mx-1" />
+
+          {/* Export PDF Button (Highlighted) */}
+          <button
+            onClick={onExportPDF}
+            className="flex items-center gap-1.5 px-2 py-1 rounded-md transition-all
+            bg-slate-900 dark:bg-white text-white dark:text-slate-900 border border-transparent
+            hover:bg-slate-700 dark:hover:bg-slate-200 active:transform active:scale-95
+            text-[10px] font-bold shadow-sm"
+            title="Export to PDF"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" x2="12" y1="15" y2="3" />
+            </svg>
+            <span>Export</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="flex-1 bg-transparent overflow-hidden">
+        <iframe
+          ref={iframeRef}
+          title="Premium Live Preview"
+          className="w-full h-full border-none bg-transparent"
+          sandbox="allow-scripts"
+          allow="clipboard-read; clipboard-write"
+          src="/preview.html"
+        />
+      </div>
     </div>
   )
-})
+}
 
 LivePreview.propTypes = {
   code: PropTypes.string,
-  language: PropTypes.string
+  language: PropTypes.string,
+  snippets: PropTypes.array,
+  theme: PropTypes.string,
+  disabled: PropTypes.bool,
+  fontFamily: PropTypes.string,
+  onOpenExternal: PropTypes.func,
+  onOpenMiniPreview: PropTypes.func,
+  onExportPDF: PropTypes.func
 }
 
-export default LivePreview
+export default React.memo(LivePreview)
