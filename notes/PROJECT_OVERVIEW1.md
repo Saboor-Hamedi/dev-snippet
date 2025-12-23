@@ -4,48 +4,54 @@ When you're deep in the zone and need to save that perfect regex, API response, 
 
 ![Quick Snippets Interface](https://reajjvfviyufxbvqvted.supabase.co/storage/v1/object/public/images/content/xrjlhfhuj9-1764592386019.png)
 
-##  The Philosophy: Less Friction, More Flow
+## The Philosophy: Less Friction, More Flow
 
 Quick Snippets was born from frustration with existing tools that were either:
+
 - **Too heavy** (full IDEs for 10 lines of code)
 - **Too simple** (plain text files with no organization)
 - **Too slow** (cloud apps requiring authentication)
 
 I wanted something that feels like an extension of my muscle memory — a tool that appears when I need it and disappears when I don't.
 
-##  What Makes It Special
+## What Makes It Special
 
-###  **Instant Capture**
+### **Instant Capture**
+
 - **Ctrl/Cmd+N** → New snippet immediately focused and ready
 - **Drag & drop** files directly into the app
 - **Auto-save** every keystroke (never lose work)
 
-###  **Smart Organization**
+### **Smart Organization**
+
 - **Command Palette (Ctrl/Cmd+P)** – Fuzzy-search through all snippets instantly
 - **Live Markdown Preview** – See formatted results as you type
 - **SQLite Backend** – Local, fast, reliable storage that syncs nothing to the cloud
 
-###  **Keyboard-First Workflow**
+### **Keyboard-First Workflow**
+
 - **Ctrl+R** – Rename selected snippet
 - **Ctrl+Shift+C** – Copy snippet to clipboard
 - **Delete key** – Remove with confirmation
 - **Esc** – Smart modal hierarchy (closes only what's relevant)
 
-###  **Clean, Focused Interface**
+### **Clean, Focused Interface**
+
 ```javascript
 // No bloat. No distractions.
 // Just your code and a live preview.
 ```
 
-##  See It in Action
+## See It in Action
 
 **Split-Pane Productivity**
 ![Live Editing with Preview](https://reajjvfviyufxbvqvted.supabase.co/storage/v1/object/public/images/content/3mab47o77vl-1764592759204.png)
-*Left: Clean editor. Right: Instant Markdown rendering. No switching tabs.*
+_Left: Clean editor. Right: Instant Markdown rendering. No switching tabs._
 
-##  Perfect For...
+## Perfect For...
 
 ### Daily Developer Tasks
+
 - Saving **one-off commands** you always forget
 - **API examples** and curl commands
 - **Config snippets** for different environments
@@ -53,15 +59,17 @@ I wanted something that feels like an extension of my muscle memory — a tool t
 - **Code review** notes and templates
 
 ### Beyond Just Code
+
 - Meeting notes in Markdown
 - Quick calculations
 - Project ideas
 - Contact templates
 - Issue descriptions
 
-##  Getting Started
+## Getting Started
 
 ### Installation
+
 ```bash
 npm install
 npm run dev  # For development
@@ -69,27 +77,32 @@ npm run build  # For production
 ```
 
 ### First 60 Seconds
+
 1. **Ctrl+N** – Create your first snippet
 2. Give it a name (`.js` extension auto-detects language)
 3. Type some code – watch it auto-save
 4. **Ctrl+P** – Search for it
 5. **Ctrl+Shift+C** – Copy it back to your main project
 
-##  Why This Works
+## Why This Works
 
 The magic is in the constraints:
+
 - **No folders** – Search instead of organizing
 - **No cloud sync** – Local-first means instant
 - **No tabs** – Single focus reduces cognitive load
 - **No settings** – It just works
-![Image](https://reajjvfviyufxbvqvted.supabase.co/storage/v1/object/public/images/content/4nps2faj29w-1764593681986.png)
-##  Roadmap Ideas
+  ![Image](https://reajjvfviyufxbvqvted.supabase.co/storage/v1/object/public/images/content/4nps2faj29w-1764593681986.png)
+
+## Roadmap Ideas
+
 - Snippet tagging and collections
 - Quick export to gist/git
 - Theme customization
 - Plugin system for syntax highlighting
 
-##  License
+## License
+
 MIT – Use it, modify it, share it. Just keep the credits if you redistribute.
 
 ---

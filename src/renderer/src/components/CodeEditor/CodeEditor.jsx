@@ -27,7 +27,8 @@ const CodeEditor = ({
   onEditorReady,
   onLargeFileChange,
   readOnly = false,
-  snippets = []
+  snippets = [],
+  language = 'markdown'
 }) => {
   // Zoom level is now managed globally by useZoomLevel at the root/SettingsProvider level.
   // Individual components consume the result via CSS variables.
@@ -171,7 +172,7 @@ const CodeEditor = ({
           cursorBlinking: isBlinking,
           cursorBlinkingSpeed,
           wordWrap: isLargeFile ? 'off' : wordWrap,
-          language: isLargeFile ? 'plaintext' : 'markdown',
+          language: isLargeFile ? 'plaintext' : language,
           isLargeFile,
           snippetTitles
         }
@@ -210,8 +211,8 @@ const CodeEditor = ({
     cursorWidth,
     cursorShape,
     cursorColor,
-    cursorBlinking,
-    cursorBlinkingSpeed,
+    // cursorBlinking, // Handled via CSS/Data Attribute
+    // cursorBlinkingSpeed, // Handled via CSS Variable
     isLargeFile,
     extensionsLoaded,
     snippetTitles

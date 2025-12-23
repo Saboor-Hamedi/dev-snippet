@@ -187,10 +187,10 @@ export const useKeyboardShortcuts = (shortcuts) => {
       }
     }
 
-    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keydown', handleKeyDown, true) // Use capture to strictly intercept before Editor
     window.addEventListener('wheel', handleWheel, { passive: false })
     return () => {
-      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keydown', handleKeyDown, true)
       window.removeEventListener('wheel', handleWheel)
     }
   }, [])

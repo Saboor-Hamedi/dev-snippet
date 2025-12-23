@@ -5,6 +5,7 @@ Welcome to the comprehensive documentation for **Dev Snippet**, a high-performan
 ---
 
 ## 1. Table of Contents
+
 1. [User Guide](#2-user-guide)
 2. [Technical Architecture](#3-technical-architecture)
 3. [Core Layer Architecture](#4-core-layer-architecture)
@@ -15,26 +16,29 @@ Welcome to the comprehensive documentation for **Dev Snippet**, a high-performan
 ## 2. User Guide
 
 ### Core Principles
+
 1.  **Markdown First**: Optimized for technical writing with GFM support.
 2.  **Local Privacy**: 100% offline, data stored in local database.
 3.  **Speed**: Keyboard-centric workflow with instant search.
 
 ### Key Features
--   **Smart Editor**: Auto-detects languages, supports 100+ syntax highlights.
--   **Live Preview**: Real-time rendering with **Mermaid** diagrams and **MathJax**.
--   **Wiki-Links**: Connect snippets using `[[WikiLink]]` syntax.
--   **PDF Export**: Pro-grade `A4` PDF generation with custom margins.
--   **Mini Browser**: Detach the preview into a floating "Always on Top" window.
+
+- **Smart Editor**: Auto-detects languages, supports 100+ syntax highlights.
+- **Live Preview**: Real-time rendering with **Mermaid** diagrams and **MathJax**.
+- **Wiki-Links**: Connect snippets using `[[WikiLink]]` syntax.
+- **PDF Export**: Pro-grade `A4` PDF generation with custom margins.
+- **Mini Browser**: Detach the preview into a floating "Always on Top" window.
 
 ### Keyboard Shortcuts
-| Action | Shortcut |
-| :--- | :--- |
-| **Quick Open** | `Ctrl + P` |
-| **New Snippet** | `Ctrl + N` |
-| **Save** | `Ctrl + S` |
-| **Rename** | `Ctrl + R` |
+
+| Action             | Shortcut           |
+| :----------------- | :----------------- |
+| **Quick Open**     | `Ctrl + P`         |
+| **New Snippet**    | `Ctrl + N`         |
+| **Save**           | `Ctrl + S`         |
+| **Rename**         | `Ctrl + R`         |
 | **Toggle Preview** | `Ctrl + Shift + \` |
-| **Export PDF** | `UI Button` |
+| **Export PDF**     | `UI Button`        |
 
 ---
 
@@ -65,7 +69,7 @@ graph TD
     IPC -->|Query| DB
     IPC -->|Write| FS
     IPC -->|Invoke| Export
-    
+
     Editor -->|OnChange| Preview
     Preview -->|postMessage| Sandbox
 ```
@@ -73,9 +77,10 @@ graph TD
 ### Core Modules
 
 #### 1. Main Process (`src/main`)
--   **`index.js`**: Application entry point. Handles lifecycle and window creation.
--   **`ipc/`**: Modularized IPC handlers (`database.js`, `export.js`, `window.js`).
--   **`database/`**: Manages the local `snippets.db` using `better-sqlite3`.
+
+- **`index.js`**: Application entry point. Handles lifecycle and window creation.
+- **`ipc/`**: Modularized IPC handlers (`database.js`, `export.js`, `window.js`).
+- **`database/`**: Manages the local `snippets.db` using `better-sqlite3`.
 
 ##### Database Schema (ER Diagram)
 
@@ -106,11 +111,12 @@ erDiagram
 ```
 
 #### 2. Renderer Process (`src/renderer`)
--   **`SnippetEditor.jsx`**: The heart of the app. Manages editor state, autosave timers, and preview coordination.
--   **`LivePreview.jsx`**: A React wrapper that manages the **Sandboxed Preview**.
-    -   *Security*: Uses an `iframe` (`public/preview.html`) to render user content.
-    -   *Performance*: Uses `fastMarkdown.js` (Regex-based) for instant rendering of massive files.
--   **`previewGenerator.js`**: Shared logic for generating HTML for **PDF Export** and **Mini Browser**.
+
+- **`SnippetEditor.jsx`**: The heart of the app. Manages editor state, autosave timers, and preview coordination.
+- **`LivePreview.jsx`**: A React wrapper that manages the **Sandboxed Preview**.
+  - _Security_: Uses an `iframe` (`public/preview.html`) to render user content.
+  - _Performance_: Uses `fastMarkdown.js` (Regex-based) for instant rendering of massive files.
+- **`previewGenerator.js`**: Shared logic for generating HTML for **PDF Export** and **Mini Browser**.
 
 ---
 
@@ -143,7 +149,7 @@ flowchart TD
         IframeWindow -->|Event Listener| Script[previewScript.js]
         Script -->|Parse| FastMD[FastMarkdown Engine]
         Script -->|Render| DOM[DOM Tree]
-        
+
         DOM -.->|Reflow| Mermaid[Mermaid Diagrams]
         DOM -.->|Paint| HLJS[Syntax Highlighting]
     end
@@ -152,7 +158,7 @@ flowchart TD
     ReactState == Real-time Sync ==> PreviewMgr
     PreviewMgr == Secure Message ==> IframeWindow
     IPCHandler == Acknowledge ==> EditorComp
-    
+
     %% Styling Definitions - Saturated Colors to avoid "White Layer" look
     classDef react fill:#b3e5fc,stroke:#01579b,stroke-width:2px,color:black;
     classDef electron fill:#ffe0b2,stroke:#e65100,stroke-width:2px,color:black;
@@ -174,21 +180,21 @@ flowchart TD
 ### Layer Descriptions
 
 1.  **Typing Layer**:
-    *   Handles high-frequency user input events.
-    *   Manages React state for the editor UI.
-    *   Debounces saves to prevent database thrashing.
-    *   Immediately propagates changes to the Preview Manager.
+    - Handles high-frequency user input events.
+    - Manages React state for the editor UI.
+    - Debounces saves to prevent database thrashing.
+    - Immediately propagates changes to the Preview Manager.
 
 2.  **System Layer**:
-    *   Operates in the Electron Main Process (Node.js environment).
-    *   Handles file system access and database persistence.
-    *   Executes heavy operations like PDF generation off the main UI thread.
+    - Operates in the Electron Main Process (Node.js environment).
+    - Handles file system access and database persistence.
+    - Executes heavy operations like PDF generation off the main UI thread.
 
 3.  **Sandbox Layer**:
-    *   A completely isolated `iframe` environment.
-    *   Receives content via `postMessage` protocol (Zero shared state).
-    *   Renders unsafe HTML/Markdown locally without risking the main application's security.
-    *   Runs heavy rendering scripts (Mermaid, Highlight.js) independently.
+    - A completely isolated `iframe` environment.
+    - Receives content via `postMessage` protocol (Zero shared state).
+    - Renders unsafe HTML/Markdown locally without risking the main application's security.
+    - Runs heavy rendering scripts (Mermaid, Highlight.js) independently.
 
 ---
 
@@ -226,4 +232,19 @@ mindmap
 
 ---
 
-*Documentation generated for Dev Snippet v1.1.5*
+## 6. Changelog & Updates
+
+### Version 1.1.6
+**Added:**
+- **Robust Keyboard Handling**: Implemented "Capture Phase" listeners to fix `Ctrl+,` (Settings) and resolve key conflicts.
+- **JSON Syntax Highlighting**: Added dedicated support for JSON files with custom theme integration.
+- **Cursor Blinking Control**: New setting to toggle cursor animations (Solid/Blinking).
+- **Safe Markdown Mode**: Restored standard Markdown highlighting while preventing previous extension-related crashes.
+
+**Fixed:**
+- **Snippet Rename System**: Completely overhauled the renaming logic to fix the "locked input" bug.
+- **Global Error Handling**: Improved `ErrorBoundary` (Safe Mode) coverage for cleaner recovery from runtime glitches.
+
+---
+
+_Documentation generated for Dev Snippet v1.1.6_

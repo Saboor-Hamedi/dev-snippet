@@ -15,6 +15,9 @@ const ModalLoader = () => (
 )
 
 export const ModalProvider = ({ children, snippets, onSelectSnippet }) => {
+  // Input State for Prompts
+  const [promptInputValue, setPromptInputValue] = useState('')
+
   // Modal States
   const [renameModal, setRenameModal] = useState({ isOpen: false, item: null, onConfirm: null })
   const [deleteModal, setDeleteModal] = useState({
@@ -27,6 +30,7 @@ export const ModalProvider = ({ children, snippets, onSelectSnippet }) => {
   // API exposed to consumers
   const openRenameModal = useCallback((item, onConfirm) => {
     setRenameModal({ isOpen: true, item, onConfirm })
+    setPromptInputValue(item?.title || '') // Initialize input
   }, [])
 
   const openDeleteModal = useCallback((snippetId, onConfirm) => {
@@ -64,10 +68,9 @@ export const ModalProvider = ({ children, snippets, onSelectSnippet }) => {
             message={`Rename "${renameModal.item?.title || ''}"`}
             confirmLabel="Rename"
             showInput={true}
-            inputValue={''} // Initial value handles by Prompt? Or need state?
-            // Ideally Prompt handles its own input state or we pass it.
-            // For now assuming we pass nothing and Prompt handles it or we need to pass a ref.
-            // Let's rely on Prompt's own handling or simple callback.
+            inputValue={promptInputValue}
+            onInputChange={setPromptInputValue}
+            placeholder="Enter snippet name..."
             onClose={() => setRenameModal((prev) => ({ ...prev, isOpen: false }))}
             onConfirm={(newName) => {
               if (renameModal.onConfirm) renameModal.onConfirm(newName)

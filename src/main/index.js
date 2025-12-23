@@ -3,21 +3,19 @@
  * Refactored for better organization and maintainability
  */
 
-// Set this to true for development, false for production
-// When true: DevTools can be opened manually with Ctrl+Shift+I or F12
-// When false: DevTools are completely disabled and cannot be opened
-const ENABLE_DEVTOOLS = true // <-- CHANGE THIS FOR YOUR NEEDS
-
 const { app, BrowserWindow } = require('electron')
+
+// AUTO-DETECT: Enable DevTools in Dev, Disable in Production
+const ENABLE_DEVTOOLS = !app.isPackaged
 
 // --- GLOBAL ERROR HANDLING (Prevent App Collapse) ---
 process.on('uncaughtException', (error) => {
-  console.error('🔴 CRITICAL MAIN PROCESS ERROR (Uncaught):', error)
+  console.error('CRITICAL MAIN PROCESS ERROR (Uncaught):', error)
   // We don't exit here immediately to allow some self-healing or logging
 })
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('🔴 UNHANDLED PROMISE REJECTION in Main Process:', reason)
+  console.error('UNHANDLED PROMISE REJECTION in Main Process:', reason)
 })
 // ----------------------------------------------------
 

@@ -7,6 +7,7 @@ This README explains how the project works, how to develop and build it, the arc
 **Friendly note:** this README is written to be published on a website. If you'd like shorter or localized versions, tell me which sections to trim or translate.
 
 **Table of contents**
+
 - **Getting started** (dev & build)
 - **Development Commands**
 - **How the app works (architecture)**
@@ -22,6 +23,7 @@ This README explains how the project works, how to develop and build it, the arc
 **Getting started**
 
 Prerequisites
+
 - Node.js 18+ (LTS recommended)
 - npm (or your package manager of choice)
 - On macOS: Xcode command line tools (for packaging)
@@ -49,6 +51,7 @@ npm run build
 **Development Commands**
 
 Core Development
+
 ```bash
 # Run in development mode (hot reload enabled)
 npm run dev
@@ -58,6 +61,7 @@ npm run build
 ```
 
 Testing
+
 ```bash
 # Run tests with Vitest
 npm test
@@ -67,6 +71,7 @@ npm test:ui
 ```
 
 Code Quality
+
 ```bash
 # Lint code with ESLint
 npm run lint
@@ -76,12 +81,14 @@ npm run format
 ```
 
 Native Module Rebuild
+
 ```bash
 # Rebuild native modules (e.g., better-sqlite3) if installation fails
 npm run rebuild
 ```
 
 Building Distributables
+
 ```bash
 # Build for Windows (produces NSIS installer)
 npm run build:win
@@ -97,6 +104,7 @@ npm run build:unpack
 ```
 
 Icon Generation
+
 ```bash
 # Generate platform-specific icons from source PNG (requires 1024x1024 PNG)
 npm run make:icons
@@ -140,11 +148,12 @@ npm run rebuild
 - Main process: `src/main/index.js` — creates BrowserWindow, registers IPC handlers for file dialogs and database access, and initializes a small SQLite DB (`snippets.db`) stored in the user's appData (`app.getPath('userData')`). The window icon is chosen per-platform in `createWindow()`.
 - Preload: `src/preload/index.js` — exposes a small safe API to the renderer for IPC operations (open file, read/write, DB RPC).
 - Renderer: `src/renderer/src` — React app built with Vite. Key folders:
-	- `components/` — UI components (Workbench, SnippetEditor, SnippetLibrary, StatusBar, SettingsPanel, modal dialogs, etc.)
-	- `hook/` — custom hooks (`useSnippetData`, `useToast`, `useKeyboardShortcuts`, etc.)
-	- `utils/` — small utilities such as `ToastNotification`
+  - `components/` — UI components (Workbench, SnippetEditor, SnippetLibrary, StatusBar, SettingsPanel, modal dialogs, etc.)
+  - `hook/` — custom hooks (`useSnippetData`, `useToast`, `useKeyboardShortcuts`, etc.)
+  - `utils/` — small utilities such as `ToastNotification`
 
 Data flow summary:
+
 - `SnippetLibrary` is the top-level view manager: it holds active view state (`snippets`, `editor`, `settings`, `welcome`) and orchestrates opening the editor, creating drafts, and showing modals.
 - `SnippetEditor` renders the editor and live preview. It contains an autosave timer, a `textareaRef` and focuses the editor reliably when a snippet is opened or created.
 - Database access (CRUD for snippets and settings) is performed in the main process via better-sqlite3 and exposed to the renderer by IPC handlers.
@@ -165,6 +174,7 @@ The app provides global keyboard shortcuts that are intentionally conservative (
 - Ctrl/Cmd + Shift + C — Copy selected snippet's code to clipboard
 
 Implementation notes:
+
 - Global shortcuts are implemented in `src/renderer/src/hook/useKeyboardShortcuts.js`. The hook ignores shortcuts while an editable field (input/textarea/contenteditable) has focus — except Escape which always works — so typing is never interrupted.
 - The editor focus is handled by React refs inside `SnippetEditor.jsx` rather than ad-hoc DOM queries; this makes Ctrl+N focus reliable.
 
@@ -192,6 +202,7 @@ Implementation notes:
 **Contributing**
 
 Pull requests are welcome. Keep changes small and focused. Follow these guidelines:
+
 - Run `npm run lint` and `npm run format` before committing.
 - If adding UI, include screenshots or a short GIF in the PR description.
 - If changing DB schema, include migration code in `initDB()`.
@@ -204,5 +215,3 @@ Pull requests are welcome. Keep changes small and focused. Follow these guidelin
 
 - **License:** This project is licensed under the MIT License. See the `LICENSE` file for details.
 - **Badge:** [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-
-

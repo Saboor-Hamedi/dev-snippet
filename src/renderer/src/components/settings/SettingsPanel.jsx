@@ -63,7 +63,7 @@ const SettingsPanel = ({ onClose }) => {
         if (path) {
           const data = {
             exportDate: new Date().toISOString(),
-            version: '1.1.5',
+            version: '1.1.6',
             snippets
           }
           await window.api.writeFile(path, JSON.stringify(data, null, 2))
@@ -243,16 +243,7 @@ const SettingsPanel = ({ onClose }) => {
               />
             )}
 
-            {activeTab === 'json' && (
-              <UserSettings
-                activeTab={activeTab}
-                jsonContent={jsonContent}
-                isJsonDirty={isJsonDirty}
-                setIsJsonDirty={setIsJsonDirty}
-                handleSaveJson={handleSaveJson}
-                setJsonContent={setJsonContent}
-              />
-            )}
+            {activeTab === 'json' && <UserSettings />}
           </div>
         </div>
       </div>

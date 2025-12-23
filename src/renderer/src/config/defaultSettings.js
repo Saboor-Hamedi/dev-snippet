@@ -6,7 +6,6 @@ export const DEFAULT_SETTINGS = {
   },
   editor: {
     editorBgColor: '#232731',
-    editorBgColor: '#232731',
     zoomLevel: 1.0,
     fontSize: 16,
     fontFamily: 'JetBrains Mono',

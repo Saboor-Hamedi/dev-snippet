@@ -12,7 +12,7 @@ files:
 asar: true
 compression: maximum
 asarUnpack:
-  - "**/node_modules/better-sqlite3/**/*"
+  - '**/node_modules/better-sqlite3/**/*'
 win:
   executableName: dev-snippet
   target:

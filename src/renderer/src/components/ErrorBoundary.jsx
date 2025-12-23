@@ -113,7 +113,7 @@ class ErrorBoundary extends React.Component {
 
             {/* Footer */}
             <div className="px-8 py-4 bg-slate-50/50 dark:bg-slate-900/40 border-t border-slate-100 dark:border-slate-800 flex justify-center text-[11px] font-bold text-slate-400 dark:text-slate-600 uppercase tracking-widest">
-              Safe Recovery Mode • v1.1.5
+              Safe Recovery Mode • v1.1.6
             </div>
           </div>
         </div>

@@ -39,6 +39,7 @@
 
 /* Force Stop Blinking */
 .cm-editor-container[data-cursor-blinking='false'] .cm-cursor {
+  /* This only works if drawSelection is enabled. For native cursor, we cannot stop blinking easily. */
   animation: none !important;
   opacity: 1 !important;
 }

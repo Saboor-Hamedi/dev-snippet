@@ -1,7 +1,7 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
     <title>Preview Sandbox</title>
     <!-- We will inject styles via message to keep them dynamic, or use standard assets -->
     <style id="base-styles">
@@ -11,40 +11,53 @@
       html {
         scroll-behavior: smooth;
       }
-      body { 
-        margin: 0; 
-        padding: 0; 
-        overflow-x: hidden !important; 
+      body {
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden !important;
         background-color: transparent !important;
       }
-      .preview-container { 
-        width: 100%; 
+      .preview-container {
+        width: 100%;
         max-width: 1200px;
-        box-sizing: border-box; 
+        box-sizing: border-box;
         padding: 5px;
         margin: 0 auto !important;
-        background-color: transparent; 
+        background-color: transparent;
       }
       .preview-container.is-live {
         padding: 5px;
       }
-      
+
       /* Premium Scrollbars */
-      ::-webkit-scrollbar { width: 10px; height: 10px; }
-      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
       ::-webkit-scrollbar-thumb {
         background: rgba(139, 148, 158, 0.2);
         border-radius: 10px;
         border: 2px solid transparent;
         background-clip: content-box;
       }
-      ::-webkit-scrollbar-thumb:hover { background: rgba(139, 148, 158, 0.4); }
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(139, 148, 158, 0.4);
+      }
     </style>
-    
+
     <!-- Dependencies (Allowed by CSP) -->
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css">
-    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js" onload="window.hljsReady = true;"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css"
+    />
+    <script
+      src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"
+      onload="window.hljsReady = true"
+    ></script>
   </head>
   <body class="markdown-body">
     <div class="preview-container">
@@ -53,143 +66,161 @@
 
     <script type="module">
       /**
-       * This module script is part of 'self' (static asset), 
+       * This module script is part of 'self' (static asset),
        * so it won't violate CSP.
        */
-      
-      let currentConfig = {};
+
+      let currentConfig = {}
 
       const highlight = () => {
         if (!window.hljs) {
           // If NOT ready yet, wait and try again
-          setTimeout(highlight, 200);
-          return;
+          setTimeout(highlight, 200)
+          return
         }
         document.querySelectorAll('pre code').forEach((block) => {
           if (!block.classList.contains('hljs')) {
             // Apply highlighting
-            hljs.highlightElement(block);
+            hljs.highlightElement(block)
           }
-        });
-      };
+        })
+      }
 
       // Handle content updates from parent
       window.addEventListener('message', (event) => {
-        const { type, html, styles, theme, isDark, isLive, mermaidConfig, mermaidEngine } = event.data;
-        
+        const { type, html, styles, theme, isDark, isLive, mermaidConfig, mermaidEngine } =
+          event.data
+
         if (type === 'render') {
           // 1. Update Appearance
-          document.documentElement.setAttribute('data-theme', theme);
-          document.documentElement.className = theme + (isDark ? ' dark' : '');
-          
-          const container = document.querySelector('.preview-container');
+          document.documentElement.setAttribute('data-theme', theme)
+          document.documentElement.className = theme + (isDark ? ' dark' : '')
+
+          const container = document.querySelector('.preview-container')
           if (container) {
-            if (isLive) container.classList.add('is-live');
-            else container.classList.remove('is-live');
+            if (isLive) container.classList.add('is-live')
+            else container.classList.remove('is-live')
           }
 
           if (styles) {
-            let styleTag = document.getElementById('dynamic-styles');
+            let styleTag = document.getElementById('dynamic-styles')
             if (!styleTag) {
-              styleTag = document.createElement('style');
-              styleTag.id = 'dynamic-styles';
-              document.head.appendChild(styleTag);
+              styleTag = document.createElement('style')
+              styleTag.id = 'dynamic-styles'
+              document.head.appendChild(styleTag)
             }
-            if (styleTag.textContent !== styles) styleTag.textContent = styles;
+            if (styleTag.textContent !== styles) styleTag.textContent = styles
           }
 
           // 2. Inject Mermaid Engine logic if provided
           if (mermaidEngine && !window.diagramEngine) {
-            const script = document.createElement('script');
-            script.textContent = mermaidEngine;
-            document.body.appendChild(script);
+            const script = document.createElement('script')
+            script.textContent = mermaidEngine
+            document.body.appendChild(script)
           }
 
           // 3. Update Content
-          const contentDiv = document.getElementById('content');
+          const contentDiv = document.getElementById('content')
           if (contentDiv && contentDiv.innerHTML !== html) {
-             contentDiv.innerHTML = html;
+            contentDiv.innerHTML = html
           }
 
           // 4. Process Logic
           const runLogic = () => {
-            if (window.hljs) highlight();
-            
+            if (window.hljs) highlight()
+
             if (window.mermaid && window.diagramEngine) {
-              window.diagramEngine.init(mermaidConfig || { startOnLoad: false, theme: isDark ? 'dark' : 'default' });
-              window.diagramEngine.run();
+              window.diagramEngine.init(
+                mermaidConfig || { startOnLoad: false, theme: isDark ? 'dark' : 'default' }
+              )
+              window.diagramEngine.run()
             } else if (window.mermaid || window.diagramEngine) {
               // Something is missing, try again soon
-              setTimeout(runLogic, 200);
+              setTimeout(runLogic, 200)
             }
-          };
+          }
 
-          runLogic();
+          runLogic()
           // Safety poll
-          setTimeout(runLogic, 1000);
+          setTimeout(runLogic, 1000)
         }
-      });
+      })
 
       // Handle Clicks
       document.addEventListener('click', (e) => {
         // 1. Copy Code Button
-        const btn = e.target.closest('.copy-code-btn');
+        const btn = e.target.closest('.copy-code-btn')
         if (btn) {
-          const raw = btn.dataset.code.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+          const raw = btn.dataset.code
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
           navigator.clipboard.writeText(raw).then(() => {
-            const old = btn.innerHTML;
-            btn.classList.add('success');
-            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
-            setTimeout(() => { btn.classList.remove('success'); btn.innerHTML = old; }, 2000);
-          });
-          return;
+            const old = btn.innerHTML
+            btn.classList.add('success')
+            btn.innerHTML =
+              '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>'
+            setTimeout(() => {
+              btn.classList.remove('success')
+              btn.innerHTML = old
+            }, 2000)
+          })
+          return
         }
 
         // 2. Quick Links (Internal Wiki Links)
-        const quickLink = e.target.closest('.preview-quicklink');
+        const quickLink = e.target.closest('.preview-quicklink')
         if (quickLink) {
-          window.parent.postMessage({ type: 'app:open-snippet', title: quickLink.dataset.title }, '*');
-          return; 
+          window.parent.postMessage(
+            { type: 'app:open-snippet', title: quickLink.dataset.title },
+            '*'
+          )
+          return
         }
 
         // 3. Standard Anchor Links
-        const link = e.target.closest('a');
+        const link = e.target.closest('a')
         if (link) {
-          e.preventDefault();
-          const href = link.getAttribute('href');
-          
-          if (!href) return;
+          e.preventDefault()
+          const href = link.getAttribute('href')
+
+          if (!href) return
 
           // Hash Link (Scroll to ID)
           if (href.startsWith('#')) {
-             const targetId = href.substring(1);
-             // Decode URI in case ID has special chars
-             try {
-               const element = document.getElementById(decodeURIComponent(targetId));
-               if (element) {
-                 element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-               }
-             } catch(err) { console.warn('Scroll failed', err); }
-          } 
+            const targetId = href.substring(1)
+            // Decode URI in case ID has special chars
+            try {
+              const element = document.getElementById(decodeURIComponent(targetId))
+              if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              }
+            } catch (err) {
+              console.warn('Scroll failed', err)
+            }
+          }
           // External Link (http/https)
           else if (href.startsWith('http') || href.startsWith('mailto:')) {
-            window.parent.postMessage({ type: 'app:open-external', url: href }, '*');
+            window.parent.postMessage({ type: 'app:open-external', url: href }, '*')
           }
         }
-      });
+      })
 
       // Forward keydown events to parent for shortcuts
       document.addEventListener('keydown', (e) => {
-        window.parent.postMessage({
-          type: 'app:keydown',
-          key: e.key,
-          code: e.code,
-          ctrlKey: e.ctrlKey,
-          metaKey: e.metaKey,
-          shiftKey: e.shiftKey,
-          altKey: e.altKey
-        }, '*');
-      });
+        window.parent.postMessage(
+          {
+            type: 'app:keydown',
+            key: e.key,
+            code: e.code,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            shiftKey: e.shiftKey,
+            altKey: e.altKey
+          },
+          '*'
+        )
+      })
     </script>
   </body>
 </html>

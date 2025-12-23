@@ -289,7 +289,7 @@ const LivePreview = ({
           className="w-full h-full border-none bg-transparent"
           sandbox="allow-scripts"
           allow="clipboard-read; clipboard-write"
-          src="/preview.html"
+          src="preview.html"
         />
       </div>
     </div>

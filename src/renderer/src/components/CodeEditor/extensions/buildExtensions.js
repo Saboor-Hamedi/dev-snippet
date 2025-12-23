@@ -168,8 +168,15 @@ const buildExtensions = async (options, handlers = {}) => {
 
   // CORE UI EXTENSIONS (Critical for stability)
   try {
-    const { dropCursor /*, highlightActiveLine */ } = await import('@codemirror/view')
+    const { dropCursor, drawSelection /*, highlightActiveLine */ } =
+      await import('@codemirror/view')
     exts.push(dropCursor())
+    // Uses custom drawn selection (better for mixed font sizes/rich text/custom blinking)
+    exts.push(
+      drawSelection({
+        cursorBlinkRate: 0 // Disable internal blinking to use CSS animation
+      })
+    )
     // exts.push(highlightActiveLine())
   } catch (e) {}
 
@@ -204,43 +211,55 @@ const buildExtensions = async (options, handlers = {}) => {
     exts.push(EditorView.lineWrapping)
   }
 
+  // JSON Support (Safe & Lightweight)
+  if (language === 'json') {
+    try {
+      const { json } = await import('@codemirror/lang-json')
+      const { syntaxHighlighting, HighlightStyle } = await import('@codemirror/language')
+      const { tags } = await import('@lezer/highlight')
+
+      // GitHub-like Dark Theme Colors for JSON
+      const jsonHighlightStyle = HighlightStyle.define([
+        { tag: tags.string, color: '#a5d6ff' }, // Light Blue
+        { tag: tags.propertyName, color: '#7ee787' }, // Green
+        { tag: tags.number, color: '#79c0ff' }, // Blue
+        { tag: tags.bool, color: '#ff7b72' }, // Red/Pink
+        { tag: tags.keyword, color: '#ff7b72' }, // Red/Pink
+        { tag: tags.null, color: '#79c0ff' }, // Blue
+        { tag: tags.punctuation, color: '#8b949e' } // Gray
+      ])
+
+      exts.push(json())
+      exts.push(syntaxHighlighting(jsonHighlightStyle))
+    } catch (e) {
+      console.warn('Failed to load json extension', e)
+    }
+  }
+
   // Markdown Support (Skip rich decorations for large files)
   if (language === 'markdown') {
     try {
-      /*
       const { markdown } = await import('@codemirror/lang-markdown')
 
-      // Load languages for nested code blocks
-      let languages = []
-      if (!isLargeFile) {
-        try {
-          languages = (await getLanguages()) || []
-        } catch (err) {}
-      }
+      // Safe Mode: Standard Markdown Parser only
       exts.push(
         markdown({
-          addKeymap: false,
-          codeLanguages: languages,
+          addKeymap: true, // Enable standard markdown keys
           defaultCodeLanguage: undefined
         })
       )
 
-      // 2. Load Custom Syntax Highlighting (Colors only) - Only for small files
+      // WikiLink Autocomplete
+      // User noted this is safe, but we'll re-enable it carefully in next step if needed
+      // WikiLink Autocomplete
       if (!isLargeFile) {
-        try {
-          const { richMarkdownExtension } = await import('./richMarkdown.js')
-          exts.push(richMarkdownExtension)
-        } catch (e) {
-          console.warn('Failed to load rich markdown styles', e)
-        }
-
-        // 3. WikiLink Autocomplete
         try {
           const { default: wikiLinkCompletion } = await import('./wikiLinkCompletion.js')
           exts.push(wikiLinkCompletion(snippetTitles))
-        } catch (e) {}
+        } catch (e) {
+          console.warn('Failed to load wikiLinkCompletion', e)
+        }
       }
-      */
     } catch (e) {
       console.error('Failed to load markdown extensions', e)
       exts.push(EditorView.lineWrapping)

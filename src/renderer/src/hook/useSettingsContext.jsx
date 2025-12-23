@@ -116,28 +116,15 @@ export const SettingsProvider = ({ children }) => {
     await settingsManager.set(path, value)
   }
 
-  // Update multiple settings at once
+  // Update multiple settings at once (e.g. from JSON editor)
   const updateSettings = async (newSettings) => {
-    // Update each setting individually to ensure proper persistence
-    for (const [key, value] of Object.entries(newSettings)) {
-      if (typeof value === 'object' && !Array.isArray(value)) {
-        // Handle nested objects
-        for (const [nestedKey, nestedValue] of Object.entries(value)) {
-          await settingsManager.set(`${key}.${nestedKey}`, nestedValue)
-        }
-      } else {
-        await settingsManager.set(key, value)
-      }
-    }
+    await settingsManager.replace(newSettings)
   }
 
   // Reset to defaults
   const resetSettings = async () => {
-    await settingsManager.set('appearance', DEFAULT_SETTINGS.appearance)
-    await settingsManager.set('editor', DEFAULT_SETTINGS.editor)
-    await settingsManager.set('ui', DEFAULT_SETTINGS.ui)
-    // Force set state to defaults to ensure UI reflects it immediately
-    setSettings(DEFAULT_SETTINGS)
+    await settingsManager.reset()
+    // settingsManager will notify listeners, causing this component to update via subscription
   }
 
   return (

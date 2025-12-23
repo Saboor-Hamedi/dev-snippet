@@ -148,6 +148,15 @@ class SettingManager {
     this.notifyListeners()
   }
 
+  // Replace all settings (e.g. from JSON editor)
+  async replace(newSettings) {
+    if (!this.validateSettings(newSettings)) return
+    // Deep merge with defaults to ensure missing keys are filled
+    this.settings = this.deepMerge(DEFAULT_SETTINGS, newSettings)
+    await this.save(true)
+    this.notifyListeners()
+  }
+
   // Subscribe to setting changes
   subscribe(callback) {
     this.listeners.add(callback)

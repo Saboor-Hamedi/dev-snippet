@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import { Save, Code, Sliders } from 'lucide-react'
 import { useSettings } from '../../hook/useSettingsContext'
+import { useToast } from '../../hook/useToast'
 import CodeEditor from '../CodeEditor/CodeEditor'
 import SettingsForm from '../settings/SettingsForm'
+import cleanErrorJson from '../../hook/useCleanErrorJson.js'
 
 const UserSettings = () => {
   const { settings, updateSettings, resetSettings } = useSettings()
+  const { showToast } = useToast()
 
   // 'ui' or 'json'
   const [mode, setMode] = useState('ui')
@@ -20,15 +23,15 @@ const UserSettings = () => {
       setJsonText(JSON.stringify(settings, null, 2))
     }
   }, [settings, mode])
-
   const handleJsonSave = () => {
     try {
       const parsed = JSON.parse(jsonText)
       updateSettings(parsed)
-      // Optional: Add toast or success indicator here
+      showToast('✓ Settings saved successfully')
     } catch (e) {
       console.error('Invalid JSON', e)
-      alert('Invalid JSON: ' + e.message)
+      const cleanError = cleanErrorJson(e, jsonText)
+      showToast(`❌ Syntax Error: ${cleanError}`)
     }
   }
 
@@ -83,8 +86,15 @@ const UserSettings = () => {
           <SettingsForm key="visual-settings" />
         ) : (
           <div className="h-full flex flex-col" key="json-settings">
-            <div className="flex-1 relative">
-              <CodeEditor code={jsonText} onChange={setJsonText} language="json" lineNumbers="on" />
+            <div className="flex-1 relative min-h-0">
+              <CodeEditor
+                value={jsonText}
+                onChange={setJsonText}
+                language="json"
+                wordWrap="off"
+                height="100%"
+                isLargeFile={false}
+              />
             </div>
 
             {/* Toolbar for JSON Mode */}

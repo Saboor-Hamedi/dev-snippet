@@ -8,10 +8,10 @@ const ThemeSelector = () => {
   const scrollRef = useRef(null)
 
   // Filter themes based on search - memoized for performance
-  const filteredThemes = useMemo(() =>
-    themes.filter((theme) =>
-      theme.name.toLowerCase().includes(searchTerm.toLowerCase())
-    ), [themes, searchTerm])
+  const filteredThemes = useMemo(
+    () => themes.filter((theme) => theme.name.toLowerCase().includes(searchTerm.toLowerCase())),
+    [themes, searchTerm]
+  )
 
   // Scroll to bottom to show the last theme
   useEffect(() => {
@@ -49,7 +49,9 @@ const ThemeSelector = () => {
             <div key={theme.id} className="group cursor-pointer" onClick={() => applyTheme(theme)}>
               <div
                 className={`relative mb-2 overflow-hidden rounded-md border transition-all group-hover:border-cyan-500/50 group-hover:shadow-[0_0_15px_rgba(6,182,212,0.15)] ${
-                  isActive ? 'border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.3)]' : 'border-gray-800'
+                  isActive
+                    ? 'border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.3)]'
+                    : 'border-gray-800'
                 }`}
                 style={{ backgroundColor: theme.colors.background }}
               >
@@ -62,7 +64,9 @@ const ThemeSelector = () => {
                     <span style={{ color: theme.colors.accent }} className="font-semibold">
                       dir
                     </span>
-                    <span style={{ color: theme.colors['--color-accent-primary'] }}>executable</span>
+                    <span style={{ color: theme.colors['--color-accent-primary'] }}>
+                      executable
+                    </span>
                     <span style={{ color: theme.colors.text }}>file</span>
                   </div>
 
@@ -90,8 +94,6 @@ const ThemeSelector = () => {
                 )}
               </div>
               <p className="text-xs text-gray-500 mt-1 px-1">{theme.description}</p>
-
-              
             </div>
           )
         })}

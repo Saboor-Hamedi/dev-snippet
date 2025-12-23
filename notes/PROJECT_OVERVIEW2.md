@@ -2,6 +2,7 @@
   Project Overview written for humans.
   Place: notes/PROJECT_OVERVIEW.md
 -->
+
 # Quick Snippets — Project Overview
 
 Quick Snippets (dev-snippet) is a lightweight, Electron-based snippets manager and editor built with React and CodeMirror.
@@ -104,4 +105,5 @@ Other scripts (packaging) are available in `package.json` (uses `electron-builde
 If you want this converted into a README-style file or split into smaller notes (architecture, HOWTOs, TODOs), tell me how you prefer it organized and I will create additional files under `notes/`.
 
 ---
+
 _Generated: project overview for humans — edit this file freely and keep it in the repo's `notes/` folder._

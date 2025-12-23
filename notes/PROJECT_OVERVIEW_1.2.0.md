@@ -2,6 +2,7 @@
   Release notes / human overview for v1.2.0
   Based on notes/PROJECT_OVERVIEW1.md (v1.0.0)
 -->
+
 # Quick Snippets — Release Notes & Overview (v1.2.0)
 
 > This is the 1.2.0 follow-up to our original 1.0.0 overview. Think of 1.0.0 as the promise — fast capture and frictionless snippets — and 1.2.0 as the polish: live settings, smoother zoom, smarter language handling, and quality-of-life fixes that make the app feel more like part of your workflow.
