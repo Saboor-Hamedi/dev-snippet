@@ -162,6 +162,7 @@
             .replace(/&amp;/g, '&')
             .replace(/&lt;/g, '<')
             .replace(/&gt;/g, '>')
+            .replace(/&quot;/g, '"')
           navigator.clipboard.writeText(raw).then(() => {
             const old = btn.innerHTML
             btn.classList.add('success')
@@ -173,6 +174,19 @@
             }, 2000)
           })
           return
+        }
+
+        // 1.5 Copy Image Button
+        const imgBtn = e.target.closest('.copy-image-btn')
+        if (imgBtn) {
+           const raw = imgBtn.dataset.code
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&quot;/g, '"')
+           
+           window.parent.postMessage({ type: 'app:copy-as-image', code: raw }, '*')
+           return
         }
 
         // 2. Quick Links (Internal Wiki Links)

@@ -10,6 +10,7 @@ import { getMermaidConfig } from '../mermaid/mermaidConfig'
 import { getMermaidEngine } from '../mermaid/mermaidEngine'
 
 import { themes } from '../preference/theme/themes'
+import { useModal } from '../workbench/manager/ModalManager'
 
 /**
  * LivePreview - Premium Sandboxed Rendering Engine.
@@ -46,7 +47,11 @@ const LivePreview = ({
     }
 
     if (normalizedLang === 'mermaid') {
-      const escaped = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      const escaped = code
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
       return `
         <div class="code-block-header mb-4" style="border: none; background: transparent;">
           <span class="code-language font-bold" style="color: var(--color-accent-primary); opacity: 0.6;">Diagram Preview</span>
@@ -57,20 +62,30 @@ const LivePreview = ({
         <div class="mermaid-diagram">${escaped}</div>`
     }
 
-    const escaped = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    const escaped = code
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
     return `
       <div class="code-block-wrapper ${normalizedLang === 'plaintext' || normalizedLang === 'text' || normalizedLang === 'txt' ? 'is-plaintext' : ''}">
         <div class="code-block-header">
           <span class="code-language font-bold">${normalizedLang}</span>
-          <button class="copy-code-btn" data-code="${escaped}" title="Copy code">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-          </button>
+          <div class="code-actions">
+            <button class="copy-image-btn" data-code="${escaped}" title="Copy as Image">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-image"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+            </button>
+            <button class="copy-code-btn" data-code="${escaped}" title="Copy code">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            </button>
+          </div>
         </div>
         <pre><code class="language-${normalizedLang}">${escaped}</code></pre>
       </div>`
   }, [code, language, existingTitles, disabled])
 
   const isDark = theme !== 'polaris'
+  const { openImageExportModal } = useModal()
 
   useEffect(() => {
     const iframe = iframeRef.current
@@ -96,6 +111,27 @@ const LivePreview = ({
         }
         pre code { 
           font-family: 'JetBrains Mono', 'Cascadia Code', monospace !important; 
+        }
+        .code-actions {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+        .copy-image-btn {
+          background: transparent;
+          border: none;
+          color: var(--color-text-tertiary);
+          cursor: pointer;
+          padding: 4px;
+          border-radius: 4px;
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .copy-image-btn:hover {
+          color: var(--color-text-primary);
+          background: var(--bg-tertiary);
         }
       `
 
@@ -124,10 +160,21 @@ const LivePreview = ({
         if (window.api && window.api.openExternal) window.api.openExternal(event.data.url)
         else window.open(event.data.url, '_blank')
       }
+      if (event.data?.type === 'app:copy-as-image' && event.data.code) {
+        // Since we are in the preview, we might not have the full snippet context (like title and tags)
+        // if this was just a raw code string rendering.
+        // However, usually LivePreview is rendering a snippet.
+        // We'll try to find the snippet or just use a generic object.
+        openImageExportModal({
+          title: 'Code Snippet',
+          code: event.data.code,
+          language: language || 'text'
+        })
+      }
     }
     window.addEventListener('message', handleMessage)
     return () => window.removeEventListener('message', handleMessage)
-  }, [])
+  }, [openImageExportModal, language])
 
   return (
     <div className="w-full h-full flex flex-col bg-transparent overflow-hidden">
@@ -211,7 +258,11 @@ const LivePreview = ({
             </svg>
           </button>
           <button
-            onClick={onExportPDF}
+            onClick={() => {
+              if (onExportPDF) onExportPDF()
+              else if (window.api?.exportPDF) window.api.exportPDF()
+              else window.print()
+            }}
             className="px-2 py-1 rounded-md bg-blue-500 text-white text-[10px] font-bold"
           >
             Export
@@ -223,7 +274,7 @@ const LivePreview = ({
           ref={iframeRef}
           title="Live Preview"
           className="w-full h-full border-none"
-          sandbox="allow-scripts"
+          sandbox="allow-scripts allow-modals allow-popups allow-same-origin"
           src="preview.html"
         />
       </div>

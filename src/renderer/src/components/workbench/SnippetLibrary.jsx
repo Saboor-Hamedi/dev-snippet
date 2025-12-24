@@ -30,7 +30,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
     permanentDeleteItem
   } = snippetData
   const { activeView, showPreview, togglePreview, navigateTo } = useView()
-  const { openRenameModal, openDeleteModal } = useModal()
+  const { openRenameModal, openDeleteModal, openImageExportModal } = useModal()
   const { settings, getSetting, updateSetting } = useSettings()
   const { toast, showToast } = useToast()
 

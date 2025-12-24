@@ -17,7 +17,12 @@ export const fastMarkdownToHtml = (text, existingTitles = []) => {
     /(?:^|\n)```(\w+)?\b[^\n]*\n([\s\S]*?)```/g,
     (match, lang, code) => {
       const id = `__CODE_BLOCK_${placeholders.length}__`
-      const escaped = code.trim().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      const escaped = code
+        .trim()
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
       let content = ''
 
       if (lang === 'mermaid') {
@@ -27,9 +32,14 @@ export const fastMarkdownToHtml = (text, existingTitles = []) => {
           <div class="code-block-wrapper">
             <div class="code-block-header">
               <span class="code-language">${lang || 'text'}</span>
-              <button class="copy-code-btn" data-code="${escaped}" title="Copy code">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-              </button>
+              <div class="code-actions">
+                <button class="copy-image-btn" data-code="${escaped}" title="Copy as Image">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-image"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                </button>
+                <button class="copy-code-btn" data-code="${escaped}" title="Copy code">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                </button>
+              </div>
             </div>
             <pre><code class="language-${lang || 'text'}">${escaped}</code></pre>
           </div>`
