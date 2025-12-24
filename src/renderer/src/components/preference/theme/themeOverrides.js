@@ -24,7 +24,7 @@ export const applyThemeOverrides = (parsedSettings, root) => {
     for (const key of keys) {
       value = value?.[key]
     }
-    if (value !== undefined) {
+    if (value !== undefined && value !== '') {
       // Add 'px' to specific variables if they are numbers
       let finalValue = value
       if (typeof value === 'number' && (cssVar.includes('width') || cssVar.includes('round'))) {

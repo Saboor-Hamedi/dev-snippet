@@ -49,8 +49,6 @@ const CodeEditor = ({
     cursorBlinking,
     cursorBlinkingSpeed,
     cursorSelectionBg,
-    cursorActiveLineBorder,
-    cursorActiveLineGutterBorder,
     cursorActiveLineBg,
     cursorShadowBoxColor
   } = useCursorProp()
@@ -89,7 +87,8 @@ const CodeEditor = ({
       buildTheme(EditorView, {
         isDark,
         caretColor: cursorColor,
-        fontSize: 'var(--editor-font-size, 14px)'
+        fontSize: 'var(--editor-font-size, 14px)',
+        disableComplexCM: settingsManager.get('advanced.disableComplexCM')
       })
     ]
   }, [isDark, cursorColor])
@@ -208,15 +207,9 @@ const CodeEditor = ({
       }
     }
 
-    // Immediate load or delayed load for first mount
-    if (!extensionsLoaded) {
-      timeoutId = setTimeout(() => {
-        window.requestAnimationFrame(loadFullEditorEngine)
-      }, 50)
-    } else {
-      // For subsequent prop updates, just load it
-      loadFullEditorEngine()
-    }
+    // Immediate load: Removing the legacy 50ms delay + RAF which was causing
+    // perceived "lag" or "missing caret" on mount/return from settings.
+    loadFullEditorEngine()
 
     return () => {
       mounted = false
@@ -244,8 +237,6 @@ const CodeEditor = ({
         '--caret-color': cursorColor,
         '--cursor-blinking-speed': `${cursorBlinkingSpeed}ms`,
         '--selection-background': cursorSelectionBg,
-        '--active-line-border-width': `${cursorActiveLineBorder}px`,
-        '--active-line-gutter-border-width': `${cursorActiveLineGutterBorder}px`,
         '--active-line-bg': cursorActiveLineBg,
         '--shadow-box-bg': cursorShadowBoxColor,
         '--gutter-bg-color': gutterBgColor,

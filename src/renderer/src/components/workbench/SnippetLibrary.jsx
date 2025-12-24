@@ -33,7 +33,30 @@ const SnippetLibraryInner = ({ snippetData }) => {
   const [isCreatingSnippet, setIsCreatingSnippet] = useState(false)
   const [zoomLevel, setZoomLevel] = useZoomLevel()
 
+  // Lifted Sidebar State
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const handleToggleSidebar = useCallback(() => setIsSidebarOpen((prev) => !prev), [])
+
   useEffect(() => localStorage.setItem('compactMode', isCompact), [isCompact])
+
+  const focusEditor = useCallback(() => {
+    if (activeView !== 'editor' && !isCreatingSnippet) return
+    setTimeout(() => {
+      const el =
+        document.querySelector('.editor-container .cm-content') ||
+        document.querySelector('.editor-container textarea')
+      if (el?.focus) el.focus()
+    }, 50)
+  }, [activeView, isCreatingSnippet])
+
+  // --- Navigation Listeners ---
+  useEffect(() => {
+    // When returning to the editor area, proactively attempt to grab focus.
+    // This solves the "missing caret" issue when returning from settings.
+    if (activeView === 'editor' || isCreatingSnippet) {
+      focusEditor()
+    }
+  }, [activeView, isCreatingSnippet, focusEditor])
 
   // --- Zoom Listeners ---
   useEffect(() => {
@@ -81,16 +104,6 @@ const SnippetLibraryInner = ({ snippetData }) => {
     navigateTo('editor')
     return draft
   }
-
-  const focusEditor = useCallback(() => {
-    if (activeView !== 'editor' && !isCreatingSnippet) return
-    setTimeout(() => {
-      const el =
-        document.querySelector('.editor-container .cm-content') ||
-        document.querySelector('.editor-container textarea')
-      if (el?.focus) el.focus()
-    }, 50)
-  }, [activeView, isCreatingSnippet])
 
   const handleRenameRequest = () => {
     // Proceed directly to rename modal, even for drafts
@@ -145,7 +158,6 @@ const SnippetLibraryInner = ({ snippetData }) => {
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white overflow-hidden transition-colors duration-200">
       <ToastNotification toast={toast} />
-
       <KeyboardHandler
         selectedSnippet={selectedSnippet}
         setSelectedSnippet={setSelectedSnippet}
@@ -158,10 +170,13 @@ const SnippetLibraryInner = ({ snippetData }) => {
         setIsCreatingSnippet={setIsCreatingSnippet}
         showToast={showToast}
         handleRename={handleRenameRequest}
+        onToggleSidebar={handleToggleSidebar}
       />
 
       <div className="flex-1 flex flex-col items-stretch min-h-0 overflow-hidden bg-slate-50 dark:bg-slate-900 transition-colors duration-200">
         <Workbench
+          isSidebarOpen={isSidebarOpen}
+          setIsSidebarOpen={setIsSidebarOpen}
           activeView={isCreatingSnippet ? 'editor' : activeView}
           currentContext={activeView}
           selectedSnippet={selectedSnippet}

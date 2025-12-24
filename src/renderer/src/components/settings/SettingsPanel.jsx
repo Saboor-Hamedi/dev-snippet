@@ -133,7 +133,6 @@ const SettingsPanel = ({ onClose }) => {
       }}
     >
       <ToastNotification toast={toast} />
-
       {/* Modern Sidebar */}
       <div
         className="w-full md:w-64 flex-shrink-0 flex flex-col border-r bg-slate-50/50 dark:bg-zinc-900/50"
@@ -187,10 +186,13 @@ const SettingsPanel = ({ onClose }) => {
         </div>
       </div>
 
-      {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden bg-[var(--color-bg-primary)]">
-        <div className="flex-1 overflow-y-auto px-8 pb-8 pt-8">
-          <div className="max-w-3xl mx-auto animate-fade-in h-full">
+        <div
+          className={`flex-1 ${activeTab === 'json' ? 'overflow-hidden' : 'overflow-y-auto px-6 pb-6 pt-4'}`}
+        >
+          <div
+            className={`${activeTab === 'json' ? 'w-full h-full' : 'max-w-3xl mx-auto'} animate-fade-in h-full`}
+          >
             {/* Desktop Header for Context */}
             {activeTab !== 'json' && activeTab !== 'updates' && (
               <div className="mb-6 border-b border-[var(--color-border)] pb-3">

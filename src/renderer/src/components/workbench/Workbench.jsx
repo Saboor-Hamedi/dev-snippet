@@ -33,7 +33,10 @@ const Workbench = ({
   onAutosave,
   showToast,
   hideWelcomePage,
-  onSearchSnippets
+  onSearchSnippets,
+  // Lifted state props
+  isSidebarOpen,
+  setIsSidebarOpen
 }) => {
   const handleSave = (snippet) => {
     onSave(snippet)
@@ -41,7 +44,7 @@ const Workbench = ({
 
   // --- Sidebar State Management ---
   const [activeSidebarTab, setActiveSidebarTab] = React.useState('explorer')
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState(true)
+  // const [isSidebarOpen, setIsSidebarOpen] = React.useState(true) -> Lifted to SnippetLibrary
 
   const handleTabChange = (tabId) => {
     if (activeSidebarTab === tabId) {
@@ -59,19 +62,6 @@ const Workbench = ({
       onOpenSettings()
     }
   }
-
-  React.useEffect(() => {
-    const handleKeyDown = (e) => {
-      // Check for Ctrl+B (Windows/Linux) or Cmd+B (Mac)
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
-        e.preventDefault()
-        setIsSidebarOpen((prev) => !prev)
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
 
   // Determine header title based on current view
   const getHeaderTitle = () => {

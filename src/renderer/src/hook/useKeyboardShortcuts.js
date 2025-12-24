@@ -71,6 +71,14 @@ export const useKeyboardShortcuts = (shortcuts) => {
         }
       }
 
+      // Ctrl+B sidebar toggle (Shift explicitly excluded)
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b' && !e.shiftKey) {
+        e.preventDefault()
+        if (shortcutsRef.current.onToggleSidebar) {
+          shortcutsRef.current.onToggleSidebar()
+        }
+      }
+
       // Ctrl+, toggles Settings
       if ((e.ctrlKey || e.metaKey) && e.key === ',') {
         e.preventDefault()
@@ -87,8 +95,8 @@ export const useKeyboardShortcuts = (shortcuts) => {
         }
       }
 
-      // Ctrl+Shift+\ toggles live preview
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
+      // Ctrl+\ toggles live preview
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey) {
         const isBackslashKey =
           e.key === '\\' || e.key === '|' || e.code === 'Backslash' || e.code === 'IntlBackslash'
         if (isBackslashKey) {

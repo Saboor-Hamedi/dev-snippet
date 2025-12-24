@@ -37,7 +37,7 @@ Welcome to the comprehensive documentation for **Dev Snippet**, a high-performan
 | **New Snippet**    | `Ctrl + N`         |
 | **Save**           | `Ctrl + S`         |
 | **Rename**         | `Ctrl + R`         |
-| **Toggle Preview** | `Ctrl + Shift + \` |
+| **Toggle Preview** | `Ctrl + \`         |
 | **Export PDF**     | `UI Button`        |
 
 ---

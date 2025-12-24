@@ -172,11 +172,14 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
       {/* Main UI Container (Lean & Compact) */}
       <div
         onMouseDown={(e) => e.stopPropagation()}
-        className="relative w-full max-w-xl bg-white/95 dark:bg-[#0d1117]/95 rounded-3xl shadow-[0_25px_70px_-15px_rgba(0,0,0,0.6)] border border-slate-200 dark:border-slate-800/60 overflow-hidden flex flex-col animate-in zoom-in-95 slide-in-from-top-6 duration-300 backdrop-blur-md"
+        className="relative w-full max-w-xl bg-[var(--bg-secondary)] rounded-3xl shadow-[0_25px_70px_-15px_rgba(0,0,0,0.6)] border border-[var(--color-border)] overflow-hidden flex flex-col animate-in zoom-in-95 slide-in-from-top-6 duration-300 backdrop-blur-md"
       >
         {/* Ultra-Clean Input Header (Strictly Zero-Gravity) */}
         <div className="flex items-center px-5 py-3.5 bg-transparent border-none shadow-none">
-          <Search size={18} className="text-slate-400 mr-4 stroke-[2.5] opacity-50" />
+          <Search
+            size={18}
+            className="text-[var(--color-text-tertiary)] mr-4 stroke-[2.5] opacity-50"
+          />
           <input
             ref={inputRef}
             type="text"
@@ -184,7 +187,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Search keywords..."
-            className="flex-1 bg-transparent border-none outline-none focus:ring-0 focus:outline-none shadow-none appearance-none text-[14px] font-normal tracking-tight placeholder:text-white/40  "
+            className="flex-1 bg-transparent border-none outline-none focus:ring-0 focus:outline-none shadow-none appearance-none text-[14px] font-normal tracking-tight placeholder:text-[var(--color-text-tertiary)] text-[var(--color-text-primary)]"
             autoComplete="off"
             spellCheck={false}
           />
@@ -222,16 +225,16 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
                     }}
                     className={`group relative px-4 py-2.5 rounded-sm flex items-center gap-4 cursor-pointer transition-all duration-150 ${
                       isSelected
-                        ? 'bg-slate-100 dark:bg-slate-800/80 border-l-[3px] border-emerald-500 pl-[13px]' /* Compensate padding for border */
-                        : 'hover:bg-slate-50 dark:hover:bg-slate-800/30 border-l-[3px] border-transparent'
+                        ? 'bg-[var(--selected-bg)] pl-[13px] border-l-[3px] border-[var(--color-accent-primary)]'
+                        : 'hover:bg-[var(--hover-bg)] border-l-[3px] border-transparent'
                     }`}
                   >
                     {/* Visual Icon Stack */}
                     <div
                       className={`p-2 rounded-xl transition-all duration-200 ${
                         isSelected
-                          ? 'bg-white/20 text-white scale-105 shadow-inner'
-                          : 'bg-slate-100/50 dark:bg-slate-800/50 text-slate-400 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-900/20 group-hover:text-emerald-500'
+                          ? 'text-[var(--selected-text)] scale-105 shadow-inner'
+                          : 'text-[var(--color-text-secondary)] group-hover:text-[var(--hover-text)]'
                       }`}
                     >
                       {item.title?.toLowerCase().endsWith('.md') ? (
@@ -245,14 +248,18 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
                     <div className="flex-1 min-w-0">
                       <div
                         className={`text-[14px] font-semibold truncate tracking-tight ${
-                          isSelected ? 'text-white' : 'text-slate-700 dark:text-white'
+                          isSelected
+                            ? 'text-[var(--selected-text)]'
+                            : 'text-[var(--color-text-primary)]'
                         }`}
                       >
                         <HighlightText text={item.title || 'Untitled'} highlight={search} />
                       </div>
                       <div
                         className={`flex items-center gap-4 mt-0.5 text-[11px] font-medium ${
-                          isSelected ? 'text-emerald-50/90' : 'text-slate-500 dark:text-slate-400'
+                          isSelected
+                            ? 'text-[var(--selected-text)] opacity-80'
+                            : 'text-[var(--color-text-secondary)]'
                         }`}
                       >
                         <span className="flex items-center gap-1.5">
@@ -279,7 +286,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
                           </div>
                         )}
                         {item.match_context ? (
-                          <div className="mt-1.5 text-[11px] font-mono text-slate-500 dark:text-slate-500/80 bg-slate-100/50 dark:bg-slate-800/50 px-1.5 py-0.5 rounded border border-slate-200/50 dark:border-slate-700/50 w-full truncate">
+                          <div className="mt-1.5 text-[11px] font-mono text-[var(--color-text-tertiary)] bg-[var(--bg-tertiary)] px-1.5 py-0.5 rounded border border-[var(--color-border)] w-full truncate">
                             <span className="opacity-60">...</span>
                             {item.match_context
                               .split(/(__MARK__|__\/MARK__)/)
@@ -289,7 +296,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
                                 return isHighlight ? (
                                   <span
                                     key={i}
-                                    className="text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-100/30 dark:bg-emerald-900/30 px-0.5 rounded-[1px]"
+                                    className="text-[var(--color-accent-primary)] font-bold bg-[var(--bg-secondary)] px-0.5 rounded-[1px]"
                                   >
                                     {part}
                                   </span>
@@ -302,7 +309,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
                         ) : (
                           isContentMatch && (
                             <span
-                              className={`flex items-center gap-1 opacity-70 ${isSelected ? 'text-white' : 'text-emerald-600 dark:text-emerald-500/80'}`}
+                              className={`flex items-center gap-1 opacity-70 ${isSelected ? 'text-[var(--selected-text)]' : 'text-[var(--color-accent-primary)]'}`}
                             >
                               <Search size={10} className="stroke-[3]" />
                               <span>match in content</span>
@@ -317,8 +324,8 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
                       <span
                         className={`px-1 py-0.5 rounded text-[8px] font-bold border transition-colors tracking-widest ${
                           isSelected
-                            ? 'bg-white/20 border-white/30 text-white'
-                            : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500'
+                            ? 'bg-[var(--bg-primary)] border-[var(--color-border)] text-[var(--selected-text)] opacity-80'
+                            : 'bg-[var(--bg-tertiary)] border-[var(--color-border)] text-[var(--color-text-secondary)]'
                         }`}
                       >
                         {lang}
@@ -336,13 +343,13 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
             </div>
           ) : (
             <div className="py-12 text-center animate-in fade-in zoom-in-95 duration-500">
-              <div className="inline-flex p-3 rounded-2xl bg-slate-50/50 dark:bg-slate-900/30 mb-3 border border-slate-200/50 dark:border-slate-800/50">
-                <ShieldCheck size={24} className="text-slate-300 dark:text-slate-700" />
+              <div className="inline-flex p-3 rounded-2xl bg-[var(--bg-tertiary)] mb-3 border border-[var(--color-border)]">
+                <ShieldCheck size={24} className="text-[var(--color-text-tertiary)]" />
               </div>
-              <h3 className="text-slate-800 dark:text-slate-200 font-bold text-[14px] tracking-tight">
+              <h3 className="text-[var(--color-text-primary)] font-bold text-[14px] tracking-tight">
                 No snippets found
               </h3>
-              <p className="text-[12px] text-slate-500 dark:text-slate-600 mt-1 max-w-[200px] mx-auto font-medium leading-relaxed">
+              <p className="text-[12px] text-[var(--color-text-secondary)] mt-1 max-w-[200px] mx-auto font-medium leading-relaxed">
                 {search
                   ? `We couldn't find anything matching "${search}"`
                   : 'Start by creating your first code snippet'}
@@ -352,16 +359,16 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
         </div>
 
         {/* Premium Footer */}
-        <div className="px-6 py-4 bg-slate-50/50 dark:bg-slate-900/40 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase tracking-widest">
+        <div className="px-6 py-4 bg-[var(--bg-tertiary)] border-t border-[var(--color-border)] flex justify-between items-center text-[10px] font-bold text-[var(--color-text-secondary)] uppercase tracking-widest">
           <div className="flex gap-6">
             <span className="flex items-center gap-2">
-              <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-800 rounded-md border border-slate-200 dark:border-slate-700 shadow-sm text-slate-600 dark:text-slate-400 font-mono">
+              <kbd className="px-1.5 py-0.5 bg-[var(--bg-primary)] rounded-md border border-[var(--color-border)] shadow-sm text-[var(--color-text-secondary)] font-mono">
                 ↑↓
               </kbd>
               Move
             </span>
             <span className="flex items-center gap-2">
-              <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-800 rounded-md border border-slate-200 dark:border-slate-700 shadow-sm text-slate-600 dark:text-slate-400 font-mono">
+              <kbd className="px-1.5 py-0.5 bg-[var(--bg-primary)] rounded-md border border-[var(--color-border)] shadow-sm text-[var(--color-text-secondary)] font-mono">
                 ↵
               </kbd>
               Open

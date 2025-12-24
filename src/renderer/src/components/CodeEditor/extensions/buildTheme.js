@@ -1,5 +1,10 @@
 const buildTheme = (EditorView, options = {}) => {
-  const { isDark = false, fontSize = 'var(--editor-font-size, 14px)' } = options
+  const {
+    isDark = false,
+    fontSize = 'var(--editor-font-size, 14px)',
+    caretColor = 'var(--caret-color, #ffffff)',
+    disableComplexCM = false
+  } = options
 
   return EditorView.theme(
     {
@@ -16,14 +21,21 @@ const buildTheme = (EditorView, options = {}) => {
 
       // Dark mode overrides for safety
       '&.cm-editor.dark': {
-        backgroundColor: '#0d1117 !important',
-        color: '#e6edf3'
+        backgroundColor: 'var(--editor-bg, #0d1117) !important',
+        color: 'var(--editor-text, #e6edf3) !important'
       },
+
+      // Force monochrome for Minimal Gray theme to ensure "Pitch Black" editor text
+      // (Overrides syntax highlighting colors)
+      'html[data-theme="minimal-gray"] & .cm-content *': {
+        color: 'inherit !important'
+      },
+
       '&.cm-editor.dark .cm-gutters': {
         backgroundColor: 'transparent !important',
         // Force a light color for getters in dark mode regardless of bad vars
-        color: '#8b949e !important',
-        borderRightColor: '#30363d !important'
+        color: 'var(--gutter-text-color, #8b949e) !important',
+        borderRightColor: 'var(--gutter-border-color, #30363d) !important'
       },
 
       '.cm-scroller': {
@@ -63,7 +75,15 @@ const buildTheme = (EditorView, options = {}) => {
         fontFamily: 'inherit',
         lineHeight: '1.6',
         minHeight: '100%',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        caretColor: caretColor
+      },
+
+      '.cm-cursor': {
+        borderLeftColor: caretColor,
+        borderLeftWidth: 'var(--caret-width, 2px)',
+        // Premium Glow Effect
+        boxShadow: disableComplexCM ? 'none' : '0 0 5px var(--caret-color)'
       },
 
       '.cm-gutters': {
@@ -88,15 +108,30 @@ const buildTheme = (EditorView, options = {}) => {
         minWidth: '100%'
       },
 
-      // Active line - Handled in CodeEditor.css
-      '.cm-activeLine': {},
+      // Active line - Handled here strictly
+      '.cm-activeLine': {
+        // Use box-shadow for the border effect to avoid layout issues/clipping
+        boxShadow: disableComplexCM
+          ? 'none !important'
+          : 'inset var(--active-line-border-width, 0px) 0 0 0 var(--caret-color, #ffffff) !important',
+        backgroundColor: disableComplexCM
+          ? 'transparent !important'
+          : 'var(--active-line-bg) !important'
+      },
       '.cm-activeLineGutter': {
-        color: 'var(--color-text-primary, #e2e8f0) !important'
+        color: 'var(--color-text-primary, #e2e8f0) !important',
+        backgroundColor: 'transparent !important',
+        borderLeft: disableComplexCM
+          ? 'none !important'
+          : 'var(--active-line-gutter-border-width, 0px) solid var(--caret-color, #ffffff) !important'
       },
 
       // Selection match
       '.cm-selectionMatch': {
-        backgroundColor: 'var(--selection-match-bg, rgba(128, 128, 128, 0.2)) !important'
+        backgroundColor: disableComplexCM
+          ? 'transparent !important'
+          : 'var(--selection-match-bg, rgba(128, 128, 128, 0.2)) !important',
+        outline: disableComplexCM ? '1px solid var(--color-accent-primary)' : 'none'
       },
       '.cm-matchingBracket': {
         backgroundColor: 'transparent !important',

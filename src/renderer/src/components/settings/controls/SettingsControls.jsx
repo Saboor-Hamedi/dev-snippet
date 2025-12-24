@@ -2,24 +2,26 @@ import React from 'react'
 import PropTypes from 'prop-types'
 
 export const Toggle = ({ value, onChange, label, description }) => (
-  <div className="flex items-center justify-between py-3 group hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg px-2 -mx-2 transition-colors">
+  <div className="flex items-center justify-between py-1.5 group hover:bg-[var(--hover-bg)] rounded-lg px-2 -mx-2 transition-colors">
     <div className="flex-1 pr-4">
-      <div className="font-medium text-slate-700 dark:text-slate-200">{label}</div>
+      <div className="text-xs font-semibold text-[var(--color-text-primary)]">{label}</div>
       {description && (
-        <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{description}</div>
+        <div className="text-[10px] leading-tight text-[var(--color-text-secondary)] mt-0.5">
+          {description}
+        </div>
       )}
     </div>
     <button
       onClick={() => onChange(!value)}
-      className={`theme-exempt relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 ${
+      className={`theme-exempt relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-primary)] focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)] ${
         value
-          ? 'bg-blue-600 hover:bg-blue-700'
-          : 'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600'
+          ? 'bg-[var(--color-accent-primary)]'
+          : 'bg-[var(--bg-tertiary)] hover:bg-[var(--hover-bg)] border-[var(--color-border)]'
       }`}
     >
       <span
-        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-          value ? 'translate-x-5' : 'translate-x-0'
+        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-[var(--text-main)] shadow ring-0 transition duration-200 ease-in-out ${
+          value ? 'translate-x-5 bg-white' : 'translate-x-0'
         }`}
       />
     </button>
@@ -27,17 +29,19 @@ export const Toggle = ({ value, onChange, label, description }) => (
 )
 
 export const Select = ({ value, onChange, options, label, description }) => (
-  <div className="flex items-center justify-between py-3 group hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg px-2 -mx-2 transition-colors">
+  <div className="flex items-center justify-between py-1.5 group hover:bg-[var(--hover-bg)] rounded-lg px-2 -mx-2 transition-colors">
     <div className="flex-1 pr-4">
-      <div className="font-medium text-slate-700 dark:text-slate-200">{label}</div>
+      <div className="text-xs font-semibold text-[var(--color-text-primary)]">{label}</div>
       {description && (
-        <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{description}</div>
+        <div className="text-[10px] leading-tight text-[var(--color-text-secondary)] mt-0.5">
+          {description}
+        </div>
       )}
     </div>
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="theme-exempt block w-48 rounded-md border-0 py-1.5 pl-3 pr-10 text-slate-700 dark:text-slate-200 ring-1 ring-inset ring-slate-300 dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm sm:leading-6 bg-transparent dark:bg-slate-800"
+      className="theme-exempt block w-40 rounded-md border-0 py-1 pl-2 pr-8 text-[var(--color-text-primary)] ring-1 ring-inset ring-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-accent-primary)] text-xs bg-[var(--bg-tertiary)]"
     >
       {options.map((opt) => (
         <option key={opt.value} value={opt.value}>
@@ -49,11 +53,13 @@ export const Select = ({ value, onChange, options, label, description }) => (
 )
 
 export const Input = ({ value, onChange, label, description, type = 'text', placeholder }) => (
-  <div className="py-3 group hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg px-2 -mx-2 transition-colors">
-    <div className="mb-2">
-      <div className="font-medium text-slate-700 dark:text-slate-200">{label}</div>
+  <div className="py-1.5 group hover:bg-[var(--hover-bg)] rounded-lg px-2 -mx-2 transition-colors">
+    <div className="mb-1">
+      <div className="text-xs font-semibold text-[var(--color-text-primary)]">{label}</div>
       {description && (
-        <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{description}</div>
+        <div className="text-[10px] leading-tight text-[var(--color-text-secondary)] mt-0.5">
+          {description}
+        </div>
       )}
     </div>
     <input
@@ -61,7 +67,7 @@ export const Input = ({ value, onChange, label, description, type = 'text', plac
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="theme-exempt block w-full rounded-md border-0 py-1.5 text-slate-900 dark:text-white shadow-sm ring-1 ring-inset ring-slate-300 dark:ring-slate-700 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 bg-transparent dark:bg-slate-800/50"
+      className="theme-exempt block w-full rounded-md border-0 py-1 text-[var(--color-text-primary)] shadow-sm ring-1 ring-inset ring-[var(--color-border)] placeholder:text-[var(--color-text-tertiary)] focus:ring-2 focus:ring-inset focus:ring-[var(--color-accent-primary)] text-xs bg-[var(--bg-tertiary)]"
     />
   </div>
 )

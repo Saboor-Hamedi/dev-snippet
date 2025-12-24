@@ -13,9 +13,9 @@ export const getMermaidConfig = (
   fontFamily: fontFamily,
   themeVariables: {
     // Primary Vibrant Colors (Vibrant but Professional)
-    primaryColor: isDark ? '#388bfd' : '#0969da',
+    primaryColor: isDark ? '#dee1e4ff' : '#dee1e4ff',
     primaryTextColor: isDark ? '#f0f6fc' : '#1f2328',
-    primaryBorderColor: isDark ? '#58a6ff' : '#0969da',
+    primaryBorderColor: isDark ? '#dee1e4ff' : '#dee1e4ff',
 
     // Backgrounds & Layers
     lineColor: isDark ? '#8b949e' : '#656d76',
@@ -25,15 +25,15 @@ export const getMermaidConfig = (
     background: 'transparent',
 
     // Node & Cluster Specifics
-    nodeBorder: isDark ? '#58a6ff' : '#0969da',
+    nodeBorder: isDark ? '#dee1e4ff' : '#dee1e4ff',
     nodeTextColor: isDark ? '#f0f6fc' : '#1f2328',
     clusterBkg: 'transparent',
-    clusterBorder: isDark ? '#444c56' : '#d0d7de',
+    clusterBorder: isDark ? '#dee1e4ff' : '#dee1e4ff',
 
     // Sequence Diagrams - High Contrast
     actorBkg: 'transparent',
     actorTextColor: isDark ? '#f0f6fc' : '#1f2328',
-    actorBorder: isDark ? '#58a6ff' : '#0969da',
+    actorBorder: isDark ? '#dee1e4ff' : '#dee1e4ff',
     actorLineColor: isDark ? '#8b949e' : '#656d76',
 
     // Labels

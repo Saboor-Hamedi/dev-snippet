@@ -86,11 +86,44 @@
   box-shadow: none !important;
   -webkit-font-smoothing: antialiased;
   position: relative;
+  box-sizing: border-box;
+  min-width: 200px;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 45px;
+  background-color: transparent !important;
+}
+
+/* Force pure black scrollbar for Minimal Gray */
+html[data-theme='minimal-gray'] ::-webkit-scrollbar-thumb {
+  background-color: #000000 !important;
+  border-radius: 0 !important;
+  border: none !important;
+}
+
+html[data-theme='minimal-gray'] ::-webkit-scrollbar-track {
+  background-color: transparent !important;
 }
 
 .markdown-body ::selection {
   background-color: rgba(var(--color-accent-primary-rgb), 0.2) !important;
   color: inherit !important;
+}
+
+/* Force full opacity on text elements to ensure "Pitch Dark" rendering in ALL themes */
+.markdown-body p,
+.markdown-body li,
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6,
+.markdown-body td,
+.markdown-body th {
+  color: var(--color-text-primary, #000000) !important;
+  opacity: 1 !important;
+  mix-blend-mode: normal !important;
 }
 
 .markdown-body > *:first-child {
@@ -287,13 +320,12 @@
 
 /* Inline code - Clean, minimal */
 .markdown-body code {
-  /* background-color: rgba(0, 0, 0, 0.05) !important; */
-  color: rgb(161, 145, 161) !important;
-  font-size: 14px !important;
-  font-weight: 500 !important;
-  padding: 2px 5px !important;
-  border-radius: 0 !important;
-  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+  background-color: var(--color-bg-tertiary, rgba(139, 148, 158, 0.2)) !important;
+  color: var(--color-text-primary, #e6edf3) !important;
+  font-size: 85% !important;
+  padding: 0.2em 0.4em !important;
+  border-radius: 6px !important;
+  font-family: var(--editor-font-family, 'JetBrains Mono', monospace) !important;
   letter-spacing: -0.2px;
 }
 
@@ -717,13 +749,25 @@
   line-height: 1.7;
 }
 
+/* Dark Theme Code Blocks - Force White Text */
+[data-theme='midnight-pro'] .markdown-preview-container code,
+[data-theme='midnight-pro'] .markdown-preview-container pre code,
+[data-theme='forest'] .markdown-preview-container code,
+[data-theme='forest'] .markdown-preview-container pre code,
+[data-theme='nebula'] .markdown-preview-container code,
+[data-theme='nebula'] .markdown-preview-container pre code,
+.dark .markdown-preview-container code,
+.dark .markdown-preview-container pre code {
+  color: #ffffff !important;
+}
+
 .markdown-preview-container code {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(var(--color-text-primary-rgb, 0, 0, 0), 0.1);
   padding: 3px 6px;
   border-radius: 4px;
   font-family: 'SFMono-Regular', Consolas, monospace;
   font-size: 14px;
-  color: purple;
+  color: var(--color-text-primary);
 }
 
 .markdown-preview-container pre {
@@ -739,7 +783,7 @@
   padding: 0;
   border-radius: 0;
   font-size: 14px;
-  color: purple;
+  color: inherit;
 }
 
 .markdown-preview-container blockquote {
@@ -849,6 +893,22 @@
   .markdown-body a:hover {
     border-bottom-color: #58a6ff !important;
   }
+
+  /* Force full opacity on text elements to ensure "Pitch Dark" rendering */
+  .markdown-body p,
+  .markdown-body li,
+  .markdown-body h1,
+  .markdown-body h2,
+  .markdown-body h3,
+  .markdown-body h4,
+  .markdown-body h5,
+  .markdown-body h6,
+  .markdown-body td,
+  .markdown-body th {
+    color: var(--color-text-primary, #24292f) !important;
+    opacity: 1 !important;
+    mix-blend-mode: normal !important;
+  }
 }
 
 /* ===== RESPONSIVE ADJUSTMENTS ===== */
@@ -872,13 +932,13 @@
   }
 
   .markdown-body pre {
-    padding: 14px 0 !important;
-    margin: 16px 0 !important;
+    padding: 2px 0 !important;
+    margin: 16px 10px !important;
   }
 
   .code-block-header {
     padding: 10px 14px;
-    font-size: 11px;
+    font-size: 10px;
   }
 
   .copy-code-btn {
@@ -902,15 +962,16 @@
 }
 
 /* Tags and Mentions styling in live preview */
+/* Tags and Mentions styling in live preview */
 .markdown-body .preview-tag,
 .markdown-body .preview-mention {
   display: inline-block !important;
   padding: 0px 6px !important;
-  background-color: rgba(255, 255, 255, 0.05) !important;
-  color: #d1d5db !important; /* gray-300 */
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background-color: var(--color-bg-tertiary, rgba(139, 148, 158, 0.2)) !important;
+  color: var(--color-text-primary, #e6edf3) !important;
+  /* border: 1px solid var(--color-border, rgba(139, 148, 158, 0.3)) !important; */
   border-radius: 4px !important;
-  font-size: 10px !important;
+  font-size: 11px !important;
   font-weight: 500 !important;
   margin: 0 2px !important;
   cursor: default !important;
@@ -923,9 +984,9 @@
 
 .markdown-body .preview-tag:hover,
 .markdown-body .preview-mention:hover {
-  background-color: rgba(255, 255, 255, 0.1) !important;
+  background-color: var(--color-accent-primary, #58a6ff) !important;
   color: #ffffff !important;
-  border-color: rgba(255, 255, 255, 0.2) !important;
+  border-color: var(--color-accent-primary, #58a6ff) !important;
 }
 
 /* Specific style for mentions - keep it subtle */
@@ -1038,4 +1099,70 @@
 /* Ensure markdown-body itself doesn't have a double scrollbar if parent has one */
 .markdown-body {
   overflow-x: hidden !important;
+}
+
+/* FORCE WHITE TEXT FOR DARK THEMES (Forest, Midnight, Nebula) */
+html[data-theme='forest'] body,
+html[data-theme='forest'] .markdown-body,
+html[data-theme='forest'] .markdown-preview-container,
+html[data-theme='midnight-pro'] body,
+html[data-theme='midnight-pro'] .markdown-body,
+html[data-theme='midnight-pro'] .markdown-preview-container,
+html[data-theme='nebula'] body,
+html[data-theme='nebula'] .markdown-body,
+html[data-theme='nebula'] .markdown-preview-container {
+  color: #ffffff !important;
+}
+
+/* Force specific elements to inherit or be white */
+html[data-theme='forest'] .markdown-body *,
+html[data-theme='forest'] .markdown-preview-container *,
+html[data-theme='midnight-pro'] .markdown-body *,
+html[data-theme='midnight-pro'] .markdown-preview-container *,
+html[data-theme='nebula'] .markdown-body *,
+html[data-theme='nebula'] .markdown-preview-container * {
+  color: inherit; /* This lets the parent white cascade down effectively */
+}
+
+/* Explicit overrides for stubborn elements */
+html[data-theme='forest'] h1,
+html[data-theme='forest'] h2,
+html[data-theme='forest'] h3,
+html[data-theme='forest'] h4,
+html[data-theme='forest'] h5,
+html[data-theme='forest'] h6,
+html[data-theme='forest'] p,
+html[data-theme='forest'] li,
+html[data-theme='forest'] code,
+html[data-theme='forest'] pre,
+html[data-theme='forest'] span,
+html[data-theme='forest'] strong,
+html[data-theme='forest'] em,
+html[data-theme='midnight-pro'] h1,
+html[data-theme='midnight-pro'] h2,
+html[data-theme='midnight-pro'] h3,
+html[data-theme='midnight-pro'] h4,
+html[data-theme='midnight-pro'] h5,
+html[data-theme='midnight-pro'] h6,
+html[data-theme='midnight-pro'] p,
+html[data-theme='midnight-pro'] li,
+html[data-theme='midnight-pro'] code,
+html[data-theme='midnight-pro'] pre,
+html[data-theme='midnight-pro'] span,
+html[data-theme='midnight-pro'] strong,
+html[data-theme='midnight-pro'] em,
+html[data-theme='nebula'] h1,
+html[data-theme='nebula'] h2,
+html[data-theme='nebula'] h3,
+html[data-theme='nebula'] h4,
+html[data-theme='nebula'] h5,
+html[data-theme='nebula'] h6,
+html[data-theme='nebula'] p,
+html[data-theme='nebula'] li,
+html[data-theme='nebula'] code,
+html[data-theme='nebula'] pre,
+html[data-theme='nebula'] span,
+html[data-theme='nebula'] strong,
+html[data-theme='nebula'] em {
+  color: #ffffff !important;
 }

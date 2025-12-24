@@ -9,6 +9,8 @@ import mermaidStyles from '../mermaid/mermaid.css?raw'
 import { getMermaidConfig } from '../mermaid/mermaidConfig'
 import { getMermaidEngine } from '../mermaid/mermaidEngine'
 
+import { themes } from '../preference/theme/themes'
+
 /**
  * LivePreview - Premium Sandboxed Rendering Engine.
  */
@@ -74,10 +76,29 @@ const LivePreview = ({
     const iframe = iframeRef.current
     if (!iframe || !html) return
     const syncContent = () => {
-      const fontOverride = `
-        .markdown-body, .mermaid-wrapper, .mermaid-diagram, .actor, .node label { font-family: ${fontFamily}, sans-serif !important; }
-        pre code { font-family: 'JetBrains Mono', 'Cascadia Code', monospace !important; }
+      // Find current theme definition to extract exact colors
+      const currentThemeObj = themes.find((t) => t.id === theme) || themes[0]
+      const cssVars = Object.entries(currentThemeObj.colors)
+        .filter(([key]) => key.startsWith('--'))
+        .map(([key, value]) => `${key}: ${value};`)
+        .join('\n')
+
+      const themeVars = `
+        :root {
+          ${cssVars}
+        }
       `
+
+      const fontOverride = `
+        .markdown-body, .mermaid-wrapper, .mermaid-diagram, .actor, .node label { 
+          font-family: ${fontFamily}, sans-serif !important; 
+          color: var(--color-text-primary) !important;
+        }
+        pre code { 
+          font-family: 'JetBrains Mono', 'Cascadia Code', monospace !important; 
+        }
+      `
+
       iframe.contentWindow.postMessage(
         {
           type: 'render',
@@ -85,7 +106,7 @@ const LivePreview = ({
           theme,
           isDark,
           isLive: true,
-          styles: `${variableStyles}\n${markdownStyles}\n${mermaidStyles}\n${fontOverride}`,
+          styles: `${variableStyles}\n${themeVars}\n${markdownStyles}\n${mermaidStyles}\n${fontOverride}`,
           mermaidConfig: getMermaidConfig(isDark, fontFamily),
           mermaidEngine: getMermaidEngine()
         },
@@ -128,19 +149,19 @@ const LivePreview = ({
             <div className="flex items-center gap-1 h-4">
               <button
                 onClick={() => splitContext.setOverlayWidth(25)}
-                className={`p-1 rounded ${splitContext.overlayWidth === 25 ? 'text-blue-500' : 'text-slate-400'}`}
+                className={`p-1 rounded ${splitContext.overlayWidth === 25 ? 'text-[var(--color-accent-primary)]' : 'text-[var(--color-text-tertiary)]'}`}
               >
                 <Smartphone size={14} />
               </button>
               <button
                 onClick={() => splitContext.setOverlayWidth(50)}
-                className={`p-1 rounded ${splitContext.overlayWidth === 50 ? 'text-blue-500' : 'text-slate-400'}`}
+                className={`p-1 rounded ${splitContext.overlayWidth === 50 ? 'text-[var(--color-accent-primary)]' : 'text-[var(--color-text-tertiary)]'}`}
               >
                 <Tablet size={14} />
               </button>
               <button
                 onClick={() => splitContext.setOverlayWidth(75)}
-                className={`p-1 rounded ${splitContext.overlayWidth === 75 ? 'text-blue-500' : 'text-slate-400'}`}
+                className={`p-1 rounded ${splitContext.overlayWidth === 75 ? 'text-[var(--color-accent-primary)]' : 'text-[var(--color-text-tertiary)]'}`}
               >
                 <Monitor size={14} />
               </button>
@@ -150,7 +171,7 @@ const LivePreview = ({
         <div className="flex items-center gap-1 flex-shrink-0 ml-4">
           <button
             onClick={onOpenMiniPreview}
-            className="w-7 h-7 rounded-md hover:bg-white/5 text-slate-400 flex items-center justify-center"
+            className="w-7 h-7 rounded-md hover:bg-[var(--hover-bg)] text-[var(--color-text-primary)] flex items-center justify-center transition-opacity hover:opacity-70"
             title="Pop out Mini Preview"
           >
             <svg
@@ -170,7 +191,7 @@ const LivePreview = ({
           </button>
           <button
             onClick={onOpenExternal}
-            className="w-7 h-7 rounded-md hover:bg-white/5 text-slate-400 flex items-center justify-center"
+            className="w-7 h-7 rounded-md hover:bg-[var(--hover-bg)] text-[var(--color-text-primary)] flex items-center justify-center transition-opacity hover:opacity-70"
             title="Open in System Browser"
           >
             <svg

@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react'
 import { Monitor, Type, Layout, Code, Settings as SettingsIcon, FileJson } from 'lucide-react'
 import { Toggle, Select, Input } from './controls/SettingsControls'
 import { useSettings, useCompactMode } from '../../hook/useSettingsContext'
+import { useToast } from '../../hook/useToast'
+import ToastNotification from '../../utils/ToastNotification'
 
 const SettingsForm = () => {
   const { settings, updateSetting, isLoading } = useSettings()
+  const { toast, showToast } = useToast()
   const [compactMode, setCompactMode] = useCompactMode()
 
   // Local state to debounce or manage form vs json
@@ -16,15 +19,24 @@ const SettingsForm = () => {
     // updateSetting handles dot notation correctly for nested keys
     // This is safer and more efficient than reconstructing the whole object
     updateSetting(`${section}.${key}`, value)
+    showToast(`✓ Updated ${key}`)
+  }
+
+  const handleCompactToggle = (v) => {
+    setCompactMode(v)
+    showToast(`✓ Compact Mode ${v ? 'Enabled' : 'Disabled'}`)
   }
 
   return (
-    <div className="max-w-3xl mx-auto py-6 px-4 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="max-w-2xl mx-auto py-2 px-4 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <ToastNotification toast={toast} />
       {/* SECTION: Appearance */}
       <section>
-        <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-200 dark:border-slate-800">
-          <Monitor className="w-5 h-5 text-blue-500" />
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">Appearance</h2>
+        <div className="flex items-center gap-2 mb-2 pb-1 border-b border-[var(--color-border)]">
+          <Monitor className="w-4 h-4 text-blue-500" />
+          <h2 className="text-sm font-bold text-[var(--color-text-primary)] uppercase tracking-tight">
+            Appearance
+          </h2>
         </div>
 
         <div className="space-y-1">
@@ -32,23 +44,18 @@ const SettingsForm = () => {
             label="Compact Mode"
             description="Reduce padding in the sidebar and lists."
             value={compactMode}
-            onChange={setCompactMode}
-          />
-
-          <Toggle
-            label="Hide Welcome Page"
-            description="Start with a blank workspace instead of the welcome screen."
-            value={settings.ui?.hideWelcomePage ?? false}
-            onChange={(v) => handleUpdate('ui', 'hideWelcomePage', v)}
+            onChange={handleCompactToggle}
           />
         </div>
       </section>
 
       {/* SECTION: Editor */}
       <section>
-        <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-200 dark:border-slate-800">
-          <Type className="w-5 h-5 text-emerald-500" />
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">Editor</h2>
+        <div className="flex items-center gap-2 mb-2 pb-1 border-b border-[var(--color-border)]">
+          <Type className="w-4 h-4 text-emerald-500" />
+          <h2 className="text-sm font-bold text-[var(--color-text-primary)] uppercase tracking-tight">
+            Editor
+          </h2>
         </div>
 
         <div className="space-y-1">
@@ -134,9 +141,11 @@ const SettingsForm = () => {
 
       {/* SECTION: AI & System (Placeholder) */}
       <section>
-        <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-200 dark:border-slate-800">
-          <SettingsIcon className="w-5 h-5 text-purple-500" />
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">System</h2>
+        <div className="flex items-center gap-2 mb-2 pb-1 border-b border-[var(--color-border)]">
+          <SettingsIcon className="w-4 h-4 text-purple-500" />
+          <h2 className="text-sm font-bold text-[var(--color-text-primary)] uppercase tracking-tight">
+            System
+          </h2>
         </div>
 
         <div className="space-y-1">

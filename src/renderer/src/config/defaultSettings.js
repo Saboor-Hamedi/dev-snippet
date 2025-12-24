@@ -23,8 +23,6 @@ export const DEFAULT_SETTINGS = {
     cursorBlinkingSpeed: 500,
     cursorSelectionBg: '#58a6ff33',
     cursorActiveLineBg: 'rgba(88, 166, 255, 0.1)',
-    cursorActiveLineBorder: 0,
-    cursorActiveLineGutterBorder: 0,
     cursorShadowBoxColor: '#58a6ff'
   },
   gutter: {
@@ -62,6 +60,7 @@ export const DEFAULT_SETTINGS = {
     enableCodeFolding: true,
     enableAutoComplete: true,
     enableLinting: false,
+    disableComplexCM: false, // Disables background highlights (active line, selection match)
     maxFileSize: 1048576 // 1MB
   }
 }

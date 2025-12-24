@@ -5,10 +5,11 @@ import { useToast } from '../../hook/useToast'
 import CodeEditor from '../CodeEditor/CodeEditor'
 import SettingsForm from '../settings/SettingsForm'
 import cleanErrorJson from '../../hook/useCleanErrorJson.js'
+import ToastNotification from '../../utils/ToastNotification'
 
 const UserSettings = () => {
   const { settings, updateSettings, resetSettings } = useSettings()
-  const { showToast } = useToast()
+  const { toast, showToast } = useToast()
 
   // 'ui' or 'json'
   const [mode, setMode] = useState('ui')
@@ -44,37 +45,35 @@ const UserSettings = () => {
 
   return (
     <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0d1117] text-slate-900 dark:text-slate-100 transition-colors duration-300">
-      {/* Settings Header */}
-      <div className="flex items-center justify-between px-8 py-6 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0d1117]">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Manage your editor preferences and configurations.
-          </p>
+      <ToastNotification toast={toast} />
+      {/* Mode Switcher Header */}
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0d1117]">
+        <div className="text-[10px] font-bold tracking-wider text-[var(--color-text-secondary)] uppercase">
+          Configuration
         </div>
 
         {/* Mode Switcher */}
         <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
           <button
             onClick={() => setMode('ui')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
               mode === 'ui'
                 ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
             }`}
           >
-            <Sliders size={16} />
+            <Sliders size={14} />
             <span>Visual</span>
           </button>
           <button
             onClick={() => setMode('json')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
               mode === 'json'
                 ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
             }`}
           >
-            <Code size={16} />
+            <Code size={14} />
             <span>JSON</span>
           </button>
         </div>
@@ -98,18 +97,18 @@ const UserSettings = () => {
             </div>
 
             {/* Toolbar for JSON Mode */}
-            <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#161b22] flex justify-end gap-3">
+            <div className="p-2 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#161b22] flex justify-end gap-2">
               <button
                 onClick={handleReset}
-                className="px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                className="px-3 py-1 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
               >
                 Reset to Defaults
               </button>
               <button
                 onClick={handleJsonSave}
-                className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors shadow-sm"
+                className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-medium transition-colors shadow-sm"
               >
-                <Save size={16} />
+                <Save size={14} />
                 <span>Save Changes</span>
               </button>
             </div>

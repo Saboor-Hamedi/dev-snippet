@@ -12,7 +12,7 @@ const ActivityBar = ({ activeTab, onTabChange, onSettings }) => {
     <div
       className="w-12 flex flex-col items-center z-10 select-none transition-colors duration-300"
       style={{
-        backgroundColor: 'var(--activity-bar-bg, #333333)',
+        backgroundColor: 'var(--activity-bar-bg, #161b22)',
         borderRight: '1px solid var(--color-border, #444)'
       }}
     >

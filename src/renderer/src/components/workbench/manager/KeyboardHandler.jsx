@@ -14,7 +14,8 @@ const KeyboardHandler = ({
   isCreatingSnippet,
   setIsCreatingSnippet,
   showToast,
-  handleRename // Pass the rename logic function
+  handleRename, // Pass the rename logic function
+  onToggleSidebar // Pass the sidebar toggle function
 }) => {
   const { toggleCommandPalette, openDeleteModal, openRenameModal, isAnyOpen, closeAll } = useModal()
   const { activeView, navigateTo, togglePreview, showPreview } = useView()
@@ -56,6 +57,7 @@ const KeyboardHandler = ({
     },
     onGlobalSearch: toggleCommandPalette, // Assuming this maps to Cmd+P or similar
     onToggleCommandPalette: toggleCommandPalette,
+    onToggleSidebar: onToggleSidebar,
 
     // ... Settings toggle is handled in Workbench usually via header, but shortcut can be here
     onToggleSettings: () => {

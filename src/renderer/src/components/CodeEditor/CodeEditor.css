@@ -15,6 +15,8 @@
   --border-round: 0;
   --active-line-bg: rgba(88, 166, 255, 0.1);
   --shadow-box-color: #58a6ff;
+  --active-line-border-width: 0px;
+  --active-line-gutter-border-width: 0px;
 }
 
 @keyframes cm-cursor-blink {
@@ -29,7 +31,7 @@
 
 /* Cursor Blinking Logic - GPU Optimized */
 .cm-cursor {
-  border-left-color: var(--caret-color, white) !important;
+  border-left-color: var(--caret-color, #fefeffff) !important;
   border-left-width: var(--caret-width, 2px) !important;
 }
 
@@ -43,10 +45,15 @@
   animation: none !important;
   opacity: 1 !important;
 }
+
+/* VS CODE STYLE: Active Line Background (Base) */
+/* VS CODE STYLE: Active Line Background (Base) */
 /* VS CODE STYLE: Active Line Background (Base) */
 .cm-editor .cm-activeLine {
   background-color: var(--active-line-bg) !important;
 }
+
+/* VS CODE BEHAVIOR: Hide active line background and indicator when text is selected */
 
 /* VS CODE BEHAVIOR: Hide active line background and indicator when text is selected */
 .cm-editor[data-has-selection='true'] .cm-activeLine {
