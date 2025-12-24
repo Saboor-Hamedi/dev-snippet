@@ -2,70 +2,28 @@ import React, { useMemo, useState } from 'react'
 import PropTypes from 'prop-types'
 import { File, Trash2, RotateCcw, Search } from 'lucide-react'
 import SidebarHeader from '../layout/SidebarHeader'
+import VirtualList from '../common/VirtualList'
+import ContextMenu from '../common/ContextMenu'
 
 const getFileIcon = () => {
   return { icon: File, color: '#9CA3AF' } // Gray for trash
 }
 
-// Virtual List (Reuse logic or keep simple for trash if list is small, but let's be consistent)
-const VirtualList = React.forwardRef(
-  ({ height, width, itemCount, itemSize, itemData, children: Row }, ref) => {
-    const containerRef = React.useRef(null)
-    const [scrollTop, setScrollTop] = React.useState(0)
-
-    React.useImperativeHandle(ref, () => ({
-      scrollToItem: (index) => {
-        if (containerRef.current) {
-          const itemTop = index * itemSize
-          containerRef.current.scrollTop = itemTop
-        }
-      }
-    }))
-
-    const visibleCount = Math.ceil(height / itemSize)
-    const startIndex = Math.max(0, Math.floor(scrollTop / itemSize) - 2)
-    const endIndex = Math.min(itemCount - 1, startIndex + visibleCount + 4)
-
-    const items = []
-    for (let i = startIndex; i <= endIndex; i++) {
-      items.push(
-        <Row
-          key={i}
-          index={i}
-          style={{
-            position: 'absolute',
-            top: i * itemSize,
-            left: 0,
-            width: '100%',
-            height: itemSize
-          }}
-          data={itemData}
-        />
-      )
-    }
-
-    return (
-      <div
-        ref={containerRef}
-        style={{ height, width, overflowY: 'auto', overflowX: 'hidden', position: 'relative' }}
-        onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)}
-        className="custom-scrollbar"
-      >
-        <div style={{ height: itemCount * itemSize, width: '100%' }}>{items}</div>
-      </div>
-    )
-  }
-)
-
 const Row = ({ index, style, data }) => {
-  const { items, onRestore, onPermanentDelete } = data
+  const { items, onRestore, onPermanentDelete, onContextMenu } = data
   const item = items[index]
 
   const { icon: Icon } = getFileIcon(item.language, item.title)
 
   return (
     <div style={style} className=" group">
-      <div className="flex items-center gap-2 px-2 w-full text-left h-full text-sm select-none rounded hover:bg-white/5 transition-colors relative">
+      <div
+        className="flex items-center gap-2 px-2 w-full text-left h-full text-sm select-none rounded hover:bg-white/5 transition-colors relative"
+        onContextMenu={(e) => {
+          e.preventDefault()
+          onContextMenu(e, item)
+        }}
+      >
         <div className="flex-shrink-0 flex items-center justify-center opacity-40 group-hover:opacity-100 transition-opacity">
           <Icon size={14} strokeWidth={1.5} />
         </div>
@@ -74,7 +32,6 @@ const Row = ({ index, style, data }) => {
           {item.title || 'Untitled'}
         </span>
 
-        {/* Floating Action Buttons */}
         {/* Floating Action Buttons */}
         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
@@ -105,6 +62,8 @@ const Row = ({ index, style, data }) => {
 
 const TrashSidebar = ({ items, onRestore, onPermanentDelete, onLoadTrash, openDeleteModal }) => {
   const [filter, setFilter] = useState('')
+  const [contextMenu, setContextMenu] = useState(null)
+
   const filteredItems = useMemo(() => {
     if (!filter) return items
     return items.filter((i) => (i.title || '').toLowerCase().includes(filter.toLowerCase()))
@@ -114,6 +73,15 @@ const TrashSidebar = ({ items, onRestore, onPermanentDelete, onLoadTrash, openDe
   React.useEffect(() => {
     if (onLoadTrash) onLoadTrash()
   }, [])
+
+  // Context menu handler
+  const handleContextMenu = (e, item) => {
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      item
+    })
+  }
 
   // Resize Observer
   const parentRef = React.useRef(null)
@@ -208,12 +176,39 @@ const TrashSidebar = ({ items, onRestore, onPermanentDelete, onLoadTrash, openDe
             width={size.width}
             itemCount={filteredItems.length}
             itemSize={32}
-            itemData={{ items: filteredItems, onRestore, onPermanentDelete }}
+            itemData={{
+              items: filteredItems,
+              onRestore,
+              onPermanentDelete,
+              onContextMenu: handleContextMenu
+            }}
           >
             {Row}
           </VirtualList>
         )}
       </div>
+
+      {/* Context Menu */}
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          items={[
+            {
+              label: 'Restore',
+              icon: RotateCcw,
+              onClick: () => onRestore(contextMenu.item.id)
+            },
+            {
+              label: 'Delete Forever',
+              icon: Trash2,
+              danger: true,
+              onClick: () => onPermanentDelete(contextMenu.item.id)
+            }
+          ]}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
     </div>
   )
 }

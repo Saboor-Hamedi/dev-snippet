@@ -195,6 +195,7 @@ const Workbench = ({
           activeTab={activeSidebarTab}
           onTabChange={handleTabChange}
           onSettings={onOpenSettings}
+          trashCount={trash?.length || 0}
         />
 
         {/* Sidebars Container (Stacking) */}

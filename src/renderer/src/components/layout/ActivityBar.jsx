@@ -2,11 +2,11 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Files, Palette, Settings, Trash2 } from 'lucide-react'
 
-const ActivityBar = ({ activeTab, onTabChange, onSettings }) => {
+const ActivityBar = ({ activeTab, onTabChange, onSettings, trashCount = 0 }) => {
   const items = [
     { id: 'explorer', icon: Files, label: 'Explorer' },
     { id: 'themes', icon: Palette, label: 'Themes' },
-    { id: 'trash', icon: Trash2, label: 'Trash' }
+    { id: 'trash', icon: Trash2, label: 'Trash', badge: trashCount }
   ]
 
   return (
@@ -35,7 +35,18 @@ const ActivityBar = ({ activeTab, onTabChange, onSettings }) => {
               }}
               title={item.label}
             >
-              <Icon strokeWidth={isActive ? 2 : 1.5} size={22} />
+              <div className="relative">
+                <Icon strokeWidth={isActive ? 2 : 1.5} size={22} />
+
+                {/* Badge for trash count */}
+                {item.badge > 0 && (
+                  <div className="absolute -top-1 -right-1 min-w-[14px] h-[14px] bg-red-500 rounded-full flex items-center justify-center">
+                    <span className="text-[9px] font-bold text-white px-0.5">
+                      {item.badge > 99 ? '99+' : item.badge}
+                    </span>
+                  </div>
+                )}
+              </div>
 
               {/* Active Indicator Bar (Left Border) */}
               {isActive && (
@@ -66,7 +77,8 @@ const ActivityBar = ({ activeTab, onTabChange, onSettings }) => {
 ActivityBar.propTypes = {
   activeTab: PropTypes.string,
   onTabChange: PropTypes.func.isRequired,
-  onSettings: PropTypes.func
+  onSettings: PropTypes.func,
+  trashCount: PropTypes.number
 }
 
 export default React.memo(ActivityBar)
