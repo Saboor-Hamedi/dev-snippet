@@ -261,7 +261,6 @@ const Workbench = ({
           <div className="flex-none border-t border-[var(--color-border)] bg-[var(--footer-bg)]">
             <StatusBar
               title={selectedSnippet?.title}
-              zoomLevel={1}
               onSettingsClick={onOpenSettings}
               snippets={snippets || []}
               hideWelcomePage={hideWelcomePage}

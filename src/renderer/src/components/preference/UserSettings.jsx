@@ -8,7 +8,7 @@ import cleanErrorJson from '../../hook/useCleanErrorJson.js'
 import ToastNotification from '../../utils/ToastNotification'
 
 const UserSettings = () => {
-  const { settings, updateSettings, resetSettings } = useSettings()
+  const { settings, updateSettings, resetSettings: contextResetSettings } = useSettings()
   const { toast, showToast } = useToast()
 
   // 'ui' or 'json'
@@ -17,6 +17,10 @@ const UserSettings = () => {
   // Local state for the JSON editor string
   const [jsonText, setJsonText] = useState('')
 
+  // Local state for zoom levels
+  const [zoomLevel, setZoomLevel] = useState(1.0) // Global UI zoom
+  const [editorZoom, setEditorZoom] = useState(1.0) // Editor-specific zoom
+
   // Sync jsonText when settings change or when switching to JSON mode
   // This ensures we always see the latest settings when opening the JSON tab
   useEffect(() => {
@@ -24,6 +28,7 @@ const UserSettings = () => {
       setJsonText(JSON.stringify(settings, null, 2))
     }
   }, [settings, mode])
+
   const handleJsonSave = () => {
     try {
       const parsed = JSON.parse(jsonText)
@@ -36,9 +41,10 @@ const UserSettings = () => {
     }
   }
 
+  // Reset to defaults
   const handleReset = () => {
     if (confirm('Are you sure you want to reset to defaults?')) {
-      if (resetSettings) resetSettings()
+      if (contextResetSettings) contextResetSettings()
       else console.error('resetSettings function is missing from context')
     }
   }
@@ -48,8 +54,13 @@ const UserSettings = () => {
       <ToastNotification toast={toast} />
       {/* Mode Switcher Header */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0d1117]">
-        <div className="text-[10px] font-bold tracking-wider text-[var(--color-text-secondary)] uppercase">
-          Configuration
+        <div className="flex items-center gap-3">
+          <div className="text-[10px] font-bold tracking-wider text-[var(--color-text-secondary)] uppercase">
+            Configuration
+          </div>
+          <div className="text-[9px] font-mono opacity-30 select-none bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+            v1.2.0
+          </div>
         </div>
 
         {/* Mode Switcher */}
@@ -97,23 +108,20 @@ const UserSettings = () => {
             </div>
 
             {/* Toolbar for JSON Mode */}
-            <div className="p-2 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#161b22] flex justify-between items-center px-4">
-              <div className="text-[10px] font-mono opacity-40 select-none">v1.2.0</div>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleReset}
-                  className="px-3 py-1 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
-                >
-                  Reset to Defaults
-                </button>
-                <button
-                  onClick={handleJsonSave}
-                  className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-medium transition-colors shadow-sm"
-                >
-                  <Save size={14} />
-                  <span>Save Changes</span>
-                </button>
-              </div>
+            <div className="p-2 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#161b22] flex justify-end gap-2">
+              <button
+                onClick={handleReset}
+                className="px-3 py-1 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+              >
+                Reset to Defaults
+              </button>
+              <button
+                onClick={handleJsonSave}
+                className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-medium transition-colors shadow-sm"
+              >
+                <Save size={14} />
+                <span>Save Changes</span>
+              </button>
             </div>
           </div>
         )}

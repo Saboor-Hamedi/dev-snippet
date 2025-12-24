@@ -1,9 +1,9 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import { useZoomLevel, useEditorZoomLevel } from '../hook/useZoomLevel'
 
 const StatusBar = ({
   onSettingsClick,
-  zoomLevel = 1,
   title,
   isLargeFile = false,
   snippets = [],
@@ -11,6 +11,8 @@ const StatusBar = ({
   onToggleWelcomePage
 }) => {
   const [version, setVersion] = React.useState('...')
+  const [zoom] = useZoomLevel()
+  const [editorZoom] = useEditorZoomLevel()
 
   React.useEffect(() => {
     window.api?.getVersion().then(setVersion)
@@ -65,9 +67,22 @@ const StatusBar = ({
               {title?.split('.').pop() || 'PLAINTEXT'}
             </span>
             <span className="text-white/20">|</span>
-            <span className="font-mono text-[10px] opacity-80" title="Zoom Level">
-              {Math.round(zoomLevel * 100)}%
-            </span>
+            <div className="flex items-center gap-2">
+              {/* If Local Editor Zoom is active, show it with an icon or label */}
+              {editorZoom !== 1.0 && (
+                <span className="font-mono text-[10px] text-cyan-400" title="Editor Font Scale">
+                  Code: {Math.round(editorZoom * 100)}%
+                </span>
+              )}
+              {/* Show Global Window Zoom */}
+              <span
+                className={`font-mono text-[10px] ${zoom === 1.0 && editorZoom !== 1.0 ? 'opacity-40' : 'opacity-80'}`}
+                title="Global Window Zoom"
+              >
+                {zoom !== 1.0 || editorZoom === 1.0 ? `Win: ${Math.round(zoom * 100)}%` : ''}
+                {zoom === 1.0 && editorZoom === 1.0 ? '100%' : ''}
+              </span>
+            </div>
           </>
         ) : (
           /* SYSTEM CONTEXT: Counts | Welcome Toggle */
@@ -100,7 +115,6 @@ const StatusBar = ({
 
 StatusBar.propTypes = {
   onSettingsClick: PropTypes.func,
-  zoomLevel: PropTypes.number,
   title: PropTypes.string, // If present, shows Editor Context
   isLargeFile: PropTypes.bool,
   snippets: PropTypes.array,

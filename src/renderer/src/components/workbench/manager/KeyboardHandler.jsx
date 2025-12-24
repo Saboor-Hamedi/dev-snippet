@@ -117,7 +117,11 @@ const KeyboardHandler = ({
 
     onZoomIn: () => window.dispatchEvent(new CustomEvent('app:zoom-in')), // let context handle or direct
     onZoomOut: () => window.dispatchEvent(new CustomEvent('app:zoom-out')),
-    onZoomReset: () => window.dispatchEvent(new CustomEvent('app:zoom-reset'))
+    onZoomReset: () => window.dispatchEvent(new CustomEvent('app:zoom-reset')),
+
+    // --- Local Editor Zoom (Targeted Font Scaling) ---
+    onEditorZoomIn: () => window.dispatchEvent(new CustomEvent('app:editor-zoom-in')),
+    onEditorZoomOut: () => window.dispatchEvent(new CustomEvent('app:editor-zoom-out'))
   })
 
   // Listen for custom zoom events which hook into useZoomLevel elsewhere or here?

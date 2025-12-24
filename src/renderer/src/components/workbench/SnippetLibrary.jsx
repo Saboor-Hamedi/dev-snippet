@@ -6,7 +6,7 @@ import { handleRenameSnippet } from '../../hook/handleRenameSnippet'
 import Workbench from './Workbench'
 import { useSettings } from '../../hook/useSettingsContext'
 import useFontSettings from '../../hook/settings/useFontSettings'
-import { useZoomLevel } from '../../hook/useZoomLevel'
+import { useZoomLevel, useEditorZoomLevel } from '../../hook/useZoomLevel'
 import { ViewProvider, useView } from '../../context/ViewContext'
 import { ModalProvider, useModal } from './manager/ModalManager'
 import KeyboardHandler from './manager/KeyboardHandler'
@@ -37,6 +37,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
   const [autosaveStatus, setAutosaveStatus] = useState(null)
   const [isCreatingSnippet, setIsCreatingSnippet] = useState(false)
   const [zoomLevel, setZoomLevel] = useZoomLevel()
+  const [editorZoom, setEditorZoom] = useEditorZoomLevel()
 
   // Lifted Sidebar State - defaults to closed, remembers last state
   const [isSidebarOpen, setIsSidebarOpen] = useState(
@@ -68,18 +69,30 @@ const SnippetLibraryInner = ({ snippetData }) => {
 
   // --- Zoom Listeners ---
   useEffect(() => {
+    // 1. Global UI Zoom Level (Keyboard)
     const handleZoomIn = () => setZoomLevel((z) => z + 0.1)
     const handleZoomOut = () => setZoomLevel((z) => z - 0.1)
     const handleZoomReset = () => setZoomLevel(1.0)
+
+    // 2. Editor-Only Local Zoom (Mouse Wheel)
+    const handleEditorZoomIn = () => setEditorZoom((z) => z + 0.1)
+    const handleEditorZoomOut = () => setEditorZoom((z) => z - 0.1)
+
     window.addEventListener('app:zoom-in', handleZoomIn)
     window.addEventListener('app:zoom-out', handleZoomOut)
     window.addEventListener('app:zoom-reset', handleZoomReset)
+
+    window.addEventListener('app:editor-zoom-in', handleEditorZoomIn)
+    window.addEventListener('app:editor-zoom-out', handleEditorZoomOut)
+
     return () => {
       window.removeEventListener('app:zoom-in', handleZoomIn)
       window.removeEventListener('app:zoom-out', handleZoomOut)
       window.removeEventListener('app:zoom-reset', handleZoomReset)
+      window.removeEventListener('app:editor-zoom-in', handleEditorZoomIn)
+      window.removeEventListener('app:editor-zoom-out', handleEditorZoomOut)
     }
-  }, [setZoomLevel])
+  }, [setZoomLevel, setEditorZoom])
 
   // --- Draft Logic ---
   const createDraftSnippet = (initialTitle = '') => {

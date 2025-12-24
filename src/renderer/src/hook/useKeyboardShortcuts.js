@@ -182,7 +182,7 @@ export const useKeyboardShortcuts = (shortcuts) => {
 
     // VS Code-style smooth wheel zoom
     let wheelAccumulator = 0
-    const WHEEL_THRESHOLD = 100
+    const WHEEL_THRESHOLD = 50 // Faster trigger for better UX
 
     const handleWheel = (e) => {
       if (e.ctrlKey || e.metaKey) {
@@ -190,9 +190,21 @@ export const useKeyboardShortcuts = (shortcuts) => {
         wheelAccumulator += e.deltaY
         if (Math.abs(wheelAccumulator) >= WHEEL_THRESHOLD) {
           if (wheelAccumulator > 0) {
-            if (shortcutsRef.current.onZoomOut) shortcutsRef.current.onZoomOut()
+            // Mouse Wheel Down -> Zoom Out (Editor Only)
+            if (shortcutsRef.current.onEditorZoomOut) {
+              shortcutsRef.current.onEditorZoomOut()
+            } else if (shortcutsRef.current.onZoomOut) {
+              // Fallback to global if local handler not provided
+              shortcutsRef.current.onZoomOut()
+            }
           } else {
-            if (shortcutsRef.current.onZoomIn) shortcutsRef.current.onZoomIn()
+            // Mouse Wheel Up -> Zoom In (Editor Only)
+            if (shortcutsRef.current.onEditorZoomIn) {
+              shortcutsRef.current.onEditorZoomIn()
+            } else if (shortcutsRef.current.onZoomIn) {
+              // Fallback to global
+              shortcutsRef.current.onZoomIn()
+            }
           }
           wheelAccumulator = 0
         }

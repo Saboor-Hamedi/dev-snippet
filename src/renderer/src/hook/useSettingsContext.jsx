@@ -71,6 +71,18 @@ export const SettingsProvider = ({ children }) => {
     return () => clearTimeout(timer)
   }, [zoom])
 
+  // EDITOR LOCAL ZOOM - Forces ONLY the editor/gutter font to scale
+  const [editorZoom, setEditorZoomInternal] = useState(() => {
+    return settingsManager.get('editor.fontZoom') ?? 1.0
+  })
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      settingsManager.set('editor.fontZoom', editorZoom)
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [editorZoom])
+
   const setZoom = (value) => {
     setZoomInternal((prev) => {
       const next = typeof value === 'function' ? value(prev) : value
@@ -81,14 +93,24 @@ export const SettingsProvider = ({ children }) => {
     })
   }
 
+  const setEditorZoom = (value) => {
+    setEditorZoomInternal((prev) => {
+      const next = typeof value === 'function' ? value(prev) : value
+      const target = Math.max(0.5, Math.min(5.0, Math.round(next * 10) / 10))
+      return target
+    })
+  }
+
   // Apply font settings to CSS variables whenever settings change
   useEffect(() => {
     if (settings.editor) {
       const root = document.documentElement
-      const fontSize = settings.editor.fontSize || 14
+      const baseFontSize = settings.editor.fontSize || 14
       const fontFamily = settings.editor.fontFamily || 'JetBrains Mono'
 
-      const sizeVal = typeof fontSize === 'number' ? `${fontSize / 16}rem` : fontSize
+      // Cumulative result: (Setting Size * Editor Local Zoom)
+      const finalFontSize = baseFontSize * editorZoom
+      const sizeVal = `${finalFontSize / 16}rem`
 
       root.style.setProperty('--editor-font-size', sizeVal)
       root.style.setProperty('--editor-font-family', fontFamily)
@@ -98,7 +120,7 @@ export const SettingsProvider = ({ children }) => {
         root.style.setProperty('--editor-bg', settings.editor.editorBgColor)
       }
     }
-  }, [settings])
+  }, [settings, editorZoom])
 
   // Get a specific setting by path (e.g., 'editor.zoomLevel')
   const getSetting = (path) => {
@@ -136,7 +158,9 @@ export const SettingsProvider = ({ children }) => {
         updateSettings,
         resetSettings,
         zoom,
-        setZoom
+        setZoom,
+        editorZoom,
+        setEditorZoom
       }}
     >
       {children}
@@ -170,6 +194,14 @@ export const useZoomLevel = () => {
 
   const { zoom, setZoom } = context
   return [zoom, setZoom]
+}
+
+export const useEditorZoomLevel = () => {
+  const context = useContext(SettingsContext)
+  if (!context) throw new Error('useEditorZoomLevel must be used within a SettingsProvider')
+
+  const { editorZoom, setEditorZoom } = context
+  return [editorZoom, setEditorZoom]
 }
 
 export const useCompactMode = () => {

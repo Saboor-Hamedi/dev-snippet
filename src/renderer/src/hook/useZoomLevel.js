@@ -1,4 +1,7 @@
-import { useZoomLevel as useZoomFromContext } from './useSettingsContext'
+import {
+  useZoomLevel as useZoomFromContext,
+  useEditorZoomLevel as useEditorZoomFromContext
+} from './useSettingsContext'
 
 /**
  * Hook to access and control the application zoom level.
@@ -7,6 +10,13 @@ import { useZoomLevel as useZoomFromContext } from './useSettingsContext'
  */
 export const useZoomLevel = () => {
   return useZoomFromContext()
+}
+
+/**
+ * Hook to strictly control the Editor Font Size (Local Zoom)
+ */
+export const useEditorZoomLevel = () => {
+  return useEditorZoomFromContext()
 }
 
 export const MIN_ZOOM = 0.5
