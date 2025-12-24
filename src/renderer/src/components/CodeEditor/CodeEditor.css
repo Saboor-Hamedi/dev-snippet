@@ -30,7 +30,7 @@
 /* Cursor Blinking Logic - GPU Optimized */
 .cm-cursor {
   border-left-color: var(--caret-color, white) !important;
-  border-left-width: 2px !important;
+  border-left-width: var(--caret-width, 2px) !important;
 }
 
 .cm-editor.cm-focused .cm-cursor {
@@ -128,25 +128,50 @@
 }
 
 .cm-tooltip-autocomplete ul li {
-  padding: 4px 8px !important;
+  padding: 6px 12px !important;
   font-size: 13px !important;
-  transition: background-color 0.1s ease !important;
-  color: var(--color-text-primary) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  transition: all 0.15s ease !important;
+  color: var(--color-text-secondary) !important;
+  cursor: pointer !important;
 }
 
 .cm-tooltip-autocomplete ul li[aria-selected] {
   background-color: var(--color-accent-primary) !important;
   color: white !important;
+  padding-left: 16px !important; /* Tiny visual shift on hover/select */
 }
 
+/* Label for the snippet itself */
 .cm-completionLabel {
-  font-family: inherit !important;
+  font-family: var(--editor-font-family, 'JetBrains Mono') !important;
+  font-weight: 500 !important;
+  color: var(--color-text-primary) !important;
+}
+
+.cm-tooltip-autocomplete ul li[aria-selected] .cm-completionLabel {
+  color: white !important;
+}
+
+/* Secondary info (the "Snippet:" prefix or type) */
+.cm-completionDetail {
+  font-size: 11px !important;
+  opacity: 0.6 !important;
+  font-style: italic !important;
+  color: var(--color-text-secondary) !important;
+}
+
+.cm-tooltip-autocomplete ul li[aria-selected] .cm-completionDetail {
+  color: rgba(255, 255, 255, 0.8) !important;
 }
 
 .cm-completionType {
-  opacity: 0.5 !important;
+  opacity: 0.4 !important;
   font-size: 10px !important;
-  margin-left: 8px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
 }
 
 .cm-scroller {

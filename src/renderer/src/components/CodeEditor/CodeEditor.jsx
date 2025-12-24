@@ -34,8 +34,12 @@ const CodeEditor = ({
   // Individual components consume the result via CSS variables.
   const editorDomRef = useRef(null)
   const snippetTitles = useMemo(() => {
+    if (!Array.isArray(snippets)) return []
     return snippets.map((s) => (s.title || '').trim()).filter(Boolean)
-  }, [snippets.length, snippets.map((s) => s.id).join(',')])
+  }, [
+    Array.isArray(snippets) ? snippets.length : 0,
+    Array.isArray(snippets) ? snippets.map((s) => s.id).join(',') : ''
+  ])
 
   // CONSUME SETTINGS VIA REFACTOR HOOKS (SOLID)
   const {

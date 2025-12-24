@@ -1,10 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
-import { GripVertical, Smartphone, Tablet, Monitor, Image } from 'lucide-react'
+import { GripVertical, Smartphone, Tablet, Monitor } from 'lucide-react'
 import useAdvancedSplitPane from './useAdvancedSplitPane.js'
-
-// Export Context for children to control the pane
-export const SplitPaneContext = React.createContext(null)
+import { SplitPaneContext } from './SplitPaneContext'
 
 const AdvancedSplitPane = ({
   left,
@@ -20,11 +18,6 @@ const AdvancedSplitPane = ({
   const containerRef = useRef(null)
   const draggingRef = useRef(false)
 
-  /*
-   * Read preview colors from settings via the settings hook
-   * useAdvancedSplitPane.js
-   * This allows dynamic updating without re-rendering the whole component.
-   */
   const { bgColor, borderWidth, borderColor, borderRound } = useAdvancedSplitPane()
 
   useEffect(() => {
@@ -36,7 +29,6 @@ const AdvancedSplitPane = ({
     }
   }, [bgColor, borderWidth, borderColor, borderRound, containerRef])
 
-  // Separate state for each mode
   const [overlayWidth, setOverlayWidth] = useState(() => {
     try {
       return parseFloat(localStorage.getItem('overlayWidth')) || 40
@@ -60,26 +52,20 @@ const AdvancedSplitPane = ({
       if (!draggingRef.current || !containerRef.current) return
 
       e.preventDefault()
-      e.stopPropagation()
-
       const rect = containerRef.current.getBoundingClientRect()
 
       if (overlayMode) {
-        // Direct overlay width calculation
         const x = e.clientX - rect.left
         const rightEdge = rect.width - x
         const newOverlayWidth = Math.max(15, Math.min(90, (rightEdge / rect.width) * 100))
-
         setOverlayWidth(newOverlayWidth)
         localStorage.setItem('overlayWidth', newOverlayWidth)
       } else {
-        // Standard side-by-side mode
         const x = e.clientX - rect.left
         const minLeftPx = Math.max(minLeft, 0)
         const minRightPx = Math.max(minRight, 0)
         const clampedX = Math.min(Math.max(x, minLeftPx), rect.width - minRightPx)
         const newPercent = Math.max(10, Math.min(90, (clampedX / rect.width) * 100))
-
         setSideBySideLeft(newPercent)
         localStorage.setItem('sideBySideLeft', newPercent)
       }
@@ -94,7 +80,7 @@ const AdvancedSplitPane = ({
       }
     }
 
-    document.addEventListener('mousemove', handleMouseMove, { passive: false })
+    document.addEventListener('mousemove', handleMouseMove)
     document.addEventListener('mouseup', handleMouseUp)
 
     return () => {
@@ -111,7 +97,6 @@ const AdvancedSplitPane = ({
     document.body.style.userSelect = 'none'
   }
 
-  // Restore saved widths when switching modes
   useEffect(() => {
     if (overlayMode) {
       const savedOverlayWidth = parseFloat(localStorage.getItem('overlayWidth')) || 40
@@ -130,96 +115,67 @@ const AdvancedSplitPane = ({
   return (
     <SplitPaneContext.Provider value={contextValue}>
       {rightHidden ? (
-        <div
-          ref={containerRef}
-          className="flex h-full w-full overflow-hidden"
-          style={{ backgroundColor: 'var(--editor-bg)' }}
-        >
+        <div ref={containerRef} className="flex h-full w-full overflow-hidden">
           <div className="flex-1 min-h-0 h-full overflow-hidden" style={{ width: '100%' }}>
             {left}
           </div>
         </div>
       ) : overlayMode ? (
-        // Overlay mode: LivePreview floats over editor
         <div ref={containerRef} className="relative h-full w-full overflow-hidden">
-          {/* Full-width editor */}
           <div className="absolute inset-0 w-full h-full">{left}</div>
-
-          {/* Floating preview */}
           {!rightHidden && (
-            <>
-              {/* Floating panel */}
+            <div
+              className="absolute top-2 right-5 bottom-2 z-10 flex flex-col overflow-hidden shadow-xl"
+              style={{
+                width: `${overlayWidth}%`,
+                minWidth: `${minRight}px`,
+                maxWidth: '90%',
+                backgroundColor: bgColor,
+                border: `${borderWidth}px solid ${borderColor || 'rgba(0,0,0,0.06)'}`,
+                borderRadius: `${borderRound}px`
+              }}
+            >
               <div
-                className="absolute top-2 right-5 bottom-2 
-                           z-10 flex flex-col overflow-hidden shadow-xl"
-                style={{
-                  width: `${overlayWidth}%`,
-                  minWidth: `${minRight}px`,
-                  maxWidth: '90%',
-                  backgroundColor: bgColor,
-                  border: `${borderWidth}px solid ${borderColor || 'rgba(0,0,0,0.06)'}`,
-                  borderRadius: `${borderRound}px`
-                }}
+                className="absolute left-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-500/20 transition-colors flex items-center justify-center z-20 group"
+                onMouseDown={startDrag}
               >
-                {/* Resize handle */}
-                <div
-                  className="absolute left-0 top-0 bottom-0 w-2 cursor-col-resize
-                 hover:bg-blue-500/20 transition-colors flex items-center justify-center z-20 group"
-                  onMouseDown={startDrag}
-                >
-                  <div className="w-1 h-8 bg-slate-400 dark:bg-slate-500 rounded-full opacity-30 group-hover:opacity-100 transition-opacity"></div>
-                </div>
-
-                {/* Content */}
-                <div
-                  className={`flex-1 overflow-auto relative ${isDragging ? 'pointer-events-none' : ''}`}
-                >
-                  {right}
-                </div>
+                <div className="w-1 h-8 bg-slate-400 dark:bg-slate-500 rounded-full opacity-30 group-hover:opacity-100 transition-opacity"></div>
               </div>
-            </>
+              <div
+                className={`flex-1 overflow-auto relative ${isDragging ? 'pointer-events-none' : ''}`}
+              >
+                {right}
+              </div>
+            </div>
           )}
         </div>
       ) : (
-        // Standard side-by-side mode
         <div
           ref={containerRef}
           className={`flex h-full w-full ${unifiedScroll ? 'overflow-auto' : 'overflow-hidden'}`}
-          style={{ backgroundColor: 'var(--editor-bg)' }}
         >
           <div
-            className={`min-h-0 h-full overflow-auto`}
-            style={{
-              width: `${sideBySideLeft}%`,
-              flex: '0 0 auto',
-              position: 'relative'
-            }}
+            className={`min-h-0 h-full overflow-auto ${isDragging ? 'pointer-events-none' : ''}`}
+            style={{ width: `${sideBySideLeft}%`, flex: '0 0 auto', position: 'relative' }}
           >
             {left}
           </div>
-
-          {/* Resize knob - Improved hit target */}
-          <div className="shrink-0 relative flex items-center justify-center w-2 z-30">
+          <div className="shrink-0 relative flex items-center justify-center w-1 z-50">
             <div
-              className={`absolute top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500/40 transition-colors ${isDragging ? 'bg-blue-500/60' : 'bg-transparent'}`}
+              className="absolute top-0 bottom-0 w-4 -left-1.5 cursor-col-resize z-10"
               onMouseDown={startDrag}
             />
             <div
-              className="w-4 h-6 flex items-center justify-center 
-             bg-slate-700/30 hover:bg-slate-700/60 
-             transition-all duration-200 
-             rounded-[4px] cursor-col-resize select-none border border-white/5 pointer-events-none"
+              className={`absolute inset-y-0 left-1/2 -translate-x-1/2 w-[1px] transition-colors pointer-events-none ${isDragging ? 'bg-blue-500' : 'bg-slate-300 dark:bg-slate-700'}`}
+            />
+            <div
+              className="relative z-20 w-4 h-8 flex items-center justify-center bg-slate-800/90 hover:bg-slate-800 transition-all duration-200 rounded-sm select-none border border-white/5 shadow-md pointer-events-none"
               role="separator"
               aria-orientation="vertical"
-              style={{
-                userSelect: 'none',
-                touchAction: 'none'
-              }}
             >
-              <GripVertical className="text-slate-500 dark:text-slate-400" size={12} />
+              <GripVertical className="text-slate-400" size={12} />
             </div>
           </div>
-
           <div
             className={`flex-1 min-h-0 h-full overflow-auto ${isDragging ? 'pointer-events-none' : ''}`}
             style={{ minWidth: 0 }}
