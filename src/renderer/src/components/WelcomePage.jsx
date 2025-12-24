@@ -1,7 +1,6 @@
 import { useState, memo, lazy, Suspense } from 'react'
 import PropTypes from 'prop-types'
 import { Folder, Command, Plus, Settings, Github } from 'lucide-react'
-import SystemStatusFooter from './SystemStatusFooter'
 import useGeneralProp from '../hook/settings/useGeneralProp.js'
 
 // Lazy load GitHub components
@@ -19,7 +18,6 @@ const WelcomePage = ({
   const [showGitHubProfile, setShowGitHubProfile] = useState(false)
   const [showGitHubSettings, setShowGitHubSettings] = useState(false)
   const [showAllRecents, setShowAllRecents] = useState(false)
-  const { welcomeBg } = useGeneralProp() // Get welcome background color
 
   const [githubUsername, setGitHubUsername] = useState(() => {
     try {
@@ -49,7 +47,10 @@ const WelcomePage = ({
 
   return (
     <>
-      <div className="h-full overflow-y-auto" style={{ backgroundColor: welcomeBg }}>
+      <div
+        className="h-full overflow-y-auto"
+        style={{ backgroundColor: 'var(--welcome-bg, #232731)' }}
+      >
         <div className="h-full flex flex-col">
           {/* Clean Header Bar */}
           <div className="px-6 py-4">
@@ -202,8 +203,6 @@ const WelcomePage = ({
               </div>
             </div>
           </div>
-
-          <SystemStatusFooter snippets={snippets} />
         </div>
       </div>
 

@@ -8,14 +8,20 @@
       :root {
         color-scheme: dark light;
       }
-      html {
-        scroll-behavior: smooth;
-      }
+      html,
       body {
+        height: 100%;
         margin: 0;
         padding: 0;
         overflow-x: hidden !important;
         background-color: transparent !important;
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+      }
+      body {
+        overflow-y: auto !important;
       }
       .preview-container {
         width: 100%;
@@ -24,6 +30,7 @@
         padding: 5px;
         margin: 0 auto !important;
         background-color: transparent;
+        min-height: 100%;
       }
       .preview-container.is-live {
         padding: 5px;

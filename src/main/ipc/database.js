@@ -44,21 +44,25 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
     }
 
     try {
-      const ftsQuery = query
-        .trim()
-        .split(/\s+/)
-        .map((term) => `"${term.replace(/"/g, '""')}"`)
-        .join(' OR ')
+      const stopWords = ['a', 'an', 'the', 'of', 'in', 'on', 'at', 'to', 'for', 'with', 'and']
+      const rawTerms = query.trim().split(/\s+/)
+      // Only filter stopwords if we have other significant words
+      const terms =
+        rawTerms.length > 1
+          ? rawTerms.filter((t) => !stopWords.includes(t.toLowerCase()))
+          : rawTerms
+
+      const ftsQuery = terms.map((term) => `"${term.replace(/"/g, '""')}"*`).join(' AND ')
 
       const results = db
         .prepare(
           `
-        SELECT s.id, s.title, s.language, s.timestamp, s.type, s.tags, s.is_draft, s.sort_index
+        SELECT s.id, s.title, s.language, s.timestamp, s.type, s.tags, s.is_draft, s.sort_index, snippet(snippets_fts, 1, '__MARK__', '__/MARK__', '...', 20) as match_context
         FROM snippets s
         INNER JOIN snippets_fts fts ON s.rowid = fts.rowid
         WHERE snippets_fts MATCH ?
-        ORDER BY rank
-        LIMIT 100
+        ORDER BY bm25(snippets_fts, 10.0, 1.0, 5.0)
+        LIMIT 10
       `
         )
         .all(ftsQuery)
@@ -74,7 +78,7 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
         FROM snippets
         WHERE title LIKE ? OR code LIKE ? OR tags LIKE ?
         ORDER BY timestamp DESC
-        LIMIT 100
+        LIMIT 10
       `
         )
         .all(likeQuery, likeQuery, likeQuery)
@@ -85,6 +89,16 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
   // Save snippet
   ipcMain.handle('db:saveSnippet', (event, snippet) => {
     try {
+      // PRO-TIP: Prevent duplicate titles to keep the library clean
+      // We skip empty titles to allow multiple "New Drafts"
+      if (snippet.title && snippet.title.trim()) {
+        const existing = db
+          .prepare('SELECT id FROM snippets WHERE title = ? COLLATE NOCASE AND id != ?')
+          .get(snippet.title.trim(), snippet.id)
+        if (existing) {
+          throw new Error('DUPLICATE_TITLE')
+        }
+      }
       const dbPayload = {
         ...snippet,
         // Ensure tags is a string for storage

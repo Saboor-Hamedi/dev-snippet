@@ -13,8 +13,15 @@ const SystemStatusFooter = ({ snippets = [] }) => {
   }, [])
 
   return (
-    <div className="flex items-center justify-between px-6 py-2 select-none bg-[var(--welcome-bg)] border-t border-[var(--color-border)]/10">
-      <div className="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-300 ">
+    <div
+      className="flex items-center justify-between px-3 py-1 select-none border-t"
+      style={{
+        backgroundColor: 'var(--footer-bg)',
+        color: 'var(--statusbar-text)',
+        borderColor: 'var(--color-border)'
+      }}
+    >
+      <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--statusbar-text)' }}>
         {/* System Ready - Using 'px-1 py-0.5' for similar height/padding as extension/zoom */}
         <div className="flex items-center gap-1.5 px-1 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-default">
           <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full"></div>
@@ -26,7 +33,7 @@ const SystemStatusFooter = ({ snippets = [] }) => {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+      <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--statusbar-text)' }}>
         {/* Snippets Count - Using 'px-1 py-0.5' */}
         <div className="flex items-center gap-1 px-1 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-default">
           <span className="font-mono tabular-nums">{snippets.length}</span>

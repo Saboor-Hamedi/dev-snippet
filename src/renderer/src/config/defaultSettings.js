@@ -10,7 +10,7 @@ export const DEFAULT_SETTINGS = {
     fontSize: 16,
     fontFamily: 'JetBrains Mono',
     lineNumbers: true,
-    wordWrap: 'on',
+    wordWrap: 'off',
     overlayMode: false,
     tabSize: 2,
     theme: 'dark'
@@ -30,7 +30,7 @@ export const DEFAULT_SETTINGS = {
   gutter: {
     gutterBgColor: '#232731',
     gutterBorderColor: 'transparent',
-    gutterBorderWidth: 1
+    gutterBorderWidth: 0
   },
   livePreview: {
     bgColor: '#232731',
@@ -39,6 +39,11 @@ export const DEFAULT_SETTINGS = {
     borderRound: 0
   },
   ui: {
+    activityBarBg: '#333333',
+    sidebarBg: '#252526',
+    statusBarBg: '#232731', // Editor header status bar
+    footerBg: '#232731', // System status footer
+    headerBg: '#232731', // Main header
     compactMode: false,
     showPreview: false,
     sidebarWidth: 250,

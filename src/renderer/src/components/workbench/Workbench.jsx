@@ -4,10 +4,13 @@ import SnippetEditor from './SnippetEditor'
 import SettingsPanel from '../SettingsPanel'
 import WelcomePage from '../WelcomePage'
 import Header from '../layout/Header'
-import SystemStatusFooter from '../SystemStatusFooter'
+
 import SidebarTheme from '../preference/SidebarTheme'
 import { File } from 'lucide-react'
-import useGeneralProp from '../../hook/settings/useGeneralProp.js'
+
+import SnippetSidebar from './SnippetSidebar'
+import ActivityBar from '../layout/ActivityBar'
+import StatusBar from '../StatusBar'
 
 const Workbench = ({
   activeView,
@@ -29,26 +32,40 @@ const Workbench = ({
   autosaveStatus,
   onAutosave,
   showToast,
-  hideWelcomePage
+  hideWelcomePage,
+  onSearchSnippets
 }) => {
   const handleSave = (snippet) => {
     onSave(snippet)
   }
-  const { welcomeBg } = useGeneralProp() // Get welcome background color
 
-  // Toggle sidebarTheme.
-  const [isSidebarThemeOpen, setIsSidebarThemeOpen] = React.useState(false)
+  // --- Sidebar State Management ---
+  const [activeSidebarTab, setActiveSidebarTab] = React.useState('explorer')
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(true)
+
+  const handleTabChange = (tabId) => {
+    if (activeSidebarTab === tabId) {
+      // Toggle if clicking active tab
+      setIsSidebarOpen(!isSidebarOpen)
+    } else {
+      // Switch tab and ensure open
+      setActiveSidebarTab(tabId)
+      setIsSidebarOpen(true)
+    }
+  }
+
   const handleSettingsClick = () => {
     if (onOpenSettings) {
       onOpenSettings()
     }
   }
+
   React.useEffect(() => {
     const handleKeyDown = (e) => {
       // Check for Ctrl+B (Windows/Linux) or Cmd+B (Mac)
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
-        e.preventDefault() // Prevent default browser behavior (bold text etc.)
-        setIsSidebarThemeOpen((prev) => !prev)
+        e.preventDefault()
+        setIsSidebarOpen((prev) => !prev)
       }
     }
 
@@ -73,8 +90,6 @@ const Workbench = ({
   }
 
   const renderContent = () => {
-    // SidebarTheme here, it will everhwhere.
-
     // Priority 0: Settings
     if (activeView === 'settings') {
       return <SettingsPanel onClose={onCloseSettings} />
@@ -84,7 +99,6 @@ const Workbench = ({
     if (activeView === 'editor') {
       return (
         <SnippetEditor
-          key={selectedSnippet?.id || 'create-mode-editor'}
           initialSnippet={selectedSnippet}
           snippets={snippets}
           onSave={onSave}
@@ -106,7 +120,6 @@ const Workbench = ({
     if (selectedSnippet) {
       return (
         <SnippetEditor
-          key={selectedSnippet.id}
           initialSnippet={selectedSnippet}
           snippets={snippets}
           onSave={handleSave}
@@ -126,10 +139,13 @@ const Workbench = ({
     // FINAL FALLBACK: Welcome page or Empty State
     if (hideWelcomePage) {
       return (
-        <div className="h-full w-full flex flex-col " style={{ backgroundColor: welcomeBg }}>
+        <div
+          className="h-full w-full flex flex-col "
+          style={{ backgroundColor: 'var(--welcome-bg, #232731)' }}
+        >
           {/* Main Content Container - Max width for better reading experience on large screens */}
           <div className="flex-1 flex justify-center overflow-auto">
-            {/* Original Action Block (Optional: kept as secondary/alternative actions) */}
+            {/* Original Action Block - Keeping it clean */}
             <div className=" p-2 m-auto flex items-center">
               <div>
                 <h1 className="text-3xl font-light text-[var(--color-text-primary)] mb-1 text-center">
@@ -141,9 +157,6 @@ const Workbench = ({
               </div>
             </div>
           </div>
-
-          {/* Footer for Empty State */}
-          <SystemStatusFooter snippets={snippets || []} />
         </div>
       )
     }
@@ -151,9 +164,7 @@ const Workbench = ({
     return (
       <WelcomePage
         onNewSnippet={onNewSnippet}
-        onNewProject={() => {
-          /* TODO: Implement project creation */
-        }}
+        onNewProject={() => {}}
         onOpenSettings={onOpenSettings}
         onSelectSnippet={onSelectSnippet}
         snippets={snippets || []}
@@ -163,21 +174,90 @@ const Workbench = ({
   }
 
   return (
-    <div className="h-full flex overflow-hidden">
-      {/* This is where the sidebar theme appears.  */}
-      <SidebarTheme
-        isOpen={isSidebarThemeOpen}
-        onToggle={() => setIsSidebarThemeOpen(!isSidebarThemeOpen)}
+    <div className="h-full flex flex-col overflow-hidden">
+      {/* Header - Full Width */}
+      <Header
+        title={getHeaderTitle()}
+        isCompact={isCompact}
+        onToggleCompact={onToggleCompact}
+        autosaveStatus={autosaveStatus}
+        isSidebarOpen={isSidebarOpen}
+        onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        onSave={() => selectedSnippet && onSave(selectedSnippet)}
+        onNewSnippet={onNewSnippet}
+        onSearch={() => setActiveSidebarTab('explorer')}
+        sidebarWidth={250}
       />
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <Header
-          title={getHeaderTitle()}
-          isCompact={isCompact}
-          onToggleCompact={onToggleCompact}
-          autosaveStatus={autosaveStatus}
+
+      {/* Main Workspace (ActivityBar + Sidebar + Editor) */}
+      <div className="flex-1 flex overflow-hidden min-h-0">
+        {/* Activity Bar (Icons) */}
+        <ActivityBar
+          activeTab={activeSidebarTab}
+          onTabChange={handleTabChange}
+          onSettings={onOpenSettings}
         />
-        <div className="flex-1 min-h-0 overflow-hidden">{renderContent()}</div>
+
+        {/* Sidebars Container (Stacking) */}
+        {/* We render both but control visibility via 'isOpen' prop for animation */}
+
+        {/* Sidebars Container (Stacking) - Unified Transition Wrapper */}
+        <aside
+          className="flex flex-col overflow-hidden h-full z-10 relative"
+          style={{
+            width: isSidebarOpen ? 250 : 0,
+            backgroundColor: 'var(--sidebar-bg)',
+            borderRight: isSidebarOpen ? '1px solid var(--color-border)' : 'none',
+            transition: 'width 300ms ease-in-out, opacity 300ms ease-in-out',
+            opacity: isSidebarOpen ? 1 : 0,
+            willChange: 'width, opacity'
+          }}
+        >
+          <div
+            className="h-full w-full flex flex-col"
+            style={{ display: activeSidebarTab === 'themes' ? 'flex' : 'none' }}
+          >
+            <SidebarTheme
+              isOpen={true} // Child always thinks it's open, parent handles collapse
+              onToggle={() => setIsSidebarOpen(false)}
+            />
+          </div>
+
+          <div
+            className="h-full w-full flex flex-col"
+            style={{ display: activeSidebarTab === 'explorer' ? 'flex' : 'none' }}
+          >
+            <SnippetSidebar
+              isOpen={true} // Child always thinks it's open
+              snippets={snippets}
+              selectedSnippet={selectedSnippet}
+              onNew={onNewSnippet}
+              onSearch={onSearchSnippets}
+              onSelect={(s) => {
+                if (onSelectSnippet) onSelectSnippet(s)
+              }}
+              onToggle={() => setIsSidebarOpen(false)}
+            />
+          </div>
+        </aside>
+
+        {/* Editor Area */}
+        <div className="flex-1 flex flex-col min-w-0 bg-[var(--editor-bg)]">
+          <div className="flex-1 min-h-0 overflow-hidden text-clip">{renderContent()}</div>
+
+          <div className="flex-none border-t border-[var(--color-border)] bg-[var(--footer-bg)]">
+            <StatusBar
+              title={selectedSnippet?.title}
+              zoomLevel={1}
+              onSettingsClick={onOpenSettings}
+              snippets={snippets || []}
+              hideWelcomePage={hideWelcomePage}
+              onToggleWelcomePage={(val) => {
+                // Optional toggle handler
+              }}
+            />
+          </div>
+        </div>
       </div>
     </div>
   )

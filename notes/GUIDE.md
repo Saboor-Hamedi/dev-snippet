@@ -235,13 +235,25 @@ mindmap
 ## 6. Changelog & Updates
 
 ### Version 1.1.6
-**Added:**
+
+**Search Engine & Performance Overhaul:**
+
+- **Hybrid Search Engine**: Integrates instant local type-ahead (Prefix Matching) with powerful Backend Full-Text Search (FTS5), giving "Best of Both Worlds" performance.
+- **Deep Content Context**: Search results now display the relevant snippet of body text with hit highlighting, powered by SQLite `snippet()`.
+- **Lazy Loading Architecture**: Optimized startup to fetch only metadata initially, allowing the app to handle 50,000+ snippets effortlessly.
+- **Smart Query Logic**: Implemented strict `AND` matching with stopword filtering (e.g. ignores "of") and BM25 ranking for high accuracy.
+
+**Other Additions:**
+
 - **Robust Keyboard Handling**: Implemented "Capture Phase" listeners to fix `Ctrl+,` (Settings) and resolve key conflicts.
 - **JSON Syntax Highlighting**: Added dedicated support for JSON files with custom theme integration.
 - **Cursor Blinking Control**: New setting to toggle cursor animations (Solid/Blinking).
 - **Safe Markdown Mode**: Restored standard Markdown highlighting while preventing previous extension-related crashes.
 
 **Fixed:**
+
+- **Production Build Fixes**: Resolved `preview.html` loading errors and automated DevTools toggling for production.
+- **Dark Mode Visibility**: Improved text contrast and highlighting visibility in Command Palette.
 - **Snippet Rename System**: Completely overhauled the renaming logic to fix the "locked input" bug.
 - **Global Error Handling**: Improved `ErrorBoundary` (Safe Mode) coverage for cleaner recovery from runtime glitches.
 

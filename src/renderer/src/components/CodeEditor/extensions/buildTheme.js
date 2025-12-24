@@ -10,7 +10,7 @@ const buildTheme = (EditorView, options = {}) => {
         fontSize: fontSize,
         lineHeight: '1.6',
         height: '100%',
-        paddingLeft: '4px' /* Safety padding for measurements */,
+        paddingLeft: '0' /* Safety padding for measurements */,
         transition: 'background-color 140ms ease, color 140ms ease'
       },
 

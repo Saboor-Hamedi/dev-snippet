@@ -146,32 +146,46 @@ const LivePreview = ({
   }, [])
 
   return (
-    <div className="w-full h-full flex flex-col bg-transparent overflow-hidden">
+    <div
+      className="w-full h-full flex flex-col bg-transparent overflow-hidden"
+      style={{
+        '--live-preview-bg': 'var(--live-preview-bg-color, var(--color-bg-primary))',
+        '--live-preview-border-color': 'var(--live-preview-border-color, var(--color-border))',
+        '--live-preview-border-width': 'var(--live-preview-border-width, 0px)',
+        '--live-preview-border-radius': 'var(--live-preview-border-round, 0px)'
+      }}
+    >
       {/* Premium Preview Toolbar */}
-      {/* Premium Mac-Style Toolbar */}
       <div
-        className="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-[#0d1117] border-b border-slate-200 dark:border-slate-800 z-10 sticky top-0 transition-colors duration-300 overflow-x-auto"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        className="flex items-center justify-between px-3 py-2 z-10 sticky top-0 transition-colors duration-300 overflow-x-auto"
+        style={{
+          backgroundColor: 'var(--header-bg, var(--color-bg-secondary))',
+          color: 'var(--header-text, var(--color-text-primary))',
+          borderBottom: '1px solid var(--color-border)',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none'
+        }}
       >
         {/* Left: Window Controls decoration */}
         <div className="flex items-center gap-2 flex-shrink-0">
           {!splitContext?.overlayMode && (
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 tracking-wider select-none uppercase opacity-80 pl-1">
+            <span
+              className="text-[11px] font-bold tracking-wider select-none uppercase opacity-80 pl-1"
+              style={{ color: 'var(--color-text-secondary)' }}
+            >
               PREVIEW ENGINE
             </span>
           )}
 
           {/* Integrated Overlay Resize Controls */}
           {splitContext?.overlayMode && (
-            <div
-              className={`flex items-center gap-1 h-4 ${!splitContext?.overlayMode ? 'ml-3 pl-3 border-l border-slate-300 dark:border-slate-700' : ''}`}
-            >
+            <div className="flex items-center gap-1 h-4">
               <button
                 onClick={() => {
                   splitContext.setOverlayWidth(25)
                   localStorage.setItem('overlayWidth', 25)
                 }}
-                className={`p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${splitContext.overlayWidth === 25 ? 'text-blue-500 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`}
+                className={`p-1 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors ${splitContext.overlayWidth === 25 ? 'text-blue-500' : 'text-slate-400'}`}
                 title="Mobile (25%)"
               >
                 <Smartphone size={14} strokeWidth={2.5} />
@@ -181,7 +195,7 @@ const LivePreview = ({
                   splitContext.setOverlayWidth(50)
                   localStorage.setItem('overlayWidth', 50)
                 }}
-                className={`p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${splitContext.overlayWidth === 50 ? 'text-blue-500 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`}
+                className={`p-1 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors ${splitContext.overlayWidth === 50 ? 'text-blue-500' : 'text-slate-400'}`}
                 title="Tablet (50%)"
               >
                 <Tablet size={14} strokeWidth={2.5} />
@@ -191,7 +205,7 @@ const LivePreview = ({
                   splitContext.setOverlayWidth(75)
                   localStorage.setItem('overlayWidth', 75)
                 }}
-                className={`p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${splitContext.overlayWidth === 75 ? 'text-blue-500 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`}
+                className={`p-1 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors ${splitContext.overlayWidth === 75 ? 'text-blue-500' : 'text-slate-400'}`}
                 title="Desktop (75%)"
               >
                 <Monitor size={14} strokeWidth={2.5} />
@@ -206,8 +220,8 @@ const LivePreview = ({
           <button
             onClick={onOpenMiniPreview}
             className="flex items-center justify-center w-7 h-7 rounded-md transition-all
-            text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400
-            hover:bg-slate-100 dark:hover:bg-slate-800/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+            hover:bg-black/5 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+            style={{ color: 'var(--color-text-secondary)' }}
             title="Pop out Mini Preview"
           >
             <svg
@@ -230,8 +244,8 @@ const LivePreview = ({
           <button
             onClick={onOpenExternal}
             className="flex items-center justify-center w-7 h-7 rounded-md transition-all
-            text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400
-            hover:bg-slate-100 dark:hover:bg-slate-800/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            hover:bg-black/5 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            style={{ color: 'var(--color-text-secondary)' }}
             title="Open in System Browser"
           >
             <svg
@@ -251,15 +265,18 @@ const LivePreview = ({
             </svg>
           </button>
 
-          <div className="h-4 w-px bg-slate-300 dark:bg-slate-700 mx-1" />
+          <div className="h-4 w-px mx-1" style={{ backgroundColor: 'var(--color-border)' }} />
 
           {/* Export PDF Button (Highlighted) */}
           <button
             onClick={onExportPDF}
             className="flex items-center gap-1.5 px-2 py-1 rounded-md transition-all
-            bg-slate-900 dark:bg-white text-white dark:text-slate-900 border border-transparent
-            hover:bg-slate-700 dark:hover:bg-slate-200 active:transform active:scale-95
-            text-[10px] font-bold shadow-sm"
+            active:transform active:scale-95 text-[10px] font-bold shadow-sm"
+            style={{
+              backgroundColor: 'var(--color-accent-primary)',
+              color: 'white',
+              border: 'none'
+            }}
             title="Export to PDF"
           >
             <svg
@@ -282,7 +299,14 @@ const LivePreview = ({
         </div>
       </div>
 
-      <div className="flex-1 bg-transparent overflow-hidden">
+      <div
+        className="flex-1 overflow-hidden"
+        style={{
+          backgroundColor: 'var(--live-preview-bg)',
+          border: 'var(--live-preview-border-width) solid var(--live-preview-border-color)',
+          borderRadius: 'var(--live-preview-border-radius)'
+        }}
+      >
         <iframe
           ref={iframeRef}
           title="Premium Live Preview"

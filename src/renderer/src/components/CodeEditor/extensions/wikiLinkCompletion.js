@@ -7,48 +7,47 @@ import { autocompletion } from '@codemirror/autocomplete'
 /**
  * Creates a completion source that matches text between [[ and ]]
  */
-export function wikiLinkCompletionSource(titles = []) {
+export const wikiLinkCompletionSource = (titles = []) => {
   return (context) => {
-    // Match the text before the cursor
+    // Search for [[ before the cursor
     const word = context.matchBefore(/\[\[[^\]]*$/)
     if (!word) return null
-
-    // We only want to trigger if it starts with [[
     if (word.from === word.to && !context.explicit) return null
 
-    // Extract the search term (everything after [[)
     const searchText = word.text.slice(2).toLowerCase()
 
-    return {
-      from: word.from + 2, // Start replacing after the [[
-      options: titles
-        .filter((title) => title.toLowerCase().includes(searchText))
-        .map((title) => ({
-          label: title,
-          type: 'keyword',
-          boost: 1,
-          apply: (view, completion, from, to) => {
-            const hasClosing = view.state.doc.sliceString(to, to + 2) === ']]'
-            const insertPart = completion.label + (hasClosing ? '' : ']]')
+    // Filter titles based on searchText
+    const filtered = titles.filter((t) => t.toLowerCase().includes(searchText))
 
-            view.dispatch({
-              changes: { from, to, insert: insertPart },
-              selection: { anchor: from + completion.label.length + 2 },
-              userEvent: 'input.complete',
-              scrollIntoView: true
-            })
-          }
-        })),
-      validFor: /^[^\]]*$/
+    return {
+      from: word.from + 2,
+      options: filtered.map((title) => ({
+        label: title,
+        displayLabel: `[[${title}]]`,
+        type: 'variable',
+        boost: 99,
+        apply: (view, completion, from, to) => {
+          // Check if there's already a closing ]]
+          const after = view.state.doc.sliceString(to, to + 2)
+          const insertText = completion.label + (after === ']]' ? '' : ']]')
+
+          view.dispatch({
+            changes: { from, to, insert: insertText },
+            selection: { anchor: from + completion.label.length + (after === ']]' ? 0 : 2) },
+            userEvent: 'input.complete'
+          })
+        }
+      })),
+      filter: false // We handled filtering
     }
   }
 }
 
-/**
- * Returns the wiki link completion extension
- */
 export default function wikiLinkCompletion(titles = []) {
   return autocompletion({
-    override: [wikiLinkCompletionSource(titles)]
+    override: [wikiLinkCompletionSource(titles)],
+    icons: true,
+    defaultKeymap: true,
+    activateOnTyping: true
   })
 }

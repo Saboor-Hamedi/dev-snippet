@@ -113,6 +113,42 @@
 /* Removed empty cursor and activeLine rulesets */
 
 /* Smooth but stable scroller */
+/* Autocompletion Tooltip */
+.cm-tooltip-autocomplete {
+  background-color: var(--color-bg-secondary) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+  overflow: hidden !important;
+  z-index: 9999 !important;
+}
+
+.cm-tooltip-autocomplete ul {
+  max-height: 250px !important;
+}
+
+.cm-tooltip-autocomplete ul li {
+  padding: 4px 8px !important;
+  font-size: 13px !important;
+  transition: background-color 0.1s ease !important;
+  color: var(--color-text-primary) !important;
+}
+
+.cm-tooltip-autocomplete ul li[aria-selected] {
+  background-color: var(--color-accent-primary) !important;
+  color: white !important;
+}
+
+.cm-completionLabel {
+  font-family: inherit !important;
+}
+
+.cm-completionType {
+  opacity: 0.5 !important;
+  font-size: 10px !important;
+  margin-left: 8px !important;
+}
+
 .cm-scroller {
   scroll-behavior: auto !important; /* Disable browser 'smooth scroll' which lags parser sync */
   will-change: scroll-position !important;

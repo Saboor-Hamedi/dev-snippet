@@ -11,56 +11,88 @@ import { Search, FileCode, ArrowRight, Hash, Terminal, Clock, ShieldCheck } from
 const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
   const [search, setSearch] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
+  const [searchResults, setSearchResults] = useState(null)
   const inputRef = useRef(null)
   const scrollRef = useRef(null)
 
-  // 1. SMART RANKING ENGINE
+  // 1. HYBRID SEARCH ENGINE
+  // - Empty query: Show local Recent files (Immediate)
+  // - Typing: Use Backend FTS (Scalable & Full Content Search)
+  useEffect(() => {
+    const query = search.trim()
+    if (!query) {
+      setSearchResults(null)
+      return
+    }
+
+    const timer = setTimeout(async () => {
+      // Use Backend Search if available (supports Content Search + FTS)
+      if (window.api?.searchSnippets) {
+        try {
+          const results = await window.api.searchSnippets(query)
+          setSearchResults(results)
+        } catch (e) {
+          console.error('Search failed', e)
+        }
+      }
+    }, 150) // 150ms debounce
+
+    return () => clearTimeout(timer)
+  }, [search])
+
   const filteredItems = useMemo(() => {
     const query = search.toLowerCase().trim()
+
+    // CASE 1: Recents (No Query)
     if (!query) {
-      // Show most recent first when empty
       return [...snippets].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)).slice(0, 15)
     }
 
-    return snippets
+    // CASE 2: Hybrid Search (Merge Client Title Matches + Backend Content Matches)
+
+    // A. Client-Side Title Search (Instant Type-ahead)
+    // This ensures "docu" matches "documentation" immediately without waiting for FTS
+    const clientMatches = snippets
       .map((item) => {
         const title = (item.title || '').toLowerCase()
         const tags = Array.isArray(item.tags)
           ? item.tags.join(' ').toLowerCase()
           : (item.tags || '').toLowerCase()
-        const lang = (item.language || '').toLowerCase()
-        const code = (item.code || '').toLowerCase()
         let score = 0
 
-        // Exact match (Highest Priority)
         if (title === query) score += 1000
-        // Prefix match
         else if (title.startsWith(query)) score += 500
-        // Word boundary match
-        else if (title.includes(` ${query}`)) score += 300
-        // Substring match
         else if (title.includes(query)) score += 100
-
-        // Secondary matches (Tags & Lang)
         if (tags.includes(query)) score += 50
-        if (lang.includes(query)) score += 30
-
-        // Deep Content Search (The "Content King" Upgrade)
-        // Check for matches within the actual snippet code/notes
-        if (code.includes(query)) score += 20
 
         return { item, score }
       })
       .filter((res) => res.score > 0)
-      .sort((a, b) => b.score - a.score || (b.item.timestamp || 0) - (a.item.timestamp || 0))
+      .sort((a, b) => b.score - a.score)
       .map((res) => res.item)
-      .slice(0, 25)
-  }, [search, snippets])
 
-  // Reset index on search
+    // B. Backend Matches (Content & FTS)
+    const backendMatches = searchResults || []
+
+    // C. Merge Strategy
+    // 1. Start with Client Matches (Top correctness for Titles)
+    // 2. Enhance them with Backend Data (Context) if available
+    // 3. Append remaining Backend Matches (Content-only matches)
+
+    // Create map for fast lookup of backend results (to get 'match_context')
+    const backendMap = new Map(backendMatches.map((i) => [i.id, i]))
+
+    const merged = clientMatches.map((c) => backendMap.get(c.id) || c)
+
+    const backendOnly = backendMatches.filter((b) => !merged.find((m) => m.id === b.id))
+
+    return [...merged, ...backendOnly].slice(0, 25)
+  }, [search, snippets, searchResults])
+
+  // Reset index on search change
   useEffect(() => {
     setSelectedIndex(0)
-  }, [search])
+  }, [search, searchResults])
 
   // Focus and handle navigation
   useEffect(() => {
@@ -98,7 +130,16 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
   // Helper to highlight matching text
   const HighlightText = ({ text, highlight }) => {
     if (!highlight.trim()) return <span>{text}</span>
-    const regex = new RegExp(`(${highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
+    // Support multi-term highlighting (e.g. "react hook" highlights both)
+    const terms = highlight
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+
+    if (terms.length === 0) return <span>{text}</span>
+
+    const regex = new RegExp(`(${terms.join('|')})`, 'gi')
     const parts = text.split(regex)
     return (
       <span>
@@ -204,14 +245,14 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
                     <div className="flex-1 min-w-0">
                       <div
                         className={`text-[14px] font-semibold truncate tracking-tight ${
-                          isSelected ? 'text-white' : 'text-slate-800 dark:text-slate-100'
+                          isSelected ? 'text-white' : 'text-slate-700 dark:text-white'
                         }`}
                       >
                         <HighlightText text={item.title || 'Untitled'} highlight={search} />
                       </div>
                       <div
                         className={`flex items-center gap-4 mt-0.5 text-[11px] font-medium ${
-                          isSelected ? 'text-emerald-50/90' : 'text-slate-500 dark:text-slate-500'
+                          isSelected ? 'text-emerald-50/90' : 'text-slate-500 dark:text-slate-400'
                         }`}
                       >
                         <span className="flex items-center gap-1.5">
@@ -237,13 +278,36 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
                               ))}
                           </div>
                         )}
-                        {isContentMatch && (
-                          <span
-                            className={`flex items-center gap-1 opacity-70 ${isSelected ? 'text-white' : 'text-emerald-600 dark:text-emerald-500/80'}`}
-                          >
-                            <Search size={10} className="stroke-[3]" />
-                            <span>match in content</span>
-                          </span>
+                        {item.match_context ? (
+                          <div className="mt-1.5 text-[11px] font-mono text-slate-500 dark:text-slate-500/80 bg-slate-100/50 dark:bg-slate-800/50 px-1.5 py-0.5 rounded border border-slate-200/50 dark:border-slate-700/50 w-full truncate">
+                            <span className="opacity-60">...</span>
+                            {item.match_context
+                              .split(/(__MARK__|__\/MARK__)/)
+                              .map((part, i, arr) => {
+                                if (part === '__MARK__' || part === '__/MARK__') return null
+                                const isHighlight = i > 0 && arr[i - 1] === '__MARK__'
+                                return isHighlight ? (
+                                  <span
+                                    key={i}
+                                    className="text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-100/30 dark:bg-emerald-900/30 px-0.5 rounded-[1px]"
+                                  >
+                                    {part}
+                                  </span>
+                                ) : (
+                                  <span key={i}>{part}</span>
+                                )
+                              })}
+                            <span className="opacity-60">...</span>
+                          </div>
+                        ) : (
+                          isContentMatch && (
+                            <span
+                              className={`flex items-center gap-1 opacity-70 ${isSelected ? 'text-white' : 'text-emerald-600 dark:text-emerald-500/80'}`}
+                            >
+                              <Search size={10} className="stroke-[3]" />
+                              <span>match in content</span>
+                            </span>
+                          )
                         )}
                       </div>
                     </div>

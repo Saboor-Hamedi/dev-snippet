@@ -35,7 +35,7 @@ const CodeEditor = ({
   const editorDomRef = useRef(null)
   const snippetTitles = useMemo(() => {
     return snippets.map((s) => (s.title || '').trim()).filter(Boolean)
-  }, [snippets])
+  }, [snippets.length, snippets.map((s) => s.id).join(',')])
 
   // CONSUME SETTINGS VIA REFACTOR HOOKS (SOLID)
   const {
@@ -57,12 +57,26 @@ const CodeEditor = ({
   const [isDark, setIsDark] = useState(false)
 
   useEffect(() => {
-    if (typeof document !== 'undefined') {
+    if (typeof document === 'undefined') return
+
+    const updateTheme = () => {
       const dark =
         document.documentElement.classList.contains('dark') ||
         document.documentElement.getAttribute('data-theme') === 'dark'
       setIsDark(dark)
     }
+
+    // Initial check
+    updateTheme()
+
+    // Observe changes to class or data-theme
+    const observer = new MutationObserver(updateTheme)
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class', 'data-theme']
+    })
+
+    return () => observer.disconnect()
   }, [])
 
   // Initial base extensions (Theme only) to prevent FOUC
@@ -190,15 +204,13 @@ const CodeEditor = ({
       }
     }
 
-    // Immediate load if already loaded once or simple update
-    // Only delay on very first mount if strictly necessary, but 150ms is too long for perceived lag
+    // Immediate load or delayed load for first mount
     if (!extensionsLoaded) {
-      // Delay to ensure parent layout (SplitPane) is stable before heavy measurement
-      // 50ms is imperceptible to users but allows the UI frame to settle.
       timeoutId = setTimeout(() => {
         window.requestAnimationFrame(loadFullEditorEngine)
       }, 50)
     } else {
+      // For subsequent prop updates, just load it
       loadFullEditorEngine()
     }
 
@@ -211,13 +223,11 @@ const CodeEditor = ({
     cursorWidth,
     cursorShape,
     cursorColor,
-    // cursorBlinking, // Handled via CSS/Data Attribute
-    // cursorBlinkingSpeed, // Handled via CSS Variable
     isLargeFile,
-    extensionsLoaded,
-    snippetTitles
-    // Removed cursorActiveLineBg etc from dep array as buildExtensions might not use them all effectively needing re-run
-    // But kept critical ones.
+    // extensionsLoaded, // REMOVED: This causes a double-render loop
+    snippetTitles,
+    isDark,
+    language
   ])
 
   return (
@@ -245,6 +255,7 @@ const CodeEditor = ({
         onChange={onChange}
         readOnly={readOnly}
         extensions={allExtensions}
+        basicSetup={false}
         height="100%"
         theme={isDark ? 'dark' : 'light'}
         className={`${className} h-full`}

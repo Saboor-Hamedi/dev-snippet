@@ -22,11 +22,22 @@ export const useSnippetData = () => {
         return
       }
 
+      // Optimistic update: Show what we have (title, metadata) IMMEDIATELY
+      // This makes the sidebar selection feel instant.
+      setSelectedSnippetState(item)
+
       // Otherwise fetch full content from DB
       if (window.api?.getSnippetById) {
         const fullSnippet = await window.api.getSnippetById(item.id)
-        setSelectedSnippetState(fullSnippet || item)
+        // Only update if the user hasn't switched to another snippet in the meantime
+        setSelectedSnippetState((current) => {
+          if (current && current.id === item.id) {
+            return fullSnippet || item
+          }
+          return current
+        })
       } else {
+        // Fallback if no API
         setSelectedSnippetState(item)
       }
     } catch (err) {
@@ -39,8 +50,13 @@ export const useSnippetData = () => {
     const loadData = async () => {
       try {
         if (window.api?.getSnippets) {
-          // Fetch only metadata for the sidebar/list - MUCH faster
-          const loadedSnippets = await window.api.getSnippets({ metadataOnly: true })
+          // Fetch only recent metadata for the sidebar/list - MUCH faster
+          // We limit to 100 for instant startup; older items are accessed via Search.
+          const loadedSnippets = await window.api.getSnippets({
+            metadataOnly: true,
+            limit: 100,
+            offset: 0
+          })
           setSnippets(loadedSnippets || [])
         }
       } catch (error) {
@@ -81,7 +97,14 @@ export const useSnippetData = () => {
       }
       showToast('✓ Snippet saved successfully')
     } catch (error) {
-      showToast('❌ Failed to save snippet')
+      // Don't show generic toast here if we want caller to handle specific errors (like DUPLICATE)
+      // But we can show it if it's NOT a Duplicate error?
+      // Actually, cleaner to let caller handle UI entirely?
+      // For now, keep generic toast as fallback but re-throw.
+      if (!error.message?.includes('DUPLICATE')) {
+        showToast('❌ Failed to save snippet')
+      }
+      throw error
     }
   }
 
@@ -117,6 +140,31 @@ export const useSnippetData = () => {
     }
   }
 
+  // Search snippets
+  const searchSnippetList = async (query) => {
+    try {
+      if (!query || !query.trim()) {
+        // Reset to default view (Recent 100)
+        if (window.api?.getSnippets) {
+          const recents = await window.api.getSnippets({
+            metadataOnly: true,
+            limit: 100,
+            offset: 0
+          })
+          setSnippets(recents || [])
+        }
+        return
+      }
+
+      if (window.api?.searchSnippets) {
+        const results = await window.api.searchSnippets(query)
+        setSnippets(results || [])
+      }
+    } catch (error) {
+      console.error('Search failed:', error)
+    }
+  }
+
   return {
     snippets,
     setSnippets,
@@ -125,6 +173,7 @@ export const useSnippetData = () => {
     selectedSnippet,
     setSelectedSnippet,
     saveSnippet,
-    deleteItem
+    deleteItem,
+    searchSnippetList
   }
 }

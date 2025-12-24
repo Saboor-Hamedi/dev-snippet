@@ -24,6 +24,7 @@ export const themes = [
       // Component-specific variables
       '--editor-bg': '#ffffff',
       '--editor-text': '#24292f',
+      '--gutter-text-color': '#586069',
       '--statusbar-bg': '#f6f8fa',
       '--statusbar-text': '#586069',
       '--header-bg': '#ffffff',
@@ -35,6 +36,7 @@ export const themes = [
       // Gutter variables
       '--gutter-bg-color': '#f6f8fa',
       '--gutter-border-color': '#d1d9e0',
+      '--activity-bar-bg': '#f6f8fa',
       background: '#ffffff',
       sidebar: '#f6f8fa',
       text: '#24292f',
@@ -46,6 +48,9 @@ export const themes = [
       welcome: {
         welcomePage: '#f6f8fa'
       },
+      editor: {
+        editorBgColor: '#ffffff'
+      },
       gutter: {
         gutterBgColor: '#f6f8fa',
         gutterBorderColor: '#d1d9e0',
@@ -55,10 +60,17 @@ export const themes = [
         color: '#050e18ff'
       },
       livePreview: {
-        bgColor: '#f6f8fa',
+        bgColor: '#ffffff',
         borderColor: '#d1d9e0',
         borderWidth: 1,
         borderRound: 4
+      },
+      ui: {
+        activityBarBg: '#f6f8fa',
+        sidebarBg: '#f6f8fa',
+        statusBarBg: '#f6f8fa',
+        footerBg: '#f6f8fa',
+        headerBg: '#ffffff'
       }
     },
     previewColors: ['bg-white', 'bg-gray-50', 'bg-blue-500']
@@ -86,6 +98,7 @@ export const themes = [
       // Component-specific variables
       '--editor-bg': '#0d1117',
       '--editor-text': '#c9d1d9',
+      '--gutter-text-color': '#8b949e',
       '--statusbar-bg': '#161b22',
       '--statusbar-text': '#8b949e',
       '--header-bg': '#0d1117',
@@ -97,6 +110,7 @@ export const themes = [
       // Gutter variables
       '--gutter-bg-color': '#161b22',
       '--gutter-border-color': '#30363d',
+      '--activity-bar-bg': '#161b22',
       background: '#0d1117',
       sidebar: '#161b22',
       text: '#c9d1d9',
@@ -108,6 +122,9 @@ export const themes = [
       welcome: {
         welcomePage: '#161b22'
       },
+      editor: {
+        editorBgColor: '#0d1117'
+      },
       gutter: {
         gutterBgColor: '#161b22',
         gutterBorderColor: '#30363d',
@@ -117,10 +134,17 @@ export const themes = [
         color: '#58a6ff'
       },
       livePreview: {
-        bgColor: '#161b22',
+        bgColor: '#0d1117',
         borderColor: '#30363d',
         borderWidth: 1,
         borderRound: 4
+      },
+      ui: {
+        activityBarBg: '#161b22',
+        sidebarBg: '#161b22',
+        statusBarBg: '#161b22',
+        footerBg: '#161b22',
+        headerBg: '#0d1117'
       }
     },
     previewColors: ['bg-[#0d1117]', 'bg-[#161b22]', 'bg-blue-500']
@@ -148,6 +172,7 @@ export const themes = [
       // Component-specific variables
       '--editor-bg': '#09090b',
       '--editor-text': '#e4e4e7',
+      '--gutter-text-color': '#a1a1aa',
       '--statusbar-bg': '#18181b',
       '--statusbar-text': '#a1a1aa',
       '--header-bg': '#09090b',
@@ -159,6 +184,7 @@ export const themes = [
       // Gutter variables
       '--gutter-bg-color': '#18181b',
       '--gutter-border-color': '#27272a',
+      '--activity-bar-bg': '#18181b',
       background: '#09090b',
       sidebar: '#18181b',
       text: '#e4e4e7',
@@ -170,6 +196,9 @@ export const themes = [
       welcome: {
         welcomePage: '#18181b'
       },
+      editor: {
+        editorBgColor: '#09090b'
+      },
       gutter: {
         gutterBgColor: '#18181b',
         gutterBorderColor: '#27272a',
@@ -179,10 +208,17 @@ export const themes = [
         color: '#d946ef'
       },
       livePreview: {
-        bgColor: '#18181b',
+        bgColor: '#09090b',
         borderColor: '#27272a',
         borderWidth: 1,
         borderRound: 4
+      },
+      ui: {
+        activityBarBg: '#18181b',
+        sidebarBg: '#18181b',
+        statusBarBg: '#18181b',
+        footerBg: '#18181b',
+        headerBg: '#09090b'
       }
     },
     previewColors: ['bg-[#09090b]', 'bg-[#18181b]', 'bg-fuchsia-500']
@@ -210,6 +246,7 @@ export const themes = [
       // Component-specific variables
       '--editor-bg': '#1c1917',
       '--editor-text': '#e7e5e4',
+      '--gutter-text-color': '#d6d3d1',
       '--statusbar-bg': '#292524',
       '--statusbar-text': '#d6d3d1',
       '--header-bg': '#1c1917',
@@ -221,6 +258,7 @@ export const themes = [
       // Gutter variables
       '--gutter-bg-color': '#292524',
       '--gutter-border-color': '#44403c',
+      '--activity-bar-bg': '#292524',
       background: '#1c1917',
       sidebar: '#292524',
       text: '#e7e5e4',
@@ -232,6 +270,9 @@ export const themes = [
       welcome: {
         welcomePage: '#292524'
       },
+      editor: {
+        editorBgColor: '#1c1917'
+      },
       gutter: {
         gutterBgColor: '#292524',
         gutterBorderColor: '#44403c',
@@ -241,13 +282,93 @@ export const themes = [
         color: '#22c55e'
       },
       livePreview: {
-        bgColor: '#292524',
+        bgColor: '#1c1917',
         borderColor: '#44403c',
         borderWidth: 1,
         borderRound: 4
+      },
+      ui: {
+        activityBarBg: '#292524',
+        sidebarBg: '#292524',
+        statusBarBg: '#292524',
+        footerBg: '#292524',
+        headerBg: '#1c1917'
       }
     },
     previewColors: ['bg-[#1c1917]', 'bg-[#292524]', 'bg-emerald-500']
+  },
+  {
+    id: 'minimal-gray',
+    name: 'Minimal Gray',
+    icon: '☁️',
+    description: 'Clean & minimal',
+    colors: {
+      '--color-bg-primary': '#ffffff',
+      '--color-bg-secondary': '#f6f6f6',
+      '--color-bg-tertiary': '#ededed',
+      '--color-text-primary': '#000000',
+      '--color-text-secondary': '#404040',
+      '--color-text-tertiary': '#737373',
+      '--color-accent-primary': '#000000',
+      '--color-border': '#e5e5e5',
+      '--hover-bg': '#e5e5e5',
+      '--hover-text': '#000000',
+      '--selected-bg': '#e5e5e5',
+      '--selected-text': '#000000',
+      '--sidebar-text': '#000000',
+      '--sidebar-header-text': '#000000',
+      // Component-specific variables
+      '--editor-bg': '#ffffff',
+      '--editor-text': '#000000',
+      '--gutter-text-color': '#000000',
+      '--statusbar-bg': '#f6f6f6',
+      '--statusbar-text': '#000000',
+      '--header-bg': '#f6f6f6',
+      '--header-text': '#000000',
+      '--sidebar-bg': '#f6f6f6',
+      '--sidebar-border': '#e5e5e5',
+      '--welcome-bg': '#ffffff',
+      '--welcome-text': '#000000',
+      // Gutter variables
+      '--gutter-bg-color': '#ffffff',
+      '--gutter-border-color': '#e5e5e5',
+      '--activity-bar-bg': '#f6f6f6',
+      background: '#ffffff',
+      sidebar: '#f6f6f6',
+      text: '#000000',
+      accent: '#000000',
+      border: '#e5e5e5'
+    },
+    settings: {
+      welcome: {
+        welcomePage: '#ffffff'
+      },
+      editor: {
+        editorBgColor: '#ffffff'
+      },
+      gutter: {
+        gutterBgColor: '#ffffff',
+        gutterBorderColor: '#e5e5e5',
+        gutterBorderWidth: 1
+      },
+      cursor: {
+        color: '#000000'
+      },
+      livePreview: {
+        bgColor: '#ffffff',
+        borderColor: '#e5e5e5',
+        borderWidth: 1,
+        borderRound: 4
+      },
+      ui: {
+        activityBarBg: '#f6f6f6',
+        sidebarBg: '#f6f6f6',
+        statusBarBg: '#f6f6f6',
+        footerBg: '#f6f6f6',
+        headerBg: '#f6f6f6'
+      }
+    },
+    previewColors: ['bg-[#ffffff]', 'bg-[#f6f6f6]', 'bg-gray-900']
   }
 ]
 
@@ -278,5 +399,13 @@ export const themeStyles = {
     hoverText: '#22c55e',
     selectedBg: '#14532d',
     selectedText: '#4ade80'
+  },
+  'minimal-gray': {
+    hoverBg: '#e5e5e5',
+    hoverText: '#000000',
+    selectedBg: '#e5e5e5',
+    selectedText: '#000000',
+    sidebarText: '#000000',
+    sidebarHeaderText: '#000000'
   }
 }

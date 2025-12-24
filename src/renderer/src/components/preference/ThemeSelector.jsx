@@ -1,11 +1,18 @@
 import React, { useState, memo, useMemo, useEffect, useRef } from 'react'
-import { Search, X, Plus, SearchCheckIcon, Check, Circle } from 'lucide-react'
+import { Search, X, Plus, Check, Circle, PanelLeftClose } from 'lucide-react'
 import { themeProps } from './theme/themeProps'
+import SidebarHeader from '../layout/SidebarHeader'
 
-const ThemeSelector = () => {
+const ThemeSelector = ({ onClose }) => {
   const [searchTerm, setSearchTerm] = useState('')
-  const { currentThemeId, setTheme, themes } = themeProps()
+  const { currentThemeId: contextThemeId, setTheme, themes } = themeProps()
+  const [currentThemeId, setCurrentThemeId] = useState(contextThemeId)
   const scrollRef = useRef(null)
+
+  // Sync local state when context updates
+  useEffect(() => {
+    setCurrentThemeId(contextThemeId)
+  }, [contextThemeId])
 
   // Filter themes based on search - memoized for performance
   const filteredThemes = useMemo(
@@ -20,28 +27,38 @@ const ThemeSelector = () => {
     }
   }, [filteredThemes])
 
-  const applyTheme = async (theme) => {
+  const applyTheme = (theme) => {
+    // Immediate local feedback for the tick mark
+    setCurrentThemeId(theme.id)
     setTheme(theme.id)
   }
 
   return (
     <div
-      className="flex h-full w-full flex-col p-2 text-gray-300 font-sans"
+      className="flex h-full w-full flex-col p-0 text-gray-300 font-sans"
       style={{ backgroundColor: 'var(--sidebar-bg)', color: 'var(--sidebar-text)' }}
     >
-      {/* Search Bar */}
-      <div className="relative mb-6">
-        <SearchCheckIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
-        <input
-          type="text"
-          placeholder="Search themes..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full rounded-md bg-[#161b22] py-2 pl-9 pr-4 text-sm text-white placeholder-gray-600 outline-none ring-1 ring-transparent focus:ring-cyan-500 transition-all"
-        />
-        <div className="absolute right-3 top-1/2 h-4 w-[1px] -translate-y-1/2 bg-cyan-500 animate-pulse" />
-      </div>
-      <div className="flex-1 overflow-y-auto pr-2 space-y-6 custom-scrollbar" ref={scrollRef}>
+      <SidebarHeader className="gap-2 z-10 relative">
+        <div className="relative group flex-1">
+          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-500" />
+          <input
+            type="text"
+            placeholder="Search themes..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="
+                theme-exempt
+                w-full rounded-md bg-[#161b22] py-1.5 pl-8 pr-4 
+                text-[12px] text-white placeholder-gray-600 
+                outline-none ring-1 ring-transparent focus:ring-cyan-500 
+                transition-all
+              "
+          />
+          <div className="absolute right-3 top-1/2 h-3 w-[1px] -translate-y-1/2 bg-cyan-500 animate-pulse" />
+        </div>
+      </SidebarHeader>
+
+      <div className="flex-1 overflow-y-auto p-2 space-y-4 custom-scrollbar" ref={scrollRef}>
         {filteredThemes.map((theme) => {
           const isActive = currentThemeId === theme.id
 
@@ -88,9 +105,12 @@ const ThemeSelector = () => {
                   </span>
                 </div>
                 {isActive ? (
-                  <Check size={12} className="text-cyan-400" />
+                  <Check size={14} className="text-cyan-400" />
                 ) : (
-                  <Circle size={12} className="text-gray-500" />
+                  <Circle
+                    size={10}
+                    className="text-gray-600 transition-colors group-hover:text-gray-400"
+                  />
                 )}
               </div>
               <p className="text-xs text-gray-500 mt-1 px-1">{theme.description}</p>
@@ -102,4 +122,4 @@ const ThemeSelector = () => {
   )
 }
 
-export default memo(ThemeSelector)
+export default ThemeSelector

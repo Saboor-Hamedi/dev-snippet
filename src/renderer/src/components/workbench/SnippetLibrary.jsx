@@ -10,11 +10,19 @@ import { useZoomLevel } from '../../hook/useZoomLevel'
 import { ViewProvider, useView } from '../../context/ViewContext'
 import { ModalProvider, useModal } from './manager/ModalManager'
 import KeyboardHandler from './manager/KeyboardHandler'
+import { useThemeManager } from '../../hook/useThemeManager'
 
 // The Core Logic Component
 const SnippetLibraryInner = ({ snippetData }) => {
-  const { snippets, selectedSnippet, setSelectedSnippet, setSnippets, saveSnippet, deleteItem } =
-    snippetData
+  const {
+    snippets,
+    selectedSnippet,
+    setSelectedSnippet,
+    setSnippets,
+    saveSnippet,
+    deleteItem,
+    searchSnippetList
+  } = snippetData
   const { activeView, showPreview, togglePreview, navigateTo } = useView()
   const { openRenameModal, openDeleteModal } = useModal()
   const { settings } = useSettings()
@@ -44,6 +52,21 @@ const SnippetLibraryInner = ({ snippetData }) => {
 
   // --- Draft Logic ---
   const createDraftSnippet = (initialTitle = '') => {
+    // Singleton Pattern: If an empty draft exists, reuse it instead of creating a new one.
+    if (!initialTitle) {
+      const existingBlank = snippets.find(
+        (s) => (!s.title || s.title.trim() === '') && (!s.code || s.code.trim() === '')
+      )
+
+      if (existingBlank) {
+        setSelectedSnippet(existingBlank)
+        setIsCreatingSnippet(true)
+        navigateTo('editor')
+        showToast('Resuming empty draft', 'info')
+        return existingBlank
+      }
+    }
+
     const draft = {
       id: Date.now().toString(),
       title: initialTitle,
@@ -70,10 +93,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
   }, [activeView, isCreatingSnippet])
 
   const handleRenameRequest = () => {
-    if (!selectedSnippet?.title?.trim()) {
-      showToast('Please save the snippet first before renaming', 'info')
-      return
-    }
+    // Proceed directly to rename modal, even for drafts
     openRenameModal(selectedSnippet, (newName) => {
       handleRenameSnippet({
         renameModal: { newName, item: selectedSnippet },
@@ -84,7 +104,8 @@ const SnippetLibraryInner = ({ snippetData }) => {
         renameSnippet: (oldId, updated) => {
           setSnippets((prev) => [...prev.filter((s) => s.id !== oldId), updated])
         },
-        showToast
+        showToast,
+        snippets // Pass snippets for validation
       }).then(() => focusEditor())
     })
   }
@@ -166,6 +187,21 @@ const SnippetLibraryInner = ({ snippetData }) => {
           }}
           onSave={async (item) => {
             try {
+              // Client-Side Robust Check (Normalize extension)
+              if (item.title && item.title.trim()) {
+                const normalize = (t) => (t || '').toLowerCase().trim().replace(/\.md$/, '')
+                const targetBase = normalize(item.title)
+
+                const duplicate = snippets.find(
+                  (s) => normalize(s.title) === targetBase && s.id !== item.id
+                )
+                if (duplicate) {
+                  showToast(`${item.title}: already taken`, 'error')
+                  setAutosaveStatus(null)
+                  return
+                }
+              }
+
               const wasForce = !!window.__forceSave
               if (!wasForce) setAutosaveStatus('saving')
               await saveSnippet(item)
@@ -178,11 +214,17 @@ const SnippetLibraryInner = ({ snippetData }) => {
               setTimeout(() => setAutosaveStatus(null), 1200)
             } catch (e) {
               setAutosaveStatus(null)
+              if (e.message && e.message.includes('DUPLICATE_TITLE')) {
+                showToast('⚠️ Title conflict: Name already taken (DB)', 'error')
+              } else {
+                console.error(e)
+              }
             }
           }}
           onDeleteRequest={handleDeleteRequest}
           onNewSnippet={() => createDraftSnippet()}
           onSelectSnippet={handleSelectSnippet}
+          onSearchSnippets={searchSnippetList}
           onOpenSettings={() => navigateTo('settings')}
           onCloseSettings={() => navigateTo('snippets')}
         />
@@ -194,6 +236,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
 // Wrapper Component to inject Providers
 const SnippetLibrary = () => {
   useFontSettings() // Global effect
+  useThemeManager() // Global theme management
   const snippetData = useSnippetData() // Global data
 
   return (

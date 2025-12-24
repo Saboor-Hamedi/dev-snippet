@@ -168,35 +168,51 @@ const buildExtensions = async (options, handlers = {}) => {
 
   // CORE UI EXTENSIONS (Critical for stability)
   try {
-    const { dropCursor, drawSelection /*, highlightActiveLine */ } =
+    const { dropCursor, drawSelection, keymap, highlightActiveLine } =
       await import('@codemirror/view')
-    exts.push(dropCursor())
-    // Uses custom drawn selection (better for mixed font sizes/rich text/custom blinking)
-    exts.push(
-      drawSelection({
-        cursorBlinkRate: 0 // Disable internal blinking to use CSS animation
-      })
-    )
-    // exts.push(highlightActiveLine())
-  } catch (e) {}
+    const { indentOnInput, bracketMatching, syntaxHighlighting, defaultHighlightStyle } =
+      await import('@codemirror/language')
+    const { defaultKeymap, historyKeymap } = await import('@codemirror/commands')
+    const { closeBrackets, closeBracketsKeymap, completionKeymap, autocompletion } =
+      await import('@codemirror/autocomplete')
 
-  // HISTORY (Undo/Redo)
+    exts.push(dropCursor())
+    exts.push(drawSelection({ cursorBlinkRate: 0 }))
+    exts.push(highlightActiveLine())
+    exts.push(indentOnInput())
+    exts.push(syntaxHighlighting(defaultHighlightStyle, { fallback: true }))
+    exts.push(closeBrackets())
+    exts.push(bracketMatching())
+    exts.push(autocompletion({ activateOnTyping: true }))
+
+    exts.push(
+      keymap.of([...defaultKeymap, ...historyKeymap, ...closeBracketsKeymap, ...completionKeymap])
+    )
+  } catch (e) {
+    console.error('Failed to load core extensions', e)
+  }
+
+  // HISTORY (Undo/Redo) - Included in keymap above but adding base extension
   try {
     const { history } = await import('@codemirror/commands')
     exts.push(history())
   } catch (e) {}
 
-  // BRACKET MATCHING (Skip for large files - expensive)
+  // BRACKET MATCHING - Handled in core block above but keeping structure
+  /*
   if (!isLargeFile) {
     try {
       const { bracketMatching } = await import('@codemirror/language')
       exts.push(bracketMatching())
     } catch (e) {}
   }
+  */
 
-  // Line numbers
+  // Line numbers & Code Folding (Critical UI)
   try {
     const { lineNumbers } = await import('@codemirror/view')
+    const { foldGutter, codeFolding } = await import('@codemirror/language')
+
     exts.push(
       lineNumbers({
         formatNumber: (lineNo) => lineNo.toString(),
@@ -205,16 +221,57 @@ const buildExtensions = async (options, handlers = {}) => {
         }
       })
     )
-  } catch (e) {}
 
-  if (wordWrap === 'on') {
+    // Code Folding (Disabled for large files)
+    if (!isLargeFile) {
+      exts.push(codeFolding())
+      exts.push(
+        foldGutter({
+          markerDOM: (open) => {
+            const icon = document.createElement('span')
+            icon.className = 'cm-fold-marker'
+            icon.innerHTML = open ? '▾' : '▸'
+            return icon
+          }
+        })
+      )
+    }
+  } catch (e) {
+    console.warn('Failed to load core editor UI extensions (lineNumbers/folding)', e)
+  }
+
+  if (String(wordWrap) === 'on' || wordWrap === true) {
     exts.push(EditorView.lineWrapping)
   }
 
-  // JSON Support (Safe & Lightweight)
+  // DYNAMIC LANGUAGE SUPPORT (The key to robust folding)
+  try {
+    const allLangs = await getLanguages()
+    const langDesc = allLangs.find(
+      (l) =>
+        l.name.toLowerCase() === language.toLowerCase() ||
+        l.alias.some((a) => a.toLowerCase() === language.toLowerCase()) ||
+        (l.extensions &&
+          l.extensions.some(
+            (e) =>
+              e.toLowerCase() ===
+              (language.startsWith('.') ? language.slice(1) : language).toLowerCase()
+          ))
+    )
+
+    if (langDesc) {
+      try {
+        const langSupport = await langDesc.load()
+        exts.push(langSupport)
+      } catch (e) {}
+    }
+  } catch (e) {
+    console.warn(`Dynamic language load failed for: ${language}`, e)
+  }
+
+  // Fallback/Enhancement logic for JSON/Markdown remains
   if (language === 'json') {
     try {
-      const { json } = await import('@codemirror/lang-json')
       const { syntaxHighlighting, HighlightStyle } = await import('@codemirror/language')
       const { tags } = await import('@lezer/highlight')
 
@@ -228,42 +285,29 @@ const buildExtensions = async (options, handlers = {}) => {
         { tag: tags.null, color: '#79c0ff' }, // Blue
         { tag: tags.punctuation, color: '#8b949e' } // Gray
       ])
-
-      exts.push(json())
       exts.push(syntaxHighlighting(jsonHighlightStyle))
-    } catch (e) {
-      console.warn('Failed to load json extension', e)
-    }
+    } catch (e) {}
   }
 
-  // Markdown Support (Skip rich decorations for large files)
   if (language === 'markdown') {
     try {
       const { markdown } = await import('@codemirror/lang-markdown')
+      exts.push(markdown({ addKeymap: true, defaultCodeLanguage: undefined }))
 
-      // Safe Mode: Standard Markdown Parser only
-      exts.push(
-        markdown({
-          addKeymap: true, // Enable standard markdown keys
-          defaultCodeLanguage: undefined
-        })
-      )
-
-      // WikiLink Autocomplete
-      // User noted this is safe, but we'll re-enable it carefully in next step if needed
-      // WikiLink Autocomplete
       if (!isLargeFile) {
         try {
-          const { default: wikiLinkCompletion } = await import('./wikiLinkCompletion.js')
-          exts.push(wikiLinkCompletion(snippetTitles))
-        } catch (e) {
-          console.warn('Failed to load wikiLinkCompletion', e)
-        }
+          const { wikiLinkCompletionSource } = await import('./wikiLinkCompletion.js')
+          const { autocompletion } = await import('@codemirror/autocomplete')
+          exts.push(
+            autocompletion({
+              override: [wikiLinkCompletionSource(snippetTitles)],
+              icons: true,
+              defaultKeymap: true
+            })
+          )
+        } catch (e) {}
       }
-    } catch (e) {
-      console.error('Failed to load markdown extensions', e)
-      exts.push(EditorView.lineWrapping)
-    }
+    } catch (e) {}
   }
 
   return exts

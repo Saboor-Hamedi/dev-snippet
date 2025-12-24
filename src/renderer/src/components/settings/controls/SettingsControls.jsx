@@ -11,7 +11,7 @@ export const Toggle = ({ value, onChange, label, description }) => (
     </div>
     <button
       onClick={() => onChange(!value)}
-      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 ${
+      className={`theme-exempt relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 ${
         value
           ? 'bg-blue-600 hover:bg-blue-700'
           : 'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600'
@@ -37,7 +37,7 @@ export const Select = ({ value, onChange, options, label, description }) => (
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="block w-48 rounded-md border-0 py-1.5 pl-3 pr-10 text-slate-700 dark:text-slate-200 ring-1 ring-inset ring-slate-300 dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm sm:leading-6 bg-transparent dark:bg-slate-800"
+      className="theme-exempt block w-48 rounded-md border-0 py-1.5 pl-3 pr-10 text-slate-700 dark:text-slate-200 ring-1 ring-inset ring-slate-300 dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm sm:leading-6 bg-transparent dark:bg-slate-800"
     >
       {options.map((opt) => (
         <option key={opt.value} value={opt.value}>
@@ -61,7 +61,7 @@ export const Input = ({ value, onChange, label, description, type = 'text', plac
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="block w-full rounded-md border-0 py-1.5 text-slate-900 dark:text-white shadow-sm ring-1 ring-inset ring-slate-300 dark:ring-slate-700 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 bg-transparent dark:bg-slate-800/50"
+      className="theme-exempt block w-full rounded-md border-0 py-1.5 text-slate-900 dark:text-white shadow-sm ring-1 ring-inset ring-slate-300 dark:ring-slate-700 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 bg-transparent dark:bg-slate-800/50"
     />
   </div>
 )

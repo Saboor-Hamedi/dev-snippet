@@ -51,6 +51,27 @@ const SnippetEditor = ({
     return () => clearTimeout(timer)
   }, [code])
 
+  // Stabilize language detection so the editor doesn't re-mount on every keystroke
+  const detectedLang = useMemo(() => {
+    const ext = title?.includes('.') ? title.split('.').pop()?.toLowerCase() : null
+    let lang = ext || 'plaintext'
+    if (!ext && code) {
+      const trimmed = code.trim()
+      if (
+        trimmed.startsWith('# ') ||
+        trimmed.startsWith('## ') ||
+        trimmed.startsWith('### ') ||
+        trimmed.startsWith('- ') ||
+        trimmed.startsWith('* ') ||
+        trimmed.startsWith('```') ||
+        trimmed.startsWith('>')
+      ) {
+        lang = 'markdown'
+      }
+    }
+    return lang
+  }, [title]) // Only re-detect if title changed. Don't re-mount while typing code!
+
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(() => {
     try {
       const saved = localStorage.getItem('autoSave')
@@ -356,19 +377,23 @@ const SnippetEditor = ({
       {!isCreateMode && (!initialSnippet || !initialSnippet.id) && !hideWelcomePage ? (
         <WelcomePage onNewSnippet={onNew} />
       ) : (
-        <div className="h-full overflow-hidden flex flex-col items-stretch bg-slate-50 dark:bg-[#0d1117] relative">
+        <div
+          className="h-full overflow-hidden flex flex-col items-stretch relative"
+          style={{ backgroundColor: 'var(--editor-bg)' }}
+        >
           <div
             className="flex-1 min-h-0 overflow-hidden editor-container relative flex"
             style={{ backgroundColor: 'var(--editor-bg)' }}
           >
             <AdvancedSplitPane
               rightHidden={!showPreview}
-              unifiedScroll={true}
+              unifiedScroll={false}
               overlayMode={settings?.editor?.overlayMode || false}
               left={
                 <div ref={editorContainerRef} className="w-full h-full">
                   <CodeEditor
                     value={code || ''}
+                    language={detectedLang}
                     wordWrap={wordWrap}
                     onChange={(val) => {
                       if (val !== code) {
@@ -453,23 +478,6 @@ const SnippetEditor = ({
             }}
             placeholder="e.g. hello.js or notes"
           />
-
-          <div
-            className="flex items-center justify-between px-2 py-1"
-            style={{
-              backgroundColor: 'var(--header-bg)',
-              borderTop: '1px solid var(--border-color)'
-            }}
-          >
-            <StatusBar
-              onSettingsClick={onSettingsClick}
-              isCompact={compact}
-              onToggleCompact={onToggleCompactHandler}
-              zoomLevel={zoomLevel}
-              title={title}
-              isLargeFile={isLargeFile}
-            />
-          </div>
         </div>
       )}
     </>

@@ -135,7 +135,7 @@ const AdvancedSplitPane = ({
           className="flex h-full w-full overflow-hidden"
           style={{ backgroundColor: 'var(--editor-bg)' }}
         >
-          <div className="min-h-0 overflow-auto" style={{ width: '100%' }}>
+          <div className="flex-1 min-h-0 h-full overflow-hidden" style={{ width: '100%' }}>
             {left}
           </div>
         </div>
@@ -188,40 +188,41 @@ const AdvancedSplitPane = ({
           style={{ backgroundColor: 'var(--editor-bg)' }}
         >
           <div
-            className={`min-h-0 ${unifiedScroll ? 'overflow-visible' : 'overflow-auto'}`}
-            style={{ width: `${sideBySideLeft}%` }}
+            className={`min-h-0 h-full overflow-auto`}
+            style={{
+              width: `${sideBySideLeft}%`,
+              flex: '0 0 auto',
+              position: 'relative'
+            }}
           >
             {left}
           </div>
 
-          {/* Resize knob */}
-          <div className="shrink-0 relative flex items-center justify-center">
+          {/* Resize knob - Improved hit target */}
+          <div className="shrink-0 relative flex items-center justify-center w-2 z-30">
+            <div
+              className={`absolute top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500/40 transition-colors ${isDragging ? 'bg-blue-500/60' : 'bg-transparent'}`}
+              onMouseDown={startDrag}
+            />
             <div
               className="w-4 h-6 flex items-center justify-center 
              bg-slate-700/30 hover:bg-slate-700/60 
              transition-all duration-200 
-             rounded-[4px] cursor-col-resize select-none border border-white/5"
+             rounded-[4px] cursor-col-resize select-none border border-white/5 pointer-events-none"
               role="separator"
               aria-orientation="vertical"
-              onMouseDown={startDrag}
               style={{
                 userSelect: 'none',
-                touchAction: 'none',
-                WebkitUserSelect: 'none',
-                msUserSelect: 'none',
-                MozUserSelect: 'none'
+                touchAction: 'none'
               }}
             >
-              <GripVertical
-                className="text-slate-500 dark:text-slate-400 pointer-events-none"
-                size={12}
-              />
+              <GripVertical className="text-slate-500 dark:text-slate-400" size={12} />
             </div>
           </div>
 
           <div
-            className={`min-h-0 overflow-auto ${isDragging ? 'pointer-events-none' : ''}`}
-            style={{ width: `${100 - sideBySideLeft}%` }}
+            className={`flex-1 min-h-0 h-full overflow-auto ${isDragging ? 'pointer-events-none' : ''}`}
+            style={{ minWidth: 0 }}
           >
             {right}
           </div>

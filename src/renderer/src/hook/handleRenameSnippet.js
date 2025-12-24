@@ -7,7 +7,8 @@ export const handleRenameSnippet = async ({
   setSelectedSnippet,
   setRenameModal,
   setIsCreatingSnippet,
-  showToast
+  showToast,
+  snippets
 }) => {
   if (!renameModal.item) {
     if (showToast) showToast('❌ Cannot rename: No snippet selected.', 'error')
@@ -17,6 +18,23 @@ export const handleRenameSnippet = async ({
 
   // Clean up name
   const baseName = (renameModal.newName || renameModal.item.title || '').trim() || 'Untitled'
+
+  // Client-Side Duplicate Check
+  const normalize = (t) => (t || '').toLowerCase().trim().replace(/\.md$/, '')
+
+  if (snippets) {
+    const targetBase = normalize(baseName)
+
+    const duplicate = snippets.find(
+      (s) => normalize(s.title) === targetBase && s.id !== renameModal.item.id
+    )
+    if (duplicate) {
+      if (showToast) showToast(`${baseName}: already taken`, 'error')
+      // Retrieve original name to clear invalid draft state if needed?
+      // Just return, keeping modal open to let user try again.
+      return
+    }
+  }
 
   const updatedItem = normalizeSnippet({
     ...renameModal.item,
@@ -29,21 +47,13 @@ export const handleRenameSnippet = async ({
     setSelectedSnippet(updatedItem)
   }
 
-  // If nothing changed (logic might have normalized it back to original), skip
-  if (renameModal.item.title === baseName) {
-    // Check if we need to force save due to language change even if title is same?
-    // Unlikely if we enforce MD everywhere.
-    // But if title is identical, we might just close.
-    // However, if the user typed "foo" and we made it "foo.md", and it was already "foo.md", then we skip.
-
-    // Actually, let's just proceed to ensure consistency.
-    // But if truly identical including language...
-    if (renameModal.item.language === 'markdown') {
-      if (showToast) showToast(`No changes made`, 'info')
-      setRenameModal({ isOpen: false, item: null })
-      setIsCreatingSnippet(false)
-      return
-    }
+  // If nothing changed (normalized), skip
+  if (normalize(renameModal.item.title) === normalize(baseName)) {
+    showToast('Snippet title unchanged', 'info')
+    // Silent close
+    setRenameModal({ isOpen: false, item: null })
+    setIsCreatingSnippet(false)
+    return
   }
 
   try {
@@ -59,7 +69,11 @@ export const handleRenameSnippet = async ({
   } catch (error) {
     console.error('Rename error:', error)
 
-    if (showToast) showToast('❌ Failed to rename snippet.', 'error')
+    if (error.message && error.message.includes('DUPLICATE_TITLE')) {
+      if (showToast) showToast(`${baseName}: already taken`, 'error')
+    } else {
+      if (showToast) showToast('❌ Failed to rename snippet.', 'error')
+    }
 
     // Rollback optimistic update
     if (setSelectedSnippet) {

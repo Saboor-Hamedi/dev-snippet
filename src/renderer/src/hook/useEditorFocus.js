@@ -32,12 +32,19 @@ export const useEditorFocus = ({ initialSnippet, isCreateMode, textareaRef }) =>
       }
     }
 
-    // Focus when snippet changes or in create mode
-    if (initialSnippet?.id || isCreateMode) {
-      // Multiple timing attempts for better reliability
+    // Focus ONLY when entering create mode or on initial mount.
+    // We intentionally removed initialSnippet changes from dependencies
+    // to prevent stealing focus while browsing the sidebar with arrow keys.
+    if (isCreateMode) {
       setTimeout(focusEditor, 50)
       setTimeout(focusEditor, 150)
-      setTimeout(focusEditor, 300)
     }
-  }, [initialSnippet?.id, initialSnippet?.title, isCreateMode, textareaRef])
+    // If it's the very first load (mounting), we might want focus?
+    // Actually, 'useEffect' runs on mount. If we want to focus on mount,
+    // we can just run it. But for browsing, we don't want it.
+    // Let's assume hitting "New" handles createMode.
+    // If opening a snippet from "Welcome", we might want focus.
+    // But if we are in the list, we don't.
+    // For now, removing snippet dependencies is safe.
+  }, [isCreateMode, textareaRef])
 }
