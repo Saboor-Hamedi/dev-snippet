@@ -33,6 +33,9 @@ const api = {
   searchSnippets: (query) => electronAPI.ipcRenderer.invoke('db:searchSnippets', query),
   saveSnippet: (snippet) => electronAPI.ipcRenderer.invoke('db:saveSnippet', snippet),
   deleteSnippet: (id) => electronAPI.ipcRenderer.invoke('db:deleteSnippet', id),
+  restoreSnippet: (id) => electronAPI.ipcRenderer.invoke('db:restoreSnippet', id),
+  permanentDeleteSnippet: (id) => electronAPI.ipcRenderer.invoke('db:permanentDeleteSnippet', id),
+  getTrash: () => electronAPI.ipcRenderer.invoke('db:getTrash'),
   getSetting: (key) => electronAPI.ipcRenderer.invoke('db:getSetting', key),
   saveSetting: (key, value) => electronAPI.ipcRenderer.invoke('db:saveSetting', key, value),
   // Drafts
@@ -58,6 +61,8 @@ const api = {
   listBackups: () => electronAPI.ipcRenderer.invoke('backup:list'),
   restoreBackup: (backupPath) => electronAPI.ipcRenderer.invoke('backup:restore', backupPath),
   createBackup: () => electronAPI.ipcRenderer.invoke('backup:create'),
+  // New Secure Export
+  exportJSON: (data) => electronAPI.ipcRenderer.invoke('export:json', data),
 
   // Auto-Update
   checkForUpdates: () => electronAPI.ipcRenderer.invoke('updates:check'),

@@ -1,11 +1,12 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Files, Palette, Settings } from 'lucide-react'
+import { Files, Palette, Settings, Trash2 } from 'lucide-react'
 
 const ActivityBar = ({ activeTab, onTabChange, onSettings }) => {
   const items = [
     { id: 'explorer', icon: Files, label: 'Explorer' },
-    { id: 'themes', icon: Palette, label: 'Themes' }
+    { id: 'themes', icon: Palette, label: 'Themes' },
+    { id: 'trash', icon: Trash2, label: 'Trash' }
   ]
 
   return (

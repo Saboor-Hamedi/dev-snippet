@@ -4,6 +4,7 @@ import { normalizeSnippet } from '../utils/snippetUtils'
 
 export const useSnippetData = () => {
   const [snippets, setSnippets] = useState([])
+  const [trash, setTrash] = useState([]) // Trash state
   const [projects, setProjects] = useState([])
   const [selectedSnippet, setSelectedSnippetState] = useState(null)
   const { showToast } = useToast()
@@ -119,11 +120,15 @@ export const useSnippetData = () => {
         await window.api.deleteSnippet(id)
         const next = snippets.filter((s) => s.id !== id)
         setSnippets(next)
+
+        // Add to trash state optimistically
+        setTrash((prev) => [{ ...isSnippet, deleted_at: Date.now() }, ...prev])
+
         // Select next available snippet to keep editor open
         if (selectedSnippet?.id === id) {
           setSelectedSnippet(next.length ? next[0] : null)
         }
-        showToast('✓ Snippet deleted')
+        showToast('✓ Snippet moved to trash')
       } else if (isProject && window.api?.deleteProject) {
         await window.api.deleteProject(id)
         const next = projects.filter((p) => p.id !== id)
@@ -137,6 +142,50 @@ export const useSnippetData = () => {
       }
     } catch (error) {
       showToast('❌ Failed to delete item')
+    }
+  }
+
+  // Restore a snippet from trash
+  const restoreItem = async (id) => {
+    try {
+      if (window.api?.restoreSnippet) {
+        await window.api.restoreSnippet(id)
+
+        // Update States
+        const restored = trash.find((t) => t.id === id)
+        setTrash((prev) => prev.filter((t) => t.id !== id))
+        if (restored) {
+          setSnippets((prev) => [restored, ...prev])
+        } else {
+          // Fallback reload if we didn't have it in state
+          searchSnippetList('')
+        }
+
+        showToast('✓ Snippet restored')
+      }
+    } catch (error) {
+      showToast('❌ Failed to restore item')
+    }
+  }
+
+  // Permanently delete
+  const permanentDeleteItem = async (id) => {
+    try {
+      if (window.api?.permanentDeleteSnippet) {
+        await window.api.permanentDeleteSnippet(id)
+        setTrash((prev) => prev.filter((t) => t.id !== id))
+        showToast('✓ Snippet permanently deleted')
+      }
+    } catch (error) {
+      showToast('❌ Failed to delete permanently')
+    }
+  }
+
+  // Load trash items
+  const loadTrash = async () => {
+    if (window.api?.getTrash) {
+      const items = await window.api.getTrash()
+      setTrash(items || [])
     }
   }
 
@@ -168,12 +217,16 @@ export const useSnippetData = () => {
   return {
     snippets,
     setSnippets,
+    trash, // Exposed
+    loadTrash, // Exposed
     projects,
     setProjects,
     selectedSnippet,
     setSelectedSnippet,
     saveSnippet,
     deleteItem,
+    restoreItem,
+    permanentDeleteItem,
     searchSnippetList
   }
 }

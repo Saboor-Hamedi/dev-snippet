@@ -56,17 +56,18 @@ const SettingsPanel = ({ onClose }) => {
   // Handlers
   const handleExportData = async () => {
     try {
-      if (window.api?.saveFileDialog && window.api?.writeFile && window.api?.getSnippets) {
-        const snippets = await window.api.getSnippets()
-        const path = await window.api.saveFileDialog()
+      // PRO-SEC: Use secure main-process export handler
+      if (window.api?.exportJSON && window.api?.getSnippets) {
+        // Request full content (metadataOnly: false)
+        const snippets = await window.api.getSnippets({ metadataOnly: false })
+        const data = {
+          exportDate: new Date().toISOString(),
+          version: '1.1.6',
+          snippets
+        }
 
-        if (path) {
-          const data = {
-            exportDate: new Date().toISOString(),
-            version: '1.1.6',
-            snippets
-          }
-          await window.api.writeFile(path, JSON.stringify(data, null, 2))
+        const success = await window.api.exportJSON(data)
+        if (success) {
           showToast('✓ Data exported successfully')
         }
       }

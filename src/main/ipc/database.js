@@ -60,7 +60,7 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
         SELECT s.id, s.title, s.language, s.timestamp, s.type, s.tags, s.is_draft, s.sort_index, snippet(snippets_fts, 1, '__MARK__', '__/MARK__', '...', 20) as match_context
         FROM snippets s
         INNER JOIN snippets_fts fts ON s.rowid = fts.rowid
-        WHERE snippets_fts MATCH ?
+        WHERE snippets_fts MATCH ? AND s.is_deleted = 0
         ORDER BY bm25(snippets_fts, 10.0, 1.0, 5.0)
         LIMIT 10
       `
@@ -76,7 +76,7 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
           `
         SELECT id, title, language, timestamp, type, tags, is_draft, sort_index 
         FROM snippets
-        WHERE title LIKE ? OR code LIKE ? OR tags LIKE ?
+        WHERE (title LIKE ? OR code LIKE ? OR tags LIKE ?) AND is_deleted = 0
         ORDER BY timestamp DESC
         LIMIT 10
       `
@@ -114,10 +114,28 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
     }
   })
 
-  // Delete snippet
+  // Delete snippet (Soft Delete)
   ipcMain.handle('db:deleteSnippet', (event, id) => {
-    preparedStatements.delete.run(id)
+    // preparedStatements.delete is now permanentDelete, we use softDelete
+    preparedStatements.softDelete.run(Date.now(), id)
     return true
+  })
+
+  // Restore snippet
+  ipcMain.handle('db:restoreSnippet', (event, id) => {
+    preparedStatements.restore.run(id)
+    return true
+  })
+
+  // Permanent Delete
+  ipcMain.handle('db:permanentDeleteSnippet', (event, id) => {
+    preparedStatements.permanentDelete.run(id)
+    return true
+  })
+
+  // Get Trash
+  ipcMain.handle('db:getTrash', () => {
+    return preparedStatements.getTrash.all().map(transformRow)
   })
 
   // Save snippet draft

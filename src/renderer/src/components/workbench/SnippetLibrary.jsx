@@ -21,7 +21,12 @@ const SnippetLibraryInner = ({ snippetData }) => {
     setSnippets,
     saveSnippet,
     deleteItem,
-    searchSnippetList
+    searchSnippetList,
+    // Trash props
+    trash,
+    loadTrash,
+    restoreItem,
+    permanentDeleteItem
   } = snippetData
   const { activeView, showPreview, togglePreview, navigateTo } = useView()
   const { openRenameModal, openDeleteModal } = useModal()
@@ -181,6 +186,10 @@ const SnippetLibraryInner = ({ snippetData }) => {
           currentContext={activeView}
           selectedSnippet={selectedSnippet}
           snippets={snippets}
+          trash={trash}
+          onRestoreItem={restoreItem}
+          onPermanentDeleteItem={permanentDeleteItem}
+          onLoadTrash={loadTrash}
           onCloseSnippet={() => {
             setSelectedSnippet(null)
             navigateTo('snippets')

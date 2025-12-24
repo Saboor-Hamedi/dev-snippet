@@ -9,13 +9,19 @@ import SidebarTheme from '../preference/SidebarTheme'
 import { File } from 'lucide-react'
 
 import SnippetSidebar from './SnippetSidebar'
+import TrashSidebar from './TrashSidebar'
 import ActivityBar from '../layout/ActivityBar'
 import StatusBar from '../StatusBar'
+import { useModal } from './manager/ModalManager'
 
 const Workbench = ({
   activeView,
   selectedSnippet,
   snippets,
+  trash, // New
+  onRestoreItem, // New
+  onPermanentDeleteItem, // New
+  onLoadTrash, // New
   showPreview,
   onTogglePreview,
   onSave,
@@ -41,6 +47,9 @@ const Workbench = ({
   const handleSave = (snippet) => {
     onSave(snippet)
   }
+
+  // Get modal functions
+  const { openDeleteModal } = useModal()
 
   // --- Sidebar State Management ---
   const [activeSidebarTab, setActiveSidebarTab] = React.useState('explorer')
@@ -227,6 +236,19 @@ const Workbench = ({
                 if (onSelectSnippet) onSelectSnippet(s)
               }}
               onToggle={() => setIsSidebarOpen(false)}
+            />
+          </div>
+
+          <div
+            className="h-full w-full flex flex-col"
+            style={{ display: activeSidebarTab === 'trash' ? 'flex' : 'none' }}
+          >
+            <TrashSidebar
+              items={trash}
+              onRestore={onRestoreItem}
+              onPermanentDelete={onPermanentDeleteItem}
+              onLoadTrash={onLoadTrash}
+              openDeleteModal={openDeleteModal}
             />
           </div>
         </aside>

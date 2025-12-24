@@ -64,4 +64,23 @@ export const registerExportHandlers = () => {
       return false
     }
   })
+
+  // NEW: Secure JSON Export
+  ipcMain.handle('export:json', async (event, data) => {
+    try {
+      const { filePath, canceled } = await dialog.showSaveDialog({
+        title: 'Export Data to JSON',
+        defaultPath: 'dev-snippet-export.json',
+        filters: [{ name: 'JSON Files', extensions: ['json'] }]
+      })
+
+      if (canceled || !filePath) return false
+
+      await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8')
+      return true
+    } catch (err) {
+      console.error('Failed to export JSON:', err)
+      return false
+    }
+  })
 }

@@ -50,29 +50,4 @@ export const registerFilesystemHandlers = () => {
     })
     return result.canceled ? null : result.filePaths[0]
   })
-
-  // Read file
-  ipcMain.handle('fs:readFile', async (event, path) => {
-    if (typeof path !== 'string') throw new Error('Invalid path')
-    return await fs.readFile(path, 'utf-8')
-  })
-
-  // Write file
-  ipcMain.handle('fs:writeFile', async (event, path, content) => {
-    if (typeof path !== 'string') throw new Error('Invalid path')
-    if (typeof content !== 'string') throw new Error('Invalid content')
-    await fs.writeFile(path, content, 'utf-8')
-    return true
-  })
-
-  // Read directory
-  ipcMain.handle('fs:readDirectory', async (event, path) => {
-    if (typeof path !== 'string') throw new Error('Invalid path')
-    const files = await fs.readdir(path, { withFileTypes: true })
-    return files.map((file) => ({
-      name: file.name,
-      isDirectory: file.isDirectory(),
-      isFile: file.isFile()
-    }))
-  })
 }

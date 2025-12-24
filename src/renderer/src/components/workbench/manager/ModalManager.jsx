@@ -83,19 +83,29 @@ export const ModalProvider = ({ children, snippets, onSelectSnippet }) => {
           <Prompt
             isOpen={true}
             variant="danger"
-            title="Delete Snippet"
+            title={deleteModal.snippetId === 'empty-trash' ? 'Empty Trash' : 'Delete Snippet'}
             message={
-              <span>
-                This action is permanent. Delete{' '}
-                <span className="font-bold text-slate-800 dark:text-slate-100">
-                  "
-                  {deleteModal.snippetId
-                    ? snippets?.find((s) => s.id === deleteModal.snippetId)?.title
-                    : 'this'}
-                  "
+              deleteModal.snippetId === 'empty-trash' ? (
+                <span>
+                  Are you sure you want to{' '}
+                  <span className="font-bold text-slate-800 dark:text-slate-100">
+                    permanently delete all items
+                  </span>{' '}
+                  in the trash? This action cannot be undone.
                 </span>
-                ?
-              </span>
+              ) : (
+                <span>
+                  This action is permanent. Delete{' '}
+                  <span className="font-bold text-slate-800 dark:text-slate-100">
+                    "
+                    {deleteModal.snippetId
+                      ? snippets?.find((s) => s.id === deleteModal.snippetId)?.title
+                      : 'this'}
+                    "
+                  </span>
+                  ?
+                </span>
+              )
             }
             confirmLabel="Delete"
             onClose={() => setDeleteModal((prev) => ({ ...prev, isOpen: false }))}
