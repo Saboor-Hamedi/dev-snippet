@@ -28,7 +28,7 @@ const Row = ({ index, style, data }) => {
           <Icon size={14} strokeWidth={1.5} />
         </div>
 
-        <span className="flex-1 min-w-0 truncate font-light opacity-50 decoration-slate-600 group-hover:opacity-90 transition-opacity">
+        <span className="flex-1 min-w-0 truncate font-light opacity-50 decoration-slate-600 group-hover:opacity-90 transition-opacity normal-case">
           {item.title || 'Untitled'}
         </span>
 
@@ -139,13 +139,17 @@ const TrashSidebar = ({ items, onRestore, onPermanentDelete, onLoadTrash, openDe
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             className="
-                 theme-exempt
-                 w-full rounded-md bg-[#161b22] py-1.5 pl-8 pr-4 
-                 text-[12px] text-white placeholder-gray-600 
-                 outline-none ring-1 ring-transparent focus:ring-red-900/50 
-                 transition-all
-               "
+                w-full rounded-md py-1.5 pl-8 pr-4 
+                text-[12px] 
+                outline-none ring-1 ring-transparent focus:ring-cyan-500 
+                transition-all
+              "
+            style={{
+              backgroundColor: 'var(--color-bg-tertiary)',
+              color: 'var(--color-text-primary)'
+            }}
           />
+          <div className="absolute right-3 top-1/2 h-3 w-[1px] -translate-y-1/2 bg-cyan-500 animate-pulse" />
         </div>
       </SidebarHeader>
 

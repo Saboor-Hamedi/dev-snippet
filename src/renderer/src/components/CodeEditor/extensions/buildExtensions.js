@@ -133,29 +133,18 @@ const buildExtensions = async (options, handlers = {}) => {
     console.warn('[Editor] Failed to load search highlighting', e)
   }
 
-  // 4. EDITOR UI (Line Numbers / Folding)
+  // 4. EDITOR UI (Moved to CodeEditor.jsx baseExtensions for zero-latency)
+  /*
   try {
     const { lineNumbers } = await import('@codemirror/view')
     const { foldGutter, codeFolding } = await import('@codemirror/language')
-
     exts.push(lineNumbers({ formatNumber: (n) => n.toString() }))
-
     if (!isLargeFile) {
       exts.push(codeFolding())
-      exts.push(
-        foldGutter({
-          markerDOM: (open) => {
-            const icon = document.createElement('span')
-            icon.className = 'cm-fold-marker'
-            icon.innerHTML = open ? '▾' : '▸'
-            return icon
-          }
-        })
-      )
+      exts.push(foldGutter({ ... }))
     }
-  } catch (e) {
-    console.warn('[Editor] Failed to load UI extras', e)
-  }
+  } catch (e) {}
+  */
 
   // 5. WORD WRAP
   if (String(wordWrap) === 'on' || wordWrap === true) {

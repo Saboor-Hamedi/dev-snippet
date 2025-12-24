@@ -81,11 +81,13 @@ const buildTheme = (EditorView, options = {}) => {
       '.cm-scroller': {
         backgroundColor: 'transparent !important',
         fontFamily: 'inherit',
-        overflow: 'auto',
+        overflow: 'auto !important',
         minWidth: '100%',
         height: '100%',
         boxSizing: 'border-box',
-        position: 'relative'
+        position: 'relative',
+        // Anchor the scrollbar so content NEVER jumps when it appears
+        scrollbarGutter: 'stable !important'
       },
 
       /* Custom Scrollbars */
@@ -111,7 +113,7 @@ const buildTheme = (EditorView, options = {}) => {
 
       '.cm-content': {
         backgroundColor: 'transparent',
-        padding: '12px',
+        padding: '0 4px', // Tighter VS Code style padding
         fontFamily: 'inherit',
         lineHeight: '1.6',
         minHeight: '100%',
@@ -132,20 +134,28 @@ const buildTheme = (EditorView, options = {}) => {
         borderRight:
           'var(--gutter-border-width, 1px) solid var(--gutter-border-color, transparent) !important',
         fontFamily: 'inherit',
-        minWidth: '3em',
         lineHeight: '1.6',
         minHeight: '100%',
         boxSizing: 'border-box',
-        padding: '0 0.2em'
+        padding: '0'
+      },
+      '.cm-lineNumbers .cm-gutterElement': {
+        minWidth: '3em !important',
+        padding: '0 4px !important',
+        justifyContent: 'center !important',
+        display: 'flex !important',
+        textAlign: 'center !important'
+      },
+      '.cm-foldGutter .cm-gutterElement': {
+        width: '1.5em !important',
+        justifyContent: 'center !important',
+        display: 'flex !important'
       },
       '.cm-gutterElement': {
         background: 'transparent !important',
         display: 'flex !important',
         alignItems: 'center !important',
-        justifyContent: 'center !important',
-        textAlign: 'center !important',
-        padding: '0 !important',
-        minWidth: '100%'
+        padding: '0 !important'
       },
 
       // Active line - Handled here strictly

@@ -268,6 +268,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
           onSearchSnippets={searchSnippetList}
           onOpenSettings={() => navigateTo('settings')}
           onCloseSettings={() => navigateTo('snippets')}
+          onRename={handleRenameRequest}
         />
       </div>
     </div>

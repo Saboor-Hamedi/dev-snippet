@@ -23,6 +23,8 @@ const Header = ({
   onSave,
   onNewSnippet,
   onSearch,
+  onRename,
+  isTab,
   sidebarWidth = 250
 }) => {
   const activityBarWidth = 48
@@ -108,9 +110,22 @@ const Header = ({
                 opacity: 0.7
               }}
             />
-            <span className="text-[12px] truncate font-medium opacity-90">
-              {displayTitle?.replace(/\.[^/.]+$/, '') || 'Untitled'}
-            </span>
+            {isTab ? (
+              <div
+                className="relative group cursor-default py-1 px-4 transition-all duration-300 flex items-center h-full border-r border-l border-[var(--color-border)] bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-bg-secondary)]"
+                style={{ WebkitAppRegion: 'no-drag' }}
+                onDoubleClick={() => onRename && onRename()}
+              >
+                <span className="text-[12px] truncate font-medium opacity-90 block max-w-[200px] sm:max-w-[400px] normal-case">
+                  {displayTitle?.replace(/\.[^/.]+$/, '') || 'Untitled'}
+                </span>
+                <span className="absolute bottom-0 left-0 right-0 h-[1.5px] bg-[var(--color-accent-primary)] transition-all duration-300 ease-out scale-x-0 group-hover:scale-x-100 origin-left opacity-70"></span>
+              </div>
+            ) : (
+              <span className="text-[12px] font-medium opacity-60 px-1 normal-case">
+                {displayTitle}
+              </span>
+            )}
 
             {/* Autosave status inside the breadcrumb area */}
             {autosaveStatus && (

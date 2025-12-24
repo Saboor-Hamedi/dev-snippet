@@ -43,7 +43,8 @@ const Workbench = ({
   onSearchSnippets,
   // Lifted state props
   isSidebarOpen,
-  setIsSidebarOpen
+  setIsSidebarOpen,
+  onRename
 }) => {
   const handleSave = (snippet) => {
     onSave(snippet)
@@ -178,6 +179,7 @@ const Workbench = ({
       {/* Header - Full Width */}
       <Header
         title={getHeaderTitle()}
+        isTab={activeView === 'editor' || (activeView === 'snippets' && !!selectedSnippet)}
         isCompact={isCompact}
         onToggleCompact={onToggleCompact}
         autosaveStatus={autosaveStatus}
@@ -187,6 +189,7 @@ const Workbench = ({
         onNewSnippet={onNewSnippet}
         onSearch={() => setActiveSidebarTab('explorer')}
         sidebarWidth={250}
+        onRename={onRename}
       />
 
       {/* Main Workspace (ActivityBar + Sidebar + Editor) */}
@@ -289,6 +292,8 @@ Workbench.propTypes = {
   onCancelEditor: PropTypes.func,
   onDeleteRequest: PropTypes.func.isRequired,
   onNewSnippet: PropTypes.func.isRequired,
+  onSearchSnippets: PropTypes.func,
+  onRename: PropTypes.func,
   onSelectSnippet: PropTypes.func,
   currentContext: PropTypes.string,
   onOpenSettings: PropTypes.func,

@@ -8,6 +8,8 @@ import buildTheme from './extensions/buildTheme'
 import buildExtensions from './extensions/buildExtensions'
 import ErrorBoundary from '../ErrorBoundary'
 import SearchPanel from './search/SearchPanel'
+import { lineNumbers } from '@codemirror/view'
+import { foldGutter, codeFolding } from '@codemirror/language'
 
 // Helper to debounce save operations
 const debounce = (func, wait) => {
@@ -103,19 +105,32 @@ const CodeEditor = ({
     return () => editorContainer.removeEventListener('keydown', handleKeyDown, true)
   }, [])
 
-  // Initial base extensions (Theme only) to prevent FOUC
+  // 1. Permanent Static Frame (Theme + Gutters) - Renders instantly, never shifts
   const baseExtensions = useMemo(() => {
     return [
       buildTheme(EditorView, {
         isDark,
         caretColor: cursorColor,
         fontSize: 'var(--editor-font-size, 14px)',
+        cursorWidth,
+        cursorShape,
         disableComplexCM: settingsManager.get('advanced.disableComplexCM')
+      }),
+      lineNumbers({ formatNumber: (n) => n.toString() }),
+      codeFolding(),
+      foldGutter({
+        markerDOM: (open) => {
+          const icon = document.createElement('span')
+          icon.className = 'cm-fold-marker'
+          icon.innerHTML = open ? '▾' : '▸'
+          return icon
+        }
       })
     ]
-  }, [isDark, cursorColor])
+  }, [isDark, cursorColor, cursorWidth, cursorShape])
 
-  const [cmExtensions, setCmExtensions] = useState(baseExtensions)
+  // 2. Dynamic Content Extensions (Syntax Highlighting, Autocomplete, etc.)
+  const [dynamicExtensions, setDynamicExtensions] = useState([])
   const [isLargeFile, setIsLargeFile] = useState(false)
   const [extensionsLoaded, setExtensionsLoaded] = useState(false)
 
@@ -138,7 +153,8 @@ const CodeEditor = ({
   // Merge extensions
   const allExtensions = useMemo(
     () => [
-      ...cmExtensions,
+      ...baseExtensions,
+      ...dynamicExtensions,
       attributesExtension
       /*
       // DEBUG: Log doc state to help diagnose "No tile at position" errors
@@ -154,7 +170,7 @@ const CodeEditor = ({
       })
       */
     ],
-    [cmExtensions, attributesExtension]
+    [baseExtensions, dynamicExtensions, attributesExtension]
   )
 
   // Detect large files (Optimized for zero typing lag)
@@ -187,7 +203,7 @@ const CodeEditor = ({
   }, [value, onLargeFileChange])
 
   /**
-   * 🚀 THE PERFORMANCE ENGINE (The "Extension Freezing" Logic)
+   * THE PERFORMANCE ENGINE (The "Extension Freezing" Logic)
    */
   useEffect(() => {
     let mounted = true
@@ -221,7 +237,7 @@ const CodeEditor = ({
         })
 
         if (mounted) {
-          setCmExtensions(exts)
+          setDynamicExtensions(exts)
           setExtensionsLoaded(true)
         }
       } catch (err) {
