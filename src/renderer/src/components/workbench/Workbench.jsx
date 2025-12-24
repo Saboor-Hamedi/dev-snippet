@@ -187,7 +187,12 @@ const Workbench = ({
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         onSave={() => selectedSnippet && onSave(selectedSnippet)}
         onNewSnippet={onNewSnippet}
-        onSearch={() => setActiveSidebarTab('explorer')}
+        onSearch={() => {
+          if (activeView === 'settings' && onCloseSettings) {
+            onCloseSettings()
+          }
+          setActiveSidebarTab('explorer')
+        }}
         sidebarWidth={250}
         onRename={onRename}
       />

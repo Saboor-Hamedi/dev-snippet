@@ -64,10 +64,13 @@ export const useKeyboardShortcuts = (shortcuts) => {
       }
 
       // Ctrl+P toggles Command Palette
-      if ((e.ctrlKey || e.metaKey) && e.key?.toLowerCase() === 'p' && !e.shiftKey) {
+      const isPKey = e.key?.toLowerCase() === 'p' && (e.ctrlKey || e.metaKey)
+      if (isPKey) {
         e.preventDefault()
         if (shortcutsRef.current.onToggleCommandPalette) {
-          shortcutsRef.current.onToggleCommandPalette()
+          // If Shift is pressed, open in Command Mode (>)
+          const isCommandMode = e.shiftKey
+          shortcutsRef.current.onToggleCommandPalette(isCommandMode)
         }
       }
 

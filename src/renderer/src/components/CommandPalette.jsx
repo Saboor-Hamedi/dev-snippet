@@ -1,14 +1,31 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import PropTypes from 'prop-types'
-import { Search, FileCode, ArrowRight, Hash, Terminal, Clock, ShieldCheck } from 'lucide-react'
+import {
+  Search,
+  FileCode,
+  ArrowRight,
+  Hash,
+  Terminal,
+  Clock,
+  ShieldCheck,
+  Command,
+  Settings,
+  Moon,
+  Sun,
+  Sidebar,
+  FilePlus,
+  Monitor,
+  X,
+  Image as ImageIcon
+} from 'lucide-react'
 
 /**
  * CommandPalette Component
  * High-performance, ranking-powered navigation hub.
  * Optimized for speed and premium aesthetics.
  */
-const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
+const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode = null }) => {
   const [search, setSearch] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [searchResults, setSearchResults] = useState(null)
@@ -20,7 +37,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
   // - Typing: Use Backend FTS (Scalable & Full Content Search)
   useEffect(() => {
     const query = search.trim()
-    if (!query) {
+    if (!query || query.startsWith('>')) {
       setSearchResults(null)
       return
     }
@@ -40,8 +57,72 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
     return () => clearTimeout(timer)
   }, [search])
 
+  const commands = useMemo(
+    () => [
+      {
+        id: 'cmd-new',
+        title: 'Create New Snippet',
+        icon: FilePlus,
+        description: 'Start a new draft',
+        action: () => window.dispatchEvent(new CustomEvent('app:command-new-snippet'))
+      },
+      {
+        id: 'cmd-theme',
+        title: 'Toggle Theme',
+        icon: Moon, // Dynamic icons handled in render if needed
+        description: 'Switch between Light and Dark mode',
+        action: () => window.dispatchEvent(new CustomEvent('app:toggle-theme'))
+      },
+      {
+        id: 'cmd-sidebar',
+        title: 'Toggle Sidebar',
+        icon: Sidebar,
+        description: 'Show or hide the side panel',
+        action: () => window.dispatchEvent(new CustomEvent('app:toggle-sidebar'))
+      },
+      {
+        id: 'cmd-preview',
+        title: 'Toggle Preview',
+        icon: Monitor,
+        description: 'Open or close the live preview pane',
+        action: () => window.dispatchEvent(new CustomEvent('app:toggle-preview'))
+      },
+      {
+        id: 'cmd-settings',
+        title: 'Open Settings',
+        icon: Settings,
+        description: 'Configure preferences and shortcuts',
+        action: () => window.dispatchEvent(new CustomEvent('app:open-settings'))
+      },
+      {
+        id: 'cmd-copy-image',
+        title: 'Copy as Image',
+        icon: ImageIcon,
+        description: 'Export snippet code as an image',
+        action: () => window.dispatchEvent(new CustomEvent('app:command-copy-image'))
+      },
+      {
+        id: 'cmd-close-window',
+        title: 'Close Application',
+        icon: X,
+        description: 'Exit the application',
+        action: () => window.api.closeWindow()
+      }
+    ],
+    []
+  )
+
+  const isCommandMode = search.startsWith('>')
+
   const filteredItems = useMemo(() => {
     const query = search.toLowerCase().trim()
+
+    // CASE 0: Command Mode
+    if (isCommandMode) {
+      const cmdQuery = query.slice(1).trim()
+      if (!cmdQuery) return commands
+      return commands.filter((cmd) => cmd.title.toLowerCase().includes(cmdQuery))
+    }
 
     // CASE 1: Recents (No Query)
     if (!query) {
@@ -87,7 +168,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
     const backendOnly = backendMatches.filter((b) => !merged.find((m) => m.id === b.id))
 
     return [...merged, ...backendOnly].slice(0, 25)
-  }, [search, snippets, searchResults])
+  }, [search, snippets, searchResults, commands, isCommandMode])
 
   // Reset index on search change
   useEffect(() => {
@@ -97,16 +178,23 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
   // Focus and handle navigation
   useEffect(() => {
     if (isOpen) {
-      setSearch('')
+      // If opened in command mode, pre-fill '>'
+      const initialText = initialMode === 'command' ? '>' : ''
+      setSearch(initialText)
+
       // Give a slight delay for the modal animation to settle before focusing
       const timer = setTimeout(() => {
         if (inputRef.current) {
           inputRef.current.focus()
+          // Move cursor to end if text exists
+          if (initialText) {
+            inputRef.current.selectionStart = inputRef.current.selectionEnd = initialText.length
+          }
         }
-      }, 100)
+      }, 50) // Slightly faster focus
       return () => clearTimeout(timer)
     }
-  }, [isOpen])
+  }, [isOpen, initialMode])
 
   const handleKeyDown = (e) => {
     if (e.key === 'ArrowDown') {
@@ -119,7 +207,11 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
       e.preventDefault()
       const selected = filteredItems[selectedIndex]
       if (selected) {
-        onSelect(selected)
+        if (isCommandMode) {
+          selected.action()
+        } else {
+          onSelect(selected)
+        }
         onClose()
       }
     } else if (e.key === 'Escape') {
@@ -174,19 +266,26 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
         onMouseDown={(e) => e.stopPropagation()}
         className="relative w-full max-w-xl bg-[var(--bg-secondary)] rounded-3xl shadow-[0_25px_70px_-15px_rgba(0,0,0,0.6)] border border-[var(--color-border)] overflow-hidden flex flex-col animate-in zoom-in-95 slide-in-from-top-6 duration-300 backdrop-blur-md"
       >
-        {/* Ultra-Clean Input Header (Strictly Zero-Gravity) */}
+        {/* Ultra-Clean Input Header */}
         <div className="flex items-center px-5 py-3.5 bg-transparent border-none shadow-none">
-          <Search
-            size={18}
-            className="text-[var(--color-text-tertiary)] mr-4 stroke-[2.5] opacity-50"
-          />
+          {isCommandMode ? (
+            <Command size={18} className="text-[var(--color-accent-primary)] mr-4 stroke-[2.5]" />
+          ) : (
+            <Search
+              size={18}
+              className="text-[var(--color-text-tertiary)] mr-4 stroke-[2.5] opacity-50"
+            />
+          )}
+
           <input
             ref={inputRef}
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Search keywords..."
+            placeholder={
+              isCommandMode ? 'Type a command...' : 'Search files or type > for commands'
+            }
             className="flex-1 bg-transparent border-none outline-none focus:ring-0 focus:outline-none shadow-none appearance-none text-[14px] font-normal tracking-tight placeholder:text-[var(--color-text-tertiary)] text-[var(--color-text-primary)]"
             autoComplete="off"
             spellCheck={false}
@@ -207,6 +306,50 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
             <div className="space-y-0.5">
               {filteredItems.map((item, index) => {
                 const isSelected = index === selectedIndex
+
+                // --- COMMAND RENDER ---
+                if (isCommandMode) {
+                  const Icon = item.icon || Terminal
+                  return (
+                    <div
+                      key={item.id}
+                      onMouseEnter={() => setSelectedIndex(index)}
+                      onClick={() => {
+                        item.action()
+                        onClose()
+                      }}
+                      className={`group relative px-4 py-2.5 rounded-sm flex items-center gap-4 cursor-pointer transition-all duration-150 ${
+                        isSelected
+                          ? 'bg-[var(--selected-bg)] pl-[13px] border-l-[3px] border-[var(--color-accent-primary)]'
+                          : 'hover:bg-[var(--hover-bg)] border-l-[3px] border-transparent'
+                      }`}
+                    >
+                      <div
+                        className={`p-2 rounded-xl transition-all duration-200 ${
+                          isSelected
+                            ? 'text-[var(--selected-text)]'
+                            : 'text-[var(--color-text-secondary)]'
+                        }`}
+                      >
+                        <Icon size={18} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div
+                          className={`text-[14px] font-semibold ${isSelected ? 'text-[var(--selected-text)]' : 'text-[var(--color-text-primary)]'}`}
+                        >
+                          {item.title}
+                        </div>
+                        <div
+                          className={`text-[11px] ${isSelected ? 'text-[var(--selected-text)] opacity-80' : 'text-[var(--color-text-secondary)]'}`}
+                        >
+                          {item.description}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                }
+
+                // --- SNIPPET RENDER ---
                 const lang = (item.language || 'txt').toUpperCase()
 
                 // Check if this was a content-only match for visual feedback
@@ -347,7 +490,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
                 <ShieldCheck size={24} className="text-[var(--color-text-tertiary)]" />
               </div>
               <h3 className="text-[var(--color-text-primary)] font-bold text-[14px] tracking-tight">
-                No snippets found
+                No results found
               </h3>
               <p className="text-[12px] text-[var(--color-text-secondary)] mt-1 max-w-[200px] mx-auto font-medium leading-relaxed">
                 {search
@@ -371,11 +514,11 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect }) => {
               <kbd className="px-1.5 py-0.5 bg-[var(--bg-primary)] rounded-md border border-[var(--color-border)] shadow-sm text-[var(--color-text-secondary)] font-mono">
                 ↵
               </kbd>
-              Open
+              {isCommandMode ? 'Execute' : 'Open'}
             </span>
           </div>
           <div className="flex items-center gap-2 tabular-nums">
-            {filteredItems.length} {filteredItems.length === 1 ? 'Match' : 'Matches'}
+            {filteredItems.length} {filteredItems.length === 1 ? 'Result' : 'Results'}
           </div>
         </div>
       </div>

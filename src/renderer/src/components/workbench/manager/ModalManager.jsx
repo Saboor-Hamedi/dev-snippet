@@ -4,6 +4,7 @@ import PropTypes from 'prop-types'
 // Lazy load modals
 const Prompt = lazy(() => import('../../modal/Prompt'))
 const CommandPalette = lazy(() => import('../../CommandPalette'))
+const ImageExportModal = lazy(() => import('../../CodeEditor/ImageExport/ImageExportModal'))
 
 const ModalContext = createContext()
 
@@ -26,6 +27,8 @@ export const ModalProvider = ({ children, snippets, onSelectSnippet }) => {
     onConfirm: null
   })
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
+  const [commandPaletteMode, setCommandPaletteMode] = useState(null) // null or 'command'
+  const [imageExportModal, setImageExportModal] = useState({ isOpen: false, snippet: null })
 
   // API exposed to consumers
   const openRenameModal = useCallback((item, onConfirm) => {
@@ -37,14 +40,46 @@ export const ModalProvider = ({ children, snippets, onSelectSnippet }) => {
     setDeleteModal({ isOpen: true, snippetId, onConfirm })
   }, [])
 
-  const toggleCommandPalette = useCallback(() => {
-    setIsCommandPaletteOpen((prev) => !prev)
+  const openImageExportModal = useCallback((snippet) => {
+    setImageExportModal({ isOpen: true, snippet })
   }, [])
+
+  const toggleCommandPalette = useCallback(
+    (forceCommandMode = false) => {
+      setIsCommandPaletteOpen((prev) => {
+        // If pressing "Ctrl+Shift+P" while "Ctrl+P" is already open -> Switch mode, don't close
+        if (prev && forceCommandMode) {
+          setCommandPaletteMode('command')
+          return true
+        }
+
+        // If pressing "Ctrl+P" (search) while "Ctrl+Shift+P" (command) is open -> Switch to search, don't close
+        if (prev && !forceCommandMode && commandPaletteMode === 'command') {
+          setCommandPaletteMode(null)
+          return true
+        }
+
+        // Standard Toggle Behavior
+        if (!prev) {
+          if (forceCommandMode) setCommandPaletteMode('command')
+          else setCommandPaletteMode(null)
+          return true
+        }
+
+        // Closing
+        setCommandPaletteMode(null)
+        return false
+      })
+    },
+    [commandPaletteMode]
+  ) // Added dependency
 
   const closeAll = useCallback(() => {
     setRenameModal({ isOpen: false, item: null, onConfirm: null })
     setDeleteModal({ isOpen: false, snippetId: null, onConfirm: null })
     setIsCommandPaletteOpen(false)
+    setCommandPaletteMode(null)
+    setImageExportModal({ isOpen: false, snippet: null })
   }, [])
 
   return (
@@ -52,9 +87,14 @@ export const ModalProvider = ({ children, snippets, onSelectSnippet }) => {
       value={{
         openRenameModal,
         openDeleteModal,
+        openImageExportModal,
         toggleCommandPalette,
         closeAll,
-        isAnyOpen: renameModal.isOpen || deleteModal.isOpen || isCommandPaletteOpen
+        isAnyOpen:
+          renameModal.isOpen ||
+          deleteModal.isOpen ||
+          isCommandPaletteOpen ||
+          imageExportModal.isOpen
       }}
     >
       {children}
@@ -119,12 +159,25 @@ export const ModalProvider = ({ children, snippets, onSelectSnippet }) => {
         {isCommandPaletteOpen && (
           <CommandPalette
             isOpen={true}
-            onClose={() => setIsCommandPaletteOpen(false)}
+            initialMode={commandPaletteMode}
+            onClose={() => {
+              setIsCommandPaletteOpen(false)
+              setCommandPaletteMode(null)
+            }}
             snippets={snippets}
             onSelect={(item) => {
               if (onSelectSnippet) onSelectSnippet(item)
               setIsCommandPaletteOpen(false)
+              setCommandPaletteMode(null)
             }}
+          />
+        )}
+
+        {imageExportModal.isOpen && (
+          <ImageExportModal
+            isOpen={true}
+            snippet={imageExportModal.snippet}
+            onClose={() => setImageExportModal({ isOpen: false, snippet: null })}
           />
         )}
       </Suspense>

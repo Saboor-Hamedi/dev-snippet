@@ -11,6 +11,7 @@ import { ViewProvider, useView } from '../../context/ViewContext'
 import { ModalProvider, useModal } from './manager/ModalManager'
 import KeyboardHandler from './manager/KeyboardHandler'
 import { useThemeManager } from '../../hook/useThemeManager'
+import { themeProps } from '../preference/theme/themeProps'
 
 // The Core Logic Component
 const SnippetLibraryInner = ({ snippetData }) => {
@@ -165,6 +166,49 @@ const SnippetLibraryInner = ({ snippetData }) => {
     return () => window.removeEventListener('app:open-snippet', handleOpenRequest)
   }, [snippets, showToast, navigateTo, setSelectedSnippet])
 
+  // --- Command Palette Actions ---
+  const { setTheme, currentThemeId } = themeProps()
+  const themeRef = React.useRef(currentThemeId)
+  useEffect(() => {
+    themeRef.current = currentThemeId
+  }, [currentThemeId])
+
+  useEffect(() => {
+    const onCommandNew = () => createDraftSnippet()
+    const onCommandTheme = () => {
+      const current = themeRef.current
+      const next = current === 'polaris' ? 'midnight-pro' : 'polaris'
+      setTheme(next)
+      showToast(`Theme switched to ${next === 'polaris' ? 'Light' : 'Dark'}`, 'info')
+    }
+    const onCommandSidebar = () => handleToggleSidebar()
+    const onCommandPreview = () => togglePreview()
+    const onCommandSettings = () => navigateTo('settings')
+    const onCommandCopyImage = () => {
+      if (selectedSnippet) {
+        openImageExportModal(selectedSnippet)
+      } else {
+        showToast('Open a snippet to export as image', 'info')
+      }
+    }
+
+    window.addEventListener('app:command-new-snippet', onCommandNew)
+    window.addEventListener('app:toggle-theme', onCommandTheme)
+    window.addEventListener('app:toggle-sidebar', onCommandSidebar)
+    window.addEventListener('app:toggle-preview', onCommandPreview)
+    window.addEventListener('app:open-settings', onCommandSettings)
+    window.addEventListener('app:command-copy-image', onCommandCopyImage)
+
+    return () => {
+      window.removeEventListener('app:command-new-snippet', onCommandNew)
+      window.removeEventListener('app:toggle-theme', onCommandTheme)
+      window.removeEventListener('app:toggle-sidebar', onCommandSidebar)
+      window.removeEventListener('app:toggle-preview', onCommandPreview)
+      window.removeEventListener('app:open-settings', onCommandSettings)
+      window.removeEventListener('app:command-copy-image', onCommandCopyImage)
+    }
+  }, [createDraftSnippet, handleToggleSidebar, togglePreview, navigateTo, setTheme, showToast])
+
   // --- Handlers for Workbench ---
   const handleDeleteRequest = (id) => {
     openDeleteModal(id, async (targetId) => {
@@ -286,11 +330,13 @@ const SnippetLibrary = () => {
       <ModalProvider
         snippets={snippetData.snippets}
         onSelectSnippet={(s) => {
-          snippetData.setSelectedSnippet(s)
-          // Note: ModalManager cannot call navigateTo directly as it's a sibling context consumer
-          // Usually better to handle selection effects in the Inner component or use a global event.
-          // For now, this updates state, and Inner component might react or user manually navigates in Inner.
-          // Ideally, ModalManager should only set selection, and we watch selection in Inner.
+          // Dispatch event to be handled by Inner component which has full context access
+          // This ensures we switch views (e.g. out of Settings) and set selection correctly
+          window.dispatchEvent(
+            new CustomEvent('app:open-snippet', {
+              detail: { title: s.title }
+            })
+          )
         }}
       >
         <SnippetLibraryInner snippetData={snippetData} />
