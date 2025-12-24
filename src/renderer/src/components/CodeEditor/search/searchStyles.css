@@ -1,0 +1,114 @@
+/**
+ * Custom Search Panel Styling for CodeMirror
+ * Matches the application's dark theme aesthetic
+ */
+
+/* Search Panel Container */
+.cm-search {
+  background: var(--editor-bg, #1e1e1e) !important;
+  border: 1px solid var(--color-border, #3e3e42) !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  color: var(--color-text-primary, #e0e0e0) !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+  font-size: 13px !important;
+  margin: 8px !important;
+  max-width: 400px !important;
+}
+
+/* Search Input Field */
+.cm-search input[type='text'] {
+  background: var(--input-bg, #2d2d30) !important;
+  border: 1px solid var(--color-border, #3e3e42) !important;
+  border-radius: 4px !important;
+  color: var(--color-text-primary, #e0e0e0) !important;
+  padding: 6px 8px !important;
+  font-size: 13px !important;
+  outline: none !important;
+  transition: border-color 0.2s ease !important;
+}
+
+.cm-search input[type='text']:focus {
+  border-color: var(--color-accent-primary, #007acc) !important;
+  box-shadow: 0 0 0 1px var(--color-accent-primary, #007acc) !important;
+}
+
+.cm-search input[type='text']::placeholder {
+  color: var(--color-text-secondary, #858585) !important;
+}
+
+/* Search Buttons */
+.cm-search button {
+  background: transparent !important;
+  border: 1px solid var(--color-border, #3e3e42) !important;
+  border-radius: 4px !important;
+  color: var(--color-text-primary, #e0e0e0) !important;
+  padding: 4px 8px !important;
+  cursor: pointer !important;
+  font-size: 12px !important;
+  transition: all 0.2s ease !important;
+  margin: 0 2px !important;
+}
+
+.cm-search button:hover {
+  background: var(--color-accent-primary, #007acc) !important;
+  border-color: var(--color-accent-primary, #007acc) !important;
+  color: white !important;
+}
+
+.cm-search button:active {
+  transform: scale(0.95) !important;
+}
+
+/* Close Button */
+.cm-search button[name='close'] {
+  border: none !important;
+  padding: 4px 6px !important;
+  opacity: 0.7 !important;
+}
+
+.cm-search button[name='close']:hover {
+  opacity: 1 !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Toggle Buttons (Case, Regex, Word) */
+.cm-search button[aria-pressed='true'] {
+  background: var(--color-accent-primary, #007acc) !important;
+  border-color: var(--color-accent-primary, #007acc) !important;
+  color: white !important;
+}
+
+/* Match Counter */
+.cm-search label {
+  color: var(--color-text-secondary, #858585) !important;
+  font-size: 12px !important;
+  margin: 0 8px !important;
+}
+
+/* Search Match Highlighting */
+.cm-searchMatch {
+  background-color: rgba(255, 200, 0, 0.3) !important;
+  border: 1px solid rgba(255, 200, 0, 0.5) !important;
+  border-radius: 2px !important;
+}
+
+/* Current/Selected Match */
+.cm-searchMatch-selected {
+  background-color: rgba(255, 150, 0, 0.5) !important;
+  border: 1px solid rgba(255, 150, 0, 0.8) !important;
+}
+
+/* Replace Panel (if enabled in future) */
+.cm-search input[type='text'][name='replace'] {
+  margin-top: 4px !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .cm-search {
+    max-width: 90% !important;
+    font-size: 12px !important;
+  }
+}

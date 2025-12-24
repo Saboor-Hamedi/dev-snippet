@@ -38,11 +38,14 @@ const SnippetLibraryInner = ({ snippetData }) => {
   const [isCreatingSnippet, setIsCreatingSnippet] = useState(false)
   const [zoomLevel, setZoomLevel] = useZoomLevel()
 
-  // Lifted Sidebar State
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  // Lifted Sidebar State - defaults to closed, remembers last state
+  const [isSidebarOpen, setIsSidebarOpen] = useState(
+    () => localStorage.getItem('sidebarOpen') === 'true'
+  )
   const handleToggleSidebar = useCallback(() => setIsSidebarOpen((prev) => !prev), [])
 
   useEffect(() => localStorage.setItem('compactMode', isCompact), [isCompact])
+  useEffect(() => localStorage.setItem('sidebarOpen', isSidebarOpen), [isSidebarOpen])
 
   const focusEditor = useCallback(() => {
     if (activeView !== 'editor' && !isCreatingSnippet) return

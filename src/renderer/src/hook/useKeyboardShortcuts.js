@@ -79,6 +79,10 @@ export const useKeyboardShortcuts = (shortcuts) => {
         }
       }
 
+      // Ctrl+F search (handled directly in CodeEditor component)
+      // The CodeEditor component listens for Ctrl+F and opens the custom search panel
+      // Escape to close is handled by the SearchPanel component itself
+
       // Ctrl+, toggles Settings
       if ((e.ctrlKey || e.metaKey) && e.key === ',') {
         e.preventDefault()

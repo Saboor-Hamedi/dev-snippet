@@ -97,20 +97,23 @@ const UserSettings = () => {
             </div>
 
             {/* Toolbar for JSON Mode */}
-            <div className="p-2 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#161b22] flex justify-end gap-2">
-              <button
-                onClick={handleReset}
-                className="px-3 py-1 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
-              >
-                Reset to Defaults
-              </button>
-              <button
-                onClick={handleJsonSave}
-                className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-medium transition-colors shadow-sm"
-              >
-                <Save size={14} />
-                <span>Save Changes</span>
-              </button>
+            <div className="p-2 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#161b22] flex justify-between items-center px-4">
+              <div className="text-[10px] font-mono opacity-40 select-none">v1.2.0</div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleReset}
+                  className="px-3 py-1 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                >
+                  Reset to Defaults
+                </button>
+                <button
+                  onClick={handleJsonSave}
+                  className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-medium transition-colors shadow-sm"
+                >
+                  <Save size={14} />
+                  <span>Save Changes</span>
+                </button>
+              </div>
             </div>
           </div>
         )}

@@ -7,6 +7,7 @@ import { EditorView } from '@codemirror/view'
 import buildTheme from './extensions/buildTheme'
 import buildExtensions from './extensions/buildExtensions'
 import ErrorBoundary from '../ErrorBoundary'
+import SearchPanel from './search/SearchPanel'
 
 // Helper to debounce save operations
 const debounce = (func, wait) => {
@@ -58,6 +59,10 @@ const CodeEditor = ({
   // Determine dark mode
   const [isDark, setIsDark] = useState(false)
 
+  // Search panel state (persistent across open/close)
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [lastSearchQuery, setLastSearchQuery] = useState('')
+
   useEffect(() => {
     if (typeof document === 'undefined') return
 
@@ -79,6 +84,23 @@ const CodeEditor = ({
     })
 
     return () => observer.disconnect()
+  }, [])
+
+  // Ctrl+F to open search (listen on editor container only)
+  useEffect(() => {
+    const editorContainer = editorDomRef.current
+    if (!editorContainer) return
+
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault()
+        e.stopPropagation()
+        setIsSearchOpen(true)
+      }
+    }
+
+    editorContainer.addEventListener('keydown', handleKeyDown, true) // Use capture phase
+    return () => editorContainer.removeEventListener('keydown', handleKeyDown, true)
   }, [])
 
   // Initial base extensions (Theme only) to prevent FOUC
@@ -263,6 +285,16 @@ const CodeEditor = ({
         }}
         editable={!readOnly}
       />
+
+      {/* VS Code-style Search Panel */}
+      {isSearchOpen && (
+        <SearchPanel
+          editorView={viewRef.current}
+          onClose={() => setIsSearchOpen(false)}
+          initialQuery={lastSearchQuery}
+          onQueryChange={setLastSearchQuery}
+        />
+      )}
     </div>
   )
 }

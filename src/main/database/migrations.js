@@ -22,8 +22,8 @@ export const runMigrations = (db) => {
     ensureCol('code_draft', 'ALTER TABLE snippets ADD COLUMN code_draft TEXT')
     ensureCol('is_draft', 'ALTER TABLE snippets ADD COLUMN is_draft INTEGER')
     ensureCol('sort_index', 'ALTER TABLE snippets ADD COLUMN sort_index INTEGER')
-    ensureCol('is_deleted', 'ALTER TABLE snippets ADD COLUMN is_deleted INTEGER DEFAULT 0')
-    ensureCol('deleted_at', 'ALTER TABLE snippets ADD COLUMN deleted_at INTEGER')
+    ensureCol('is_deleted', 'ALTER TABLE snippets ADD COLUMN is_deleted INTEGER DEFAULT 0') // Default to 0 (not deleted)
+    ensureCol('deleted_at', 'ALTER TABLE snippets ADD COLUMN deleted_at INTEGER') // Timestamp of deletion
   } catch (e) {
     console.warn('Migration warning:', e.message)
   }

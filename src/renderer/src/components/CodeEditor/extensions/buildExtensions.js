@@ -73,7 +73,6 @@ const buildExtensions = async (options, handlers = {}) => {
     exts.push(drawSelection({ cursorBlinkRate: 0 })) // We use custom blinking
     exts.push(highlightActiveLine())
     exts.push(indentOnInput())
-    exts.push(syntaxHighlighting(defaultHighlightStyle, { fallback: true }))
     exts.push(closeBrackets())
     exts.push(bracketMatching())
     exts.push(history())
@@ -100,6 +99,17 @@ const buildExtensions = async (options, handlers = {}) => {
     )
   } catch (e) {
     console.error('[Editor] Failed to load core extensions', e)
+  }
+
+  // 3.5. SEARCH HIGHLIGHTING (Custom search panel with highlighting)
+  try {
+    const { searchHighlighter, searchHighlightTheme } =
+      await import('../search/searchHighlighter.js')
+
+    exts.push(searchHighlighter)
+    exts.push(searchHighlightTheme)
+  } catch (e) {
+    console.warn('[Editor] Failed to load search highlighting', e)
   }
 
   // 4. EDITOR UI (Line Numbers / Folding)
@@ -147,9 +157,25 @@ const buildExtensions = async (options, handlers = {}) => {
       const langSupport = await langDesc.load()
       exts.push(langSupport)
       console.info(`[Editor] Loaded language: ${langDesc.name}`)
-    } else if (language === 'markdown' || language === 'md') {
+
+      // If it's Markdown, also add rich styling and extras
+      if (normalizedLang === 'markdown' || normalizedLang === 'md') {
+        console.log('[Editor] Adding rich Markdown styling + extras...')
+        const { richMarkdownExtension } = await import('./richMarkdown.js')
+        const { markdownExtrasExtension } = await import('./markdownExtras.js')
+        exts.push(richMarkdownExtension)
+        exts.push(markdownExtrasExtension)
+        console.info('[Editor] ✅ Added rich Markdown styling + extras')
+      }
+    } else if (normalizedLang === 'markdown' || normalizedLang === 'md') {
+      console.log('[Editor] Loading Markdown with rich styling...')
       const { markdown } = await import('@codemirror/lang-markdown')
+      const { richMarkdownExtension } = await import('./richMarkdown.js')
       exts.push(markdown({ addKeymap: true }))
+      exts.push(richMarkdownExtension)
+      console.info('[Editor] ✅ Loaded Markdown with rich styling')
+    } else {
+      console.warn('[Editor] No language support found for:', normalizedLang)
     }
   } catch (e) {
     console.warn(`[Editor] Language loading failed for: ${language}`, e)

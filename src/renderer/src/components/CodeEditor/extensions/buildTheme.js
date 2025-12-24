@@ -19,16 +19,44 @@ const buildTheme = (EditorView, options = {}) => {
         transition: 'background-color 140ms ease, color 140ms ease'
       },
 
+      // Hide whitespace/special char highlighting (tabs, spaces, etc) - Global suppression
+      '.cm-specialChar, .cm-whitespace, .cm-highlightWhitespace, .cm-tab': {
+        color: 'inherit !important',
+        backgroundColor: 'transparent !important',
+        textDecoration: 'none !important',
+        opacity: '1 !important',
+        backgroundImage: 'none !important'
+      },
+      // Ensure specific suppression inside code contexts
+      '.cm-content *': {
+        '&.cm-whitespace, &.cm-tab, &.cm-specialChar': {
+          color: 'inherit !important',
+          backgroundColor: 'transparent !important',
+          display: 'inline !important'
+        }
+      },
+
+      // Table Row Background (Full-width via line decoration)
+      '.cm-md-table-row': {
+        backgroundColor: 'rgba(88, 166, 255, 0.05)'
+      },
+
+      // Custom Markdown Elements (Inline decorations)
+      '.cm-wikilink': {
+        color: '#58a6ff !important',
+        textDecoration: 'underline'
+      },
+      '.cm-mention, .cm-hashtag': {
+        color: '#d2a8ff !important',
+        backgroundColor: 'rgba(210, 168, 255, 0.1)',
+        padding: '0 2px',
+        borderRadius: '3px'
+      },
+
       // Dark mode overrides for safety
       '&.cm-editor.dark': {
         backgroundColor: 'var(--editor-bg, #0d1117) !important',
         color: 'var(--editor-text, #e6edf3) !important'
-      },
-
-      // Force monochrome for Minimal Gray theme to ensure "Pitch Black" editor text
-      // (Overrides syntax highlighting colors)
-      'html[data-theme="minimal-gray"] & .cm-content *': {
-        color: 'inherit !important'
       },
 
       '&.cm-editor.dark .cm-gutters': {

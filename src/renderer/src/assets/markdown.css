@@ -562,6 +562,47 @@ html[data-theme='minimal-gray'] ::-webkit-scrollbar-track {
   text-decoration: underline !important;
 }
 
+/* WikiLinks [[link]] */
+.markdown-body .wikilink,
+.markdown-body a[href*='[['] {
+  color: #a5d6ff !important;
+  background-color: rgba(88, 166, 255, 0.1) !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  text-decoration: none !important;
+  font-weight: 500 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* @mentions */
+.markdown-body .mention,
+.markdown-body a[href^='@'],
+.markdown-body span[data-mention] {
+  color: #d2a8ff !important;
+  background-color: rgba(210, 168, 255, 0.1) !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  text-decoration: none !important;
+  font-weight: 500 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* #hashtags (not headings) */
+.markdown-body .hashtag,
+.markdown-body a[href^='#']:not([href='#']),
+.markdown-body span[data-hashtag] {
+  color: #79c0ff !important;
+  background-color: rgba(121, 192, 255, 0.1) !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  text-decoration: none !important;
+  font-weight: 500 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
 /* Images - Responsive */
 .markdown-body img {
   max-width: 100%;

@@ -1,6 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 :root {
   /* Layout dimensions */
   --activity-bar-width: 60px;
@@ -47,6 +48,7 @@
   --current-line-bg: rgba(88, 166, 255, 0.12);
   --editor-line-height: 1.6;
   --caret-style: bar;
+
   /* custom Tailwind font sizes → CSS variables */
   --font-size-xtiny: 0.625rem; /* 10px  */
   --font-size-tiny: 0.75rem; /* 12px  */
@@ -86,6 +88,7 @@
   --line-height-2xs: 1rem;
   --line-height-3xs: 1rem;
 }
+
 /* Comprehensive Theme System - All components use these variables */
 
 /* Prevent Monaco from overriding line padding */

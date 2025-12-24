@@ -23,9 +23,14 @@ Welcome to the comprehensive documentation for **Dev Snippet**, a high-performan
 
 ### Key Features
 
-- **Smart Editor**: Auto-detects languages, supports 100+ syntax highlights.
+- **Pro Smart Editor**: 
+  - **Syntax Highlighting**: Auto-detects 100+ languages.
+  - **Social Elements**: Vibrant highlighting for `@mentions` and `#hashtags`.
+  - **Wiki-Links**: Connect snippets with `[[WikiLink]]` syntax and smart completion.
+  - **Smart Pairs**: Atomic deletion for common pairs like `[[ ]]`, `` ``` ``, `**`, etc.
+- **In-Editor Search**: VS Code-style search panel with regex, case-sensitivity, and match navigation. (See [Search Documentation](../src/renderer/src/components/CodeEditor/search/SearchDoc.md))
+- **Enhanced Tables**: Full-width striped background with bold headers and subtle delimiters.
 - **Live Preview**: Real-time rendering with **Mermaid** diagrams and **MathJax**.
-- **Wiki-Links**: Connect snippets using `[[WikiLink]]` syntax.
 - **PDF Export**: Pro-grade `A4` PDF generation with custom margins.
 - **Mini Browser**: Detach the preview into a floating "Always on Top" window.
 
@@ -34,10 +39,11 @@ Welcome to the comprehensive documentation for **Dev Snippet**, a high-performan
 | Action             | Shortcut           |
 | :----------------- | :----------------- |
 | **Quick Open**     | `Ctrl + P`         |
+| **In-Editor Search** | `Ctrl + F`       |
 | **New Snippet**    | `Ctrl + N`         |
 | **Save**           | `Ctrl + S`         |
 | **Rename**         | `Ctrl + R`         |
-| **Toggle Preview** | `Ctrl + \`         |
+| **Toggle Preview** | `Ctrl + Shift + \` |
 | **Export PDF**     | `UI Button`        |
 
 ---
@@ -234,29 +240,24 @@ mindmap
 
 ## 6. Changelog & Updates
 
-### Version 1.1.6
+### Version 1.2.0
 
-**Search Engine & Performance Overhaul:**
+**Pro Editor & UX Enhancements:**
 
-- **Hybrid Search Engine**: Integrates instant local type-ahead (Prefix Matching) with powerful Backend Full-Text Search (FTS5), giving "Best of Both Worlds" performance.
-- **Deep Content Context**: Search results now display the relevant snippet of body text with hit highlighting, powered by SQLite `snippet()`.
-- **Lazy Loading Architecture**: Optimized startup to fetch only metadata initially, allowing the app to handle 50,000+ snippets effortlessly.
-- **Smart Query Logic**: Implemented strict `AND` matching with stopword filtering (e.g. ignores "of") and BM25 ranking for high accuracy.
+- **Pro Smart Editor**: 
+  - **Social Highlighting**: Vibrant colors and background capsules for `@mentions` and `#hashtags`.
+  - **Table Overhaul**: Full-width striped backgrounds for table rows, bolded headers, and subtle pipe delimiters.
+  - **Atomic Units**: Entire pairs like `[[ ]]`, `` ``` ``, `**`, `~~` are now deleted as single units.
+  - **Triple-Backtick Pairing**: Typing the 3rd backtick now automatically generates the full code block unit `` ``` ``` ``.
+- **In-Editor Search**: Integration of VS Code-style search panel with full regex and navigation support.
+- **Robustness Fixes**: Implemented crash protection for undefined Markdown tags and refined regex to prevent "swallowing" document content.
 
-**Other Additions:**
+**Search Engine & Performance Overhaul (v1.1.6):**
 
-- **Robust Keyboard Handling**: Implemented "Capture Phase" listeners to fix `Ctrl+,` (Settings) and resolve key conflicts.
-- **JSON Syntax Highlighting**: Added dedicated support for JSON files with custom theme integration.
-- **Cursor Blinking Control**: New setting to toggle cursor animations (Solid/Blinking).
-- **Safe Markdown Mode**: Restored standard Markdown highlighting while preventing previous extension-related crashes.
-
-**Fixed:**
-
-- **Production Build Fixes**: Resolved `preview.html` loading errors and automated DevTools toggling for production.
-- **Dark Mode Visibility**: Improved text contrast and highlighting visibility in Command Palette.
-- **Snippet Rename System**: Completely overhauled the renaming logic to fix the "locked input" bug.
+- **Hybrid Search Engine**: Integrates instant local type-ahead (Prefix Matching) with powerful Backend Full-Text Search (FTS5).
+[... 15 lines ...]
 - **Global Error Handling**: Improved `ErrorBoundary` (Safe Mode) coverage for cleaner recovery from runtime glitches.
 
 ---
 
-_Documentation generated for Dev Snippet v1.1.6_
+_Documentation generated for Dev Snippet v1.2.0_

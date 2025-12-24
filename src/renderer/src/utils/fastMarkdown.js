@@ -11,22 +11,19 @@ export const fastMarkdownToHtml = (text, existingTitles = []) => {
   const placeholders = []
   let processed = text
 
-  // Fenced Code Blocks (```)
-  processed = processed.replace(/```(\w+)?\s*([\s\S]*?)```/g, (match, lang, code) => {
-    const id = `__CODE_BLOCK_${placeholders.length}__`
-    if (lang === 'mermaid') {
+  // Fenced Code Blocks (```) - Stricter matching at start of line
+  // This prevents inline ` ``` ` from swallowing the whole document
+  processed = processed.replace(
+    /(?:^|\n)```(\w+)?\b[^\n]*\n([\s\S]*?)```/g,
+    (match, lang, code) => {
+      const id = `__CODE_BLOCK_${placeholders.length}__`
       const escaped = code.trim().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      placeholders.push({
-        id,
-        content: `<div class="mermaid-diagram">${escaped}</div>`
-      })
-    } else {
-      // Escape code content here
-      const escaped = code.trim().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      let content = ''
 
-      placeholders.push({
-        id,
-        content: `
+      if (lang === 'mermaid') {
+        content = `<div class="mermaid-diagram">${escaped}</div>`
+      } else {
+        content = `
           <div class="code-block-wrapper">
             <div class="code-block-header">
               <span class="code-language">${lang || 'text'}</span>
@@ -36,10 +33,11 @@ export const fastMarkdownToHtml = (text, existingTitles = []) => {
             </div>
             <pre><code class="language-${lang || 'text'}">${escaped}</code></pre>
           </div>`
-      })
+      }
+      placeholders.push({ id, content })
+      return `\n${id}`
     }
-    return id
-  })
+  )
 
   // 2. Tables (GFM Style)
   processed = processed.replace(
@@ -90,7 +88,6 @@ export const fastMarkdownToHtml = (text, existingTitles = []) => {
     .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">')
     .replace(/\[([^\]]*)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
     // GitHub Alerts [!NOTE], [!TIP], [!IMPORTANT], [!WARNING], [!CAUTION]
-    // Supports: [!TYPE] line text OR > [!TYPE] \n > content
     .replace(
       /(?:^|\n)(?:> )?\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\][^\n\S]*(.*)?(\r?\n(?:> ?.*(?:\n> ?.*)*))?(?=\n\n|\n$|$)/gi,
       (match, type, sameLineText, content) => {
@@ -128,18 +125,13 @@ export const fastMarkdownToHtml = (text, existingTitles = []) => {
     .replace(/^[\s]*[-|\*]\s\[x\]\s(.*)$/gm, '<li><input type="checkbox" checked disabled> $1</li>')
 
   // Lists
-  // Convert lines starting with *, -, or 1. into <li> tags
   processed = processed.replace(/^[\s]*[\*][\s]+(.*)$/gm, '<li>$1</li>')
   processed = processed.replace(/^[\s]*[-][\s]+(.*)$/gm, '<li>$1</li>')
   processed = processed.replace(/^[\s]*\d+\.[\s]+(.*)$/gm, '<li>$1</li>')
 
-  // Wrap groups of <li> tags in <ul> or <ol>
-  // Simplified approach: wrap everything in <ul> first, then
-  // we'll refine if it's strictly numbers (but <ul> is a safe fallback)
   processed = processed.replace(
     /(?:^|\n)(<li>.*<\/li>(?:\r?\n<li>.*<\/li>)*)/g,
     (match, listItems) => {
-      // Check if the original lines were likely an ordered list
       const isOrdered = match.trim().startsWith('1.') || match.trim().match(/^\d+\./)
       const tag = isOrdered ? 'ol' : 'ul'
       return `\n<${tag}>${listItems}</${tag}>`
