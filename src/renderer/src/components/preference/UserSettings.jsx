@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { Save, Code, Sliders } from 'lucide-react'
+import { createPortal } from 'react-dom'
+import { Save, Code, Sliders, RotateCcw } from 'lucide-react'
 import { useSettings } from '../../hook/useSettingsContext'
 import { useToast } from '../../hook/useToast'
 import CodeEditor from '../CodeEditor/CodeEditor'
@@ -17,14 +18,9 @@ const UserSettings = () => {
   // Local state for the JSON editor string
   const [jsonText, setJsonText] = useState('')
 
-  // Local state for zoom levels
-  const [zoomLevel, setZoomLevel] = useState(1.0) // Global UI zoom
-  const [editorZoom, setEditorZoom] = useState(1.0) // Editor-specific zoom
-
   // Sync jsonText when settings change or when switching to JSON mode
-  // This ensures we always see the latest settings when opening the JSON tab
   useEffect(() => {
-    if (settings && mode === 'json') {
+    if (settings && (mode === 'json' || jsonText === '')) {
       setJsonText(JSON.stringify(settings, null, 2))
     }
   }, [settings, mode])
@@ -41,62 +37,79 @@ const UserSettings = () => {
     }
   }
 
-  // Reset to defaults
   const handleReset = () => {
     if (confirm('Are you sure you want to reset to defaults?')) {
       if (contextResetSettings) contextResetSettings()
-      else console.error('resetSettings function is missing from context')
     }
   }
 
-  return (
-    <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0d1117] text-slate-900 dark:text-slate-100 transition-colors duration-300">
-      <ToastNotification toast={toast} />
-      {/* Mode Switcher Header */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0d1117]">
-        <div className="flex items-center gap-3">
-          <div className="text-[10px] font-bold tracking-wider text-[var(--color-text-secondary)] uppercase">
-            Configuration
-          </div>
-          <div className="text-[9px] font-mono opacity-30 select-none bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
-            v1.2.0
-          </div>
-        </div>
+  // Find the header portal target
+  const headerPortalTarget = document.getElementById('settings-header-right')
 
-        {/* Mode Switcher */}
-        <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
-          <button
-            onClick={() => setMode('ui')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-              mode === 'ui'
-                ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-            }`}
-          >
-            <Sliders size={14} />
-            <span>Visual</span>
-          </button>
-          <button
-            onClick={() => setMode('json')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-              mode === 'json'
-                ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-            }`}
-          >
-            <Code size={14} />
-            <span>JSON</span>
-          </button>
-        </div>
-      </div>
+  return (
+    <div className="flex flex-col h-full bg-transparent text-slate-900 dark:text-slate-100 transition-colors duration-300 overflow-hidden">
+      <ToastNotification toast={toast} />
+
+      {/* Mode Switcher & Controls - Portaled to Header */}
+      {headerPortalTarget &&
+        createPortal(
+          <div className="flex items-center gap-2 sm:gap-4 ml-2">
+            {/* Conditional Toggling Switcher (Only show opposite mode) */}
+            <div className="flex items-center">
+              {mode === 'ui' ? (
+                <button
+                  onClick={() => setMode('json')}
+                  className="flex items-center gap-1.5 px-2 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-[var(--color-border)] rounded-md text-[9px] sm:text-[10px] font-bold text-slate-600 dark:text-slate-300 transition-all shadow-sm"
+                  title="Switch to Source Code"
+                >
+                  <Code size={11} className="opacity-70" />
+                  <span className="hidden sm:inline">Source Code</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => setMode('ui')}
+                  className="flex items-center gap-1.5 px-2 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-[var(--color-border)] rounded-md text-[9px] sm:text-[10px] font-bold text-slate-600 dark:text-slate-300 transition-all shadow-sm"
+                  title="Switch to Visual Editor"
+                >
+                  <Sliders size={11} className="opacity-70" />
+                  <span className="hidden sm:inline">Visual Editor</span>
+                </button>
+              )}
+            </div>
+
+            {/* Source Code Action Buttons */}
+            {mode === 'json' && (
+              <div className="flex items-center gap-1.5 pl-2 border-l border-[var(--color-border)]">
+                <button
+                  onClick={handleReset}
+                  title="Reset Defaults"
+                  className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-500/10 rounded-md transition-all sm:px-2 sm:py-1 sm:text-[9px] sm:font-bold sm:uppercase sm:tracking-wider sm:border sm:border-transparent sm:hover:border-red-500/30"
+                >
+                  <RotateCcw size={12} className="sm:hidden" />
+                  <span className="hidden sm:inline">Reset</span>
+                </button>
+                <button
+                  onClick={handleJsonSave}
+                  className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-[10px] uppercase font-bold tracking-tight transition-all shadow-sm"
+                >
+                  <Save size={11} />
+                  <span>Save</span>
+                </button>
+              </div>
+            )}
+          </div>,
+          headerPortalTarget
+        )}
 
       {/* Content Area */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 min-h-0">
         {mode === 'ui' ? (
-          <SettingsForm key="visual-settings" />
+          <div className="max-w-3xl mx-auto py-6 px-4 sm:px-6 overflow-y-auto h-full custom-scrollbar">
+            <SettingsForm key="visual-settings" />
+          </div>
         ) : (
           <div className="h-full flex flex-col" key="json-settings">
-            <div className="flex-1 relative min-h-0">
+            <div className="flex-1 relative min-h-0 border-t border-[var(--color-border)] overflow-hidden">
               <CodeEditor
                 value={jsonText}
                 onChange={setJsonText}
@@ -105,23 +118,6 @@ const UserSettings = () => {
                 height="100%"
                 isLargeFile={false}
               />
-            </div>
-
-            {/* Toolbar for JSON Mode */}
-            <div className="p-2 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#161b22] flex justify-end gap-2">
-              <button
-                onClick={handleReset}
-                className="px-3 py-1 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
-              >
-                Reset to Defaults
-              </button>
-              <button
-                onClick={handleJsonSave}
-                className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-medium transition-colors shadow-sm"
-              >
-                <Save size={14} />
-                <span>Save Changes</span>
-              </button>
             </div>
           </div>
         )}

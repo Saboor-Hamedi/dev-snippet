@@ -30,10 +30,12 @@ const SnippetLibraryInner = ({ snippetData }) => {
   } = snippetData
   const { activeView, showPreview, togglePreview, navigateTo } = useView()
   const { openRenameModal, openDeleteModal } = useModal()
-  const { settings } = useSettings()
+  const { settings, getSetting, updateSetting } = useSettings()
   const { toast, showToast } = useToast()
 
-  const [isCompact, setIsCompact] = useState(() => localStorage.getItem('compactMode') === 'true')
+  const isCompact = getSetting('ui.compactMode') || false
+  const setIsCompact = (val) => updateSetting('ui.compactMode', val)
+
   const [autosaveStatus, setAutosaveStatus] = useState(null)
   const [isCreatingSnippet, setIsCreatingSnippet] = useState(false)
   const [zoomLevel, setZoomLevel] = useZoomLevel()
@@ -45,7 +47,6 @@ const SnippetLibraryInner = ({ snippetData }) => {
   )
   const handleToggleSidebar = useCallback(() => setIsSidebarOpen((prev) => !prev), [])
 
-  useEffect(() => localStorage.setItem('compactMode', isCompact), [isCompact])
   useEffect(() => localStorage.setItem('sidebarOpen', isSidebarOpen), [isSidebarOpen])
 
   const focusEditor = useCallback(() => {
@@ -219,7 +220,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
           showPreview={showPreview}
           onTogglePreview={togglePreview}
           showToast={showToast}
-          hideWelcomePage={settings?.ui?.hideWelcomePage || false}
+          hideWelcomePage={settings?.welcome?.hideWelcomePage || false}
           autosaveStatus={autosaveStatus}
           onAutosave={(s) => {
             setAutosaveStatus(s)

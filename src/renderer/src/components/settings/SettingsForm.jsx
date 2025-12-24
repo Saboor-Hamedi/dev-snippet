@@ -1,23 +1,24 @@
-import React, { useState, useEffect } from 'react'
-import { Monitor, Type, Layout, Code, Settings as SettingsIcon, FileJson } from 'lucide-react'
-import { Toggle, Select, Input } from './controls/SettingsControls'
+import React from 'react'
+import { Monitor, Type, Settings as SettingsIcon, MousePointer2, Layout, Eye } from 'lucide-react'
+import { SettingSection, SettingToggle, SettingSelect, SettingInput } from './components'
 import { useSettings, useCompactMode } from '../../hook/useSettingsContext'
 import { useToast } from '../../hook/useToast'
 import ToastNotification from '../../utils/ToastNotification'
+import useFontSettings from '../../hook/settings/useFontSettings'
+import useCursorProp from '../../hook/settings/useCursorProp'
 
 const SettingsForm = () => {
   const { settings, updateSetting, isLoading } = useSettings()
   const { toast, showToast } = useToast()
   const [compactMode, setCompactMode] = useCompactMode()
 
-  // Local state to debounce or manage form vs json
-  // But for now we bind directly for instant gratification
+  // Hooks for matched settings from other tabs
+  const fontSettings = useFontSettings()
+  const cursorSettings = useCursorProp()
 
   if (isLoading) return <div className="p-8 text-center text-slate-500">Loading settings...</div>
 
   const handleUpdate = (section, key, value) => {
-    // updateSetting handles dot notation correctly for nested keys
-    // This is safer and more efficient than reconstructing the whole object
     updateSetting(`${section}.${key}`, value)
     showToast(`✓ Updated ${key}`)
   }
@@ -27,138 +28,130 @@ const SettingsForm = () => {
     showToast(`✓ Compact Mode ${v ? 'Enabled' : 'Disabled'}`)
   }
 
+  const onSettingChange = (setter, label) => (val) => {
+    setter(val)
+    showToast(`✓ Updated ${label}`)
+  }
+
   return (
-    <div className="max-w-2xl mx-auto py-2 px-4 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="max-w-2xl mx-auto py-2 px-4 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
       <ToastNotification toast={toast} />
-      {/* SECTION: Appearance */}
-      <section>
-        <div className="flex items-center gap-2 mb-2 pb-1 border-b border-[var(--color-border)]">
-          <Monitor className="w-4 h-4 text-blue-500" />
-          <h2 className="text-sm font-bold text-[var(--color-text-primary)] uppercase tracking-tight">
-            Appearance
-          </h2>
-        </div>
 
-        <div className="space-y-1">
-          <Toggle
-            label="Compact Mode"
-            description="Reduce padding in the sidebar and lists."
-            value={compactMode}
-            onChange={handleCompactToggle}
-          />
-        </div>
-      </section>
+      {/* SECTION: Global Appearance */}
+      <SettingSection title="Global Appearance" icon={Monitor} iconColor="text-blue-500">
+        <SettingToggle
+          label="Compact Mode"
+          description="Reduce padding in the sidebar and lists."
+          checked={compactMode}
+          onChange={handleCompactToggle}
+        />
+      </SettingSection>
 
-      {/* SECTION: Editor */}
-      <section>
-        <div className="flex items-center gap-2 mb-2 pb-1 border-b border-[var(--color-border)]">
-          <Type className="w-4 h-4 text-emerald-500" />
-          <h2 className="text-sm font-bold text-[var(--color-text-primary)] uppercase tracking-tight">
-            Editor
-          </h2>
-        </div>
+      {/* SECTION: Typography */}
+      <SettingSection title="Typography" icon={Type} iconColor="text-emerald-500">
+        <SettingSelect
+          label="Editor Font Family"
+          description="Monospace fonts recommended."
+          value={fontSettings.editorFontFamily}
+          onChange={onSettingChange(fontSettings.updateEditorFontFamily, 'Font Family')}
+          options={['JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', 'Courier New']}
+        />
 
-        <div className="space-y-1">
-          <Select
-            label="Font Family"
-            description="The font used in the code editor area."
-            value={settings.editor?.fontFamily || 'Fira Code'}
-            onChange={(v) => handleUpdate('editor', 'fontFamily', v)}
-            options={[
-              { label: 'Fira Code', value: "'Fira Code', monospace" },
-              { label: 'JetBrains Mono', value: "'JetBrains Mono', monospace" },
-              { label: 'Cascadia Code', value: "'Cascadia Code', monospace" },
-              { label: 'Source Code Pro', value: "'Source Code Pro', monospace" },
-              { label: 'Consolas (System)', value: "Consolas, 'Courier New', monospace" }
-            ]}
-          />
+        <SettingInput
+          label="Editor Font Size"
+          description="Controls the editor font size."
+          value={fontSettings.editorFontSize}
+          onChange={onSettingChange(fontSettings.updateEditorFontSize, 'Font Size')}
+          type="number"
+        />
 
-          <Select
-            label="Font Size"
-            value={parseInt(settings.editor?.fontSize) || 14}
-            onChange={(v) => handleUpdate('editor', 'fontSize', parseInt(v))}
-            options={[
-              { label: '12px', value: 12 },
-              { label: '14px', value: 14 },
-              { label: '16px', value: 16 },
-              { label: '18px', value: 18 },
-              { label: '20px', value: 20 },
-              { label: '24px', value: 24 }
-            ]}
-          />
+        <SettingToggle
+          label="Font Ligatures"
+          description="Enable symbols combining (e.g. => turns into an arrow)."
+          checked={settings.editor?.fontLigatures !== false}
+          onChange={(v) => handleUpdate('editor', 'fontLigatures', v)}
+        />
+      </SettingSection>
 
-          <Select
-            label="Cursor Blinking"
-            description="Controls the cursor animation style."
-            value={settings.editor?.cursorBlinking || 'blink'}
-            onChange={(v) => handleUpdate('editor', 'cursorBlinking', v)}
-            options={[
-              { label: 'Blink', value: 'blink' },
-              { label: 'Smooth', value: 'smooth' },
-              { label: 'Phase', value: 'phase' },
-              { label: 'Expand', value: 'expand' },
-              { label: 'Solid', value: 'solid' }
-            ]}
-          />
+      {/* SECTION: Editor Experience */}
+      <SettingSection title="Editor Experience" icon={Layout} iconColor="text-purple-500">
+        <SettingToggle
+          label="Word Wrap"
+          description="Wrap long lines in the editor."
+          checked={settings.editor?.wordWrap === 'on'}
+          onChange={(v) => handleUpdate('editor', 'wordWrap', v ? 'on' : 'off')}
+        />
 
-          <Toggle
-            label="Font Ligatures"
-            description="Enable symbols combining (e.g. => turns into an arrow)."
-            value={settings.editor?.fontLigatures ?? true}
-            onChange={(v) => handleUpdate('editor', 'fontLigatures', v)}
-          />
+        <SettingToggle
+          label="Line Numbers"
+          checked={settings.editor?.lineNumbers !== 'off'}
+          onChange={(v) => handleUpdate('editor', 'lineNumbers', v ? 'on' : 'off')}
+        />
 
-          <Toggle
-            label="Line Numbers"
-            value={settings.editor?.lineNumbers !== 'off'}
-            onChange={(v) => handleUpdate('editor', 'lineNumbers', v ? 'on' : 'off')}
-          />
+        <SettingToggle
+          label="Minimap"
+          description="Show the code overview on the right side."
+          checked={settings.editor?.minimap?.enabled ?? false}
+          onChange={(v) =>
+            handleUpdate('editor', 'minimap', { ...settings.editor?.minimap, enabled: v })
+          }
+        />
 
-          <Toggle
-            label="Word Wrap"
-            value={settings.editor?.wordWrap === 'on'}
-            onChange={(v) => handleUpdate('editor', 'wordWrap', v ? 'on' : 'off')}
-          />
+        <SettingSelect
+          label="Cursor Blinking"
+          description="Controls the cursor animation style."
+          value={cursorSettings.cursorBlinking ? 'blink' : 'solid'}
+          onChange={(v) => cursorSettings.setCursorBlinking(v === 'blink')}
+          options={[
+            { label: 'Blink', value: 'blink' },
+            { label: 'Solid', value: 'solid' }
+          ]}
+        />
+      </SettingSection>
 
-          <Toggle
-            label="Minimap"
-            description="Show the code overview on the right side."
-            value={settings.editor?.minimap?.enabled ?? false}
-            onChange={(v) =>
-              handleUpdate('editor', 'minimap', { ...settings.editor?.minimap, enabled: v })
-            }
-          />
+      {/* SECTION: Cursor & Interaction */}
+      <SettingSection
+        title="Cursor & Cursor Details"
+        icon={MousePointer2}
+        iconColor="text-cyan-500"
+      >
+        <SettingSelect
+          label="Cursor Shape"
+          value={cursorSettings.cursorShape}
+          onChange={onSettingChange(cursorSettings.setCursorShape, 'Cursor Shape')}
+          options={[
+            { value: 'bar', label: 'Bar' },
+            { value: 'block', label: 'Block' },
+            { value: 'underline', label: 'Underline' }
+          ]}
+        />
+        <SettingInput
+          label="Cursor Width"
+          description="Thickness of the text cursor."
+          value={cursorSettings.cursorWidth}
+          onChange={onSettingChange(cursorSettings.setCursorWidth, 'Cursor Width')}
+          type="number"
+        />
+        <SettingInput
+          label="Selection Background"
+          description="CSS color for selected text."
+          value={cursorSettings.cursorSelectionBg}
+          onChange={onSettingChange(cursorSettings.setCursorSelectionBg, 'Selection Color')}
+          placeholder="#58a6ff33"
+        />
+      </SettingSection>
 
-          <Input
-            label="Background Color (CSS)"
-            description="Override the editor background color (e.g. #1e1e1e or transparent)."
-            value={settings.editor?.editorBgColor || ''}
-            onChange={(v) => handleUpdate('editor', 'editorBgColor', v)}
-            placeholder="#232731"
-          />
-        </div>
-      </section>
-
-      {/* SECTION: AI & System (Placeholder) */}
-      <section>
-        <div className="flex items-center gap-2 mb-2 pb-1 border-b border-[var(--color-border)]">
-          <SettingsIcon className="w-4 h-4 text-purple-500" />
-          <h2 className="text-sm font-bold text-[var(--color-text-primary)] uppercase tracking-tight">
-            System
-          </h2>
-        </div>
-
-        <div className="space-y-1">
-          <Input
-            label="Snippets Directory"
-            description="Custom path to store snippets (Coming Soon)."
-            value={settings.system?.snippetPath || ''}
-            onChange={() => {}} // Disabled for now
-            disabled
-            placeholder="Default application folder"
-          />
-        </div>
-      </section>
+      {/* SECTION: System */}
+      <SettingSection title="System" icon={SettingsIcon} iconColor="text-slate-500">
+        <SettingInput
+          label="Snippets Directory"
+          description="Custom path to store snippets (Coming Soon)."
+          value={settings.system?.snippetPath || ''}
+          onChange={() => {}}
+          placeholder="Default application folder"
+          noBorder
+        />
+      </SettingSection>
     </div>
   )
 }

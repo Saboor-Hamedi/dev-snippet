@@ -5,19 +5,22 @@ import PropTypes from 'prop-types'
  * Reusable section wrapper for grouped settings
  * Provides consistent styling and spacing
  */
-const SettingSection = ({ title, children, className = '' }) => {
+const SettingSection = ({ title, icon: Icon, iconColor, children, className = '' }) => {
   return (
-    <section className={className}>
+    <section className={`mb-6 ${className}`}>
       {title && (
-        <h3
-          className="text-xtiny font-semibold uppercase tracking-wider mb-3 ml-3"
-          style={{ color: 'var(--color-text-tertiary)' }}
-        >
-          {title}
-        </h3>
+        <div className="flex items-center gap-2 mb-3 ml-3">
+          {Icon && <Icon size={14} className={iconColor || 'opacity-50'} />}
+          <h3
+            className="text-xtiny font-semibold uppercase tracking-wider"
+            style={{ color: 'var(--color-text-tertiary)' }}
+          >
+            {title}
+          </h3>
+        </div>
       )}
       <div
-        className="rounded-md border overflow-hidden"
+        className="rounded-md border overflow-hidden shadow-sm"
         style={{
           backgroundColor: 'var(--color-bg-secondary)',
           borderColor: 'var(--color-border)'
@@ -31,6 +34,8 @@ const SettingSection = ({ title, children, className = '' }) => {
 
 SettingSection.propTypes = {
   title: PropTypes.string,
+  icon: PropTypes.elementType,
+  iconColor: PropTypes.string,
   children: PropTypes.node.isRequired,
   className: PropTypes.string
 }

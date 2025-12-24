@@ -2,7 +2,8 @@
 export const DEFAULT_SETTINGS = {
   // Welcome settings Covers all tiny components
   welcome: {
-    welcomePage: '#232731'
+    welcomePage: '#232731',
+    hideWelcomePage: false
   },
   editor: {
     editorBgColor: '#232731',

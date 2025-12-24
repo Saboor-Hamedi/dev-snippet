@@ -15,7 +15,7 @@ const EditorSettings = ({
   onOverlayModeChange
 }) => {
   return (
-    <SettingSection title="Text Editor">
+    <SettingSection>
       {/* Word Wrap */}
       <SettingToggle
         label="Word Wrap"

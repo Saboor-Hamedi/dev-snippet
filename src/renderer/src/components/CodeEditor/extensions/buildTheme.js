@@ -15,9 +15,21 @@ const buildTheme = (EditorView, options = {}) => {
         fontSize: fontSize,
         lineHeight: '1.6',
         height: '100%',
-        paddingLeft: '0' /* Safety padding for measurements */,
+        paddingLeft: '0',
         transition: 'background-color 140ms ease, color 140ms ease'
       },
+
+      /* HIGH-CONTRAST SYNTAX HIGHLIGHTING (RESTORATION) */
+      '.cm-string': { color: 'var(--color-accent-primary, #4ade80) !important' },
+      '.cm-property, .cm-variableName-2': {
+        color: 'var(--color-accent-secondary, #60a5fa) !important'
+      },
+      '.cm-number': { color: '#f472b6 !important' },
+      '.cm-boolean': { color: '#fb923c !important' },
+      '.cm-null': { color: '#94a3b8 !important' },
+      '.cm-keyword': { color: '#c084fc !important' },
+      '.cm-comment': { color: '#64748b !important', fontStyle: 'italic' },
+      '.cm-punctuation, .cm-bracket': { color: 'var(--color-text-secondary, #94a3b8) !important' },
 
       // Hide whitespace/special char highlighting (tabs, spaces, etc) - Global suppression
       '.cm-specialChar, .cm-whitespace, .cm-highlightWhitespace, .cm-tab': {
@@ -56,7 +68,7 @@ const buildTheme = (EditorView, options = {}) => {
       // Dark mode overrides for safety
       '&.cm-editor.dark': {
         backgroundColor: 'var(--editor-bg, #0d1117) !important',
-        color: 'var(--editor-text, #e6edf3) !important'
+        color: 'var(--editor-text, #e6edf3)'
       },
 
       '&.cm-editor.dark .cm-gutters': {

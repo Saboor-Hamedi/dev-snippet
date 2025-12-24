@@ -1,28 +1,32 @@
-import React from 'react'
+import React, { useState, useEffect, useMemo, memo } from 'react'
 import PropTypes from 'prop-types'
 import { useZoomLevel, useEditorZoomLevel } from '../hook/useZoomLevel'
 
-const StatusBar = ({
-  onSettingsClick,
-  title,
-  isLargeFile = false,
-  snippets = [],
-  hideWelcomePage = false,
-  onToggleWelcomePage
-}) => {
-  const [version, setVersion] = React.useState('...')
+const StatusBar = ({ title, isLargeFile = false, snippets = [] }) => {
+  const [version, setVersion] = useState('...')
   const [zoom] = useZoomLevel()
   const [editorZoom] = useEditorZoomLevel()
 
-  React.useEffect(() => {
+  // Debounce display values to keep statusbar "still" during fast wheeling
+  const [displayZoom, setDisplayZoom] = useState(zoom)
+  const [displayEditorZoom, setDisplayEditorZoom] = useState(editorZoom)
+
+  useEffect(() => {
+    const t = setTimeout(() => setDisplayZoom(zoom), 50)
+    return () => clearTimeout(t)
+  }, [zoom])
+
+  useEffect(() => {
+    const t = setTimeout(() => setDisplayEditorZoom(editorZoom), 50)
+    return () => clearTimeout(t)
+  }, [editorZoom])
+
+  useEffect(() => {
     window.api?.getVersion().then(setVersion)
   }, [])
 
   const hasEditorContext = title !== undefined && title !== null
-  const uniqueLanguages = React.useMemo(
-    () => new Set(snippets.map((s) => s.language)).size,
-    [snippets]
-  )
+  const uniqueLanguages = useMemo(() => new Set(snippets.map((s) => s.language)).size, [snippets])
 
   return (
     <div
@@ -33,7 +37,7 @@ const StatusBar = ({
         borderColor: 'var(--color-border)'
       }}
     >
-      {/* LEFT: System Info (Always Visible for Consistency) */}
+      {/* LEFT: System Info */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-1.5 px-1 py-0.5 rounded hover:bg-white/5 transition-colors cursor-default">
           <div
@@ -48,9 +52,8 @@ const StatusBar = ({
         </div>
       </div>
 
-      {/* RIGHT: Context Info (Swaps based on View) */}
+      {/* RIGHT: Context Info */}
       <div className="flex items-center gap-3 opacity-90">
-        {/* Large File Warning */}
         {isLargeFile && (
           <span
             className="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider bg-amber-500/20 text-amber-500"
@@ -60,66 +63,31 @@ const StatusBar = ({
           </span>
         )}
 
-        {/* EDITOR CONTEXT: Lang | Zoom */}
-        {hasEditorContext ? (
-          <>
-            <span className="font-mono text-[10px] uppercase tracking-wider opacity-80">
-              {title?.split('.').pop() || 'PLAINTEXT'}
+        <span className="font-mono text-[10px] uppercase tracking-wider opacity-80">
+          {title?.split('.').pop() || 'PLAINTEXT'}
+        </span>
+        <span className="text-white/20">|</span>
+        <div className="flex items-center gap-2">
+          {displayEditorZoom !== 1.0 && (
+            <span className="font-mono text-[10px] text-cyan-400" title="Editor Font Scale">
+              Code: {Math.round(displayEditorZoom * 100)}%
             </span>
-            <span className="text-white/20">|</span>
-            <div className="flex items-center gap-2">
-              {/* If Local Editor Zoom is active, show it with an icon or label */}
-              {editorZoom !== 1.0 && (
-                <span className="font-mono text-[10px] text-cyan-400" title="Editor Font Scale">
-                  Code: {Math.round(editorZoom * 100)}%
-                </span>
-              )}
-              {/* Show Global Window Zoom */}
-              <span
-                className={`font-mono text-[10px] ${zoom === 1.0 && editorZoom !== 1.0 ? 'opacity-40' : 'opacity-80'}`}
-                title="Global Window Zoom"
-              >
-                {zoom !== 1.0 || editorZoom === 1.0 ? `Win: ${Math.round(zoom * 100)}%` : ''}
-                {zoom === 1.0 && editorZoom === 1.0 ? '100%' : ''}
-              </span>
-            </div>
-          </>
-        ) : (
-          /* SYSTEM CONTEXT: Counts | Welcome Toggle */
-          <>
-            <div className="flex items-center gap-2 text-[10px] opacity-80 hidden sm:flex">
-              <span>{snippets.length} Snippets</span>
-              <span className="text-white/20">|</span>
-              <span>{uniqueLanguages} Languages</span>
-            </div>
-
-            {/* Only show toggle if handler provided */}
-            {onToggleWelcomePage && (
-              <>
-                <span className="text-white/20 hidden sm:block">|</span>
-                <button
-                  onClick={() => onToggleWelcomePage(!hideWelcomePage)}
-                  className="hover:text-cyan-400 transition-colors"
-                  title={hideWelcomePage ? 'Show Welcome Page' : 'Hide Welcome Page'}
-                >
-                  {hideWelcomePage ? 'Show Welcome' : 'Hide Welcome'}
-                </button>
-              </>
-            )}
-          </>
-        )}
+          )}
+          <span className="font-mono text-[10px] opacity-80" title="Global Window Zoom">
+            {displayZoom !== 1.0 || displayEditorZoom === 1.0
+              ? `Win: ${Math.round(displayZoom * 100)}%`
+              : ''}
+          </span>
+        </div>
       </div>
     </div>
   )
 }
 
 StatusBar.propTypes = {
-  onSettingsClick: PropTypes.func,
-  title: PropTypes.string, // If present, shows Editor Context
+  title: PropTypes.string,
   isLargeFile: PropTypes.bool,
-  snippets: PropTypes.array,
-  hideWelcomePage: PropTypes.bool,
-  onToggleWelcomePage: PropTypes.func
+  snippets: PropTypes.array
 }
 
-export default React.memo(StatusBar)
+export default memo(StatusBar)

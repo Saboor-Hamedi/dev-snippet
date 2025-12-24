@@ -1,5 +1,7 @@
 import buildTheme from './buildTheme'
 import { premiumTypingBundle } from './premiumFeatures'
+import { tags as t } from '@lezer/highlight'
+import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 
 /**
  * Lazy-load language names to keep the main bundle light.
@@ -62,11 +64,29 @@ const buildExtensions = async (options, handlers = {}) => {
   try {
     const { dropCursor, drawSelection, keymap, highlightActiveLine } =
       await import('@codemirror/view')
-    const { indentOnInput, bracketMatching, syntaxHighlighting, defaultHighlightStyle } =
+    const { indentOnInput, bracketMatching, defaultHighlightStyle } =
       await import('@codemirror/language')
     const { defaultKeymap, historyKeymap, history } = await import('@codemirror/commands')
     const { closeBrackets, closeBracketsKeymap, completionKeymap, autocompletion } =
       await import('@codemirror/autocomplete')
+
+    // Define premium syntax highlighting style
+    const premiumHighlightStyle = HighlightStyle.define([
+      { tag: t.keyword, color: '#c084fc', fontWeight: 'bold' },
+      { tag: t.variableName, color: 'var(--color-accent-secondary, #60a5fa)' },
+      { tag: t.propertyName, color: 'var(--color-accent-secondary, #60a5fa)' },
+      { tag: t.string, color: 'var(--color-accent-primary, #4ade80)' },
+      { tag: t.number, color: '#f472b6' },
+      { tag: t.bool, color: '#fb923c' },
+      { tag: t.null, color: '#94a3b8' },
+      { tag: t.comment, color: '#64748b', fontStyle: 'italic' },
+      {
+        tag: [t.punctuation, t.separator, t.bracket],
+        color: 'var(--color-text-secondary, #94a3b8)'
+      },
+      { tag: t.heading, color: 'var(--color-accent-primary)', fontWeight: 'bold' },
+      { tag: t.link, color: 'var(--color-accent-secondary)', textDecoration: 'underline' }
+    ])
 
     // Basic UI Extensions
     exts.push(dropCursor())
@@ -75,6 +95,7 @@ const buildExtensions = async (options, handlers = {}) => {
     exts.push(indentOnInput())
     exts.push(closeBrackets())
     exts.push(bracketMatching())
+    exts.push(syntaxHighlighting(premiumHighlightStyle, { fallback: true }))
     exts.push(history())
 
     // REGISTER UNIFIED AUTOCOMPLETION
@@ -153,27 +174,25 @@ const buildExtensions = async (options, handlers = {}) => {
         (l.extensions && l.extensions.some((e) => e.toLowerCase() === normalizedLang))
     )
 
-    if (langDesc) {
-      const langSupport = await langDesc.load()
-      exts.push(langSupport)
-      console.info(`[Editor] Loaded language: ${langDesc.name}`)
-
-      // If it's Markdown, also add rich styling and extras
-      if (normalizedLang === 'markdown' || normalizedLang === 'md') {
-        console.log('[Editor] Adding rich Markdown styling + extras...')
-        const { richMarkdownExtension } = await import('./richMarkdown.js')
-        const { markdownExtrasExtension } = await import('./markdownExtras.js')
-        exts.push(richMarkdownExtension)
-        exts.push(markdownExtrasExtension)
-        console.info('[Editor] ✅ Added rich Markdown styling + extras')
-      }
-    } else if (normalizedLang === 'markdown' || normalizedLang === 'md') {
+    // Priority 1: Explicit JSON (Settings)
+    if (normalizedLang === 'json') {
+      console.log('[Editor] Loading explicit JSON support...')
+      const { json } = await import('@codemirror/lang-json')
+      exts.push(json())
+    }
+    // Priority 2: Markdown with extras
+    else if (normalizedLang === 'markdown' || normalizedLang === 'md') {
       console.log('[Editor] Loading Markdown with rich styling...')
       const { markdown } = await import('@codemirror/lang-markdown')
       const { richMarkdownExtension } = await import('./richMarkdown.js')
       exts.push(markdown({ addKeymap: true }))
       exts.push(richMarkdownExtension)
-      console.info('[Editor] ✅ Loaded Markdown with rich styling')
+    }
+    // Priority 3: Dynamic discovery
+    else if (langDesc) {
+      const langSupport = await langDesc.load()
+      exts.push(langSupport)
+      console.info(`[Editor] Loaded language: ${langDesc.name}`)
     } else {
       console.warn('[Editor] No language support found for:', normalizedLang)
     }

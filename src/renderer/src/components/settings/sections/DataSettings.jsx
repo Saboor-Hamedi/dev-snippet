@@ -10,7 +10,7 @@ import BackupRestorePanel from '../../BackupRestorePanel'
  */
 const DataSettings = ({ hideWelcomePage, onWelcomePageToggle, onExportData }) => {
   return (
-    <SettingSection title="System & Data">
+    <SettingSection title="">
       {/* Show Welcome Page Toggle */}
       <SettingToggle
         label="Show Welcome Page"

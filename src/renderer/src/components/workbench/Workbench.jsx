@@ -13,6 +13,7 @@ import TrashSidebar from './TrashSidebar'
 import ActivityBar from '../layout/ActivityBar'
 import StatusBar from '../StatusBar'
 import { useModal } from './manager/ModalManager'
+import SystemStatusFooter from '../SystemStatusFooter'
 
 const Workbench = ({
   activeView,
@@ -259,15 +260,19 @@ const Workbench = ({
           <div className="flex-1 min-h-0 overflow-hidden text-clip">{renderContent()}</div>
 
           <div className="flex-none border-t border-[var(--color-border)] bg-[var(--footer-bg)]">
-            <StatusBar
-              title={selectedSnippet?.title}
-              onSettingsClick={onOpenSettings}
-              snippets={snippets || []}
-              hideWelcomePage={hideWelcomePage}
-              onToggleWelcomePage={(val) => {
-                // Optional toggle handler
-              }}
-            />
+            {selectedSnippet ? (
+              <StatusBar
+                title={selectedSnippet?.title}
+                onSettingsClick={onOpenSettings}
+                snippets={snippets || []}
+                hideWelcomePage={hideWelcomePage}
+                onToggleWelcomePage={(val) => {
+                  // Optional toggle handler
+                }}
+              />
+            ) : (
+              <SystemStatusFooter snippets={snippets || []} />
+            )}
           </div>
         </div>
       </div>

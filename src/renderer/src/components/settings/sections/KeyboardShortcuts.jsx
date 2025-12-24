@@ -51,7 +51,7 @@ const KeyboardShortcuts = ({ modKey = 'Ctrl' }) => {
   ]
 
   return (
-    <SettingSection title="Keyboard Shortcuts">
+    <SettingSection>
       <div className="p-4">
         <p className="text-xtiny mb-3" style={{ color: 'var(--color-text-tertiary)' }}>
           Common keyboard shortcuts used across the app.

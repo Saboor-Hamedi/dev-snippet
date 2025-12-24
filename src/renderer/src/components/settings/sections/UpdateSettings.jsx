@@ -8,7 +8,7 @@ import UpdateManager from '../components/UpdateManager'
  */
 const UpdateSettings = () => {
   return (
-    <SettingSection title="Software Updates">
+    <SettingSection>
       <UpdateManager />
 
       <div className="mt-4 p-4 rounded-lg bg-blue-500/5 border border-blue-500/10">

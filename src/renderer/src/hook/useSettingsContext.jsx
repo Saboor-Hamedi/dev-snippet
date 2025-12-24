@@ -31,73 +31,56 @@ export const SettingsProvider = ({ children }) => {
     }
   }, [])
 
-  // LIVE ZOOM STATE - For smooth, immediate interface updates
-  // LIVE ZOOM STATE - For smooth, immediate interface updates
+  // --- ZOOM MANAGEMENT ---
+
+  // 1. Live state for Global UI Zoom
   const [zoom, setZoomInternal] = useState(() => {
-    // Pre-calculate to avoid FOUC or 10% issue on first render
     const initial = settingsManager.get('editor.zoomLevel') ?? 1.0
     return Math.max(0.5, Number(initial))
   })
 
-  // Sync live zoom with settings on load
-  useEffect(() => {
-    const savedZoom = settings.editor?.zoomLevel ?? 1.0
-    // FORCED FLOOR of 0.5 (50%) to prevent "tiny UI" issues.
-    // This ensures Ctrl+0 never results in 10%.
-    const cleanSaved = Math.max(0.5, Number(savedZoom))
-    if (Math.abs(cleanSaved - zoom) > 0.01) {
-      setZoomInternal(cleanSaved)
-    }
-  }, [settings.editor?.zoomLevel])
-
-  // Apply Live Zoom factor to the native window and CSS
-  useEffect(() => {
-    // 1. CSS Variable for components that need it
-    document.documentElement.style.setProperty('--zoom-level', zoom)
-
-    // 2. Native Electron Zoom (The professional way)
-    if (window.api?.setZoom) {
-      window.api.setZoom(zoom).catch(() => {})
-    }
-
-    // 3. Debounced persist to settings.json
-    const timer = setTimeout(() => {
-      const currentSaved = settings.editor?.zoomLevel ?? 1.0
-      if (Math.abs(zoom - currentSaved) > 0.01) {
-        settingsManager.set('editor.zoomLevel', zoom)
-      }
-    }, 500)
-
-    return () => clearTimeout(timer)
-  }, [zoom])
-
-  // EDITOR LOCAL ZOOM - Forces ONLY the editor/gutter font to scale
+  // 2. Live state for Editor-Only Font Zoom
   const [editorZoom, setEditorZoomInternal] = useState(() => {
     return settingsManager.get('editor.fontZoom') ?? 1.0
   })
 
+  // 3. Apply UI Zoom to the native window and CSS
+  useEffect(() => {
+    if (window.api?.setZoom) {
+      window.api.setZoom(zoom).catch(() => {})
+    }
+    document.documentElement.style.setProperty('--zoom-level', zoom)
+  }, [zoom])
+
+  // 4. Consolidated Debounced Persistence
   useEffect(() => {
     const timer = setTimeout(() => {
-      settingsManager.set('editor.fontZoom', editorZoom)
-    }, 500)
-    return () => clearTimeout(timer)
-  }, [editorZoom])
+      const currentZoom = settingsManager.get('editor.zoomLevel') ?? 1.0
+      const currentFontZoom = settingsManager.get('editor.fontZoom') ?? 1.0
 
+      const needsZoomWrite = Math.abs(zoom - currentZoom) > 0.01
+      const needsFontWrite = Math.abs(editorZoom - currentFontZoom) > 0.01
+
+      if (needsZoomWrite || needsFontWrite) {
+        if (needsZoomWrite) settingsManager.set('editor.zoomLevel', zoom)
+        if (needsFontWrite) settingsManager.set('editor.fontZoom', editorZoom)
+      }
+    }, 1000)
+    return () => clearTimeout(timer)
+  }, [zoom, editorZoom])
+
+  // 5. Exposure Setters
   const setZoom = (value) => {
     setZoomInternal((prev) => {
       const next = typeof value === 'function' ? value(prev) : value
-      // Step: 0.1, Floor: 0.5, Ceiling: 5.0
-      // Round to nearest 0.1 (one decimal place)
-      const target = Math.max(0.5, Math.min(5.0, Math.round(next * 10) / 10))
-      return target
+      return Math.max(0.5, Math.min(5.0, Math.round(next * 10) / 10))
     })
   }
 
   const setEditorZoom = (value) => {
     setEditorZoomInternal((prev) => {
       const next = typeof value === 'function' ? value(prev) : value
-      const target = Math.max(0.5, Math.min(5.0, Math.round(next * 10) / 10))
-      return target
+      return Math.max(0.5, Math.min(5.0, Math.round(next * 10) / 10))
     })
   }
 
@@ -146,6 +129,9 @@ export const SettingsProvider = ({ children }) => {
   // Reset to defaults
   const resetSettings = async () => {
     await settingsManager.reset()
+    // Explicitly reset local zoom states
+    setZoomInternal(1.0)
+    setEditorZoomInternal(1.0)
     // settingsManager will notify listeners, causing this component to update via subscription
   }
 
