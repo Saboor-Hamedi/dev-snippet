@@ -53,6 +53,7 @@ export const normalizeSnippet = (snippet) => {
     tags: extractTags(code),
     timestamp: snippet.timestamp || Date.now(),
     is_draft: snippet.is_draft || false,
+    is_pinned: snippet.is_pinned || 0,
     folder_id: snippet.folder_id || null
   }
 }

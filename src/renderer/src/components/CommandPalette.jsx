@@ -19,6 +19,7 @@ import {
   X,
   Image as ImageIcon,
   Layers,
+  Layout,
   FileDown
 } from 'lucide-react'
 
@@ -118,11 +119,32 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
         action: () => window.dispatchEvent(new CustomEvent('app:export-pdf'))
       },
       {
+        id: 'cmd-toggle-activity-bar',
+        title: 'Toggle Activity Bar',
+        icon: Layout,
+        description: 'Show or hide the leftmost navigation rail',
+        action: () => window.dispatchEvent(new CustomEvent('app:toggle-activity-bar'))
+      },
+      {
         id: 'cmd-close-window',
         title: 'Close Application',
         icon: X,
         description: 'Exit the application',
         action: () => window.api.closeWindow()
+      },
+      {
+        id: 'cmd-toggle-zen',
+        title: 'Toggle All Sidebars (Zen Mode)',
+        icon: Monitor,
+        description: 'Hide/Show both Activity Bar and Sidebar at once',
+        action: () => window.dispatchEvent(new CustomEvent('app:toggle-zen'))
+      },
+      {
+        id: 'cmd-toggle-focus',
+        title: 'Toggle Focus Mode',
+        icon: Command,
+        description: 'Hide every bit of UI and center the editor',
+        action: () => window.dispatchEvent(new CustomEvent('app:toggle-focus'))
       }
     ],
     []

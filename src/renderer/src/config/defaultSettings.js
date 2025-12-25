@@ -10,6 +10,7 @@ export const DEFAULT_SETTINGS = {
     zoomLevel: 1.0,
     fontSize: 16,
     fontFamily: 'JetBrains Mono',
+    fontLigatures: true,
     lineNumbers: true,
     wordWrap: 'off',
     tabSize: 2,
@@ -37,19 +38,38 @@ export const DEFAULT_SETTINGS = {
     borderRound: 0,
     overlayMode: false
   },
+  header: {
+    bgColor: '#232731',
+    textColor: '#c9d1d9',
+    iconColor: '#c9d1d9',
+    borderColor: '#30363d'
+  },
   ui: {
-    activityBarBg: '#333333',
     sidebarBg: '#252526',
     statusBarBg: '#232731', // Editor header status bar
     footerBg: '#232731', // System status footer
     headerBg: '#232731', // Main header
     compactMode: false,
+    showSidebar: true,
+    showActivityBar: true,
+    showHeader: true,
+    showStatusBar: true,
+    showFocusMode: false,
     showPreview: false,
+    sidebarIconColor: '#c9d1d9',
     sidebarWidth: 250,
     previewPosition: 'right',
     previewFontSize: 14,
     hideWelcomePage: false,
     theme: 'system'
+  },
+  activityBar: {
+    bgColor: '#18181b',
+    activeFg: '#f1be36',
+    inactiveFg: 'rgba(255, 255, 255, 0.4)',
+    activeBorder: '#d946ef',
+    badgeBg: '#d946ef',
+    badgeFg: '#ffffff'
   },
   behavior: {
     autoSave: true,

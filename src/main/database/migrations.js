@@ -30,6 +30,11 @@ export const runMigrations = (db) => {
     )
     ensureCol('snippets', 'deleted_at', 'ALTER TABLE snippets ADD COLUMN deleted_at INTEGER')
     ensureCol('snippets', 'folder_id', 'ALTER TABLE snippets ADD COLUMN folder_id TEXT')
+    ensureCol(
+      'snippets',
+      'is_pinned',
+      'ALTER TABLE snippets ADD COLUMN is_pinned INTEGER DEFAULT 0'
+    )
 
     // Folders table migrations
     ensureCol(

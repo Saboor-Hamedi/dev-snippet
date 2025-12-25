@@ -10,7 +10,7 @@ import { File } from 'lucide-react'
 
 import SnippetSidebar from './SnippetSidebar'
 import TrashSidebar from './TrashSidebar'
-import ActivityBar from '../layout/ActivityBar'
+import ActivityBar from '../layout/activityBar/ActivityBar'
 import StatusBar from '../StatusBar'
 import { useModal } from './manager/ModalManager'
 import SystemStatusFooter from '../SystemStatusFooter'
@@ -57,8 +57,11 @@ const Workbench = ({
   onRenameFolder,
   onDeleteFolder,
   onDeleteBulk,
+  onTogglePin,
   selectedIds,
-  onSelectionChange
+  onSelectionChange,
+  settings,
+  isSettingsOpen
 }) => {
   const handleSave = (snippet) => {
     onSave(snippet)
@@ -189,39 +192,47 @@ const Workbench = ({
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div
+      className={`h-full flex flex-col overflow-hidden ${settings?.ui?.showFocusMode ? 'focus-mode-active' : ''}`}
+    >
       {/* Header - Full Width */}
-      <Header
-        title={getHeaderTitle()}
-        isTab={activeView === 'editor' || (activeView === 'snippets' && !!selectedSnippet)}
-        isCompact={isCompact}
-        onToggleCompact={onToggleCompact}
-        autosaveStatus={autosaveStatus}
-        isSidebarOpen={isSidebarOpen}
-        onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        onSave={() => selectedSnippet && onSave(selectedSnippet)}
-        onNewSnippet={onNewSnippet}
-        onNewFolder={onNewFolder}
-        onSearch={() => {
-          if (activeView === 'settings' && onCloseSettings) {
-            onCloseSettings()
-          }
-          setActiveSidebarTab('explorer')
-        }}
-        sidebarWidth={250}
-        onRename={onRename}
-        onClose={onCloseSnippet}
-      />
+      {settings?.ui?.showHeader !== false && !settings?.ui?.showFocusMode && (
+        <Header
+          title={getHeaderTitle()}
+          isTab={activeView === 'editor' || (activeView === 'snippets' && !!selectedSnippet)}
+          isCompact={isCompact}
+          onToggleCompact={onToggleCompact}
+          autosaveStatus={autosaveStatus}
+          isSidebarOpen={isSidebarOpen}
+          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+          onSave={() => selectedSnippet && onSave(selectedSnippet)}
+          onNewSnippet={onNewSnippet}
+          onNewFolder={onNewFolder}
+          onSearch={() => {
+            if (activeView === 'settings' && onCloseSettings) {
+              onCloseSettings()
+            }
+            setActiveSidebarTab('explorer')
+          }}
+          sidebarWidth={250}
+          onRename={onRename}
+          onClose={onCloseSnippet}
+        />
+      )}
 
       {/* Main Workspace (ActivityBar + Sidebar + Editor) */}
       <div className="flex-1 flex overflow-hidden min-h-0">
         {/* Activity Bar (Icons) */}
-        <ActivityBar
-          activeTab={activeSidebarTab}
-          onTabChange={handleTabChange}
-          onSettings={onOpenSettings}
-          trashCount={trash?.length || 0}
-        />
+        {settings?.ui?.showActivityBar !== false && !settings?.ui?.showFocusMode && (
+          <ActivityBar
+            activeTab={activeSidebarTab}
+            onTabChange={handleTabChange}
+            onSettings={onOpenSettings}
+            isSettingsOpen={isSettingsOpen}
+            trashCount={trash?.length || 0}
+            settings={settings}
+          />
+        )}
 
         {/* Sidebars Container (Stacking) */}
         {/* We render both but control visibility via 'isOpen' prop for animation */}
@@ -230,11 +241,14 @@ const Workbench = ({
         <aside
           className="flex flex-col overflow-hidden h-full z-10 relative"
           style={{
-            width: isSidebarOpen ? 250 : 0,
+            width: isSidebarOpen && !settings?.ui?.showFocusMode ? 250 : 0,
             backgroundColor: 'var(--sidebar-bg)',
-            borderRight: isSidebarOpen ? '1px solid var(--color-border)' : 'none',
+            borderRight:
+              isSidebarOpen && !settings?.ui?.showFocusMode
+                ? '1px solid var(--color-border)'
+                : 'none',
             transition: 'width 300ms ease-in-out, opacity 300ms ease-in-out',
-            opacity: isSidebarOpen ? 1 : 0,
+            opacity: isSidebarOpen && !settings?.ui?.showFocusMode ? 1 : 0,
             willChange: 'width, opacity'
           }}
         >
@@ -270,6 +284,7 @@ const Workbench = ({
               onDeleteFolder={onDeleteFolder}
               onDeleteSnippet={onDeleteRequest}
               onDeleteBulk={onDeleteBulk}
+              onTogglePin={onTogglePin}
               selectedIds={selectedIds}
               onSelectionChange={onSelectionChange}
               onSelect={(s) => {
@@ -296,24 +311,32 @@ const Workbench = ({
         </aside>
 
         {/* Editor Area */}
-        <div className="flex-1 flex flex-col min-w-0 bg-[var(--editor-bg)]">
-          <div className="flex-1 min-h-0 overflow-hidden text-clip">{renderContent()}</div>
-
-          <div className="flex-none border-t border-[var(--color-border)] bg-[var(--footer-bg)]">
-            {selectedSnippet ? (
-              <StatusBar
-                title={selectedSnippet?.title}
-                onSettingsClick={onOpenSettings}
-                snippets={snippets || []}
-                hideWelcomePage={hideWelcomePage}
-                onToggleWelcomePage={(val) => {
-                  // Optional toggle handler
-                }}
-              />
-            ) : (
-              <SystemStatusFooter snippets={snippets || []} />
-            )}
+        <div
+          className={`flex-1 flex flex-col min-w-0 bg-[var(--editor-bg)] ${settings?.ui?.showFocusMode ? 'focus-mode-container' : ''}`}
+        >
+          <div
+            className={`flex-1 min-h-0 overflow-hidden text-clip ${settings?.ui?.showFocusMode ? 'focus-mode-content' : ''}`}
+          >
+            {renderContent()}
           </div>
+
+          {settings?.ui?.showStatusBar !== false && !settings?.ui?.showFocusMode && (
+            <div className="flex-none border-t border-[var(--color-border)] bg-[var(--footer-bg)]">
+              {selectedSnippet ? (
+                <StatusBar
+                  title={selectedSnippet?.title}
+                  onSettingsClick={onOpenSettings}
+                  snippets={snippets || []}
+                  hideWelcomePage={hideWelcomePage}
+                  onToggleWelcomePage={(val) => {
+                    // Optional toggle handler
+                  }}
+                />
+              ) : (
+                <SystemStatusFooter snippets={snippets || []} />
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

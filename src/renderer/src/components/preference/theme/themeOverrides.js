@@ -11,10 +11,24 @@ const OVERRIDABLE_SETTINGS = {
   'livePreview.borderRound': '--live-preview-border-round',
   'ui.activityBarBg': '--activity-bar-bg',
   'ui.sidebarBg': '--sidebar-bg',
+  'ui.sidebarIconColor': '--sidebar-icon-color',
   'ui.statusBarBg': '--statusbar-bg',
   'ui.footerBg': '--footer-bg',
   'ui.headerBg': '--header-bg',
-  'welcome.welcomePage': '--welcome-bg'
+  'welcome.welcomePage': '--welcome-bg',
+  // Header Overrides
+  // Header Overrides
+  'header.bgColor': '--header-bg',
+  'header.textColor': '--header-text',
+  'header.iconColor': '--header-icon-color',
+  'header.borderColor': '--header-border',
+  // Activity Bar Overrides
+  'activityBar.bgColor': '--activity-bar-bg',
+  'activityBar.activeFg': '--activity-bar-active-fg',
+  'activityBar.inactiveFg': '--activity-bar-inactive-fg',
+  'activityBar.activeBorder': '--activity-bar-active-border',
+  'activityBar.badgeBg': '--activity-bar-badge-bg',
+  'activityBar.badgeFg': '--activity-bar-badge-fg'
 }
 
 export const applyThemeOverrides = (parsedSettings, root) => {

@@ -52,9 +52,9 @@ export const getWindowConfig = (app, ENABLE_DEVTOOLS) => {
 
   return {
     width: 800,
-    height: 600,
-    minWidth: 600,
-    minHeight: 400,
+    height: 900,
+    minWidth: 800,
+    minHeight: 600,
     icon: iconPath,
     show: false,
     frame: false,

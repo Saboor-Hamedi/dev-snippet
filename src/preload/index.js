@@ -65,6 +65,7 @@ const api = {
   getWindowBounds: () => electronAPI.ipcRenderer.invoke('window:getBounds'),
   setWindowBounds: (bounds) => electronAPI.ipcRenderer.invoke('window:setBounds', bounds),
   restoreDefaultSize: () => electronAPI.ipcRenderer.invoke('window:restore-default-size'),
+  setFocusSize: () => electronAPI.ipcRenderer.invoke('window:set-focus-size'),
   setZoom: (factor) => electronAPI.ipcRenderer.invoke('window:setZoom', factor),
   getZoom: () => electronAPI.ipcRenderer.invoke('window:getZoom'),
   openMiniBrowser: (htmlContent) =>

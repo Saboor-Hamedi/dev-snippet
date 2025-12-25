@@ -273,11 +273,7 @@ select:not(.theme-exempt):focus {
 /* ===== SETTINGS PANEL SPECIFIC OVERRIDES ===== */
 
 /* Force SettingsPanel to use theme colors */
-.settings-panel,
-.settings-panel * {
-}
-
-/* Settings Panel main container */
+/* Settings cards and sections */
 .settings-panel .bg-white {
   background-color: var(--color-bg-primary) !important;
 }
@@ -332,13 +328,6 @@ select:not(.theme-exempt):focus {
 }
 
 /* settings-panel input:focus overrides removed to allow component control */
-.settings-panel input:focus,
-.settings-panel select:focus,
-.settings-panel textarea:focus {
-  /* background-color: var(--color-bg-tertiary) !important; */
-  /* border-color: var(--color-accent-primary) !important; */
-}
-
 /* Settings cards and sections */
 .settings-panel .bg-slate-800,
 .settings-panel .bg-slate-900 {
@@ -365,17 +354,9 @@ select:not(.theme-exempt):focus {
   border: none !important;
 }
 
-.settings-panel select:hover {
-  /* No hover effect */
-}
-
 /* Smooth input styling */
 .settings-panel input[type='number'] {
   border: none !important;
-}
-
-.settings-panel input[type='number']:hover {
-  /* No hover effect */
 }
 
 /* Remove focus outline completely */
@@ -1028,4 +1009,46 @@ textarea {
 ::selection {
   background-color: var(--selected-bg, rgba(147, 185, 246, 0.3));
   color: var(--selected-text, inherit);
+}
+
+/* ===== FOCUS MODE ===== */
+.focus-mode-active {
+  background-color: var(--color-bg-primary) !important;
+}
+
+.focus-mode-container {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  background-color: var(--color-bg-secondary) !important; /* Slightly darker background */
+  padding: 1.5rem !important;
+  -webkit-app-region: drag !important; /* Allow moving the window by dragging the background */
+}
+
+.focus-mode-content {
+  width: 100% !important;
+  max-width: 720px !important; /* Made "little smaller" as requested */
+  height: 100% !important;
+  max-height: 820px !important; /* Constrained height */
+  margin: auto !important;
+  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.7); /* Deep premium shadow */
+  background-color: var(--color-bg-primary) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  overflow: hidden;
+  -webkit-app-region: no-drag !important; /* Ensure children remain interactive */
+}
+
+/* Ensure editor fills the focused content */
+.focus-mode-content > div {
+  flex: 1 !important;
+}
+
+/* Ensure editor fills the focused content */
+.focus-mode-content > div {
+  flex: 1 !important;
 }

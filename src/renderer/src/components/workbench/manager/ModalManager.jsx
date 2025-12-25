@@ -1,10 +1,12 @@
 import React, { createContext, useContext, useState, useCallback, Suspense, lazy } from 'react'
 import PropTypes from 'prop-types'
+import { useSettings } from '../../../hook/useSettingsContext'
 
 // Lazy load modals
 const Prompt = lazy(() => import('../../modal/Prompt'))
 const CommandPalette = lazy(() => import('../../CommandPalette'))
 const ImageExportModal = lazy(() => import('../../CodeEditor/ImageExport/ImageExportModal'))
+const SettingsModal = lazy(() => import('../../SettingsModal'))
 
 const ModalContext = createContext()
 
@@ -16,6 +18,7 @@ const ModalLoader = () => (
 )
 
 export const ModalProvider = ({ children, snippets, folders, onSelectSnippet }) => {
+  const { settings, updateSettings } = useSettings()
   // Input State for Prompts
   const [promptInputValue, setPromptInputValue] = useState('')
 
@@ -34,6 +37,7 @@ export const ModalProvider = ({ children, snippets, folders, onSelectSnippet }) 
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
   const [commandPaletteMode, setCommandPaletteMode] = useState(null) // null or 'command'
   const [imageExportModal, setImageExportModal] = useState({ isOpen: false, snippet: null })
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
   // API exposed to consumers
   const openRenameModal = useCallback((item, onConfirm, customTitle = 'Rename Snippet') => {
@@ -47,6 +51,10 @@ export const ModalProvider = ({ children, snippets, folders, onSelectSnippet }) 
 
   const openImageExportModal = useCallback((snippet) => {
     setImageExportModal({ isOpen: true, snippet })
+  }, [])
+
+  const openSettingsModal = useCallback(() => {
+    setIsSettingsOpen(true)
   }, [])
 
   const toggleCommandPalette = useCallback(
@@ -85,6 +93,7 @@ export const ModalProvider = ({ children, snippets, folders, onSelectSnippet }) 
     setIsCommandPaletteOpen(false)
     setCommandPaletteMode(null)
     setImageExportModal({ isOpen: false, snippet: null })
+    setIsSettingsOpen(false)
   }, [])
 
   return (
@@ -93,13 +102,16 @@ export const ModalProvider = ({ children, snippets, folders, onSelectSnippet }) 
         openRenameModal,
         openDeleteModal,
         openImageExportModal,
+        openSettingsModal,
         toggleCommandPalette,
         closeAll,
+        isSettingsOpen,
         isAnyOpen:
           renameModal.isOpen ||
           deleteModal.isOpen ||
           isCommandPaletteOpen ||
-          imageExportModal.isOpen
+          imageExportModal.isOpen ||
+          isSettingsOpen
       }}
     >
       {children}
@@ -204,6 +216,15 @@ export const ModalProvider = ({ children, snippets, folders, onSelectSnippet }) 
             isOpen={true}
             snippet={imageExportModal.snippet}
             onClose={() => setImageExportModal({ isOpen: false, snippet: null })}
+          />
+        )}
+
+        {isSettingsOpen && (
+          <SettingsModal
+            isOpen={true}
+            onClose={() => setIsSettingsOpen(false)}
+            currentSettings={settings}
+            onSettingsChange={updateSettings}
           />
         )}
       </Suspense>

@@ -33,6 +33,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
     toggleFolderCollapse,
     moveSnippet,
     moveFolder,
+    togglePinnedSnippet,
     // Trash props
     trash,
     loadTrash,
@@ -40,9 +41,19 @@ const SnippetLibraryInner = ({ snippetData }) => {
     permanentDeleteItem
   } = snippetData
   const { activeView, showPreview, togglePreview, navigateTo } = useView()
-  const { openRenameModal, openDeleteModal, openImageExportModal } = useModal()
+  const {
+    openRenameModal,
+    openDeleteModal,
+    openImageExportModal,
+    openSettingsModal,
+    isSettingsOpen
+  } = useModal()
   const { settings, getSetting, updateSetting } = useSettings()
   const { toast, showToast } = useToast()
+
+  // Ensure global settings are applied when this component mounts/updates
+  useFontSettings()
+  useThemeManager()
 
   const isCompact = getSetting('ui.compactMode') || false
   const setIsCompact = (val) => updateSetting('ui.compactMode', val)
@@ -56,12 +67,10 @@ const SnippetLibraryInner = ({ snippetData }) => {
   const { overlayMode, setOverlayMode } = useAdvancedSplitPane()
 
   // Lifted Sidebar State - defaults to closed, remembers last state
-  const [isSidebarOpen, setIsSidebarOpen] = useState(
-    () => localStorage.getItem('sidebarOpen') === 'true'
-  )
-  const handleToggleSidebar = useCallback(() => setIsSidebarOpen((prev) => !prev), [])
-
-  useEffect(() => localStorage.setItem('sidebarOpen', isSidebarOpen), [isSidebarOpen])
+  const isSidebarOpen = settings?.ui?.showSidebar !== false
+  const handleToggleSidebar = useCallback(() => {
+    updateSetting('ui.showSidebar', !isSidebarOpen)
+  }, [isSidebarOpen, updateSetting])
 
   const focusEditor = useCallback(() => {
     if (activeView !== 'editor' && !isCreatingSnippet) return
@@ -213,7 +222,33 @@ const SnippetLibraryInner = ({ snippetData }) => {
     }
     const onCommandSidebar = () => handleToggleSidebar()
     const onCommandPreview = () => togglePreview()
-    const onCommandSettings = () => navigateTo('settings')
+    const onCommandSettings = () => openSettingsModal()
+    const onCommandActivityBar = () => {
+      const current = settings?.ui?.showActivityBar !== false
+      updateSetting('ui.showActivityBar', !current)
+      showToast(`Activity Bar ${!current ? 'Shown' : 'Hidden'}`, 'info')
+    }
+    const onCommandZen = () => {
+      const isActVisible = settings?.ui?.showActivityBar !== false
+      const isSideVisible = settings?.ui?.showSidebar !== false
+      const next = !isActVisible // Toggle based on activity bar state
+      updateSetting('ui.showActivityBar', next)
+      updateSetting('ui.showSidebar', next)
+      showToast(next ? 'Workspace expanded' : 'Zen Mode enabled', 'info')
+    }
+    const onCommandFocus = () => {
+      const current = settings?.ui?.showFocusMode || false
+      const next = !current
+      updateSetting('ui.showFocusMode', next)
+
+      if (next && window.api?.setFocusSize) {
+        window.api.setFocusSize()
+      } else if (!next && window.api?.restoreDefaultSize) {
+        window.api.restoreDefaultSize()
+      }
+
+      showToast(next ? 'Focus Mode enabled' : 'Focus Mode disabled', 'info')
+    }
     const onCommandCopyImage = () => {
       if (selectedSnippet) {
         openImageExportModal(selectedSnippet)
@@ -234,6 +269,9 @@ const SnippetLibraryInner = ({ snippetData }) => {
     window.addEventListener('app:toggle-sidebar', onCommandSidebar)
     window.addEventListener('app:toggle-preview', onCommandPreview)
     window.addEventListener('app:open-settings', onCommandSettings)
+    window.addEventListener('app:toggle-activity-bar', onCommandActivityBar)
+    window.addEventListener('app:toggle-zen', onCommandZen)
+    window.addEventListener('app:toggle-focus', onCommandFocus)
     window.addEventListener('app:command-copy-image', onCommandCopyImage)
     window.addEventListener('app:toggle-overlay', onCommandOverlay)
     window.addEventListener('app:export-pdf', onCommandExportPDF)
@@ -244,6 +282,9 @@ const SnippetLibraryInner = ({ snippetData }) => {
       window.removeEventListener('app:toggle-sidebar', onCommandSidebar)
       window.removeEventListener('app:toggle-preview', onCommandPreview)
       window.removeEventListener('app:open-settings', onCommandSettings)
+      window.removeEventListener('app:toggle-activity-bar', onCommandActivityBar)
+      window.removeEventListener('app:toggle-zen', onCommandZen)
+      window.removeEventListener('app:toggle-focus', onCommandFocus)
       window.removeEventListener('app:command-copy-image', onCommandCopyImage)
       window.removeEventListener('app:toggle-overlay', onCommandOverlay)
       window.removeEventListener('app:export-pdf', onCommandExportPDF)
@@ -261,8 +302,27 @@ const SnippetLibraryInner = ({ snippetData }) => {
     selectedSnippet
   ])
 
-  const handleNewFolder = (options = {}) => {
-    // Context: Passed parentId OR Selected folder OR parent folder of selected snippet
+  const handleNewFolder = (arg1 = {}, arg2 = null) => {
+    // Case 1: Inline Creation (Name provided directly from Sidebar)
+    if (typeof arg1 === 'string') {
+      const name = arg1
+      const parentId = arg2
+      if (name && name.trim()) {
+        saveFolder({ name: name.trim(), parent_id: parentId })
+          .then(() => {
+            if (parentId) toggleFolderCollapse(parentId, false)
+            showToast(`Folder "${name}" created`, 'success')
+          })
+          .catch((e) => {
+            console.error('Failed to create folder:', e)
+            showToast('Failed to create folder', 'error')
+          })
+      }
+      return
+    }
+
+    // Case 2: Command/Button Request (No name yet -> Open Modal)
+    const options = arg1 || {}
     const parentId = options.parentId || selectedFolderId || selectedSnippet?.folder_id || null
 
     openRenameModal(
@@ -274,7 +334,6 @@ const SnippetLibraryInner = ({ snippetData }) => {
               name: name.trim(),
               parent_id: parentId
             })
-            // Proactively expand parent so user sees the new folder
             if (parentId) {
               toggleFolderCollapse(parentId, false)
             }
@@ -410,6 +469,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
         showToast={showToast}
         handleRename={handleRenameRequest}
         onToggleSidebar={handleToggleSidebar}
+        onTogglePin={togglePinnedSnippet}
         // Selection Props
         selectedIds={selectedIds}
         setSelectedIds={setSelectedIds}
@@ -419,8 +479,9 @@ const SnippetLibraryInner = ({ snippetData }) => {
 
       <div className="flex-1 flex flex-col items-stretch min-h-0 overflow-hidden bg-slate-50 dark:bg-slate-900 transition-colors duration-200">
         <Workbench
+          settings={settings}
           isSidebarOpen={isSidebarOpen}
-          setIsSidebarOpen={setIsSidebarOpen}
+          setIsSidebarOpen={(val) => updateSetting('ui.showSidebar', val)}
           activeView={isCreatingSnippet ? 'editor' : activeView}
           currentContext={activeView}
           selectedSnippet={selectedSnippet}
@@ -510,9 +571,11 @@ const SnippetLibraryInner = ({ snippetData }) => {
           onToggleFolder={toggleFolderCollapse}
           onMoveSnippet={moveSnippet}
           onMoveFolder={moveFolder}
+          onTogglePin={togglePinnedSnippet}
           onSelectSnippet={handleSelectSnippet}
           onSearchSnippets={searchSnippetList}
-          onOpenSettings={() => navigateTo('settings')}
+          onOpenSettings={() => openSettingsModal()}
+          isSettingsOpen={isSettingsOpen}
           onCloseSettings={() => navigateTo('snippets')}
           onRename={handleRenameRequest}
         />
@@ -523,8 +586,6 @@ const SnippetLibraryInner = ({ snippetData }) => {
 
 // Wrapper Component to inject Providers
 const SnippetLibrary = () => {
-  useFontSettings() // Global effect
-  useThemeManager() // Global theme management
   const snippetData = useSnippetData() // Global data
 
   return (

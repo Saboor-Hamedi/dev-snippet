@@ -10,7 +10,7 @@ const SettingSection = ({ title, icon: Icon, iconColor, children, className = ''
     <section className={`mb-6 ${className}`}>
       {title && (
         <div className="flex items-center gap-2 mb-3 ml-3">
-          {Icon && <Icon size={14} className={iconColor || 'opacity-50'} />}
+          {Icon && <Icon size={14} style={{ color: 'var(--color-accent-primary)' }} />}
           <h3
             className="text-xtiny font-semibold uppercase tracking-wider"
             style={{ color: 'var(--color-text-tertiary)' }}

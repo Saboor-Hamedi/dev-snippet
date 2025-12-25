@@ -181,6 +181,22 @@ export const useKeyboardShortcuts = (shortcuts) => {
           shortcutsRef.current.onZoomReset()
         }
       }
+
+      // Alt+P toggle pin
+      if (e.altKey && e.key.toLowerCase() === 'p') {
+        e.preventDefault()
+        if (shortcutsRef.current.onTogglePin) {
+          shortcutsRef.current.onTogglePin()
+        }
+      }
+
+      // Alt+Shift+F toggle focus mode
+      if (e.altKey && e.shiftKey && e.key.toLowerCase() === 'f') {
+        e.preventDefault()
+        if (shortcutsRef.current.onToggleFocus) {
+          shortcutsRef.current.onToggleFocus()
+        }
+      }
     }
 
     // VS Code-style smooth wheel zoom

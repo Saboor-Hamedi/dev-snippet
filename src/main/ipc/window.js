@@ -80,12 +80,28 @@ export const registerWindowHandlers = () => {
     try {
       const win = BrowserWindow.fromWebContents(event.sender)
       if (win) {
-        win.setSize(800, 600, true)
+        win.setSize(800, 900, true)
         win.center()
         return true
       }
     } catch (err) {
       console.error('Failed to restore default size:', err)
+    }
+    return false
+  })
+
+  // Set Focus Size (800x900)
+  ipcMain.handle('window:set-focus-size', (event) => {
+    try {
+      const win = BrowserWindow.fromWebContents(event.sender)
+      if (win) {
+        if (win.isMaximized()) win.unmaximize()
+        win.setSize(800, 900, true)
+        win.center()
+        return true
+      }
+    } catch (err) {
+      console.error('Failed to set focus size:', err)
     }
     return false
   })

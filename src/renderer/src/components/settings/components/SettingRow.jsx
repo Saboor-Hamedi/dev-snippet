@@ -8,7 +8,7 @@ import PropTypes from 'prop-types'
 const SettingRow = ({ label, description, children, noBorder = false, className = '' }) => {
   return (
     <div
-      className={`flex items-center justify-between p-3 gap-4 ${!noBorder ? 'border-t first:border-t-0' : ''} ${className}`}
+      className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 gap-3 md:gap-4 ${!noBorder ? 'border-t first:border-t-0' : ''} ${className}`}
       style={{ borderColor: 'var(--color-border)' }}
     >
       <div className="flex-1">

@@ -16,13 +16,22 @@ const KeyboardHandler = ({
   showToast,
   handleRename,
   onToggleSidebar,
+  onTogglePin,
   // Selection Props
   selectedIds = [],
   setSelectedIds,
   selectedFolderId,
   setSelectedFolderId
 }) => {
-  const { toggleCommandPalette, openDeleteModal, openRenameModal, isAnyOpen, closeAll } = useModal()
+  const {
+    toggleCommandPalette,
+    openDeleteModal,
+    openRenameModal,
+    isAnyOpen,
+    closeAll,
+    openSettingsModal,
+    isSettingsOpen
+  } = useModal()
   const { activeView, navigateTo, togglePreview, showPreview } = useView()
 
   useKeyboardShortcuts({
@@ -77,8 +86,8 @@ const KeyboardHandler = ({
 
     // ... Settings toggle is handled in Workbench usually via header, but shortcut can be here
     onToggleSettings: () => {
-      if (activeView === 'settings') navigateTo('snippets')
-      else navigateTo('settings')
+      if (isSettingsOpen) closeAll()
+      else openSettingsModal()
     },
 
     onCopyToClipboard: () => {
@@ -137,7 +146,16 @@ const KeyboardHandler = ({
 
     // --- Local Editor Zoom (Targeted Font Scaling) ---
     onEditorZoomIn: () => window.dispatchEvent(new CustomEvent('app:editor-zoom-in')),
-    onEditorZoomOut: () => window.dispatchEvent(new CustomEvent('app:editor-zoom-out'))
+    onEditorZoomOut: () => window.dispatchEvent(new CustomEvent('app:editor-zoom-out')),
+
+    onTogglePin: () => {
+      if (selectedSnippet) {
+        onTogglePin(selectedSnippet.id)
+      }
+    },
+    onToggleFocus: () => {
+      window.dispatchEvent(new CustomEvent('app:toggle-focus'))
+    }
   })
 
   // Listen for custom zoom events which hook into useZoomLevel elsewhere or here?

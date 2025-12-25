@@ -44,8 +44,8 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-6 bg-slate-950/40 backdrop-blur-xl transition-all duration-500">
-          <div className="relative w-full max-w-lg bg-white/95 dark:bg-[#0d1117]/95 rounded-[5px] shadow-[0_25px_70px_-15px_rgba(0,0,0,0.6)] border border-slate-200 dark:border-slate-800/60 overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 sm:p-6 bg-slate-950/40 backdrop-blur-xl transition-all duration-500">
+          <div className="relative w-full max-w-[calc(100%-2rem)] sm:max-w-lg bg-white/95 dark:bg-[#0d1117]/95 rounded-[5px] shadow-[0_25px_70px_-15px_rgba(0,0,0,0.6)] border border-slate-200 dark:border-slate-800/60 overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
             {/* Header / Graphic - Removed top border as requested */}
             {/* <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 to-amber-500" /> */}
 
@@ -58,7 +58,7 @@ class ErrorBoundary extends React.Component {
               <RefreshCw size={20} className="rotate-45" />
             </button>
 
-            <div className="p-8 pb-6 flex flex-col items-center text-center">
+            <div className="p-6 sm:p-8 pb-6 flex flex-col items-center text-center">
               <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-500 mb-6 group ring-1 ring-red-500/20">
                 <ShieldAlert
                   size={32}

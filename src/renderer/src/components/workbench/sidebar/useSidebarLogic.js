@@ -62,8 +62,15 @@ export const useSidebarLogic = ({
       const levelSnippets = currentSnippets
         .filter((s) => (s.folder_id || null) == (parentId || null))
         .sort((a, b) => {
+          // Priority 1: Pinned
+          if (a.is_pinned && !b.is_pinned) return -1
+          if (!a.is_pinned && b.is_pinned) return 1
+
+          // Priority 2: Drafts
           if (a.is_draft && !b.is_draft) return -1
           if (!a.is_draft && b.is_draft) return 1
+
+          // Fallback: Title
           return (a.title || '').localeCompare(b.title || '', undefined, { sensitivity: 'base' })
         })
 
@@ -151,40 +158,77 @@ export const useSidebarLogic = ({
 
   // 3. Keyboard Navigation Logic
   // Handles Arrow Keys and Enter
+  // 3. Keyboard Navigation Logic
+  // Handles Arrow Keys (Tree Traversal) and Enter
   const handleItemKeyDown = useCallback(
     (e, index) => {
-      if (e.key === 'ArrowDown' && index < treeItems.length - 1) {
-        e.preventDefault()
-        const next = treeItems[index + 1]
-        handleSelectionInternal(e, next.id, next.type) // Pass the event for modifier keys support!
-        listRef.current?.scrollToItem(index + 1)
+      const item = treeItems[index]
+      if (!item) return
 
-        // Small timeout to allow render
+      // Helper to select an item by index
+      const selectIndex = (i) => {
+        if (i < 0 || i >= treeItems.length) return
+        const target = treeItems[i]
+        // Pass fake event to avoid modifier logic during simple nav, OR keep it?
+        // Usually arrow navigation resets selection unless Shift is held.
+        // handleSelectionInternal uses e.shiftKey.
+        handleSelectionInternal(e, target.id, target.type)
+        listRef.current?.scrollToItem(i)
         setTimeout(() => {
-          const el = document.getElementById(`sidebar-item-${index + 1}`)
+          const el = document.getElementById(`sidebar-item-${i}`)
           if (el) el.focus()
         }, 10)
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault()
-        if (index === 0) {
-          // If at top, focus search input
-          if (inputRef.current) inputRef.current.focus()
-        } else {
-          const prev = treeItems[index - 1]
-          handleSelectionInternal(e, prev.id, prev.type)
-          listRef.current?.scrollToItem(index - 1)
-          setTimeout(() => {
-            const el = document.getElementById(`sidebar-item-${index - 1}`)
-            if (el) el.focus()
-          }, 10)
-        }
-      } else if (e.key === 'Enter') {
-        const item = treeItems[index]
-        if (item.type === 'folder') {
-          onToggleFolder(item.id, !item.data.collapsed)
-        } else {
-          onSelect(item.data)
-        }
+      }
+
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault()
+          selectIndex(index + 1)
+          break
+        case 'ArrowUp':
+          e.preventDefault()
+          if (index === 0) {
+            inputRef.current?.focus()
+          } else {
+            selectIndex(index - 1)
+          }
+          break
+        case 'ArrowRight':
+          e.preventDefault()
+          if (item.type === 'folder') {
+            if (item.data.collapsed) {
+              onToggleFolder(item.id, false) // Expand
+            } else {
+              selectIndex(index + 1) // Focus first child
+            }
+          }
+          break
+        case 'ArrowLeft':
+          e.preventDefault()
+          if (item.type === 'folder' && !item.data.collapsed) {
+            onToggleFolder(item.id, true) // Collapse
+          } else {
+            // Jump to Parent
+            if (item.depth > 0) {
+              let parentIndex = -1
+              for (let i = index - 1; i >= 0; i--) {
+                if (treeItems[i].depth < item.depth) {
+                  parentIndex = i
+                  break
+                }
+              }
+              if (parentIndex !== -1) selectIndex(parentIndex)
+            }
+          }
+          break
+        case 'Enter':
+          e.preventDefault()
+          if (item.type === 'folder') {
+            onToggleFolder(item.id, !item.data.collapsed)
+          } else {
+            onSelect(item.data)
+          }
+          break
       }
     },
     [treeItems, handleSelectionInternal, listRef, inputRef, onSelect, onToggleFolder]

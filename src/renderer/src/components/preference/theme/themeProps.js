@@ -31,26 +31,30 @@ export const themeProps = () => {
     // Deep clone to safely mutate
     const futureSettings = JSON.parse(JSON.stringify(settings))
     let hasChanges = false
+    const currentThemeIdFromSettings = settings?.ui?.theme
+    const isThemeSwitch = currentThemeIdFromSettings !== theme.id
 
     // Explicitly set the theme ID in future settings
     if (!futureSettings.ui) futureSettings.ui = {}
-    if (futureSettings.ui.theme !== theme.id) {
+
+    // Only apply theme presets if the theme actually changed
+    // This allows users to overwrite settings manually without them gets reset on reload
+    if (isThemeSwitch) {
       futureSettings.ui.theme = theme.id
       hasChanges = true
-    }
 
-    if (theme.settings) {
-      for (const [category, values] of Object.entries(theme.settings)) {
-        // Ensure category object exists
-        if (!futureSettings[category] || typeof futureSettings[category] !== 'object') {
-          futureSettings[category] = {}
-        }
+      if (theme.settings) {
+        for (const [category, values] of Object.entries(theme.settings)) {
+          // Ensure category object exists
+          if (!futureSettings[category] || typeof futureSettings[category] !== 'object') {
+            futureSettings[category] = {}
+          }
 
-        for (const [key, value] of Object.entries(values)) {
-          // Only update if value is different
-          if (futureSettings[category][key] !== value) {
-            futureSettings[category][key] = value
-            hasChanges = true
+          for (const [key, value] of Object.entries(values)) {
+            // Only update if value is different
+            if (futureSettings[category][key] !== value) {
+              futureSettings[category][key] = value
+            }
           }
         }
       }

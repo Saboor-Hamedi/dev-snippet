@@ -38,7 +38,7 @@ const SettingsForm = () => {
       <ToastNotification toast={toast} />
       <div className="max-w-2xl mx-auto py-2 px-4 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
         {/* SECTION: Global Appearance */}
-        <SettingSection title="Global Appearance" icon={Monitor} iconColor="text-blue-500">
+        <SettingSection title="Global Appearance" icon={Monitor}>
           <SettingToggle
             label="Compact Mode"
             description="Reduce padding in the sidebar and lists."
@@ -48,7 +48,7 @@ const SettingsForm = () => {
         </SettingSection>
 
         {/* SECTION: Typography */}
-        <SettingSection title="Typography" icon={Type} iconColor="text-emerald-500">
+        <SettingSection title="Typography" icon={Type}>
           <SettingSelect
             label="Editor Font Family"
             description="Monospace fonts recommended."
@@ -74,7 +74,7 @@ const SettingsForm = () => {
         </SettingSection>
 
         {/* SECTION: Editor Experience */}
-        <SettingSection title="Editor Experience" icon={Layout} iconColor="text-purple-500">
+        <SettingSection title="Editor Experience" icon={Layout}>
           <SettingToggle
             label="Word Wrap"
             description="Wrap long lines in the editor."
@@ -110,11 +110,7 @@ const SettingsForm = () => {
         </SettingSection>
 
         {/* SECTION: Cursor & Interaction */}
-        <SettingSection
-          title="Cursor & Cursor Details"
-          icon={MousePointer2}
-          iconColor="text-cyan-500"
-        >
+        <SettingSection title="Cursor & Cursor Details" icon={MousePointer2}>
           <SettingSelect
             label="Cursor Shape"
             value={cursorSettings.cursorShape}
@@ -142,7 +138,7 @@ const SettingsForm = () => {
         </SettingSection>
 
         {/* SECTION: System */}
-        <SettingSection title="System" icon={SettingsIcon} iconColor="text-slate-500">
+        <SettingSection title="System" icon={SettingsIcon}>
           <SettingInput
             label="Snippets Directory"
             description="Custom path to store snippets (Coming Soon)."

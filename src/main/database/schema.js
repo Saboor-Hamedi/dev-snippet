@@ -18,7 +18,8 @@ export const createTables = (db) => {
       sort_index INTEGER,
       folder_id TEXT,
       is_deleted INTEGER DEFAULT 0,
-      deleted_at INTEGER
+      deleted_at INTEGER,
+      is_pinned INTEGER DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS folders (

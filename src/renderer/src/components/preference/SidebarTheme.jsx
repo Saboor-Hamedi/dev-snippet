@@ -12,6 +12,7 @@ import {
 import ThemeSelector from './ThemeSelector'
 import SidebarHeader from '../layout/SidebarHeader'
 
+// Renders the ThemeSelector to manage application styling
 const Sidebar = ({ isOpen = true, onToggle }) => {
   return (
     <div

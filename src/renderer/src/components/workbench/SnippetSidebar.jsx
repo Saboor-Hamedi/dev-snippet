@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import PropTypes from 'prop-types'
-import { Search, Trash2, Edit2, FilePlus, FolderPlus } from 'lucide-react'
+import { Search, Trash2, Edit2, FilePlus, FolderPlus, Pin } from 'lucide-react'
 import SidebarHeader from '../layout/SidebarHeader'
 import VirtualList from '../common/VirtualList'
 import ContextMenu from '../common/ContextMenu'
@@ -25,6 +25,7 @@ const SnippetSidebar = ({
   onDeleteFolder,
   onDeleteSnippet,
   onDeleteBulk,
+  onTogglePin,
   selectedIds = [],
   onSelectionChange,
   isOpen,
@@ -99,7 +100,7 @@ const SnippetSidebar = ({
         if (showToast) showToast(`Folder "${name}" already exists`, 'error')
         return // Keep input open
       }
-      onNewFolder({ name, parentId })
+      onNewFolder(name, parentId)
     }
     confirmCreation()
   }
@@ -156,6 +157,11 @@ const SnippetSidebar = ({
         danger: true
       })
       if (!isMulti) {
+        menuItems.unshift({
+          label: itemData.is_pinned ? 'Unpin' : 'Pin',
+          icon: Pin,
+          onClick: () => onTogglePin(itemData.id)
+        })
         menuItems.unshift({
           label: 'Rename',
           icon: Edit2,
@@ -271,6 +277,7 @@ const SnippetSidebar = ({
               onMoveFolder,
               onContextMenu: handleContextMenu,
               lastSelectedIdRef,
+              onTogglePin,
               // Creation Props
               onConfirmCreation: handleConfirmCreation,
               onCancelCreation: cancelCreation
@@ -311,6 +318,7 @@ SnippetSidebar.propTypes = {
   onDeleteFolder: PropTypes.func,
   onDeleteSnippet: PropTypes.func,
   onDeleteBulk: PropTypes.func,
+  onTogglePin: PropTypes.func,
   selectedIds: PropTypes.array,
   onSelectionChange: PropTypes.func,
   isOpen: PropTypes.bool,

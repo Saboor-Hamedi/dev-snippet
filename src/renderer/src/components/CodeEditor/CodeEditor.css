@@ -17,6 +17,14 @@
   --shadow-box-color: #58a6ff;
   --active-line-border-width: 0px;
   --active-line-gutter-border-width: 0px;
+
+  /* Activity Bar Defaults */
+  --activity-bar-bg: #161b22;
+  --activity-bar-active-fg: #ffffff;
+  --activity-bar-inactive-fg: rgba(255, 255, 255, 0.4);
+  --activity-bar-active-border: #007fd4;
+  --activity-bar-badge-bg: #ef4444;
+  --activity-bar-badge-fg: #ffffff;
 }
 
 @keyframes cm-cursor-blink {

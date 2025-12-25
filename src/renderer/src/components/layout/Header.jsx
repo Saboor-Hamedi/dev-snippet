@@ -85,7 +85,7 @@ const Header = ({
       className="flex items-center h-[34px] select-none transition-colors duration-200"
       style={{
         backgroundColor: 'var(--header-bg)',
-        borderBottom: '1px solid var(--color-border)',
+        borderBottom: '1px solid var(--header-border, var(--color-border))',
         gap: 0,
         color: 'var(--header-text)',
         boxSizing: 'border-box'
@@ -97,7 +97,7 @@ const Header = ({
         style={{
           width: sidebarAreaWidth,
           backgroundColor: 'var(--header-bg)',
-          borderRight: '1px solid var(--color-border)',
+          borderRight: '1px solid var(--header-border, var(--color-border))',
           WebkitAppRegion: 'no-drag'
         }}
       >
@@ -108,7 +108,11 @@ const Header = ({
             style={{ color: 'var(--header-text)' }}
             title={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'}
           >
-            {isSidebarOpen ? <PanelLeftClose size={18} /> : <PanelLeft size={18} />}
+            {isSidebarOpen ? (
+              <PanelLeftClose size={18} color="var(--header-icon-color, var(--header-text))" />
+            ) : (
+              <PanelLeft size={18} color="var(--header-icon-color, var(--header-text))" />
+            )}
           </button>
 
           {isSidebarOpen && (
@@ -119,7 +123,7 @@ const Header = ({
                 style={{ color: 'var(--header-text)' }}
                 title="New Snippet"
               >
-                <FilePlus size={15} />
+                <FilePlus size={15} color="var(--header-icon-color, var(--header-text))" />
               </button>
               <button
                 onClick={onNewFolder}
@@ -127,7 +131,7 @@ const Header = ({
                 style={{ color: 'var(--header-text)' }}
                 title="New Folder"
               >
-                <FolderPlus size={15} />
+                <FolderPlus size={15} color="var(--header-icon-color, var(--header-text))" />
               </button>
               <button
                 onClick={onSearch}
@@ -135,7 +139,7 @@ const Header = ({
                 style={{ color: 'var(--header-text)' }}
                 title="Search"
               >
-                <Search size={15} />
+                <Search size={15} color="var(--header-icon-color, var(--header-text))" />
               </button>
               <button
                 onClick={onSave}
@@ -143,7 +147,7 @@ const Header = ({
                 style={{ color: 'var(--header-text)' }}
                 title="Save"
               >
-                <Save size={15} />
+                <Save size={15} color="var(--header-icon-color, var(--header-text))" />
               </button>
             </div>
           )}
@@ -202,7 +206,7 @@ const Header = ({
             style={{ color: 'var(--header-text)' }}
             title={isCompact ? 'Standard UI' : 'Compact UI'}
           >
-            <Minimize2 size={14} />
+            <Minimize2 size={14} color="var(--header-icon-color, var(--header-text))" />
           </button>
 
           <button
@@ -215,7 +219,7 @@ const Header = ({
             style={{ color: 'var(--header-text)' }}
             title="Minimize"
           >
-            <Minus size={16} />
+            <Minus size={16} color="var(--header-icon-color, var(--header-text))" />
           </button>
 
           <button
@@ -224,7 +228,7 @@ const Header = ({
             style={{ color: 'var(--header-text)' }}
             title="Maximize"
           >
-            <Minimize size={14} />
+            <Minimize size={14} color="var(--header-icon-color, var(--header-text))" />
           </button>
 
           <button
@@ -233,7 +237,7 @@ const Header = ({
             style={{ color: 'var(--header-text)' }}
             title="Close"
           >
-            <X size={16} />
+            <X size={16} color="currentColor" />
           </button>
         </div>
       </div>

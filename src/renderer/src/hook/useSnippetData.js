@@ -281,6 +281,30 @@ export const useSnippetData = () => {
     }
   }
 
+  // Pin/Unpin snippet
+  const togglePinnedSnippet = async (id) => {
+    try {
+      const snippet = snippets.find((s) => s.id === id)
+      if (!snippet) return
+
+      const newPinned = snippet.is_pinned ? 0 : 1
+      const updated = { ...snippet, is_pinned: newPinned }
+
+      // Get full snippet for saving if we only have metadata
+      let fullSnippet = updated
+      if (window.api?.getSnippetById) {
+        const full = await window.api.getSnippetById(id)
+        if (full) fullSnippet = { ...full, is_pinned: newPinned }
+      }
+
+      await saveSnippet(fullSnippet, { skipSelectedUpdate: false })
+      showToast(newPinned ? '📌 Snippet pinned' : '📍 Snippet unpinned')
+    } catch (error) {
+      console.error('Failed to toggle pin:', error)
+      showToast('❌ Failed to update pin status')
+    }
+  }
+
   // --- FOLDER OPERATIONS ---
 
   const saveFolder = async (folder) => {
@@ -451,6 +475,7 @@ export const useSnippetData = () => {
     deleteFolders,
     toggleFolderCollapse,
     moveSnippet,
-    moveFolder
+    moveFolder,
+    togglePinnedSnippet
   }
 }

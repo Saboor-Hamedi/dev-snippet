@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { File, Plus, ChevronDown, ChevronRight, Folder } from 'lucide-react'
+import { File, Plus, ChevronDown, ChevronRight, Folder, Pin } from 'lucide-react'
 
 // Helper to get file icon
 const getFileIcon = (lang, title = '') => {
@@ -31,7 +31,7 @@ const getFileIcon = (lang, title = '') => {
   if (lang === 'markdown' || lang === 'md' || extension === 'md' || isMd)
     return { icon: File, color: '#519aba' }
 
-  return { icon: File, color: '#8b949e' } // Default
+  return { icon: File, color: 'var(--sidebar-icon-color)' } // Default
 }
 
 const CreationInputRow = ({ style, depth, itemData, onConfirm, onCancel, isCompact }) => {
@@ -67,7 +67,10 @@ const CreationInputRow = ({ style, depth, itemData, onConfirm, onCancel, isCompa
         style={{ paddingLeft: `${depth * 12 + 26}px` }}
       >
         <div className="flex-1 flex items-center gap-[3px] bg-[var(--color-bg-secondary)] border border-[var(--color-accent-primary)]/50 rounded-sm h-[22px]">
-          <div className="flex-shrink-0 flex items-center justify-center opacity-80 pl-1">
+          <div
+            className="flex-shrink-0 flex items-center justify-center opacity-80 pl-1"
+            style={{ color: 'var(--sidebar-icon-color)' }}
+          >
             {isFolder ? <Folder size={isCompact ? 13 : 15} /> : <File size={isCompact ? 13 : 15} />}
           </div>
           <input
@@ -120,6 +123,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
     onMoveFolder,
     onContextMenu,
     lastSelectedIdRef,
+    onTogglePin,
     onConfirmCreation,
     onCancelCreation
   } = data
@@ -264,7 +268,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
               ? 'bg-[var(--selected-bg)] border border-[var(--color-accent-primary)]/30 rounded-sm'
               : isSelected
                 ? ''
-                : 'hover:bg-white/5'
+                : 'hover:bg-white/5 focus:bg-[var(--selected-bg)]'
           }`}
           style={{
             color: isSelected ? 'var(--selected-text)' : 'var(--sidebar-header-text)',
@@ -290,7 +294,10 @@ const SnippetSidebarRow = ({ index, style, data }) => {
           </button>
 
           {/* Icon */}
-          <div className="flex-shrink-0 flex items-center justify-center text-amber-400 opacity-80 group-hover:opacity-100">
+          <div
+            className="flex-shrink-0 flex items-center justify-center opacity-80 group-hover:opacity-100"
+            style={{ color: 'var(--sidebar-icon-color)' }}
+          >
             <Folder size={isCompact ? 13 : 15} strokeWidth={2} />
           </div>
 
@@ -331,8 +338,9 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         onContextMenu={(e) => onContextMenu(e, 'snippet', itemData)}
         className={`flex items-center gap-[3px] w-full h-full select-none border-none outline-none focus:outline-none pr-2 relative ${
           isCompact ? 'text-xs' : 'text-sm'
-        } ${isSelected ? 'bg-[var(--selected-bg)]' : 'hover:bg-white/[0.03]'}`}
+        } ${isSelected ? 'bg-[var(--selected-bg)]' : 'hover:bg-white/[0.03] focus:bg-[var(--selected-bg)]'}`}
         style={{
+          backgroundColor: isSelected ? 'var(--selected-bg)' : 'transparent',
           color: isSelected ? 'var(--selected-text)' : 'var(--sidebar-text)',
           paddingLeft: `${depth * 12 + 26}px`,
           borderLeft: isSelected ? '2px solid var(--color-accent-primary)' : '2px solid transparent'
@@ -348,6 +356,14 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         <span className="flex-1 min-w-0 text-left truncate font-normal opacity-90 group-hover/row:opacity-100 normal-case pl-1">
           {itemData.title || 'Untitled'}
         </span>
+        {itemData.is_pinned === 1 && (
+          <div
+            className="flex-shrink-0 flex items-center justify-center text-[var(--color-accent-primary)] opacity-80"
+            title="Pinned"
+          >
+            <Pin size={10} className="fill-current rotate-45" />
+          </div>
+        )}
       </button>
     </div>
   )
