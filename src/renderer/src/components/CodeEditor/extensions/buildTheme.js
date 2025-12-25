@@ -20,16 +20,21 @@ const buildTheme = (EditorView, options = {}) => {
       },
 
       /* HIGH-CONTRAST SYNTAX HIGHLIGHTING (RESTORATION) */
-      '.cm-string': { color: 'var(--color-accent-primary, #4ade80) !important' },
+      '.cm-string': { color: 'var(--color-syntax-string, #4ade80) !important' },
       '.cm-property, .cm-variableName-2': {
-        color: 'var(--color-accent-secondary, #60a5fa) !important'
+        color: 'var(--color-syntax-variable, #60a5fa) !important'
       },
-      '.cm-number': { color: '#f472b6 !important' },
-      '.cm-boolean': { color: '#fb923c !important' },
-      '.cm-null': { color: '#94a3b8 !important' },
-      '.cm-keyword': { color: '#c084fc !important' },
-      '.cm-comment': { color: '#64748b !important', fontStyle: 'italic' },
-      '.cm-punctuation, .cm-bracket': { color: 'var(--color-text-secondary, #94a3b8) !important' },
+      '.cm-number': { color: 'var(--color-syntax-number, #f472b6) !important' },
+      '.cm-boolean': { color: 'var(--color-syntax-boolean, #fb923c) !important' },
+      '.cm-null': { color: 'var(--color-syntax-null, #94a3b8) !important' },
+      '.cm-keyword': { color: 'var(--color-syntax-keyword, #c084fc) !important' },
+      '.cm-comment': {
+        color: 'var(--color-syntax-comment, #64748b) !important',
+        fontStyle: 'italic'
+      },
+      '.cm-punctuation, .cm-bracket': {
+        color: 'var(--color-syntax-punctuation, #94a3b8) !important'
+      },
 
       // Hide whitespace/special char highlighting (tabs, spaces, etc) - Global suppression
       '.cm-specialChar, .cm-whitespace, .cm-highlightWhitespace, .cm-tab': {

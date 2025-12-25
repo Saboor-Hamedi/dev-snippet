@@ -10,7 +10,7 @@ import {
   Keyboard,
   Database
 } from 'lucide-react'
-import { useSettings } from '../../hook/useSettingsContext'
+import { useSettings, useAutoSave } from '../../hook/useSettingsContext'
 import { useToast } from '../../hook/useToast'
 import ToastNotification from '../../utils/ToastNotification'
 import UserSettings from '../preference/UserSettings.jsx'
@@ -33,7 +33,7 @@ const SettingsPanel = ({ onClose }) => {
 
   // Typography & UI settings (Self-managed by components)
   const [wordWrap, setWordWrap] = useState('on')
-  const [autoSave, setAutoSave] = useState(false)
+  const [autoSave, setAutoSave] = useAutoSave()
   const [overlayMode, setOverlayMode] = useState(() => {
     try {
       const saved = localStorage.getItem('overlayMode')

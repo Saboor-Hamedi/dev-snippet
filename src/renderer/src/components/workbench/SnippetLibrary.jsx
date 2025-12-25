@@ -268,7 +268,6 @@ const SnippetLibraryInner = ({ snippetData }) => {
           autosaveStatus={autosaveStatus}
           onAutosave={(s) => {
             setAutosaveStatus(s)
-            if (s === 'saved') setTimeout(() => setAutosaveStatus(null), 1200)
           }}
           onSave={async (item) => {
             try {
@@ -296,7 +295,6 @@ const SnippetLibraryInner = ({ snippetData }) => {
               }
               if (wasForce) window.__forceSave = false
               setAutosaveStatus('saved')
-              setTimeout(() => setAutosaveStatus(null), 1200)
             } catch (e) {
               setAutosaveStatus(null)
               if (e.message && e.message.includes('DUPLICATE_TITLE')) {

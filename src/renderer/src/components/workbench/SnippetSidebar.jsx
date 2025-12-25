@@ -10,7 +10,7 @@ const getFileIcon = () => {
 }
 
 const Row = ({ index, style, data }) => {
-  const { snippets, selectedSnippet, onSelect, handleItemKeyDown } = data
+  const { snippets, selectedSnippet, onSelect, handleItemKeyDown, isCompact } = data
   const snippet = snippets[index]
   const isSelected = selectedSnippet?.id === snippet.id
 
@@ -23,9 +23,9 @@ const Row = ({ index, style, data }) => {
         onClick={() => onSelect(snippet)}
         onKeyDown={(e) => handleItemKeyDown(e, index, snippet)}
         className={`
-          group flex items-center gap-2 px-3 w-full text-left h-full
-          text-sm select-none
-          border-none outline-none
+          group flex items-center gap-2 w-full text-left h-full
+          select-none border-none outline-none
+          ${isCompact ? 'px-2 text-xs' : 'px-3 text-sm'}
           ${isSelected ? '' : 'hover:opacity-100'}
         `}
         style={{
@@ -38,7 +38,7 @@ const Row = ({ index, style, data }) => {
           className="flex-shrink-0 flex items-center justify-center opacity-80 group-hover:opacity-100"
           style={{ color: isSelected ? 'inherit' : color }}
         >
-          <Icon size={15} strokeWidth={1.5} />
+          <Icon size={isCompact ? 13 : 15} strokeWidth={1.5} />
         </div>
         <span className="flex-1 min-w-0 truncate font-light opacity-90 group-hover:opacity-100 normal-case">
           {snippet.title || 'Untitled'}
@@ -56,7 +56,8 @@ const SnippetSidebar = ({
   onSearch,
   isOpen, // kept for prop compatibility, though unsed in styling now
   onToggle,
-  width = 250
+  width = 250,
+  isCompact = false
 }) => {
   const [filter, setFilter] = React.useState('')
   const inputRef = React.useRef(null)
@@ -181,8 +182,8 @@ const SnippetSidebar = ({
             height={size.height}
             width={size.width}
             itemCount={snippets.length}
-            itemSize={32} // Increased for better spacing
-            itemData={{ snippets, selectedSnippet, onSelect, handleItemKeyDown }}
+            itemSize={isCompact ? 24 : 32} // Dynamic Item Size
+            itemData={{ snippets, selectedSnippet, onSelect, handleItemKeyDown, isCompact }}
           >
             {Row}
           </VirtualList>

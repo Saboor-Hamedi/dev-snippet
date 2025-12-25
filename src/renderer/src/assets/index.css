@@ -919,10 +919,6 @@ code,
   pointer-events: auto;
 }
 
-.mention-pill {
-  cursor: pointer !important;
-}
-
 /* Enhanced text selection in preview */
 .preview-container ::selection,
 .preview-content ::selection,
@@ -940,13 +936,6 @@ code ::selection,
   -webkit-user-select: text !important;
   -moz-user-select: text !important;
   cursor: text !important;
-}
-
-/* Make mentions clickable but preserve text selection around them */
-.md-mention {
-  cursor: pointer;
-  user-select: none;
-  -webkit-user-select: none;
 }
 
 /* Better cursor indication for code preview */

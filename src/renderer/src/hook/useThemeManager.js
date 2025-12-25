@@ -13,15 +13,10 @@ export const useThemeManager = () => {
   const prevThemeIdRef = useRef(currentThemeId)
 
   useEffect(() => {
-    // Initial apply and re-apply on change
-    // We check if values actually changed to avoid unnecessary re-paints (though applyTheme is optimized)
-    const settingsChanged = prevSettingsRef.current !== settings
-    const themeChanged = prevThemeIdRef.current !== currentThemeId
-
-    if (settingsChanged || themeChanged) {
-      setTheme(currentThemeId)
-      prevSettingsRef.current = settings
-      prevThemeIdRef.current = currentThemeId
-    }
+    // Always apply theme on mount or when dependencies change
+    // The previous logic skipped valid initial application
+    setTheme(currentThemeId)
+    prevSettingsRef.current = settings
+    prevThemeIdRef.current = currentThemeId
   }, [currentThemeId, settings, setTheme])
 }

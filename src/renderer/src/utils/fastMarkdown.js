@@ -33,7 +33,7 @@ export const fastMarkdownToHtml = (text, existingTitles = []) => {
             <div class="code-block-header">
               <span class="code-language">${lang || 'text'}</span>
               <div class="code-actions">
-                <button class="copy-image-btn" data-code="${escaped}" title="Copy as Image">
+                <button class="copy-image-btn" data-code="${escaped}" data-lang="${lang || 'text'}" title="Copy as Image">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-image"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
                 </button>
                 <button class="copy-code-btn" data-code="${escaped}" title="Copy code">
@@ -41,7 +41,7 @@ export const fastMarkdownToHtml = (text, existingTitles = []) => {
                 </button>
               </div>
             </div>
-            <pre><code class="language-${lang || 'text'}">${escaped}</code></pre>
+            <pre><code class="language-${lang || 'text'} hljs">${escaped}</code></pre>
           </div>`
       }
       placeholders.push({ id, content })
@@ -125,8 +125,10 @@ export const fastMarkdownToHtml = (text, existingTitles = []) => {
     })
     // Tags #tag and @mention
     .replace(/(^|\s)([#@][a-zA-Z0-9_-]+)/g, (match, space, tag) => {
-      const type = tag.startsWith('@') ? 'mention' : 'tag'
-      return `${space}<span class="preview-${type}">${tag}</span>`
+      const isMention = tag.startsWith('@')
+      const type = isMention ? 'mention' : 'tag'
+      const dataAttr = isMention ? `data-mention="${tag}"` : `data-hashtag="${tag}"`
+      return `${space}<span class="preview-${type}" ${dataAttr}>${tag}</span>`
     })
     // Horizontal Rules (---)
     .replace(/^---$/gm, '<hr>')

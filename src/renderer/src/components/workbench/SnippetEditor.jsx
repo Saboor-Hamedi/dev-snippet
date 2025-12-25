@@ -8,7 +8,7 @@ import StatusBar from '../StatusBar.jsx'
 import CodeEditor from '../CodeEditor/CodeEditor.jsx'
 import LivePreview from '../livepreview/LivePreview.jsx'
 import Prompt from '../modal/Prompt.jsx'
-import { useSettings } from '../../hook/useSettingsContext'
+import { useSettings, useAutoSave } from '../../hook/useSettingsContext'
 import { useTheme } from '../../hook/useTheme'
 import AdvancedSplitPane from '../splitPanels/AdvancedSplitPane'
 import { extractTags } from '../../utils/snippetUtils.js'
@@ -72,14 +72,8 @@ const SnippetEditor = ({
     return lang
   }, [title]) // Only re-detect if title changed. Don't re-mount while typing code!
 
-  const [autoSaveEnabled, setAutoSaveEnabled] = useState(() => {
-    try {
-      const saved = localStorage.getItem('autoSave')
-      return saved ? saved === 'true' : true
-    } catch (e) {
-      return true
-    }
-  })
+  // Unified AutoSave Hook - Source of Truth
+  const [autoSaveEnabled] = useAutoSave()
 
   const lastSavedCode = useRef(initialSnippet?.code || '')
   const lastSavedTitle = useRef(initialSnippet?.title || '')
@@ -118,39 +112,47 @@ const SnippetEditor = ({
   useEditorFocus({ initialSnippet, isCreateMode, textareaRef })
 
   const scheduleSave = useCallback(() => {
+    // 1. Explicitly check if enabled first
     if (!autoSaveEnabled) return
+
+    // Clear any pending timer
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
 
-    saveTimerRef.current = setTimeout(async () => {
-      const id = initialSnippet?.id
-      if (!id) return
-      if (isDeletingRef.current) return
-      if (window.__deletedIds && window.__deletedIds.has(id)) return
-      if (initialSnippet?.is_draft && (!title || !title.trim())) return
+    // Schedule new save
+    saveTimerRef.current = setTimeout(
+      async () => {
+        const id = initialSnippet?.id
+        if (!id) return
 
-      const updatedSnippet = {
-        id: id,
-        title: title,
-        code: code,
-        language: 'markdown',
-        timestamp: Date.now(),
-        type: initialSnippet.type || 'snippet',
-        tags: extractTags(code),
-        is_draft: initialSnippet?.is_draft || false
-      }
+        const updatedSnippet = {
+          id: id,
+          title: title,
+          code: code,
+          language: 'markdown', // Always mark as markdown/text for now
+          timestamp: Date.now(),
+          type: initialSnippet.type || 'snippet',
+          tags: extractTags(code),
+          is_draft: false
+        }
 
-      try {
-        onAutosave && onAutosave('saving')
-        await onSave(updatedSnippet)
-        onAutosave && onAutosave('saved')
-        setIsDirty(false)
-        lastSavedCode.current = code
-        lastSavedTitle.current = title
-      } catch (err) {
-        onAutosave && onAutosave(null)
-      }
-    }, 5000)
-  }, [code, title, initialSnippet, autoSaveEnabled, onSave, onAutosave])
+        try {
+          // Direct event dispatch for UI feedback bypassing prop delays
+          window.dispatchEvent(new CustomEvent('autosave-status', { detail: { status: 'saving' } }))
+
+          await onSave(updatedSnippet)
+
+          window.dispatchEvent(new CustomEvent('autosave-status', { detail: { status: 'saved' } }))
+          setIsDirty(false)
+          lastSavedCode.current = code
+          lastSavedTitle.current = title
+        } catch (err) {
+          window.dispatchEvent(new CustomEvent('autosave-status', { detail: { status: 'error' } }))
+          console.error('Autosave failed', err)
+        }
+      },
+      getSetting('behavior.autoSaveDelay') || 2000
+    )
+  }, [code, title, initialSnippet, autoSaveEnabled, onSave])
 
   useEffect(() => {
     const id = initialSnippet?.id
@@ -166,19 +168,6 @@ const SnippetEditor = ({
       if (id2 && window.__autosaveCancel) window.__autosaveCancel.delete(id2)
     }
   }, [initialSnippet?.id])
-
-  useEffect(() => {
-    const onToggle = (e) => {
-      const enabled = !!(e && e.detail && e.detail.enabled)
-      setAutoSaveEnabled(enabled)
-      if (!enabled && saveTimerRef.current) {
-        clearTimeout(saveTimerRef.current)
-        saveTimerRef.current = null
-      }
-    }
-    window.addEventListener('autosave:toggle', onToggle)
-    return () => window.removeEventListener('autosave:toggle', onToggle)
-  }, [])
 
   // Listen for navigation requests from the Sandboxed Preview (iframe bridge)
   useEffect(() => {
@@ -239,7 +228,6 @@ const SnippetEditor = ({
       return
     }
     if (!isDirty || !autoSaveEnabled) return
-    if (!title || title.toLowerCase() === 'untitled') return
     scheduleSave()
   }, [code, title, isDirty, autoSaveEnabled, scheduleSave])
 
@@ -266,7 +254,9 @@ const SnippetEditor = ({
     if ((initialSnippet?.id && !initialSnippet?.is_draft && finalTitle !== '') || forceSave) {
       const unchanged =
         lastSavedCode.current === code && lastSavedTitle.current === (finalTitle || title)
-      if (unchanged) {
+
+      // Only block if unchanged AND NOT a forced save (Ctrl+S)
+      if (unchanged && !forceSave) {
         showToast?.('No changes to save', 'info')
         return
       }
@@ -291,19 +281,25 @@ const SnippetEditor = ({
 
     try {
       onAutosave && onAutosave('saving')
+      window.dispatchEvent(new CustomEvent('autosave-status', { detail: { status: 'saving' } }))
+
       await onSave(payload)
-      window.dispatchEvent(new CustomEvent('autosave:complete', { detail: { id: payload.id } }))
+
+      window.dispatchEvent(new CustomEvent('autosave-complete', { detail: { id: payload.id } }))
+      window.dispatchEvent(new CustomEvent('autosave-status', { detail: { status: 'saved' } }))
+
       setIsDirty(false)
       lastSavedCode.current = code
       lastSavedTitle.current = finalTitle
       setTitle(finalTitle) // Sync state
     } catch (err) {
       onAutosave && onAutosave('error')
+      window.dispatchEvent(new CustomEvent('autosave-status', { detail: { status: null } }))
     }
   }
 
   useEffect(() => {
-    const fn = () => handleSave()
+    const fn = () => handleSave(true) // Force save on manual trigger
     window.addEventListener('force-save', fn)
     return () => window.removeEventListener('force-save', fn)
   }, [code, title, initialSnippet])

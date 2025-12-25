@@ -185,7 +185,8 @@
             .replace(/&gt;/g, '>')
             .replace(/&quot;/g, '"')
            
-           window.parent.postMessage({ type: 'app:copy-as-image', code: raw }, '*')
+           const lang = imgBtn.dataset.lang || 'text'
+           window.parent.postMessage({ type: 'app:copy-as-image', code: raw, language: lang }, '*')
            return
         }
 

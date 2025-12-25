@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   X,
   Minimize,
@@ -11,6 +11,48 @@ import {
   Save
 } from 'lucide-react'
 import iconUrl from '../../assets/icon.png'
+
+const AutosaveIndicator = ({ status }) => {
+  const [localStatus, setLocalStatus] = useState(status)
+
+  useEffect(() => {
+    setLocalStatus(status)
+  }, [status])
+
+  useEffect(() => {
+    const handleStatus = (e) => {
+      setLocalStatus(e.detail?.status)
+    }
+    window.addEventListener('autosave-status', handleStatus)
+    return () => window.removeEventListener('autosave-status', handleStatus)
+  }, [])
+
+  // Auto-hide "Saved" after 2 seconds
+  useEffect(() => {
+    if (localStatus === 'saved') {
+      const timer = setTimeout(() => {
+        setLocalStatus(null)
+      }, 2000)
+      return () => clearTimeout(timer)
+    }
+  }, [localStatus])
+
+  if (!localStatus) return null
+
+  return (
+    <div
+      className="flex items-center ml-2 pl-2 transition-opacity duration-300"
+      style={{ borderLeft: '1px solid var(--color-border)' }}
+    >
+      <small className="whitespace-nowrap opacity-60 text-[10px] font-medium">
+        {localStatus === 'pending' && '...'}
+        {localStatus === 'saving' && 'Saving...'}
+        {localStatus === 'saved' && 'Saved'}
+        {localStatus === 'error' && <span className="text-red-400">Error</span>}
+      </small>
+    </div>
+  )
+}
 
 const Header = ({
   isCompact,
@@ -128,18 +170,7 @@ const Header = ({
             )}
 
             {/* Autosave status inside the breadcrumb area */}
-            {autosaveStatus && (
-              <div
-                className="flex items-center ml-2 pl-2"
-                style={{ borderLeft: '1px solid var(--color-border)' }}
-              >
-                <small className="whitespace-nowrap opacity-60 text-[10px]">
-                  {autosaveStatus === 'pending' && 'Saving...'}
-                  {autosaveStatus === 'saving' && 'Saving'}
-                  {autosaveStatus === 'saved' && 'Saved ✓'}
-                </small>
-              </div>
-            )}
+            <AutosaveIndicator status={autosaveStatus} />
           </div>
         </div>
 
@@ -156,7 +187,6 @@ const Header = ({
           <button
             onClick={() => {
               try {
-                if (typeof onToggleCompact === 'function') onToggleCompact()
                 window.api?.minimize?.()
               } catch (e) {}
             }}

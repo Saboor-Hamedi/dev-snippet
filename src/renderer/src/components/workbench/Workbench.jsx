@@ -246,6 +246,7 @@ const Workbench = ({
                 if (onSelectSnippet) onSelectSnippet(s)
               }}
               onToggle={() => setIsSidebarOpen(false)}
+              isCompact={isCompact}
             />
           </div>
 

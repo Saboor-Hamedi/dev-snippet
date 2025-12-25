@@ -245,9 +245,9 @@ html[data-theme='minimal-gray'] ::-webkit-scrollbar-track {
 
 /* Paragraphs and lists */
 .markdown-body p {
-  margin: 1.25rem 0 !important;
+  margin: 0.5rem 0 !important; /* Reduced from 1.25rem for tighter spacing */
   color: var(--color-text-primary, #e6edf3) !important;
-  line-height: 1.8 !important;
+  line-height: 1.6 !important; /* Slightly tighter line height */
 }
 
 .markdown-body ul,
@@ -350,17 +350,17 @@ html[data-theme='minimal-gray'] ::-webkit-scrollbar-track {
   box-shadow: 0 4px 20px rgba(88, 166, 255, 0.1);
 }
 
-/* Syntax Highlighting Colors - Ultra-Vibrant IDE Palette */
+/* Syntax Highlighting Colors - Theme Aware */
 .hljs-comment,
 .hljs-quote {
-  color: #5c6370 !important;
+  color: var(--color-syntax-comment, #5c6370) !important;
   font-style: italic !important;
 }
 
 .hljs-keyword,
 .hljs-selector-tag,
 .hljs-doctag {
-  color: #c678dd !important; /* Vivid Purple */
+  color: var(--color-syntax-keyword, #c678dd) !important;
   font-weight: 600 !important;
 }
 
@@ -369,7 +369,7 @@ html[data-theme='minimal-gray'] ::-webkit-scrollbar-track {
 .hljs-built_in,
 .hljs-bullet,
 .hljs-addition {
-  color: #98c379 !important; /* Emerald Green */
+  color: var(--color-syntax-string, #98c379) !important;
 }
 
 .hljs-title,
@@ -377,7 +377,7 @@ html[data-theme='minimal-gray'] ::-webkit-scrollbar-track {
 .hljs-function,
 .hljs-selector-id,
 .hljs-selector-class {
-  color: #61afef !important; /* Electric Blue */
+  color: var(--color-syntax-variable, #61afef) !important;
 }
 
 .hljs-variable,
@@ -390,7 +390,7 @@ html[data-theme='minimal-gray'] ::-webkit-scrollbar-track {
 .hljs-name,
 .hljs-selector-attr,
 .hljs-selector-pseudo {
-  color: #e06c75 !important; /* Soft Red/Coral */
+  color: var(--color-syntax-variable, #e06c75) !important;
 }
 
 .hljs-number,
@@ -398,15 +398,15 @@ html[data-theme='minimal-gray'] ::-webkit-scrollbar-track {
 .hljs-symbol,
 .hljs-bullet,
 .hljs-meta {
-  color: #d19a66 !important; /* Golden Orange */
+  color: var(--color-syntax-number, #d19a66) !important;
 }
 
 .hljs-params {
-  color: #abb2bf !important; /* Muted White */
+  color: var(--color-text-primary, #abb2bf) !important;
 }
 
 .hljs-operator {
-  color: #56b6c2 !important; /* Cyan */
+  color: var(--color-syntax-punctuation, #56b6c2) !important;
 }
 
 .hljs-emphasis {
@@ -578,29 +578,45 @@ html[data-theme='minimal-gray'] ::-webkit-scrollbar-track {
 /* @mentions */
 .markdown-body .mention,
 .markdown-body a[href^='@'],
-.markdown-body span[data-mention] {
+.markdown-body span[data-mention],
+.markdown-body .preview-mention {
   color: #d2a8ff !important;
-  background-color: rgba(210, 168, 255, 0.1) !important;
-  padding: 2px 6px !important;
-  border-radius: 4px !important;
+  background-color: transparent !important;
+  padding: 0 !important; /* Removed padding */
   text-decoration: none !important;
-  font-weight: 500 !important;
+  font-weight: 700 !important;
   border: none !important;
   box-shadow: none !important;
+  cursor: pointer !important;
+  transition: opacity 0.2s ease;
+  display: inline !important; /* Ensure inline/flat flow */
+}
+
+.markdown-body .preview-mention:hover,
+.markdown-body .mention:hover {
+  opacity: 0.8;
+  text-decoration: underline !important;
 }
 
 /* #hashtags (not headings) */
 .markdown-body .hashtag,
 .markdown-body a[href^='#']:not([href='#']),
-.markdown-body span[data-hashtag] {
+.markdown-body span[data-hashtag],
+.markdown-body .preview-tag {
   color: #79c0ff !important;
-  background-color: rgba(121, 192, 255, 0.1) !important;
-  padding: 2px 6px !important;
-  border-radius: 4px !important;
+  background-color: transparent !important;
+  padding: 0 !important; /* Removed padding */
   text-decoration: none !important;
-  font-weight: 500 !important;
+  font-weight: 700 !important;
   border: none !important;
   box-shadow: none !important;
+  cursor: pointer !important;
+  display: inline !important; /* Ensure inline/flat flow */
+}
+
+.markdown-body .preview-tag:hover,
+.markdown-body .hashtag:hover {
+  text-decoration: underline !important;
 }
 
 /* Images - Responsive */
@@ -903,9 +919,9 @@ html[data-theme='minimal-gray'] ::-webkit-scrollbar-track {
   }
 
   /* Dark theme adjustments */
-  .markdown-body code {
+  /* .markdown-body code {
     background-color: var(--bg-secondary) !important;
-  }
+  } */
 
   .markdown-body blockquote {
     color: var(--text-main) !important;
@@ -1002,25 +1018,23 @@ html[data-theme='minimal-gray'] ::-webkit-scrollbar-track {
   animation: fadeIn 0.3s ease;
 }
 
-/* Tags and Mentions styling in live preview */
-/* Tags and Mentions styling in live preview */
 .markdown-body .preview-tag,
 .markdown-body .preview-mention {
   display: inline-block !important;
-  padding: 0px 6px !important;
+  padding: 0 5px !important;
   background-color: var(--color-bg-tertiary, rgba(139, 148, 158, 0.2)) !important;
   color: var(--color-text-primary, #e6edf3) !important;
-  /* border: 1px solid var(--color-border, rgba(139, 148, 158, 0.3)) !important; */
-  border-radius: 4px !important;
-  font-size: 11px !important;
+  border: 1px solid transparent !important; /* Reserve space for border */
+  border-radius: 2px !important; /* Slightly softer */
+  font-size: inherit !important;
   font-weight: 500 !important;
   margin: 0 2px !important;
   cursor: default !important;
   transition: all 0.15s ease !important;
   user-select: none !important;
-  font-family: var(--editor-font-family, monospace) !important;
+  font-family: inherit !important;
   vertical-align: baseline !important;
-  line-height: 1.4 !important;
+  line-height: inherit !important;
 }
 
 .markdown-body .preview-tag:hover,
@@ -1028,11 +1042,12 @@ html[data-theme='minimal-gray'] ::-webkit-scrollbar-track {
   background-color: var(--color-accent-primary, #58a6ff) !important;
   color: #ffffff !important;
   border-color: var(--color-accent-primary, #58a6ff) !important;
+  padding: 0 5px !important;
 }
 
 /* Specific style for mentions - keep it subtle */
 .markdown-body .preview-mention {
-  border-style: dashed !important;
+  border-style: none !important; /* Remove dashed border */
   background-color: rgba(88, 166, 255, 0.03) !important;
 }
 

@@ -21,6 +21,15 @@ export const themes = [
       '--selected-text': '#0969da',
       '--sidebar-text': '#24292f',
       '--sidebar-header-text': '#586069',
+      // Syntax Highlighting (Light Mode)
+      '--color-syntax-string': '#0a3069',
+      '--color-syntax-variable': '#953800',
+      '--color-syntax-number': '#0550ae',
+      '--color-syntax-boolean': '#0550ae',
+      '--color-syntax-null': '#24292f',
+      '--color-syntax-keyword': '#cf222e',
+      '--color-syntax-comment': '#6e7781',
+      '--color-syntax-punctuation': '#57606a',
       // Component-specific variables
       '--editor-bg': '#ffffff',
       '--editor-text': '#24292f',
@@ -95,6 +104,15 @@ export const themes = [
       '--selected-text': '#79c0ff',
       '--sidebar-text': '#c9d1d9',
       '--sidebar-header-text': '#8b949e',
+      // Syntax Highlighting (Dark Mode)
+      '--color-syntax-string': '#a5d6ff', // Light Blue/Green
+      '--color-syntax-variable': '#79c0ff', // Blue
+      '--color-syntax-number': '#d2a8ff', // Purple
+      '--color-syntax-boolean': '#ff7b72', // Red/Orange
+      '--color-syntax-null': '#79c0ff',
+      '--color-syntax-keyword': '#ff7b72', // Red
+      '--color-syntax-comment': '#8b949e', // Grey
+      '--color-syntax-punctuation': '#8b949e',
       // Component-specific variables
       '--editor-bg': '#0d1117',
       '--editor-text': '#c9d1d9',
@@ -169,6 +187,15 @@ export const themes = [
       '--selected-text': '#e879f9',
       '--sidebar-text': '#ffffff',
       '--sidebar-header-text': '#ffffff',
+      // Syntax Highlighting (Nebula)
+      '--color-syntax-string': '#d946ef',
+      '--color-syntax-variable': '#e879f9',
+      '--color-syntax-number': '#f0abfc',
+      '--color-syntax-boolean': '#c026d3',
+      '--color-syntax-null': '#fae8ff',
+      '--color-syntax-keyword': '#c026d3',
+      '--color-syntax-comment': '#71717a',
+      '--color-syntax-punctuation': '#a1a1aa',
       // Component-specific variables
       '--editor-bg': '#09090b',
       '--editor-text': '#ffffff',
@@ -243,6 +270,15 @@ export const themes = [
       '--selected-text': '#4ade80',
       '--sidebar-text': '#ffffff',
       '--sidebar-header-text': '#ffffff',
+      // Syntax Highlighting (Forest)
+      '--color-syntax-string': '#4ade80',
+      '--color-syntax-variable': '#86efac',
+      '--color-syntax-number': '#bef264',
+      '--color-syntax-boolean': '#16a34a',
+      '--color-syntax-null': '#dcfce7',
+      '--color-syntax-keyword': '#16a34a',
+      '--color-syntax-comment': '#57534e',
+      '--color-syntax-punctuation': '#a8a29e',
       // Component-specific variables
       '--editor-bg': '#1c1917',
       '--editor-text': '#ffffff',
@@ -317,6 +353,15 @@ export const themes = [
       '--selected-text': '#000000',
       '--sidebar-text': '#000000',
       '--sidebar-header-text': '#000000',
+      // Syntax Highlighting (Minimal)
+      '--color-syntax-string': '#404040',
+      '--color-syntax-variable': '#171717',
+      '--color-syntax-number': '#262626',
+      '--color-syntax-boolean': '#000000',
+      '--color-syntax-null': '#525252',
+      '--color-syntax-keyword': '#000000',
+      '--color-syntax-comment': '#737373',
+      '--color-syntax-punctuation': '#404040',
       // Component-specific variables
       '--editor-bg': '#ffffff',
       '--editor-text': '#000000',

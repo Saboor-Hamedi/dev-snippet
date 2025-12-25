@@ -98,7 +98,7 @@ const KeyboardHandler = ({
             window.__forceSave = true
           } catch {}
           try {
-            setAutosaveStatus('saved')
+            // Let the editor handle the status updates to ensure alignment with visible notifications
             window.dispatchEvent(new Event('force-save'))
           } catch {}
           return

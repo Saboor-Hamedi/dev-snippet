@@ -72,7 +72,7 @@ const LivePreview = ({
         <div class="code-block-header">
           <span class="code-language font-bold">${normalizedLang}</span>
           <div class="code-actions">
-            <button class="copy-image-btn" data-code="${escaped}" title="Copy as Image">
+            <button class="copy-image-btn" data-code="${escaped}" data-lang="${normalizedLang}" title="Copy as Image">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-image"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
             </button>
             <button class="copy-code-btn" data-code="${escaped}" title="Copy code">
@@ -80,7 +80,7 @@ const LivePreview = ({
             </button>
           </div>
         </div>
-        <pre><code class="language-${normalizedLang}">${escaped}</code></pre>
+        <pre><code class="language-${normalizedLang} hljs">${escaped}</code></pre>
       </div>`
   }, [code, language, existingTitles, disabled])
 
@@ -107,10 +107,11 @@ const LivePreview = ({
       const fontOverride = `
         .markdown-body, .mermaid-wrapper, .mermaid-diagram, .actor, .node label { 
           font-family: ${fontFamily}, sans-serif !important; 
-          color: var(--color-text-primary) !important;
+          color: var(--color-text-primary);
         }
         pre code { 
           font-family: 'JetBrains Mono', 'Cascadia Code', monospace !important; 
+          color: inherit;
         }
         .code-actions {
           display: flex;
@@ -168,7 +169,7 @@ const LivePreview = ({
         openImageExportModal({
           title: 'Code Snippet',
           code: event.data.code,
-          language: language || 'text'
+          language: event.data.language || language || 'text'
         })
       }
     }
@@ -274,7 +275,7 @@ const LivePreview = ({
           ref={iframeRef}
           title="Live Preview"
           className="w-full h-full border-none"
-          sandbox="allow-scripts allow-modals allow-popups allow-same-origin"
+          sandbox="allow-scripts allow-modals allow-popups"
           src="preview.html"
         />
       </div>

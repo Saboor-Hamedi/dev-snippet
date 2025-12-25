@@ -165,7 +165,8 @@ export const useSettings = () => {
 
 export const useAutoSave = () => {
   const { getSetting, updateSetting } = useSettings()
-  const autoSave = getSetting('behavior.autoSave') || true
+  const setting = getSetting('behavior.autoSave')
+  const autoSave = setting === undefined || setting === null ? true : setting
 
   const setAutoSave = (enabled) => {
     updateSetting('behavior.autoSave', enabled)
