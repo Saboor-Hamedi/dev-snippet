@@ -277,6 +277,7 @@ const Workbench = ({
               }}
               onToggle={() => setIsSidebarOpen(false)}
               isCompact={isCompact}
+              showToast={showToast}
             />
           </div>
 

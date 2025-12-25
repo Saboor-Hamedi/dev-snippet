@@ -92,9 +92,12 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
       // PRO-TIP: Prevent duplicate titles to keep the library clean
       // We skip empty titles to allow multiple "New Drafts"
       if (snippet.title && snippet.title.trim()) {
+        const folderId = snippet.folder_id || null
         const existing = db
-          .prepare('SELECT id FROM snippets WHERE title = ? COLLATE NOCASE AND id != ?')
-          .get(snippet.title.trim(), snippet.id)
+          .prepare(
+            'SELECT id FROM snippets WHERE title = ? COLLATE NOCASE AND id != ? AND (folder_id IS ?)'
+          )
+          .get(snippet.title.trim(), snippet.id, folderId)
         if (existing) {
           throw new Error('DUPLICATE_TITLE')
         }

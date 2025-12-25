@@ -26,7 +26,10 @@ export const handleRenameSnippet = async ({
     const targetBase = normalize(baseName)
 
     const duplicate = snippets.find(
-      (s) => normalize(s.title) === targetBase && s.id !== renameModal.item.id
+      (s) =>
+        normalize(s.title) === targetBase &&
+        s.id !== renameModal.item.id &&
+        (s.folder_id || null) === (renameModal.item.folder_id || null)
     )
     if (duplicate) {
       if (showToast) showToast(`${baseName}: already taken`, 'error')
@@ -47,8 +50,8 @@ export const handleRenameSnippet = async ({
     setSelectedSnippet(updatedItem)
   }
 
-  // If nothing changed (normalized), skip
-  if (normalize(renameModal.item.title) === normalize(baseName)) {
+  // If nothing changed, skip
+  if (renameModal.item.title.trim() === baseName) {
     showToast('Snippet title unchanged', 'info')
     // Silent close
     setRenameModal({ isOpen: false, item: null })

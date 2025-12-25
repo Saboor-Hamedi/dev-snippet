@@ -12,9 +12,7 @@ export const ensureExtension = (name, ext = '.md') => {
   let trimmed = (name || '').trim() || 'Untitled'
 
   if (!trimmed.toLowerCase().endsWith(ext)) {
-    // Remove existing extension if any, then append
-    const nameWithoutExt = trimmed.replace(/\.[^.\\/]+$/, '')
-    return `${nameWithoutExt}${ext}`
+    return `${trimmed}${ext}`
   }
 
   return trimmed

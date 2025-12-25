@@ -110,7 +110,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
   }, [setZoomLevel, setEditorZoom])
 
   // --- Draft Logic ---
-  const createDraftSnippet = (initialTitle = '', folderId = null) => {
+  const createDraftSnippet = (initialTitle = '', folderId = null, options = {}) => {
     // Singleton Pattern: If an empty draft exists, reuse it instead of creating a new one.
     if (!initialTitle && !folderId) {
       const existingBlank = snippets.find(
@@ -119,16 +119,22 @@ const SnippetLibraryInner = ({ snippetData }) => {
       )
 
       if (existingBlank) {
-        setSelectedSnippet(existingBlank)
-        setIsCreatingSnippet(true)
-        navigateTo('editor')
+        if (!options.skipNavigation) {
+          setSelectedSnippet(existingBlank)
+          setIsCreatingSnippet(true)
+          navigateTo('editor')
+        }
         showToast('Resuming empty draft', 'info')
         return existingBlank
       }
     }
 
+    console.log('[SnippetLibrary] Creating draft:', { initialTitle, folderId })
+
     const draft = {
-      id: Date.now().toString(),
+      id: window.crypto?.randomUUID
+        ? window.crypto.randomUUID()
+        : `draft-${Date.now()}-${Math.random().toString(36).slice(2)}`,
       title: initialTitle,
       code: '',
       timestamp: Date.now(),
@@ -137,9 +143,12 @@ const SnippetLibraryInner = ({ snippetData }) => {
       folder_id: folderId
     }
     setSnippets((prev) => [draft, ...prev])
-    setSelectedSnippet(draft)
-    setIsCreatingSnippet(true)
-    navigateTo('editor')
+
+    if (!options.skipNavigation) {
+      setSelectedSnippet(draft)
+      setIsCreatingSnippet(true)
+      navigateTo('editor')
+    }
     return draft
   }
 
@@ -189,7 +198,13 @@ const SnippetLibraryInner = ({ snippetData }) => {
   }, [currentThemeId])
 
   useEffect(() => {
-    const onCommandNew = () => createDraftSnippet()
+    const onCommandNew = () => {
+      const parentId = selectedFolderId || selectedSnippet?.folder_id || null
+      // Trigger inline creation in Sidebar instead of direct draft
+      window.dispatchEvent(
+        new CustomEvent('app:sidebar-start-creation', { detail: { type: 'snippet', parentId } })
+      )
+    }
     const onCommandTheme = () => {
       const current = themeRef.current
       const next = current === 'polaris' ? 'midnight-pro' : 'polaris'
@@ -241,7 +256,9 @@ const SnippetLibraryInner = ({ snippetData }) => {
     setTheme,
     showToast,
     overlayMode,
-    setOverlayMode
+    setOverlayMode,
+    selectedFolderId,
+    selectedSnippet
   ])
 
   const handleNewFolder = (options = {}) => {
@@ -408,6 +425,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
           currentContext={activeView}
           selectedSnippet={selectedSnippet}
           snippets={snippets}
+          folders={folders}
           trash={trash}
           onRestoreItem={restoreItem}
           onPermanentDeleteItem={permanentDeleteItem}
@@ -438,11 +456,13 @@ const SnippetLibraryInner = ({ snippetData }) => {
                 const normalize = (t) => (t || '').toLowerCase().trim().replace(/\.md$/, '')
                 const targetBase = normalize(item.title)
 
-                const duplicate = snippets.find(
-                  (s) => normalize(s.title) === targetBase && s.id !== item.id
-                )
+                const duplicate = snippets.find((s) => {
+                  const titleMatch = normalize(s.title) === targetBase
+                  const folderMatch = (s.folder_id || null) === (item.folder_id || null)
+                  return titleMatch && folderMatch && s.id !== item.id
+                })
                 if (duplicate) {
-                  showToast(`${item.title}: already taken`, 'error')
+                  showToast(`${item.title}: already taken in this folder`, 'error')
                   setAutosaveStatus(null)
                   return
                 }
@@ -469,16 +489,20 @@ const SnippetLibraryInner = ({ snippetData }) => {
           onNewRequest={() => createDraftSnippet()}
           onDeleteRequest={handleDeleteRequest}
           onBulkDeleteRequest={handleBulkDelete}
-          onNewSnippet={(title, folderId) => {
+          onNewSnippet={async (title, folderId, options) => {
             const parentId = folderId || selectedFolderId || selectedSnippet?.folder_id || null
-            createDraftSnippet(title, parentId)
+            const draft = createDraftSnippet(title, parentId, options)
+
+            // If explicit title provided (Sidebar creation), save to DB immediately
+            if (title && title.trim()) {
+              await saveSnippet({ ...draft, is_draft: false }, { skipSelectedUpdate: true })
+            }
           }}
           onRenameSnippet={handleRenameSnippetRequest}
           onNewFolder={handleNewFolder}
           onRenameFolder={handleRenameFolder}
           onDeleteFolder={handleDeleteFolder}
           onDeleteBulk={handleBulkDelete}
-          folders={folders}
           selectedFolderId={selectedFolderId}
           selectedIds={selectedIds}
           onSelectionChange={handleSelectionChange}

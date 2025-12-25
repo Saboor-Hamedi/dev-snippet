@@ -156,7 +156,7 @@ const Header = ({
           <div className="flex items-center gap-2 max-w-full h-full">
             {isTab ? (
               <div
-                className="relative group cursor-default px-3 transition-all duration-300 flex items-center justify-between h-full min-w-[160px] border-r border-[var(--color-border)] bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-bg-secondary)]"
+                className="relative group cursor-default px-1 transition-all duration-300 flex items-center justify-between h-full min-w-[160px] border-r border-[var(--color-border)] bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-bg-secondary)]"
                 style={{ WebkitAppRegion: 'no-drag' }}
                 onDoubleClick={() => onRename && onRename()}
               >

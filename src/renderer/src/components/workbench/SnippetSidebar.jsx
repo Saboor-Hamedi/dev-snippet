@@ -1,289 +1,11 @@
-import React, { useMemo, useState, useCallback } from 'react'
+import React, { useState } from 'react'
 import PropTypes from 'prop-types'
-import {
-  File,
-  Plus,
-  MoreHorizontal,
-  ChevronDown,
-  ChevronRight,
-  Search,
-  Folder,
-  FolderPlus,
-  Trash2,
-  Edit2,
-  FilePlus
-} from 'lucide-react'
+import { Search, Trash2, Edit2, FilePlus, FolderPlus } from 'lucide-react'
 import SidebarHeader from '../layout/SidebarHeader'
 import VirtualList from '../common/VirtualList'
 import ContextMenu from '../common/ContextMenu'
-
-const getFileIcon = (lang, title = '') => {
-  const extension = title.split('.').pop()?.toLowerCase() || ''
-  const name = title.toLowerCase()
-
-  // Languages matching
-  if (lang === 'javascript' || lang === 'js' || extension === 'js')
-    return { icon: File, color: '#f7df1e' }
-  if (lang === 'typescript' || lang === 'ts' || extension === 'ts')
-    return { icon: File, color: '#007acc' }
-  if (lang === 'react' || extension === 'jsx' || extension === 'tsx')
-    return { icon: File, color: '#61dafb' }
-  if (lang === 'css' || extension === 'css') return { icon: File, color: '#264de4' }
-  if (lang === 'html' || extension === 'html') return { icon: File, color: '#e34c26' }
-  if (lang === 'python' || extension === 'py') return { icon: File, color: '#3776ab' }
-  if (lang === 'markdown' || lang === 'md' || extension === 'md')
-    return { icon: File, color: '#519aba' }
-
-  return { icon: File, color: '#8b949e' } // Default
-}
-
-// Tree flattening logic for VirtualList (Performance optimized)
-const flattenTree = (folders, snippets, depth = 0, parentId = null) => {
-  let result = []
-
-  // Get and sort folders in this level
-  const levelFolders = folders
-    .filter((f) => (f.parent_id || null) === (parentId || null))
-    .sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }))
-
-  levelFolders.forEach((folder) => {
-    const isExpanded = folder.collapsed === 0 || folder.collapsed === false
-    result.push({
-      id: folder.id,
-      type: 'folder',
-      data: folder,
-      depth,
-      isExpanded
-    })
-
-    if (isExpanded) {
-      result = result.concat(flattenTree(folders, snippets, depth + 1, folder.id))
-    }
-  })
-
-  // Get and sort snippets in this level
-  const levelSnippets = snippets
-    .filter((s) => (s.folder_id || null) === (parentId || null))
-    .sort((a, b) => {
-      if (a.is_draft && !b.is_draft) return -1
-      if (!a.is_draft && b.is_draft) return 1
-      return (a.title || '').localeCompare(b.title || '', undefined, { sensitivity: 'base' })
-    })
-
-  levelSnippets.forEach((snippet) => {
-    result.push({
-      id: snippet.id,
-      type: 'snippet',
-      data: snippet,
-      depth
-    })
-  })
-
-  return result
-}
-
-const Row = ({ index, style, data }) => {
-  const {
-    treeItems,
-    selectedSnippet,
-    selectedFolderId,
-    selectedIds = [],
-    onSelect,
-    onSelectFolder,
-    onSelectionChange,
-    handleItemKeyDown,
-    isCompact,
-    onToggleFolder,
-    onNew,
-    onMoveSnippet,
-    onMoveFolder,
-    onContextMenu,
-    lastSelectedIdRef
-  } = data
-
-  const item = treeItems[index]
-  if (!item) return null
-
-  const { type, data: itemData, depth } = item
-  const [isDragOver, setIsDragOver] = useState(false)
-
-  const handleDragStart = (e) => {
-    let dragIds = [itemData.id]
-    let dragTypes = [type]
-
-    if (selectedIds.includes(itemData.id)) {
-      dragIds = selectedIds
-      dragTypes = selectedIds.map((id) => {
-        const found = treeItems.find((i) => i.id === id)
-        return found ? found.type : 'snippet'
-      })
-    }
-
-    e.dataTransfer.setData('sourceIds', JSON.stringify(dragIds))
-    e.dataTransfer.setData('sourceTypes', JSON.stringify(dragTypes))
-    e.dataTransfer.effectAllowed = 'move'
-
-    const dragImg = new Image()
-    dragImg.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
-    e.dataTransfer.setDragImage(dragImg, 0, 0)
-  }
-
-  const handleDragOver = (e) => {
-    if (type === 'folder') {
-      e.preventDefault()
-      setIsDragOver(true)
-      e.dataTransfer.dropEffect = 'move'
-    }
-  }
-
-  const handleDrop = (e) => {
-    if (type === 'folder') {
-      e.preventDefault()
-      e.stopPropagation()
-      setIsDragOver(false)
-      try {
-        const sourceIds = JSON.parse(e.dataTransfer.getData('sourceIds') || '[]')
-        const sourceTypes = JSON.parse(e.dataTransfer.getData('sourceTypes') || '[]')
-        if (sourceIds.includes(itemData.id)) return
-        const snippetIds = sourceIds.filter((_, idx) => sourceTypes[idx] === 'snippet')
-        const folderIds = sourceIds.filter((_, idx) => sourceTypes[idx] === 'folder')
-        if (snippetIds.length > 0) onMoveSnippet(snippetIds, itemData.id)
-        if (folderIds.length > 0) onMoveFolder(folderIds, itemData.id)
-      } catch (err) {
-        console.error('Drop error:', err)
-      }
-    }
-  }
-
-  const handleItemClick = (e) => {
-    let newSelection = []
-    if (e.shiftKey && lastSelectedIdRef.current) {
-      const lastIndex = treeItems.findIndex((i) => i.id === lastSelectedIdRef.current)
-      const currentIndex = index
-      if (lastIndex !== -1) {
-        const start = Math.min(lastIndex, currentIndex)
-        const end = Math.max(lastIndex, currentIndex)
-        newSelection = [...selectedIds]
-        for (let i = start; i <= end; i++) {
-          const itemId = treeItems[i].id
-          if (!newSelection.includes(itemId)) newSelection.push(itemId)
-        }
-      }
-    } else if (e.ctrlKey || e.metaKey) {
-      newSelection = selectedIds.includes(itemData.id)
-        ? selectedIds.filter((id) => id !== itemData.id)
-        : [...selectedIds, itemData.id]
-    } else {
-      newSelection = [itemData.id]
-      if (type === 'snippet') onSelect(itemData)
-      else onSelectFolder(itemData.id)
-    }
-    lastSelectedIdRef.current = itemData.id
-    onSelectionChange(newSelection)
-  }
-
-  if (type === 'folder') {
-    const isSelected = selectedIds.includes(itemData.id) || selectedFolderId === itemData.id
-    return (
-      <div
-        id={`sidebar-item-${index}`}
-        className="outline-none focus:outline-none"
-        style={style}
-        draggable
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragLeave={() => setIsDragOver(false)}
-        onDrop={handleDrop}
-        tabIndex={0}
-        onClick={handleItemClick}
-        onKeyDown={(e) => handleItemKeyDown(e, index, itemData)}
-        onContextMenu={(e) => onContextMenu(e, 'folder', itemData)}
-      >
-        <div
-          className={`group flex items-center gap-[3px] w-full h-full select-none border-none outline-none focus:outline-none transition-all duration-150 pr-2 ${
-            isSelected ? 'bg-[var(--selected-bg)]' : ''
-          } ${
-            isDragOver
-              ? 'bg-[var(--selected-bg)] border border-[var(--color-accent-primary)]/30 rounded-sm'
-              : isSelected
-                ? ''
-                : 'hover:bg-white/5'
-          }`}
-          style={{
-            color: isSelected ? 'var(--selected-text)' : 'var(--sidebar-header-text)',
-            paddingLeft: `${depth * 12 + 6}px`
-          }}
-        >
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onToggleFolder(itemData.id, !itemData.collapsed)
-            }}
-            className="flex-shrink-0 flex items-center justify-center opacity-70 group-hover:opacity-100 hover:bg-white/10 rounded"
-          >
-            {itemData.collapsed ? (
-              <ChevronRight size={isCompact ? 12 : 14} strokeWidth={2.5} />
-            ) : (
-              <ChevronDown size={isCompact ? 12 : 14} strokeWidth={2.5} />
-            )}
-          </button>
-          <div className="flex-shrink-0 flex items-center justify-center text-amber-400 opacity-80 group-hover:opacity-100">
-            <Folder size={isCompact ? 13 : 15} strokeWidth={1.5} />
-          </div>
-          <span className="flex-1 min-w-0 text-left truncate font-medium text-[12px] opacity-80 group-hover:opacity-100 pl-0.5">
-            {itemData.name}
-          </span>
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onNew(null, itemData.id)
-            }}
-            className="hidden group-hover:flex items-center justify-center p-0.5 rounded hover:bg-white/20 opacity-60 hover:opacity-100"
-          >
-            <Plus size={12} />
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  const isSelected =
-    selectedIds.includes(itemData.id) || (selectedSnippet?.id === itemData.id && !selectedFolderId)
-  const { icon: Icon, color } = getFileIcon(itemData.language, itemData.title)
-
-  return (
-    <div style={style}>
-      <button
-        id={`sidebar-item-${index}`}
-        draggable
-        onDragStart={handleDragStart}
-        onClick={handleItemClick}
-        onKeyDown={(e) => handleItemKeyDown(e, index, itemData)}
-        onContextMenu={(e) => onContextMenu(e, 'snippet', itemData)}
-        className={`group flex items-center gap-[3px] w-full h-full select-none border-none outline-none focus:outline-none pr-2 ${
-          isCompact ? 'text-xs' : 'text-sm'
-        } ${isSelected ? '' : 'hover:bg-white/[0.03]'}`}
-        style={{
-          backgroundColor: isSelected ? 'var(--selected-bg)' : 'transparent',
-          color: isSelected ? 'var(--selected-text)' : 'var(--sidebar-text)',
-          paddingLeft: `${depth * 12 + 26}px`
-        }}
-        tabIndex={0}
-      >
-        <div
-          className="flex-shrink-0 flex items-center justify-center opacity-80 group-hover:opacity-100"
-          style={{ color: isSelected ? 'inherit' : color }}
-        >
-          <Icon size={isCompact ? 13 : 15} strokeWidth={1.5} />
-        </div>
-        {/* TODO: Add snippet language */}
-        <span className="flex-1 min-w-0 text-left truncate font-light opacity-90 group-hover:opacity-100 normal-case pl-0.5">
-          {itemData.title || 'Untitled'}
-        </span>
-      </button>
-    </div>
-  )
-}
+import SnippetSidebarRow from './sidebar/SnippetSidebarRow'
+import { useSidebarLogic } from './sidebar/useSidebarLogic'
 
 const SnippetSidebar = ({
   snippets,
@@ -307,19 +29,82 @@ const SnippetSidebar = ({
   onSelectionChange,
   isOpen,
   onToggle,
-  isCompact = false
+  isCompact = false,
+  showToast
 }) => {
   const [filter, setFilter] = useState('')
   const [contextMenu, setContextMenu] = useState(null)
-  const lastSelectedIdRef = React.useRef(null)
   const inputRef = React.useRef(null)
   const listRef = React.useRef(null)
+  const parentRef = React.useRef(null)
 
-  const treeItems = useMemo(() => {
-    return flattenTree(folders, snippets)
-  }, [snippets, folders])
+  // --- Logic Hook ---
+  const {
+    treeItems,
+    lastSelectedIdRef,
+    handleSelectionInternal,
+    handleItemKeyDown,
+    handleBackgroundClick,
+    startCreation,
+    cancelCreation,
+    confirmCreation
+  } = useSidebarLogic({
+    folders,
+    snippets,
+    selectedIds,
+    selectedFolderId,
+    selectedSnippet,
+    onSelect,
+    onSelectFolder,
+    onSelectionChange,
+    onToggleFolder,
+    inputRef,
+    listRef
+  })
 
-  // Debounced Search
+  // --- Creation Handlers ---
+  const handleConfirmCreation = (name, type, parentId) => {
+    // Validation
+    const validNameRegex = /^[a-zA-Z0-9_][a-zA-Z0-9_\-\. ]*$/
+    if (!validNameRegex.test(name)) {
+      if (showToast)
+        showToast(
+          'Invalid Name: Must start with Letter/Number/_ and no special symbols (@#$%)',
+          'error'
+        )
+      return
+    }
+
+    // Client-side duplicate check to prevent overwriting
+    if (type === 'snippet') {
+      const normalize = (t) => (t || '').toLowerCase().trim().replace(/\.md$/, '')
+      const targetBase = normalize(name)
+      const duplicate = snippets.find(
+        (s) => normalize(s.title) === targetBase && (s.folder_id || null) === (parentId || null)
+      )
+
+      if (duplicate) {
+        if (showToast) showToast(`File "${name}" already exists`, 'error')
+        return // Keep input open
+      }
+      onNew(name, parentId, { skipNavigation: true })
+    } else {
+      const normalize = (t) => (t || '').toLowerCase().trim()
+      const targetBase = normalize(name)
+      const duplicate = folders.find(
+        (f) => normalize(f.name) === targetBase && (f.parent_id || null) === (parentId || null)
+      )
+
+      if (duplicate) {
+        if (showToast) showToast(`Folder "${name}" already exists`, 'error')
+        return // Keep input open
+      }
+      onNewFolder({ name, parentId })
+    }
+    confirmCreation()
+  }
+
+  // --- Debounced Search ---
   React.useEffect(() => {
     const timer = setTimeout(() => {
       if (onSearch) onSearch(filter)
@@ -327,45 +112,13 @@ const SnippetSidebar = ({
     return () => clearTimeout(timer)
   }, [filter, onSearch])
 
-  const handleSelectionInternal = useCallback(
-    (e, id, type) => {
-      let newSelection = []
-      if (e.shiftKey && lastSelectedIdRef.current) {
-        const lastIndex = treeItems.findIndex((i) => i.id === lastSelectedIdRef.current)
-        const currentIndex = treeItems.findIndex((i) => i.id === id)
-        if (lastIndex !== -1 && currentIndex !== -1) {
-          const start = Math.min(lastIndex, currentIndex)
-          const end = Math.max(lastIndex, currentIndex)
-          newSelection = [...selectedIds]
-          for (let i = start; i <= end; i++) {
-            const itemId = treeItems[i].id
-            if (!newSelection.includes(itemId)) newSelection.push(itemId)
-          }
-        }
-      } else if (e.ctrlKey || e.metaKey) {
-        newSelection = selectedIds.includes(id)
-          ? selectedIds.filter((sid) => sid !== id)
-          : [...selectedIds, id]
-      } else {
-        newSelection = [id]
-        if (type === 'snippet') {
-          const snippet = snippets.find((s) => s.id === id)
-          if (snippet) onSelect(snippet)
-        } else {
-          onSelectFolder(id)
-        }
-      }
-      lastSelectedIdRef.current = id
-      onSelectionChange(newSelection)
-    },
-    [treeItems, selectedIds, onSelectionChange, onSelect, onSelectFolder, snippets]
-  )
-
+  // --- Context Menu Logic (UI specific) ---
   const handleContextMenu = (e, type, itemData) => {
     e.preventDefault()
     e.stopPropagation()
 
-    if (itemData && !selectedIds.includes(itemData.id)) {
+    // If right-clicking unselected item, select it first (unless background)
+    if (type !== 'background' && itemData && !selectedIds.includes(itemData.id)) {
       handleSelectionInternal({ ctrlKey: false, shiftKey: false }, itemData.id, type)
     }
 
@@ -381,11 +134,15 @@ const SnippetSidebar = ({
       })
       if (!isMulti) {
         menuItems.unshift(
-          { label: 'New Snippet', icon: FilePlus, onClick: () => onNew(null, itemData.id) },
+          {
+            label: 'New Snippet',
+            icon: FilePlus,
+            onClick: () => startCreation('snippet', itemData.id)
+          },
           {
             label: 'New Subfolder',
             icon: FolderPlus,
-            onClick: () => onNewFolder({ parentId: itemData.id })
+            onClick: () => startCreation('folder', itemData.id)
           },
           { label: 'separator' },
           { label: 'Rename', icon: Edit2, onClick: () => onRenameFolder(itemData) }
@@ -406,40 +163,27 @@ const SnippetSidebar = ({
         })
       }
     } else {
+      // Background context menu
       menuItems.push(
-        { label: 'New Snippet', icon: FilePlus, onClick: () => onNew() },
-        { label: 'New Folder', icon: FolderPlus, onClick: () => onNewFolder() }
+        { label: 'New Snippet', icon: FilePlus, onClick: () => startCreation('snippet', null) },
+        { label: 'New Folder', icon: FolderPlus, onClick: () => startCreation('folder', null) }
       )
     }
 
     setContextMenu({ x: e.clientX, y: e.clientY, items: menuItems })
   }
 
-  const handleItemKeyDown = (e, index) => {
-    if (e.key === 'ArrowDown' && index < treeItems.length - 1) {
-      e.preventDefault()
-      const next = treeItems[index + 1]
-      handleSelectionInternal(e, next.id, next.type)
-      listRef.current?.scrollToItem(index + 1)
-      setTimeout(() => document.getElementById(`sidebar-item-${index + 1}`)?.focus(), 10)
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault()
-      if (index === 0) inputRef.current?.focus()
-      else {
-        const prev = treeItems[index - 1]
-        handleSelectionInternal(e, prev.id, prev.type)
-        listRef.current?.scrollToItem(index - 1)
-        setTimeout(() => document.getElementById(`sidebar-item-${index - 1}`)?.focus(), 10)
-      }
-    } else if (e.key === 'Enter') {
-      const item = treeItems[index]
-      if (item.type === 'folder') onToggleFolder(item.id, !item.data.collapsed)
-      else onSelect(item.data)
+  // --- External Creation Command Listener ---
+  React.useEffect(() => {
+    const handler = (e) => {
+      const { type, parentId } = e.detail || {}
+      startCreation(type || 'snippet', parentId)
     }
-  }
+    window.addEventListener('app:sidebar-start-creation', handler)
+    return () => window.removeEventListener('app:sidebar-start-creation', handler)
+  }, [startCreation])
 
-  // Resize Observer
-  const parentRef = React.useRef(null)
+  // --- Resize Observer ---
   const [size, setSize] = useState({ width: 0, height: 0 })
   React.useLayoutEffect(() => {
     if (!parentRef.current) return
@@ -482,14 +226,9 @@ const SnippetSidebar = ({
       <div
         className="flex-1 overflow-hidden relative"
         ref={parentRef}
-        onClick={(e) => {
-          if (e.target === e.currentTarget) {
-            onSelectionChange([])
-            lastSelectedIdRef.current = null
-          }
-        }}
+        onClick={handleBackgroundClick}
         onContextMenu={(e) => {
-          if (e.target === e.currentTarget) handleContextMenu(e, 'background', null)
+          handleContextMenu(e, 'background', null)
         }}
         onDragOver={(e) => {
           e.preventDefault()
@@ -531,10 +270,13 @@ const SnippetSidebar = ({
               onMoveSnippet,
               onMoveFolder,
               onContextMenu: handleContextMenu,
-              lastSelectedIdRef
+              lastSelectedIdRef,
+              // Creation Props
+              onConfirmCreation: handleConfirmCreation,
+              onCancelCreation: cancelCreation
             }}
           >
-            {Row}
+            {SnippetSidebarRow}
           </VirtualList>
         )}
       </div>
@@ -573,7 +315,8 @@ SnippetSidebar.propTypes = {
   onSelectionChange: PropTypes.func,
   isOpen: PropTypes.bool,
   onToggle: PropTypes.func,
-  isCompact: PropTypes.bool
+  isCompact: PropTypes.bool,
+  showToast: PropTypes.func
 }
 
 export default React.memo(SnippetSidebar)
