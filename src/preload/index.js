@@ -59,17 +59,19 @@ const api = {
   unmaximize: () => electronAPI.ipcRenderer.invoke('window:unmaximize'),
   toggleMaximize: () => electronAPI.ipcRenderer.invoke('window:toggle-maximize'),
   closeWindow: () => electronAPI.ipcRenderer.invoke('window:close'),
+  reloadWindow: () => electronAPI.ipcRenderer.invoke('window:reload'),
   relaunch: () => electronAPI.ipcRenderer.invoke('window:relaunch'),
   getVersion: () => electronAPI.ipcRenderer.invoke('app:getVersion'),
   // Bounds helpers for custom resize handles (renderer will call these)
   getWindowBounds: () => electronAPI.ipcRenderer.invoke('window:getBounds'),
   setWindowBounds: (bounds) => electronAPI.ipcRenderer.invoke('window:setBounds', bounds),
   restoreDefaultSize: () => electronAPI.ipcRenderer.invoke('window:restore-default-size'),
-  setFocusSize: () => electronAPI.ipcRenderer.invoke('window:set-focus-size'),
+  setFlowSize: () => electronAPI.ipcRenderer.invoke('window:set-flow-size'),
   setZoom: (factor) => electronAPI.ipcRenderer.invoke('window:setZoom', factor),
   getZoom: () => electronAPI.ipcRenderer.invoke('window:getZoom'),
   openMiniBrowser: (htmlContent) =>
     electronAPI.ipcRenderer.invoke('window:openMiniBrowser', htmlContent),
+  resetWindow: () => electronAPI.ipcRenderer.invoke('window:reset'),
   // Backup Management
   listBackups: () => electronAPI.ipcRenderer.invoke('backup:list'),
   restoreBackup: (backupPath) => electronAPI.ipcRenderer.invoke('backup:restore', backupPath),

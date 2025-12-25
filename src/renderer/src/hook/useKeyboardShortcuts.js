@@ -190,11 +190,11 @@ export const useKeyboardShortcuts = (shortcuts) => {
         }
       }
 
-      // Alt+Shift+F toggle focus mode
-      if (e.altKey && e.shiftKey && e.key.toLowerCase() === 'f') {
+      // Ctrl+Shift+F toggle flow mode
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'f') {
         e.preventDefault()
-        if (shortcutsRef.current.onToggleFocus) {
-          shortcutsRef.current.onToggleFocus()
+        if (shortcutsRef.current.onToggleFlow) {
+          shortcutsRef.current.onToggleFlow()
         }
       }
     }

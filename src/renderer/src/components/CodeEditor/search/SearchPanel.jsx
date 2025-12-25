@@ -232,11 +232,17 @@ const SearchPanel = ({ editorView, onClose, initialQuery = '', onQueryChange }) 
 
   return (
     <div
-      className="absolute top-1 right-3 z-50 flex items-center gap-0.5 bg-[#1e1e1e] border border-[#3e3e42] rounded shadow-lg px-1.5 py-1"
-      style={{ minWidth: '280px', maxWidth: '320px' }}
+      className="absolute top-1 right-3 z-50 flex items-center gap-0.5 rounded shadow-lg px-1.5 py-1 border transition-all duration-300"
+      style={{
+        minWidth: '280px',
+        maxWidth: '320px',
+        backgroundColor: 'var(--color-bg-secondary)',
+        borderColor: 'var(--color-border)',
+        color: 'var(--color-text-primary)'
+      }}
     >
       {/* Search Icon */}
-      <Search size={12} className="text-gray-400 flex-shrink-0" />
+      <Search size={12} className="opacity-60 flex-shrink-0" />
 
       {/* Search Input */}
       <input
@@ -246,13 +252,18 @@ const SearchPanel = ({ editorView, onClose, initialQuery = '', onQueryChange }) 
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={handleInputKeyDown}
         placeholder="Find"
-        className="flex-1 bg-transparent text-white outline-none px-1 py-0.5 placeholder-gray-500"
-        style={{ fontSize: '12px', minWidth: '80px' }}
+        className="flex-1 bg-transparent outline-none px-1 py-0.5"
+        style={{
+          fontSize: '12px',
+          minWidth: '80px',
+          color: 'var(--color-text-primary)',
+          '::placeholder': { color: 'var(--color-text-tertiary)' }
+        }}
       />
 
       {/* Match Counter - always reserve space */}
       <span
-        className="text-gray-400 px-1 whitespace-nowrap"
+        className="opacity-60 px-1 whitespace-nowrap"
         style={{ fontSize: '10px', minWidth: '60px', textAlign: 'right' }}
       >
         {query
@@ -263,31 +274,39 @@ const SearchPanel = ({ editorView, onClose, initialQuery = '', onQueryChange }) 
       </span>
 
       {/* Navigation Buttons */}
-      <div className="flex items-center gap-0.5 border-l border-[#3e3e42] pl-0.5">
+      <div
+        className="flex items-center gap-0.5 border-l pl-0.5"
+        style={{ borderColor: 'var(--color-border)' }}
+      >
         <button
           onClick={handlePrevious}
           disabled={totalMatches === 0}
-          className="p-0.5 hover:bg-white/10 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="p-0.5 hover:bg-[var(--hover-bg)] rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           title="Previous match (Shift+Enter)"
         >
-          <ChevronUp size={12} className="text-gray-300" />
+          <ChevronUp size={12} />
         </button>
         <button
           onClick={handleNext}
           disabled={totalMatches === 0}
-          className="p-0.5 hover:bg-white/10 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="p-0.5 hover:bg-[var(--hover-bg)] rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           title="Next match (Enter)"
         >
-          <ChevronDown size={12} className="text-gray-300" />
+          <ChevronDown size={12} />
         </button>
       </div>
 
       {/* Toggle Options */}
-      <div className="flex items-center gap-0.5 border-l border-[#3e3e42] pl-0.5">
+      <div
+        className="flex items-center gap-0.5 border-l pl-0.5"
+        style={{ borderColor: 'var(--color-border)' }}
+      >
         <button
           onClick={() => setCaseSensitive(!caseSensitive)}
           className={`p-0.5 rounded transition-colors ${
-            caseSensitive ? 'bg-blue-500/20 text-blue-400' : 'hover:bg-white/10 text-gray-400'
+            caseSensitive
+              ? 'bg-[var(--color-accent-primary)] text-white'
+              : 'hover:bg-[var(--hover-bg)] opacity-60'
           }`}
           title="Match Case (Alt+C)"
         >
@@ -296,7 +315,9 @@ const SearchPanel = ({ editorView, onClose, initialQuery = '', onQueryChange }) 
         <button
           onClick={() => setWholeWord(!wholeWord)}
           className={`p-0.5 rounded transition-colors ${
-            wholeWord ? 'bg-blue-500/20 text-blue-400' : 'hover:bg-white/10 text-gray-400'
+            wholeWord
+              ? 'bg-[var(--color-accent-primary)] text-white'
+              : 'hover:bg-[var(--hover-bg)] opacity-60'
           }`}
           title="Match Whole Word (Alt+W)"
         >
@@ -305,7 +326,9 @@ const SearchPanel = ({ editorView, onClose, initialQuery = '', onQueryChange }) 
         <button
           onClick={() => setUseRegex(!useRegex)}
           className={`p-0.5 rounded transition-colors ${
-            useRegex ? 'bg-blue-500/20 text-blue-400' : 'hover:bg-white/10 text-gray-400'
+            useRegex
+              ? 'bg-[var(--color-accent-primary)] text-white'
+              : 'hover:bg-[var(--hover-bg)] opacity-60'
           }`}
           title="Use Regular Expression (Alt+R)"
         >
@@ -316,10 +339,10 @@ const SearchPanel = ({ editorView, onClose, initialQuery = '', onQueryChange }) 
       {/* Close Button */}
       <button
         onClick={handleClose}
-        className="p-0.5 hover:bg-white/10 rounded transition-colors ml-auto"
+        className="p-0.5 hover:bg-[var(--hover-bg)] rounded transition-colors ml-auto opacity-60 hover:opacity-100"
         title="Close (Escape)"
       >
-        <X size={12} className="text-gray-400" />
+        <X size={12} />
       </button>
     </div>
   )

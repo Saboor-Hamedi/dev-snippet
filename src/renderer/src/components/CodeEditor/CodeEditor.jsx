@@ -31,7 +31,8 @@ const CodeEditor = ({
   onLargeFileChange,
   readOnly = false,
   snippets = [],
-  language = 'markdown'
+  language = 'markdown',
+  theme = 'midnight-pro'
 }) => {
   // Zoom level is now managed globally by useZoomLevel at the root/SettingsProvider level.
   // Individual components consume the result via CSS variables.
@@ -217,8 +218,7 @@ const CodeEditor = ({
           EditorView,
           isDark:
             (typeof document !== 'undefined' &&
-              (document.documentElement.classList.contains('dark') ||
-                document.documentElement.getAttribute('data-theme') === 'dark')) ||
+              document.documentElement.classList.contains('dark')) ||
             false,
           caretColor: cursorColor,
           cursorWidth,
@@ -262,7 +262,8 @@ const CodeEditor = ({
     // extensionsLoaded, // REMOVED: This causes a double-render loop
     snippetTitles,
     isDark,
-    language
+    language,
+    theme
   ])
 
   return (

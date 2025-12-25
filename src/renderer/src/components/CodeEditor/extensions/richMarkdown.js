@@ -15,47 +15,54 @@ const styles = [
   {
     tag: t.heading,
     fontWeight: 'bold',
-    color: '#58a6ff',
+    color: 'var(--color-accent-primary, #58a6ff)',
     borderBottom: '1px solid rgba(88, 166, 255, 0.2)'
   },
 
   // Emphasis
-  { tag: t.strong, fontWeight: 'bold', color: '#c9d1d9' },
-  { tag: t.emphasis, fontStyle: 'italic', color: '#c9d1d9' },
-  { tag: t.strikethrough, textDecoration: 'line-through', color: '#8b949e' },
+  { tag: t.strong, fontWeight: 'bold', color: 'var(--color-text-primary, #f8fafc)' },
+  { tag: t.emphasis, fontStyle: 'italic', color: 'var(--color-text-primary, #f8fafc)' },
+  {
+    tag: t.strikethrough,
+    textDecoration: 'line-through',
+    color: 'var(--color-text-tertiary, #64748b)'
+  },
 
-  // Code
+  // Code (inline)
   {
     tag: t.monospace,
-    color: '#a5d6ff'
+    color: 'var(--color-syntax-string, #a5d6ff)'
   },
 
   // Links
-  { tag: t.link, color: '#58a6ff', textDecoration: 'underline' },
-  { tag: t.url, color: '#58a6ff' },
+  { tag: t.link, color: 'var(--color-accent-primary, #58a6ff)', textDecoration: 'underline' },
+  { tag: t.url, color: 'var(--color-accent-primary, #58a6ff)' },
 
   // Lists & Quotes
-  { tag: t.list, color: '#8b949e' },
-  { tag: t.quote, color: '#8b949e', fontStyle: 'italic' },
+  { tag: t.list, color: 'var(--color-text-secondary, #94a3b8)' },
+  { tag: t.quote, color: 'var(--color-text-secondary, #94a3b8)', fontStyle: 'italic' },
 
   // Markdown formatting characters (*, #, `, etc.) - subtle
-  { tag: t.punctuation, color: '#6e7681', opacity: 0.6 },
-  { tag: t.processingInstruction, color: '#6e7681', opacity: 0.6 },
-  { tag: t.meta, color: '#6e7681', opacity: 0.6 },
+  { tag: t.punctuation, color: 'var(--color-syntax-punctuation, #6e7681)', opacity: 0.6 },
+  { tag: t.processingInstruction, color: 'var(--color-syntax-punctuation, #6e7681)', opacity: 0.6 },
+  { tag: t.meta, color: 'var(--color-syntax-punctuation, #6e7681)', opacity: 0.6 },
 
   // Tables - Robust header styling
   {
     tag: [t.tableHeader, t.propertyName, t.name, t.atom],
     fontWeight: '700',
-    color: '#58a6ff'
+    color: 'var(--color-accent-primary, #58a6ff)'
   },
-  { tag: t.tableDelimiter, color: '#6e7681', opacity: 0.5 },
+  { tag: t.tableDelimiter, color: 'var(--color-syntax-punctuation, #6e7681)', opacity: 0.5 },
 
   // Code block syntax (for fenced code blocks)
-  { tag: t.keyword, color: '#ff7b72' },
-  { tag: t.string, color: '#a5d6ff' },
-  { tag: t.variableName, color: '#d2a8ff' },
-  { tag: t.comment, color: '#8b949e', fontStyle: 'italic' }
+  { tag: t.keyword, color: 'var(--color-syntax-keyword, #ff7b72)' },
+  { tag: t.string, color: 'var(--color-syntax-string, #a5d6ff)' },
+  {
+    tag: [t.variableName, t.definition(t.variableName)],
+    color: 'var(--color-syntax-variable, #79c0ff)'
+  },
+  { tag: t.comment, color: 'var(--color-syntax-comment, #8b949e)', fontStyle: 'italic' }
 ]
   .map((s) => ({ ...s, tag: sanitize(s.tag) }))
   .filter((s) => s.tag !== undefined && (Array.isArray(s.tag) ? s.tag.length > 0 : true))

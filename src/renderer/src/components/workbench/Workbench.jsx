@@ -6,23 +6,24 @@ import WelcomePage from '../WelcomePage'
 import Header from '../layout/Header'
 
 import SidebarTheme from '../preference/SidebarTheme'
-import { File } from 'lucide-react'
-
 import SnippetSidebar from './SnippetSidebar'
 import TrashSidebar from './TrashSidebar'
 import ActivityBar from '../layout/activityBar/ActivityBar'
 import StatusBar from '../StatusBar'
-import { useModal } from './manager/ModalManager'
+import { useModal } from './manager/ModalContext'
 import SystemStatusFooter from '../SystemStatusFooter'
+import FlowStatusBadge from './FlowStatusBadge'
+import LivePreview from '../livepreview/LivePreview'
+import { useTheme } from '../../hook/useTheme'
 
 const Workbench = ({
   activeView,
   selectedSnippet,
   snippets,
-  trash, // New
-  onRestoreItem, // New
-  onPermanentDeleteItem, // New
-  onLoadTrash, // New
+  trash,
+  onRestoreItem,
+  onPermanentDeleteItem,
+  onLoadTrash,
   showPreview,
   onTogglePreview,
   onSave,
@@ -41,11 +42,9 @@ const Workbench = ({
   showToast,
   hideWelcomePage,
   onSearchSnippets,
-  // Lifted state props
   isSidebarOpen,
   setIsSidebarOpen,
   onRename,
-  // Folder Props
   folders,
   onToggleFolder,
   onNewFolder,
@@ -63,23 +62,19 @@ const Workbench = ({
   settings,
   isSettingsOpen
 }) => {
+  const { currentTheme } = useTheme()
   const handleSave = (snippet) => {
     onSave(snippet)
   }
 
-  // Get modal functions
   const { openDeleteModal } = useModal()
-
-  // --- Sidebar State Management ---
   const [activeSidebarTab, setActiveSidebarTab] = React.useState('explorer')
-  // const [isSidebarOpen, setIsSidebarOpen] = React.useState(true) -> Lifted to SnippetLibrary
+  const [showFlowPreview, setShowFlowPreview] = React.useState(false)
 
   const handleTabChange = (tabId) => {
     if (activeSidebarTab === tabId) {
-      // Toggle if clicking active tab
       setIsSidebarOpen(!isSidebarOpen)
     } else {
-      // Switch tab and ensure open
       setActiveSidebarTab(tabId)
       setIsSidebarOpen(true)
     }
@@ -91,7 +86,6 @@ const Workbench = ({
     }
   }
 
-  // Determine header title based on current view
   const getHeaderTitle = () => {
     switch (activeView) {
       case 'editor':
@@ -108,12 +102,10 @@ const Workbench = ({
   }
 
   const renderContent = () => {
-    // Priority 0: Settings
     if (activeView === 'settings') {
       return <SettingsPanel onClose={onCloseSettings} />
     }
 
-    // Priority 1: Editor mode (creating new snippet)
     if (activeView === 'editor') {
       return (
         <SnippetEditor
@@ -134,7 +126,6 @@ const Workbench = ({
       )
     }
 
-    // Viewing a selected snippet
     if (selectedSnippet) {
       return (
         <SnippetEditor
@@ -154,16 +145,13 @@ const Workbench = ({
       )
     }
 
-    // FINAL FALLBACK: Welcome page or Empty State
     if (hideWelcomePage) {
       return (
         <div
           className="h-full w-full flex flex-col "
           style={{ backgroundColor: 'var(--welcome-bg, #232731)' }}
         >
-          {/* Main Content Container - Max width for better reading experience on large screens */}
           <div className="flex-1 flex justify-center overflow-auto">
-            {/* Original Action Block - Keeping it clean */}
             <div className=" p-2 m-auto flex items-center">
               <div>
                 <h1 className="text-3xl font-light text-[var(--color-text-primary)] mb-1 text-center">
@@ -191,12 +179,16 @@ const Workbench = ({
     )
   }
 
+  const showFlowMode = settings?.ui?.showFlowMode
+
   return (
     <div
-      className={`h-full flex flex-col overflow-hidden ${settings?.ui?.showFocusMode ? 'focus-mode-active' : ''}`}
+      className={`h-full flex flex-col overflow-hidden transition-colors duration-300 ${
+        showFlowMode ? 'flow-mode-active' : ''
+      }`}
     >
-      {/* Header - Full Width */}
-      {settings?.ui?.showHeader !== false && !settings?.ui?.showFocusMode && (
+      {/* Header */}
+      {settings?.ui?.showHeader !== false && !showFlowMode && (
         <Header
           title={getHeaderTitle()}
           isTab={activeView === 'editor' || (activeView === 'snippets' && !!selectedSnippet)}
@@ -220,117 +212,109 @@ const Workbench = ({
         />
       )}
 
-      {/* Main Workspace (ActivityBar + Sidebar + Editor) */}
-      <div className="flex-1 flex overflow-hidden min-h-0">
-        {/* Activity Bar (Icons) */}
-        {settings?.ui?.showActivityBar !== false && !settings?.ui?.showFocusMode && (
-          <ActivityBar
-            activeTab={activeSidebarTab}
-            onTabChange={handleTabChange}
-            onSettings={onOpenSettings}
-            isSettingsOpen={isSettingsOpen}
-            trashCount={trash?.length || 0}
-            settings={settings}
-          />
+      {/* Main Container */}
+      <div className="flex-1 flex overflow-hidden min-h-0 relative">
+        {/* Activity Bar */}
+        {(settings?.ui?.showActivityBar !== false || showFlowMode) && (
+          <div
+            style={{
+              width: showFlowMode ? 0 : 48,
+              opacity: showFlowMode ? 0 : 1,
+              overflow: 'hidden',
+              transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
+          >
+            <ActivityBar
+              activeTab={activeSidebarTab}
+              onTabChange={handleTabChange}
+              onSettings={onOpenSettings}
+              isSettingsOpen={isSettingsOpen}
+              trashCount={trash?.length || 0}
+              settings={settings}
+            />
+          </div>
         )}
 
-        {/* Sidebars Container (Stacking) */}
-        {/* We render both but control visibility via 'isOpen' prop for animation */}
-
-        {/* Sidebars Container (Stacking) - Unified Transition Wrapper */}
+        {/* Sidebar */}
         <aside
-          className="flex flex-col overflow-hidden h-full z-10 relative"
+          className="flex flex-col overflow-hidden h-full z-10 relative bg-[var(--sidebar-bg)] border-[var(--color-border)]"
           style={{
-            width: isSidebarOpen && !settings?.ui?.showFocusMode ? 250 : 0,
-            backgroundColor: 'var(--sidebar-bg)',
-            borderRight:
-              isSidebarOpen && !settings?.ui?.showFocusMode
-                ? '1px solid var(--color-border)'
-                : 'none',
-            transition: 'width 300ms ease-in-out, opacity 300ms ease-in-out',
-            opacity: isSidebarOpen && !settings?.ui?.showFocusMode ? 1 : 0,
-            willChange: 'width, opacity'
+            width: isSidebarOpen && !showFlowMode ? 250 : 0,
+            opacity: isSidebarOpen && !showFlowMode ? 1 : 0,
+            borderRightWidth: isSidebarOpen && !showFlowMode ? 1 : 0,
+            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
           }}
         >
-          <div
-            className="h-full w-full flex flex-col"
-            style={{ display: activeSidebarTab === 'themes' ? 'flex' : 'none' }}
-          >
-            <SidebarTheme
-              isOpen={true} // Child always thinks it's open, parent handles collapse
-              onToggle={() => setIsSidebarOpen(false)}
-            />
-          </div>
+          <div className="h-full w-full flex flex-col overflow-hidden">
+            {activeSidebarTab === 'explorer' && (
+              <SnippetSidebar
+                isOpen={isSidebarOpen}
+                snippets={snippets}
+                folders={folders}
+                selectedSnippet={selectedSnippet}
+                selectedFolderId={selectedFolderId}
+                onSelectFolder={onSelectFolder}
+                onNew={onNewSnippet}
+                onNewFolder={onNewFolder}
+                onSearch={onSearchSnippets}
+                onToggleFolder={onToggleFolder}
+                onMoveSnippet={onMoveSnippet}
+                onMoveFolder={onMoveFolder}
+                onRenameSnippet={onRenameSnippet}
+                onRenameFolder={onRenameFolder}
+                onDeleteFolder={onDeleteFolder}
+                onDeleteSnippet={onDeleteRequest}
+                onDeleteBulk={onDeleteBulk}
+                onTogglePin={onTogglePin}
+                selectedIds={selectedIds}
+                onSelectionChange={onSelectionChange}
+                onSelect={(s) => {
+                  if (onSelectSnippet) onSelectSnippet(s)
+                }}
+                onToggle={() => setIsSidebarOpen(false)}
+                isCompact={isCompact}
+                showToast={showToast}
+              />
+            )}
 
-          <div
-            className="h-full w-full flex flex-col"
-            style={{ display: activeSidebarTab === 'explorer' ? 'flex' : 'none' }}
-          >
-            <SnippetSidebar
-              isOpen={true} // Child always thinks it's open
-              snippets={snippets}
-              folders={folders}
-              selectedSnippet={selectedSnippet}
-              selectedFolderId={selectedFolderId}
-              onSelectFolder={onSelectFolder}
-              onNew={onNewSnippet}
-              onNewFolder={onNewFolder}
-              onSearch={onSearchSnippets}
-              onToggleFolder={onToggleFolder}
-              onMoveSnippet={onMoveSnippet}
-              onMoveFolder={onMoveFolder}
-              onRenameSnippet={onRenameSnippet}
-              onRenameFolder={onRenameFolder}
-              onDeleteFolder={onDeleteFolder}
-              onDeleteSnippet={onDeleteRequest}
-              onDeleteBulk={onDeleteBulk}
-              onTogglePin={onTogglePin}
-              selectedIds={selectedIds}
-              onSelectionChange={onSelectionChange}
-              onSelect={(s) => {
-                if (onSelectSnippet) onSelectSnippet(s)
-              }}
-              onToggle={() => setIsSidebarOpen(false)}
-              isCompact={isCompact}
-              showToast={showToast}
-            />
-          </div>
+            {activeSidebarTab === 'themes' && (
+              <SidebarTheme isOpen={isSidebarOpen} onToggle={() => setIsSidebarOpen(false)} />
+            )}
 
-          <div
-            className="h-full w-full flex flex-col"
-            style={{ display: activeSidebarTab === 'trash' ? 'flex' : 'none' }}
-          >
-            <TrashSidebar
-              items={trash}
-              onRestore={onRestoreItem}
-              onPermanentDelete={onPermanentDeleteItem}
-              onLoadTrash={onLoadTrash}
-              openDeleteModal={openDeleteModal}
-            />
+            {activeSidebarTab === 'trash' && (
+              <TrashSidebar
+                items={trash}
+                onRestore={onRestoreItem}
+                onPermanentDelete={onPermanentDeleteItem}
+                onLoadTrash={onLoadTrash}
+                openDeleteModal={openDeleteModal}
+              />
+            )}
           </div>
         </aside>
 
-        {/* Editor Area */}
+        {/* Content Area */}
         <div
-          className={`flex-1 flex flex-col min-w-0 bg-[var(--editor-bg)] ${settings?.ui?.showFocusMode ? 'focus-mode-container' : ''}`}
+          className={`flex-1 flex flex-col min-w-0 overflow-hidden transition-all duration-300 ${
+            showFlowMode ? 'flow-convas' : 'bg-[var(--editor-bg)]'
+          }`}
+          style={{
+            transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
+          }}
         >
-          <div
-            className={`flex-1 min-h-0 overflow-hidden text-clip ${settings?.ui?.showFocusMode ? 'focus-mode-content' : ''}`}
-          >
+          <div className={showFlowMode ? 'flow-content' : 'flex-1 flex flex-col overflow-hidden'}>
             {renderContent()}
           </div>
 
-          {settings?.ui?.showStatusBar !== false && !settings?.ui?.showFocusMode && (
+          {/* Status Bar */}
+          {settings?.ui?.showStatusBar !== false && !showFlowMode && (
             <div className="flex-none border-t border-[var(--color-border)] bg-[var(--footer-bg)]">
               {selectedSnippet ? (
                 <StatusBar
                   title={selectedSnippet?.title}
-                  onSettingsClick={onOpenSettings}
+                  onSettingsClick={handleSettingsClick}
                   snippets={snippets || []}
                   hideWelcomePage={hideWelcomePage}
-                  onToggleWelcomePage={(val) => {
-                    // Optional toggle handler
-                  }}
                 />
               ) : (
                 <SystemStatusFooter snippets={snippets || []} />
@@ -339,6 +323,43 @@ const Workbench = ({
           )}
         </div>
       </div>
+
+      {showFlowMode && (
+        <>
+          <FlowStatusBadge
+            onExit={() => window.dispatchEvent(new CustomEvent('app:toggle-flow'))}
+            onTogglePreview={() => setShowFlowPreview(!showFlowPreview)}
+            isPreviewVisible={showFlowPreview}
+            snippet={selectedSnippet}
+          />
+
+          {showFlowPreview && selectedSnippet && (
+            <div
+              className="fixed top-8 right-8 w-[300px] h-[400px] z-[999] animate-in fade-in zoom-in-95 duration-500"
+              style={{ WebkitAppRegion: 'no-drag' }}
+            >
+              <div className="w-full h-full bg-[#0d1117]/60 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden ring-1 ring-white/5 pointer-events-auto">
+                <div className="absolute top-0 left-0 right-0 h-8 bg-black/40 flex items-center px-3 z-10 border-b border-white/5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse mr-2" />
+                  <span className="text-[9px] font-bold text-white/50 uppercase tracking-widest">
+                    Ghost Live Preview
+                  </span>
+                </div>
+                <div className="w-full h-full opacity-60 contrast-[1.2] brightness-[1.1] scale-95 origin-center">
+                  <LivePreview
+                    code={selectedSnippet?.code || ''}
+                    language={selectedSnippet?.language || 'markdown'}
+                    snippets={snippets}
+                    theme={currentTheme}
+                    fontFamily={settings?.editor?.fontFamily}
+                    showHeader={false}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }
@@ -355,6 +376,7 @@ Workbench.propTypes = {
   onSearchSnippets: PropTypes.func,
   onRename: PropTypes.func,
   onSelectSnippet: PropTypes.func,
+  handleRename: PropTypes.func,
   currentContext: PropTypes.string,
   onOpenSettings: PropTypes.func,
   onCloseSettings: PropTypes.func,
@@ -362,7 +384,32 @@ Workbench.propTypes = {
   hideWelcomePage: PropTypes.bool,
   folders: PropTypes.array,
   onToggleFolder: PropTypes.func,
-  onNewFolder: PropTypes.func
+  onNewFolder: PropTypes.func,
+  onMoveSnippet: PropTypes.func,
+  onMoveFolder: PropTypes.func,
+  selectedFolderId: PropTypes.string,
+  onSelectFolder: PropTypes.func,
+  onRenameSnippet: PropTypes.func,
+  onRenameFolder: PropTypes.func,
+  onDeleteFolder: PropTypes.func,
+  onDeleteBulk: PropTypes.func,
+  onTogglePin: PropTypes.func,
+  selectedIds: PropTypes.array,
+  onSelectionChange: PropTypes.func,
+  settings: PropTypes.object,
+  isSettingsOpen: PropTypes.bool,
+  isSidebarOpen: PropTypes.bool,
+  setIsSidebarOpen: PropTypes.func,
+  trash: PropTypes.array,
+  onRestoreItem: PropTypes.func,
+  onPermanentDeleteItem: PropTypes.func,
+  onLoadTrash: PropTypes.func,
+  isCompact: PropTypes.bool,
+  onToggleCompact: PropTypes.func,
+  autosaveStatus: PropTypes.string,
+  onAutosave: PropTypes.func,
+  showPreview: PropTypes.bool,
+  onTogglePreview: PropTypes.func
 }
 
 export default Workbench

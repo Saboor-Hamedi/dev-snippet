@@ -1011,40 +1011,66 @@ textarea {
   color: var(--selected-text, inherit);
 }
 
-/* ===== FOCUS MODE ===== */
-.focus-mode-active {
+/* ===== FLOW MODE (Formerly Focus Mode) ===== */
+.flow-mode-active {
   background-color: var(--color-bg-primary) !important;
 }
 
-.focus-mode-container {
+/* The background layer is now called "The Flow Convas" */
+.flow-convas {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   width: 100% !important;
   height: 100% !important;
-  background-color: var(--color-bg-secondary) !important; /* Slightly darker background */
+  background-color: var(--color-bg-secondary) !important;
   padding: 1.5rem !important;
-  -webkit-app-region: drag !important; /* Allow moving the window by dragging the background */
+  -webkit-app-region: drag !important; /* Move window by dragging the canvas */
+  animation: flowConvasFade 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: background-color;
 }
 
-.focus-mode-content {
-  width: 100% !important;
-  max-width: 720px !important; /* Made "little smaller" as requested */
-  height: 100% !important;
-  max-height: 820px !important; /* Constrained height */
-  margin: auto !important;
-  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.7); /* Deep premium shadow */
+@keyframes flowConvasFade {
+  from {
+    background-color: var(--color-bg-primary);
+  }
+  to {
+    background-color: var(--color-bg-secondary);
+  }
+}
+
+/* The editor area within Flow Mode */
+.flow-content {
+  flex: none !important;
+  width: 650px !important;
+  height: 650px !important;
+  max-width: 90% !important;
+  max-height: 90% !important;
+  box-shadow: 0 40px 120px rgba(0, 0, 0, 0.8);
   background-color: var(--color-bg-primary) !important;
   display: flex !important;
   flex-direction: column !important;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border: none !important;
+  border-radius: 16px;
   overflow: hidden;
-  -webkit-app-region: no-drag !important; /* Ensure children remain interactive */
+  -webkit-app-region: no-drag !important;
+  animation: flowIslandAppear 0.7s cubic-bezier(0.19, 1, 0.22, 1);
+  will-change: transform, opacity;
 }
 
-/* Ensure editor fills the focused content */
-.focus-mode-content > div {
+@keyframes flowIslandAppear {
+  0% {
+    opacity: 0;
+    transform: scale(0.96) translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Ensure editor fills the flow content island */
+.flow-content > div {
   flex: 1 !important;
 }
 

@@ -20,7 +20,7 @@ const SettingSection = ({ title, icon: Icon, iconColor, children, className = ''
         </div>
       )}
       <div
-        className="rounded-md border overflow-hidden shadow-sm"
+        className="rounded-md border shadow-sm"
         style={{
           backgroundColor: 'var(--color-bg-secondary)',
           borderColor: 'var(--color-border)'

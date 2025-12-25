@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, Suspense, lazy } from 'react'
+import React, { useContext, useState, useCallback, Suspense, lazy } from 'react'
 import PropTypes from 'prop-types'
 import { useSettings } from '../../../hook/useSettingsContext'
 
@@ -8,7 +8,7 @@ const CommandPalette = lazy(() => import('../../CommandPalette'))
 const ImageExportModal = lazy(() => import('../../CodeEditor/ImageExport/ImageExportModal'))
 const SettingsModal = lazy(() => import('../../SettingsModal'))
 
-const ModalContext = createContext()
+import { ModalContext } from './ModalContext'
 
 // Loading fallback component
 const ModalLoader = () => (
@@ -239,8 +239,4 @@ ModalProvider.propTypes = {
   onSelectSnippet: PropTypes.func
 }
 
-export const useModal = () => {
-  const context = useContext(ModalContext)
-  if (!context) throw new Error('useModal must be used within a ModalProvider')
-  return context
-}
+// useModal is now exported from ModalContext.js

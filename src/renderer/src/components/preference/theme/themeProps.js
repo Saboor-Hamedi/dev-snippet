@@ -76,9 +76,17 @@ export const themeProps = () => {
   const applyThemeCSS = (theme, activeSettings = settings) => {
     const root = document.documentElement
 
-    // 1. DISABLE TRANSITIONS to prevent "disco effect"
+    // 1. ENABLE TRANSITION to create a smooth cross-fade effect
     const style = document.createElement('style')
-    style.innerHTML = '* { transition: none !important; }'
+    style.id = 'theme-transition-style'
+    style.innerHTML = `
+      * { 
+        transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+                    color 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+                    border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                    box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important; 
+      }
+    `
     document.head.appendChild(style)
 
     // Force reflow
@@ -89,56 +97,69 @@ export const themeProps = () => {
 
     // Use cached CSS variables for instant application
     const cssVars = theme._cssCache
-    // Filter and apply all variables starting with '--'
+    // Use cached CSS variables for instant application
+    // We bundle these into a single string to apply them ATOMICALLY
+    let cssString = ''
+
+    // 1. Core Theme Colors
     Object.entries(theme.colors).forEach(([key, value]) => {
       if (key.startsWith('--')) {
-        root.style.setProperty(key, value)
+        cssString += `${key}: ${value} !important;\n`
       }
     })
 
-    // 2. RE-ENABLE TRANSITIONS just after paint
+    // 2. Generic Overrides
+    const overrides = THEME_OVERRIDES[theme.id]
+    if (overrides) {
+      Object.entries(overrides).forEach(([key, value]) => {
+        cssString += `${key}: ${value} !important;\n`
+      })
+    }
+
+    // 3. Legacy Compatibility Variables
+    cssString += `--color-background: ${theme.colors.background} !important;\n`
+    cssString += `--color-background-soft: ${theme.colors.sidebar} !important;\n`
+    cssString += `--color-text: ${theme.colors.text} !important;\n`
+    cssString += `--text-main: ${theme.colors.text} !important;\n`
+    cssString += `--accent: ${theme.colors.accent} !important;\n`
+    cssString += `--border-color: ${theme.colors.border} !important;\n`
+
+    if (theme.colors['--selected-bg'])
+      cssString += `--selected-bg: ${theme.colors['--selected-bg']} !important;\n`
+    if (theme.colors['--selected-text'])
+      cssString += `--selected-text: ${theme.colors['--selected-text']} !important;\n`
+    if (theme.colors['--hover-bg'])
+      cssString += `--hover-bg: ${theme.colors['--hover-bg']} !important;\n`
+    if (theme.colors['--hover-text'])
+      cssString += `--hover-text: ${theme.colors['--hover-text']} !important;\n`
+
+    // Apply ATOMICALLY via a style tag
+    let themeStyleTag = document.getElementById('atomic-theme-variables')
+    if (!themeStyleTag) {
+      themeStyleTag = document.createElement('style')
+      themeStyleTag.id = 'atomic-theme-variables'
+      document.head.appendChild(themeStyleTag)
+    }
+    themeStyleTag.innerHTML = `:root { \n${cssString}\n }`
+
+    // Apply User Settings Overrides (Directly to root for priority)
+    applyThemeOverrides(activeSettings, root)
+
+    // 2. CLEAN UP transition styles after animation completes
     setTimeout(() => {
       if (document.head.contains(style)) {
         document.head.removeChild(style)
       }
-    }, 100) // Slightly longer to ensure paint finish
-
-    // Apply specific theme overrides (Generic)
-    const overrides = THEME_OVERRIDES[theme.id]
-    if (overrides) {
-      Object.entries(overrides).forEach(([key, value]) => {
-        root.style.setProperty(key, value)
-      })
-    }
-    // Apply User Settings Overrides (Highest priority)
-    applyThemeOverrides(activeSettings, root)
-
-    // Apply legacy variables
-    root.style.setProperty('--color-background', theme.colors.background)
-    root.style.setProperty('--color-background-soft', theme.colors.sidebar)
-    root.style.setProperty('--color-text', theme.colors.text)
-    root.style.setProperty('--text-main', theme.colors.text)
-    root.style.setProperty('--accent', theme.colors.accent)
-    root.style.setProperty('--border-color', theme.colors.border)
-
-    // Apply selection colors
-    if (theme.colors['--selected-bg'])
-      root.style.setProperty('--selected-bg', theme.colors['--selected-bg'])
-    if (theme.colors['--selected-text'])
-      root.style.setProperty('--selected-text', theme.colors['--selected-text'])
-    if (theme.colors['--hover-bg']) root.style.setProperty('--hover-bg', theme.colors['--hover-bg'])
-    if (theme.colors['--hover-text'])
-      root.style.setProperty('--hover-text', theme.colors['--hover-text'])
+    }, 500)
 
     // Set dark class
-    if (theme.id !== 'polaris') {
+    const lightThemes = ['polaris', 'minimal-gray']
+    if (!lightThemes.includes(theme.id)) {
       root.classList.add('dark')
     }
 
-    // Set data-theme
+    // Set data-theme and body styles
     root.setAttribute('data-theme', theme.id)
-
-    // Update body
     document.body.style.backgroundColor = theme.colors.background
     document.body.style.color = theme.colors.text
 

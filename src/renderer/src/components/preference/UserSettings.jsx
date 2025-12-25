@@ -38,7 +38,7 @@ const UserSettings = () => {
   }
 
   const handleReset = () => {
-    if (confirm('Are you sure you want to reset to defaults?')) {
+    if (window.confirm('Are you sure you want to reset to defaults?')) {
       if (contextResetSettings) contextResetSettings()
     }
   }
@@ -47,52 +47,52 @@ const UserSettings = () => {
   const headerPortalTarget = document.getElementById('settings-header-right')
 
   return (
-    <div className="flex flex-col h-full bg-transparent text-slate-900 dark:text-slate-100 transition-colors duration-300 overflow-hidden">
+    <div className="flex flex-col h-full bg-transparent text-slate-900 dark:text-slate-100 transition-colors duration-300 overflow-hidden relative">
       <ToastNotification toast={toast} />
 
       {/* Mode Switcher & Controls - Portaled to Header */}
       {headerPortalTarget &&
         createPortal(
           <div className="flex items-center gap-2 sm:gap-4 ml-2">
-            {/* Conditional Toggling Switcher (Only show opposite mode) */}
+            {/* Mode Switcher */}
             <div className="flex items-center">
               {mode === 'ui' ? (
                 <button
                   onClick={() => setMode('json')}
-                  className="flex items-center gap-1.5 px-2 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-[var(--color-border)] rounded-md text-[9px] sm:text-[10px] font-bold text-slate-600 dark:text-slate-300 transition-all shadow-sm"
+                  className="flex items-center gap-1.5 px-2 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-[var(--color-border)] rounded-md text-[9px] font-bold text-slate-600 dark:text-slate-300 transition-all"
                   title="Switch to Source Code"
                 >
-                  <Code size={11} className="opacity-70" />
+                  <Code size={10} className="opacity-70" />
                   <span className="hidden sm:inline">Source Code</span>
                 </button>
               ) : (
                 <button
                   onClick={() => setMode('ui')}
-                  className="flex items-center gap-1.5 px-2 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-[var(--color-border)] rounded-md text-[9px] sm:text-[10px] font-bold text-slate-600 dark:text-slate-300 transition-all shadow-sm"
+                  className="flex items-center gap-1.5 px-2 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-[var(--color-border)] rounded-md text-[9px] font-bold text-slate-600 dark:text-slate-300 transition-all"
                   title="Switch to Visual Editor"
                 >
-                  <Sliders size={11} className="opacity-70" />
+                  <Sliders size={10} className="opacity-70" />
                   <span className="hidden sm:inline">Visual Editor</span>
                 </button>
               )}
             </div>
 
-            {/* Source Code Action Buttons */}
+            {/* Actions */}
             {mode === 'json' && (
-              <div className="flex items-center gap-1.5 pl-2 border-l border-[var(--color-border)]">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={handleReset}
                   title="Reset Defaults"
-                  className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-500/10 rounded-md transition-all sm:px-2 sm:py-1 sm:text-[9px] sm:font-bold sm:uppercase sm:tracking-wider sm:border sm:border-transparent sm:hover:border-red-500/30"
+                  className="flex items-center gap-1.5 px-2 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500 border border-[var(--color-border)] hover:border-red-200 dark:hover:border-red-900/30 rounded-md text-[9px] font-bold text-slate-600 dark:text-slate-300 transition-all"
                 >
-                  <RotateCcw size={12} className="sm:hidden" />
+                  <RotateCcw size={10} className="opacity-70" />
                   <span className="hidden sm:inline">Reset</span>
                 </button>
                 <button
                   onClick={handleJsonSave}
-                  className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-[10px] uppercase font-bold tracking-tight transition-all shadow-sm"
+                  className="flex items-center gap-1.5 px-2 py-1 bg-blue-600 hover:bg-blue-700 border border-blue-600 hover:border-blue-700 rounded-md text-[9px] font-bold text-white transition-all shadow-sm"
                 >
-                  <Save size={11} />
+                  <Save size={10} />
                   <span>Save</span>
                 </button>
               </div>
@@ -102,13 +102,13 @@ const UserSettings = () => {
         )}
 
       {/* Content Area */}
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 flex relative">
         {mode === 'ui' ? (
-          <div className="max-w-3xl mx-auto py-6 px-4 sm:px-6 overflow-y-auto h-full custom-scrollbar">
+          <div className="max-w-3xl mx-auto py-6 px-4 sm:px-6 overflow-y-auto h-full custom-scrollbar flex-1">
             <SettingsForm key="visual-settings" />
           </div>
         ) : (
-          <div className="h-full flex flex-col" key="json-settings">
+          <div className="flex-1 flex flex-col min-w-0" key="json-settings">
             <div className="flex-1 relative min-h-0 border-t border-[var(--color-border)] overflow-hidden">
               <CodeEditor
                 value={jsonText}

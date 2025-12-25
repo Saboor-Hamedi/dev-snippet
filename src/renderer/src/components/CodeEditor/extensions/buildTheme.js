@@ -16,25 +16,12 @@ const buildTheme = (EditorView, options = {}) => {
         lineHeight: '1.6',
         height: '100%',
         paddingLeft: '0',
-        transition: 'background-color 140ms ease, color 140ms ease'
+        transition:
+          'background-color 400ms cubic-bezier(0.4, 0, 0.2, 1), color 400ms cubic-bezier(0.4, 0, 0.2, 1)'
       },
 
-      /* HIGH-CONTRAST SYNTAX HIGHLIGHTING (RESTORATION) */
-      '.cm-string': { color: 'var(--color-syntax-string, #4ade80) !important' },
-      '.cm-property, .cm-variableName-2': {
-        color: 'var(--color-syntax-variable, #60a5fa) !important'
-      },
-      '.cm-number': { color: 'var(--color-syntax-number, #f472b6) !important' },
-      '.cm-boolean': { color: 'var(--color-syntax-boolean, #fb923c) !important' },
-      '.cm-null': { color: 'var(--color-syntax-null, #94a3b8) !important' },
-      '.cm-keyword': { color: 'var(--color-syntax-keyword, #c084fc) !important' },
-      '.cm-comment': {
-        color: 'var(--color-syntax-comment, #64748b) !important',
-        fontStyle: 'italic'
-      },
-      '.cm-punctuation, .cm-bracket': {
-        color: 'var(--color-syntax-punctuation, #94a3b8) !important'
-      },
+      // Syntax Highlighting is now handled by HighlightStyle in buildExtensions.js
+      // Using variables from :root for maximum performance and theme sync
 
       // Hide whitespace/special char highlighting (tabs, spaces, etc) - Global suppression
       '.cm-specialChar, .cm-whitespace, .cm-highlightWhitespace, .cm-tab': {
@@ -92,7 +79,9 @@ const buildTheme = (EditorView, options = {}) => {
         boxSizing: 'border-box',
         position: 'relative',
         // Anchor the scrollbar so content NEVER jumps when it appears
-        scrollbarGutter: 'stable !important'
+        scrollbarGutter: 'stable !important',
+        transition:
+          'background-color 400ms cubic-bezier(0.4, 0, 0.2, 1), color 400ms cubic-bezier(0.4, 0, 0.2, 1)'
       },
 
       /* Custom Scrollbars */
@@ -143,7 +132,9 @@ const buildTheme = (EditorView, options = {}) => {
         lineHeight: '1.6',
         minHeight: '100%',
         boxSizing: 'border-box',
-        padding: '0'
+        padding: '0',
+        transition:
+          'background-color 400ms cubic-bezier(0.4, 0, 0.2, 1), color 400ms cubic-bezier(0.4, 0, 0.2, 1), border-color 400ms cubic-bezier(0.4, 0, 0.2, 1)'
       },
       '.cm-lineNumbers .cm-gutterElement': {
         minWidth: '2.5em !important', // Use em to scale with font size

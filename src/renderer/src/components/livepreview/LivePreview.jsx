@@ -10,7 +10,7 @@ import { getMermaidConfig } from '../mermaid/mermaidConfig'
 import { getMermaidEngine } from '../mermaid/mermaidEngine'
 
 import { themes } from '../preference/theme/themes'
-import { useModal } from '../workbench/manager/ModalManager'
+import { useModal } from '../workbench/manager/ModalContext'
 import useAdvancedSplitPane from '../splitPanels/useAdvancedSplitPane.js'
 
 /**
@@ -25,7 +25,8 @@ const LivePreview = ({
   fontFamily = "'Outfit', 'Inter', sans-serif",
   onOpenExternal,
   onOpenMiniPreview,
-  onExportPDF
+  onExportPDF,
+  showHeader = true
 }) => {
   const iframeRef = useRef(null)
   const splitContext = React.useContext(SplitPaneContext)
@@ -82,11 +83,13 @@ const LivePreview = ({
             </button>
           </div>
         </div>
-        <pre><code class="language-${normalizedLang} hljs">${escaped}</code></pre>
+        <pre><code class="language-${normalizedLang}">${escaped}</code></pre>
       </div>`
   }, [code, language, existingTitles, disabled])
 
-  const isDark = theme !== 'polaris'
+  const isDark = useMemo(() => {
+    return !['polaris', 'minimal-gray'].includes(theme)
+  }, [theme])
   const { openImageExportModal } = useModal()
 
   useEffect(() => {
@@ -107,6 +110,11 @@ const LivePreview = ({
       `
 
       const fontOverride = `
+        * {
+          transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+                      color 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+                      border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
         .markdown-body, .mermaid-wrapper, .mermaid-diagram, .actor, .node label { 
           font-family: ${fontFamily}, sans-serif !important; 
           color: var(--color-text-primary);
@@ -146,7 +154,7 @@ const LivePreview = ({
           isDark,
           isLive: true,
           styles: `${variableStyles}\n${themeVars}\n${markdownStyles}\n${mermaidStyles}\n${fontOverride}`,
-          mermaidConfig: getMermaidConfig(isDark, fontFamily),
+          mermaidConfig: getMermaidConfig(false, fontFamily),
           mermaidEngine: getMermaidEngine()
         },
         '*'
@@ -181,108 +189,110 @@ const LivePreview = ({
 
   return (
     <div className="w-full h-full flex flex-col bg-transparent overflow-hidden">
-      <div
-        className="flex items-center justify-between px-3 py-2 z-10 sticky top-0 transition-colors duration-300 overflow-x-auto"
-        style={{
-          backgroundColor: 'var(--header-bg, var(--color-bg-secondary))',
-          color: 'var(--header-text, var(--color-text-primary))',
-          borderBottom: '1px solid var(--color-border)'
-        }}
-      >
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <button
-            onClick={() => setOverlay(!isOverlay)}
-            className={`w-7 h-7 flex items-center justify-center rounded-md transition-all ${isOverlay ? 'bg-[var(--color-accent-primary)] text-white' : 'hover:bg-black/5 dark:hover:bg-white/5 opacity-60 hover:opacity-100'}`}
-            title={isOverlay ? 'Switch to Split View' : 'Switch to Overlay Mode'}
-          >
-            <Layers size={14} />
-          </button>
+      {showHeader && (
+        <div
+          className="flex items-center justify-between px-3 py-2 z-10 sticky top-0 transition-colors duration-300 overflow-x-auto"
+          style={{
+            backgroundColor: 'var(--header-bg, var(--color-bg-secondary))',
+            color: 'var(--header-text, var(--color-text-primary))',
+            borderBottom: '1px solid var(--color-border)'
+          }}
+        >
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={() => setOverlay(!isOverlay)}
+              className={`w-7 h-7 flex items-center justify-center rounded-md transition-all ${isOverlay ? 'bg-[var(--color-accent-primary)] text-white' : 'hover:bg-black/5 dark:hover:bg-white/5 opacity-60 hover:opacity-100'}`}
+              title={isOverlay ? 'Switch to Split View' : 'Switch to Overlay Mode'}
+            >
+              <Layers size={14} />
+            </button>
 
-          {!isOverlay && (
-            <span className="text-[10px] font-bold tracking-widest select-none uppercase opacity-50 pl-1">
-              PREVIEW
-            </span>
-          )}
-          {isOverlay && (
-            <div className="flex items-center gap-1 h-4 ml-1">
-              <button
-                onClick={() => splitContext.setOverlayWidth(25)}
-                className={`p-1 rounded transition-colors ${splitContext.overlayWidth === 25 ? 'bg-[var(--color-accent-primary)] text-white' : 'text-[var(--color-text-tertiary)] hover:bg-black/5 dark:hover:bg-white/5'}`}
-                title="Phone View"
-              >
-                <Smartphone size={14} />
-              </button>
-              <button
-                onClick={() => splitContext.setOverlayWidth(50)}
-                className={`p-1 rounded transition-colors ${splitContext.overlayWidth === 50 ? 'bg-[var(--color-accent-primary)] text-white' : 'text-[var(--color-text-tertiary)] hover:bg-black/5 dark:hover:bg-white/5'}`}
-                title="Tablet View"
-              >
-                <Tablet size={14} />
-              </button>
-              <button
-                onClick={() => splitContext.setOverlayWidth(75)}
-                className={`p-1 rounded transition-colors ${splitContext.overlayWidth === 75 ? 'bg-[var(--color-accent-primary)] text-white' : 'text-[var(--color-text-tertiary)] hover:bg-black/5 dark:hover:bg-white/5'}`}
-                title="Desktop View"
-              >
-                <Monitor size={14} />
-              </button>
-            </div>
-          )}
-        </div>
-        <div className="flex items-center gap-1 flex-shrink-0 ml-4">
-          <button
-            onClick={onOpenMiniPreview}
-            className="w-7 h-7 rounded-md hover:bg-[var(--hover-bg)] text-[var(--color-text-primary)] flex items-center justify-center transition-opacity hover:opacity-70"
-            title="Pop out Mini Preview"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+            {!isOverlay && (
+              <span className="text-[10px] font-bold tracking-widest select-none uppercase opacity-50 pl-1">
+                PREVIEW
+              </span>
+            )}
+            {isOverlay && splitContext && (
+              <div className="flex items-center gap-1 h-4 ml-1">
+                <button
+                  onClick={() => splitContext.setOverlayWidth(25)}
+                  className={`p-1 rounded transition-colors ${splitContext.overlayWidth === 25 ? 'bg-[var(--color-accent-primary)] text-white' : 'text-[var(--color-text-tertiary)] hover:bg-black/5 dark:hover:bg-white/5'}`}
+                  title="Phone View"
+                >
+                  <Smartphone size={14} />
+                </button>
+                <button
+                  onClick={() => splitContext.setOverlayWidth(50)}
+                  className={`p-1 rounded transition-colors ${splitContext.overlayWidth === 50 ? 'bg-[var(--color-accent-primary)] text-white' : 'text-[var(--color-text-tertiary)] hover:bg-black/5 dark:hover:bg-white/5'}`}
+                  title="Tablet View"
+                >
+                  <Tablet size={14} />
+                </button>
+                <button
+                  onClick={() => splitContext.setOverlayWidth(75)}
+                  className={`p-1 rounded transition-colors ${splitContext.overlayWidth === 75 ? 'bg-[var(--color-accent-primary)] text-white' : 'text-[var(--color-text-tertiary)] hover:bg-black/5 dark:hover:bg-white/5'}`}
+                  title="Desktop View"
+                >
+                  <Monitor size={14} />
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-1 flex-shrink-0 ml-4">
+            <button
+              onClick={onOpenMiniPreview}
+              className="w-7 h-7 rounded-md hover:bg-[var(--hover-bg)] text-[var(--color-text-primary)] flex items-center justify-center transition-opacity hover:opacity-70"
+              title="Pop out Mini Preview"
             >
-              <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-              <line x1="15" x2="15" y1="3" y2="21" />
-            </svg>
-          </button>
-          <button
-            onClick={onOpenExternal}
-            className="w-7 h-7 rounded-md hover:bg-[var(--hover-bg)] text-[var(--color-text-primary)] flex items-center justify-center transition-opacity hover:opacity-70"
-            title="Open in System Browser"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                <line x1="15" x2="15" y1="3" y2="21" />
+              </svg>
+            </button>
+            <button
+              onClick={onOpenExternal}
+              className="w-7 h-7 rounded-md hover:bg-[var(--hover-bg)] text-[var(--color-text-primary)] flex items-center justify-center transition-opacity hover:opacity-70"
+              title="Open in System Browser"
             >
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-              <polyline points="15 3 21 3 21 9" />
-              <line x1="10" x2="21" y1="14" y2="3" />
-            </svg>
-          </button>
-          <button
-            onClick={() => {
-              if (onExportPDF) onExportPDF()
-              else if (window.api?.exportPDF) window.api.exportPDF()
-              else window.print()
-            }}
-            className="px-2 py-1 rounded-md bg-blue-500 text-white text-[10px] font-bold"
-          >
-            Export
-          </button>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" x2="21" y1="14" y2="3" />
+              </svg>
+            </button>
+            <button
+              onClick={() => {
+                if (onExportPDF) onExportPDF()
+                else if (window.api?.exportPDF) window.api.exportPDF()
+                else window.print()
+              }}
+              className="px-2 py-1 rounded-md bg-blue-500 text-white text-[10px] font-bold"
+            >
+              Export
+            </button>
+          </div>
         </div>
-      </div>
+      )}
       <div className="flex-1 overflow-hidden">
         <iframe
           ref={iframeRef}

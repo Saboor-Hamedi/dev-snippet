@@ -31,20 +31,32 @@ Welcome to the comprehensive documentation for **Dev Snippet**, a high-performan
 - **In-Editor Search**: VS Code-style search panel with regex, case-sensitivity, and match navigation. (See [Search Documentation](../src/renderer/src/components/CodeEditor/search/SearchDoc.md))
 - **Enhanced Tables**: Full-width striped background with bold headers and subtle delimiters.
 - **Live Preview**: Real-time rendering with **Mermaid** diagrams and **MathJax**.
+- **Flow Mode (Zen Mode)**: 
+  - **Distraction-Free**: Toggle with `Ctrl + Shift + F` to hide all UI (Sidebar, Activity Bar, Header, Footer) and focus solely on the editor.
+  - **Ghost Preview**: A floating, semi-transparent preview window that appears in Flow Mode to provide visual feedback without breaking focus.
 - **PDF Export**: Pro-grade `A4` PDF generation with custom margins.
 - **Mini Browser**: Detach the preview into a floating "Always on Top" window.
 
 ### Keyboard Shortcuts
 
-| Action             | Shortcut           |
-| :----------------- | :----------------- |
-| **Quick Open**     | `Ctrl + P`         |
-| **In-Editor Search** | `Ctrl + F`       |
-| **New Snippet**    | `Ctrl + N`         |
-| **Save**           | `Ctrl + S`         |
-| **Rename**         | `Ctrl + R`         |
-| **Toggle Preview** | `Ctrl + Shift + \` |
-| **Export PDF**     | `UI Button`        |
+| Action               | Shortcut             |
+| :------------------- | :------------------- |
+| **New Snippet**      | `Ctrl + N`           |
+| **Save (Force)**     | `Ctrl + S`           |
+| **Flow Mode (Zen)**  | `Ctrl + Shift + F`  |
+| **Toggle Sidebar**   | `Ctrl + B`           |
+| **Toggle Preview**   | `Ctrl + \`           |
+| **Quick Search**     | `Ctrl + P`           |
+| **In-Editor Search** | `Ctrl + F`           |
+| **Rename Snippet**   | `Ctrl + R`           |
+| **Delete Snippet**   | `Ctrl + Shift + D`   |
+| **Copy Code**        | `Ctrl + Shift + C`   |
+| **Pin / Unpin**      | `Alt + P`            |
+| **Open Settings**    | `Ctrl + ,`           |
+| **App Zoom**         | `Ctrl + / - / 0`     |
+| **Editor Font Zoom** | `Ctrl + Mouse Wheel` |
+| **Close Editor**     | `Ctrl + Shift + W`   |
+| **Export PDF**       | `UI Button`          |
 
 ---
 
@@ -56,15 +68,15 @@ Dev Snippet follows a secure **Electron** architecture with strict separation be
 
 ```mermaid
 graph TD
-    subgraph "Main Process (Node.js)"
-        Main[index.js]
+    subgraph "Main Process"
+        Main["index.js"]
         IPC[IPC Handlers]
         DB[(SQLite Database)]
         FS[File System]
         Export[PDF Engine]
     end
 
-    subgraph "Renderer Process (React)"
+    subgraph "Renderer Process"
         UI[App UI]
         Editor[CodeMirror Editor]
         Preview[Live Preview Manager]
@@ -134,25 +146,25 @@ This section details the interaction between the three critical layers: Typing, 
 
 ```mermaid
 flowchart TD
-    subgraph Typing_Layer ["Typing Layer (React Renderer)"]
+    subgraph Typing_Layer ["Typing Layer"]
         direction TB
-        UserInput(User Input) --> EditorComp[SnippetEditor.jsx]
+        UserInput(User Input) --> EditorComp["SnippetEditor.jsx"]
         EditorComp -->|State Update| ReactState[React State]
         ReactState -->|Debounce 5s| Timer[Autosave Timer]
-        ReactState -->|Immediate| PreviewMgr[LivePreview.jsx]
+        ReactState -->|Immediate| PreviewMgr["LivePreview.jsx"]
     end
 
-    subgraph System_Layer ["System Layer (Electron Main)"]
+    subgraph System_Layer ["System Layer"]
         direction TB
         Timer -->|IPC Invoke| IPCHandler[IPC Main Handler]
         IPCHandler -->|SQL Transaction| SQLite[(Local DB)]
         IPCHandler -->|Write File| PDFEngine[PDF Export Engine]
     end
 
-    subgraph Sandbox_Layer ["Sandbox Layer (Isolated Iframe)"]
+    subgraph Sandbox_Layer ["Sandbox Layer"]
         direction TB
-        PreviewMgr -->|postMessage JSON| IframeWindow[preview.html]
-        IframeWindow -->|Event Listener| Script[previewScript.js]
+        PreviewMgr -->|postMessage JSON| IframeWindow["preview.html"]
+        IframeWindow -->|Event Listener| Script["previewScript.js"]
         Script -->|Parse| FastMD[FastMarkdown Engine]
         Script -->|Render| DOM[DOM Tree]
 
@@ -165,22 +177,22 @@ flowchart TD
     PreviewMgr == Secure Message ==> IframeWindow
     IPCHandler == Acknowledge ==> EditorComp
 
-    %% Styling Definitions - Saturated Colors to avoid "White Layer" look
-    classDef react fill:#b3e5fc,stroke:#01579b,stroke-width:2px,color:black;
-    classDef electron fill:#ffe0b2,stroke:#e65100,stroke-width:2px,color:black;
-    classDef sandbox fill:#c8e6c9,stroke:#1b5e20,stroke-width:2px,color:black;
-    classDef storage fill:#cfd8dc,stroke:#37474f,stroke-width:2px,stroke-dasharray: 5 5,color:black;
+    %% Styling Definitions
+    classDef react fill:#b3e5fc,stroke:#01579b,stroke-width:2px,color:black
+    classDef electron fill:#ffe0b2,stroke:#e65100,stroke-width:2px,color:black
+    classDef sandbox fill:#c8e6c9,stroke:#1b5e20,stroke-width:2px,color:black
+    classDef storage fill:#cfd8dc,stroke:#37474f,stroke-width:2px,stroke-dasharray:5,color:black
 
-    %% Subgraph Styling - Transparent Backgrounds
+    %% Subgraph Styling
     style Typing_Layer fill:none,stroke:#0277bd,stroke-width:2px,color:#0277bd
     style System_Layer fill:none,stroke:#ef6c00,stroke-width:2px,color:#ef6c00
     style Sandbox_Layer fill:none,stroke:#2e7d32,stroke-width:2px,color:#2e7d32
 
     %% Apply Styles
-    class EditorComp,ReactState,PreviewMgr,UserInput react;
-    class IPCHandler,PDFEngine electron;
-    class IframeWindow,Script,FastMD,DOM,Mermaid,HLJS sandbox;
-    class Timer,SQLite,DB storage;
+    class EditorComp,ReactState,PreviewMgr,UserInput react
+    class IPCHandler,PDFEngine electron
+    class IframeWindow,Script,FastMD,DOM,Mermaid,HLJS sandbox
+    class Timer,SQLite,DB storage
 ```
 
 ### Layer Descriptions
@@ -211,29 +223,29 @@ mindmap
   root((Dev Snippet))
     src
       main(Main Process)
-        index.js
+        "index.js"
         database
-          schema.js
+          "schema.js"
         ipc
-          export.js
-          database.js
+          "export.js"
+          "database.js"
       renderer(Renderer Process)
-        index.html
+        "index.html"
         src
-          App.jsx
+          "App.jsx"
           components
             LivePreview
             SnippetEditor
             Mermaid
           utils
-            fastMarkdown.js
-            previewGenerator.js
+            "fastMarkdown.js"
+            "previewGenerator.js"
           assets
-            markdown.css
-            variables.css
+            "markdown.css"
+            "variables.css"
     resources
       icons
-    package.json
+    "package.json"
 ```
 
 ---
@@ -255,7 +267,8 @@ mindmap
 **Search Engine & Performance Overhaul (v1.1.6):**
 
 - **Hybrid Search Engine**: Integrates instant local type-ahead (Prefix Matching) with powerful Backend Full-Text Search (FTS5).
-[... 15 lines ...]
+- **Infinite Scroll**: Virtualized list rendering for seamless navigation through thousands of snippets.
+- **Search Highlighting**: Real-time visual feedback for matches directly within the editor and library views.
 - **Global Error Handling**: Improved `ErrorBoundary` (Safe Mode) coverage for cleaner recovery from runtime glitches.
 
 ---

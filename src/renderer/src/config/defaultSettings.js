@@ -54,7 +54,7 @@ export const DEFAULT_SETTINGS = {
     showActivityBar: true,
     showHeader: true,
     showStatusBar: true,
-    showFocusMode: false,
+    showFlowMode: false,
     showPreview: false,
     sidebarIconColor: '#c9d1d9',
     sidebarWidth: 250,

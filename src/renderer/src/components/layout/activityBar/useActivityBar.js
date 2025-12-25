@@ -9,10 +9,6 @@ import { useMemo } from 'react'
 export const useActivityBar = (settings, activeTab, trashCount) => {
   const styles = useMemo(() => {
     return {
-      container: {
-        backgroundColor: 'var(--activity-bar-bg, #161b22)',
-        borderRight: '1px solid var(--color-border, #444)'
-      },
       item: (isActive) => ({
         color: isActive
           ? 'var(--activity-bar-active-fg, var(--color-accent-primary, #ffffff))'

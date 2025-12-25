@@ -30,7 +30,7 @@ const StatusBar = ({ title, isLargeFile = false, snippets = [] }) => {
 
   return (
     <div
-      className="flex items-center justify-between gap-3 text-xs w-full px-3 py-1 select-none border-t"
+      className="flex items-center justify-between gap-3 text-xs w-full px-3 py-0.5 select-none border-t"
       style={{
         backgroundColor: 'var(--footer-bg)',
         color: 'var(--statusbar-text, var(--header-text))',
@@ -50,6 +50,17 @@ const StatusBar = ({ title, isLargeFile = false, snippets = [] }) => {
         <div className="px-1 py-0.5 rounded hover:bg-white/5 transition-colors cursor-default opacity-60 hidden sm:block">
           <span className="font-mono tabular-nums">v{version}</span>
         </div>
+        <div className="w-px h-3 bg-white/10 mx-1"></div>
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('app:toggle-flow'))}
+          className="flex items-center gap-1.5 px-2 py-0.5 rounded hover:bg-blue-500/10 text-blue-400/80 hover:text-blue-400 transition-all group"
+          title="Enter Flow Mode (Alt+Shift+F)"
+        >
+          <span className="text-[14px] leading-none group-hover:scale-110 transition-transform">
+            🌀
+          </span>
+          <span className="font-bold uppercase tracking-widest text-[10px]">Flow Mode</span>
+        </button>
       </div>
 
       {/* RIGHT: Context Info */}

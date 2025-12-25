@@ -72,20 +72,27 @@ const buildExtensions = async (options, handlers = {}) => {
 
     // Define premium syntax highlighting style
     const premiumHighlightStyle = HighlightStyle.define([
-      { tag: t.keyword, color: '#c084fc', fontWeight: 'bold' },
-      { tag: t.variableName, color: 'var(--color-accent-secondary, #60a5fa)' },
-      { tag: t.propertyName, color: 'var(--color-accent-secondary, #60a5fa)' },
-      { tag: t.string, color: 'var(--color-accent-primary, #4ade80)' },
-      { tag: t.number, color: '#f472b6' },
-      { tag: t.bool, color: '#fb923c' },
-      { tag: t.null, color: '#94a3b8' },
-      { tag: t.comment, color: '#64748b', fontStyle: 'italic' },
+      { tag: t.keyword, color: 'var(--color-syntax-keyword, #ff7b72)', fontWeight: 'bold' },
+      {
+        tag: [t.variableName, t.definition(t.variableName), t.propertyName],
+        color: 'var(--color-syntax-variable, #79c0ff)'
+      },
+      {
+        tag: [t.function(t.variableName), t.function(t.propertyName)],
+        color: 'var(--color-syntax-variable, #79c0ff)',
+        fontStyle: 'italic'
+      },
+      { tag: t.string, color: 'var(--color-syntax-string, #a5d6ff)' },
+      { tag: t.number, color: 'var(--color-syntax-number, #d19a66)' },
+      { tag: t.bool, color: 'var(--color-syntax-boolean, #ff7b72)' },
+      { tag: t.null, color: 'var(--color-syntax-null, #79c0ff)' },
+      { tag: t.comment, color: 'var(--color-syntax-comment, #8b949e)', fontStyle: 'italic' },
       {
         tag: [t.punctuation, t.separator, t.bracket],
-        color: 'var(--color-text-secondary, #94a3b8)'
+        color: 'var(--color-syntax-punctuation, #8b949e)'
       },
-      { tag: t.heading, color: 'var(--color-accent-primary)', fontWeight: 'bold' },
-      { tag: t.link, color: 'var(--color-accent-secondary)', textDecoration: 'underline' }
+      { tag: t.heading, color: 'var(--color-accent-primary, #58a6ff)', fontWeight: 'bold' },
+      { tag: t.link, color: 'var(--color-accent-secondary, #58a6ff)', textDecoration: 'underline' }
     ])
 
     // Basic UI Extensions
@@ -174,8 +181,15 @@ const buildExtensions = async (options, handlers = {}) => {
       console.log('[Editor] Loading Markdown with rich styling...')
       const { markdown } = await import('@codemirror/lang-markdown')
       const { richMarkdownExtension } = await import('./richMarkdown.js')
-      exts.push(markdown({ addKeymap: true }))
+      const { markdownExtrasExtension } = await import('./markdownExtras.js')
+      exts.push(
+        markdown({
+          addKeymap: true,
+          codeLanguages: allLangs
+        })
+      )
       exts.push(richMarkdownExtension)
+      exts.push(markdownExtrasExtension)
     }
     // Priority 3: Dynamic discovery
     else if (langDesc) {

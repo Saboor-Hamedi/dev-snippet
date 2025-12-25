@@ -41,7 +41,7 @@ export const fastMarkdownToHtml = (text, existingTitles = []) => {
                 </button>
               </div>
             </div>
-            <pre><code class="language-${lang || 'text'} hljs">${escaped}</code></pre>
+            <pre><code class="language-${lang || 'plaintext'}">${escaped}</code></pre>
           </div>`
       }
       placeholders.push({ id, content })

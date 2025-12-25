@@ -14,7 +14,7 @@ import { registerExportHandlers } from './export'
 
 export const registerAllHandlers = (app, mainWindow, db, preparedStatements, getDB) => {
   // Register all IPC handlers
-  registerWindowHandlers()
+  registerWindowHandlers(app, mainWindow)
   registerDatabaseHandlers(db, preparedStatements)
   registerFilesystemHandlers()
   const settingsHandlers = createSettingsHandlers(app, mainWindow)

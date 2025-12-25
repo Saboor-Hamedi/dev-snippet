@@ -20,10 +20,7 @@ const ActivityBar = ({
   ]
 
   return (
-    <div
-      className="w-12 flex flex-col items-center z-10 select-none transition-colors duration-300"
-      style={styles.container}
-    >
+    <div className="w-12 h-full flex flex-col items-center z-10 select-none transition-colors duration-300 bg-[var(--activity-bar-bg)] border-r border-[var(--color-border)]">
       <div className="flex flex-col w-full">
         {items.map((item) => {
           const isActive = activeTab === item.id

@@ -140,11 +140,25 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
         action: () => window.dispatchEvent(new CustomEvent('app:toggle-zen'))
       },
       {
-        id: 'cmd-toggle-focus',
-        title: 'Toggle Focus Mode',
+        id: 'cmd-toggle-flow',
+        title: 'Toggle Flow Mode',
         icon: Command,
-        description: 'Hide every bit of UI and center the editor',
-        action: () => window.dispatchEvent(new CustomEvent('app:toggle-focus'))
+        description: 'Concentrate on a single snippet with the Canvas (Alt+Shift+F)',
+        action: () => window.dispatchEvent(new CustomEvent('app:toggle-flow'))
+      },
+      {
+        id: 'cmd-toggle-header',
+        title: 'Toggle Header',
+        icon: Layout,
+        description: 'Show or hide the top title and navigation bar',
+        action: () => window.dispatchEvent(new CustomEvent('app:toggle-header'))
+      },
+      {
+        id: 'cmd-toggle-status-bar',
+        title: 'Toggle Status Bar',
+        icon: ShieldCheck,
+        description: 'Show or hide the bottom information bar',
+        action: () => window.dispatchEvent(new CustomEvent('app:toggle-status-bar'))
       }
     ],
     []

@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useKeyboardShortcuts } from '../../../hook/useKeyboardShortcuts'
-import { useModal } from './ModalManager'
+import { useModal } from './ModalContext'
 import { useView } from '../../../context/ViewContext'
 
 const KeyboardHandler = ({
@@ -153,8 +153,8 @@ const KeyboardHandler = ({
         onTogglePin(selectedSnippet.id)
       }
     },
-    onToggleFocus: () => {
-      window.dispatchEvent(new CustomEvent('app:toggle-focus'))
+    onToggleFlow: () => {
+      window.dispatchEvent(new CustomEvent('app:toggle-flow'))
     }
   })
 

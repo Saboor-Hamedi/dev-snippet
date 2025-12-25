@@ -33,8 +33,14 @@ class ErrorBoundary extends React.Component {
     try {
       sessionStorage.clear()
     } catch (e) {}
-    // Force a hard reload
-    window.location.reload()
+
+    // Use the native Electron refresh if available (equivalent to Ctrl+R / hard reload)
+    // falling back to standard location.reload()
+    if (window.api?.reloadWindow) {
+      window.api.reloadWindow()
+    } else {
+      window.location.reload()
+    }
   }
 
   dismissError = () => {

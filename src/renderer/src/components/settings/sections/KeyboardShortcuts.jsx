@@ -9,6 +9,11 @@ import { SettingSection, KeyboardShortcutItem } from '../components'
 const KeyboardShortcuts = ({ modKey = 'Ctrl' }) => {
   const shortcuts = [
     {
+      action: 'Search in Library',
+      description: 'Open quick search / commands',
+      shortcut: `${modKey} + P`
+    },
+    {
       action: 'Create new snippet',
       description: 'Open a new draft',
       shortcut: `${modKey} + N`
@@ -19,19 +24,19 @@ const KeyboardShortcuts = ({ modKey = 'Ctrl' }) => {
       shortcut: `${modKey} + S`
     },
     {
-      action: 'Command Palette',
-      description: 'Open quick search / commands',
-      shortcut: `${modKey} + P`
+      action: 'Toggle Flow Mode',
+      description: 'Zen-like distraction-free mode',
+      shortcut: `${modKey} + Shift + F`
     },
     {
-      action: 'Go to Welcome',
-      description: 'Show the welcome page',
-      shortcut: `${modKey} + Shift + W`
+      action: 'Toggle Preview',
+      description: 'Split-view live rendering',
+      shortcut: `${modKey} + \\`
     },
     {
-      action: 'Copy to clipboard',
-      description: 'Copy selected snippet code',
-      shortcut: `${modKey} + C`
+      action: 'Toggle Sidebar',
+      description: 'Show/hide snippet explorer',
+      shortcut: `${modKey} + B`
     },
     {
       action: 'Rename snippet',
@@ -44,9 +49,34 @@ const KeyboardShortcuts = ({ modKey = 'Ctrl' }) => {
       shortcut: `${modKey} + Shift + D`
     },
     {
-      action: 'Toggle compact',
-      description: 'Toggle compact header / status bar',
+      action: 'Copy to clipboard',
+      description: 'Copy selected snippet code',
+      shortcut: `${modKey} + Shift + C`
+    },
+    {
+      action: 'Pin / Unpin',
+      description: 'Toggle favorite status',
+      shortcut: `Alt + P`
+    },
+    {
+      action: 'App Zoom',
+      description: 'Scale UI size',
+      shortcut: `${modKey} + / -`
+    },
+    {
+      action: 'Editor Zoom',
+      description: 'Precise font scaling',
+      shortcut: `${modKey} + Wheel`
+    },
+    {
+      action: 'Open Settings',
+      description: 'Configure preferences',
       shortcut: `${modKey} + ,`
+    },
+    {
+      action: 'Close Editor',
+      description: 'Exit to welcome page',
+      shortcut: `${modKey} + Shift + W`
     }
   ]
 

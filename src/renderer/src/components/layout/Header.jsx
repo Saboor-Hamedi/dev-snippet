@@ -201,15 +201,6 @@ const Header = ({
         >
           {/* Custom Toggle: Compact vs Full */}
           <button
-            onClick={onToggleCompact}
-            className="theme-exempt bg-transparent h-full w-10 flex items-center justify-center transition-colors opacity-60 hover:opacity-100 hover:bg-white/5"
-            style={{ color: 'var(--header-text)' }}
-            title={isCompact ? 'Standard UI' : 'Compact UI'}
-          >
-            <Minimize2 size={14} color="var(--header-icon-color, var(--header-text))" />
-          </button>
-
-          <button
             onClick={() => {
               try {
                 window.api?.minimize?.()

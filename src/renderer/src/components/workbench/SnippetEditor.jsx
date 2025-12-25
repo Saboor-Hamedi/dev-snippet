@@ -56,7 +56,7 @@ const SnippetEditor = ({
     const ext = title?.includes('.') ? title.split('.').pop()?.toLowerCase() : null
     let lang = ext || 'plaintext'
     if (!ext && code) {
-      const trimmed = code.trim()
+      const trimmed = code.substring(0, 500).trim()
       if (
         trimmed.startsWith('# ') ||
         trimmed.startsWith('## ') ||
@@ -64,13 +64,15 @@ const SnippetEditor = ({
         trimmed.startsWith('- ') ||
         trimmed.startsWith('* ') ||
         trimmed.startsWith('```') ||
-        trimmed.startsWith('>')
+        trimmed.startsWith('>') ||
+        trimmed.includes('**') ||
+        trimmed.includes(']]')
       ) {
         lang = 'markdown'
       }
     }
     return lang
-  }, [title]) // Only re-detect if title changed. Don't re-mount while typing code!
+  }, [title, code.substring(0, 20)]) // Re-detect if title or start of code changes
 
   // Unified AutoSave Hook - Source of Truth
   const [autoSaveEnabled] = useAutoSave()
@@ -399,6 +401,7 @@ const SnippetEditor = ({
                     value={code || ''}
                     language={detectedLang}
                     wordWrap={wordWrap}
+                    theme={currentTheme}
                     onChange={(val) => {
                       if (val !== code) {
                         setCode(val || '')

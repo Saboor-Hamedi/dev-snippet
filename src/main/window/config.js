@@ -73,6 +73,7 @@ export const getWindowConfig = (app, ENABLE_DEVTOOLS) => {
       sandbox: false,
       devTools: ENABLE_DEVTOOLS
     },
-    roundedCorners: false
+    roundedCorners: false,
+    backgroundColor: '#1f2937' // Use a dark grey that matches app theme to prevent white flash
   }
 }

@@ -115,14 +115,18 @@ export const searchHighlighter = StateField.define({
 // Base theme for search highlighting
 export const searchHighlightTheme = EditorView.baseTheme({
   '.cm-search-match': {
-    backgroundColor: 'rgba(255, 200, 0, 0.3)',
-    borderBottom: '2px solid rgba(255, 200, 0, 0.6)',
-    borderRadius: '2px'
+    backgroundColor: 'var(--search-match-bg, rgba(255, 200, 0, 0.2))',
+    borderBottom: '2px solid var(--search-match-border, rgba(255, 200, 0, 0.4))',
+    borderRadius: '2px',
+    transition:
+      'background-color 400ms cubic-bezier(0.4, 0, 0.2, 1), border-color 400ms cubic-bezier(0.4, 0, 0.2, 1)'
   },
   '.cm-search-match-current': {
-    backgroundColor: 'rgba(255, 150, 0, 0.5)',
-    borderBottom: '2px solid rgba(255, 150, 0, 0.9)',
+    backgroundColor: 'var(--search-match-current-bg, rgba(255, 150, 0, 0.4))',
+    borderBottom: '2px solid var(--search-match-current-border, rgba(255, 150, 0, 0.8))',
     borderRadius: '2px',
-    boxShadow: '0 0 0 1px rgba(255, 150, 0, 0.9)'
+    boxShadow: '0 0 0 1px var(--search-match-current-border, rgba(255, 150, 0, 0.8))',
+    transition:
+      'background-color 400ms cubic-bezier(0.4, 0, 0.2, 1), border-color 400ms cubic-bezier(0.4, 0, 0.2, 1)'
   }
 })
