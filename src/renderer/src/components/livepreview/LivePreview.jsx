@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useEffect } from 'react'
 import PropTypes from 'prop-types'
-import { Smartphone, Tablet, Monitor } from 'lucide-react'
+import { Smartphone, Tablet, Monitor, Layers } from 'lucide-react'
 import { SplitPaneContext } from '../splitPanels/SplitPaneContext'
 import { fastMarkdownToHtml } from '../../utils/fastMarkdown'
 import markdownStyles from '../../assets/markdown.css?raw'
@@ -11,6 +11,7 @@ import { getMermaidEngine } from '../mermaid/mermaidEngine'
 
 import { themes } from '../preference/theme/themes'
 import { useModal } from '../workbench/manager/ModalManager'
+import useAdvancedSplitPane from '../splitPanels/useAdvancedSplitPane.js'
 
 /**
  * LivePreview - Premium Sandboxed Rendering Engine.
@@ -28,6 +29,7 @@ const LivePreview = ({
 }) => {
   const iframeRef = useRef(null)
   const splitContext = React.useContext(SplitPaneContext)
+  const { overlayMode: isOverlay, setOverlayMode: setOverlay } = useAdvancedSplitPane()
 
   const existingTitles = useMemo(() => {
     return (snippets || []).map((s) => (s.title || '').trim()).filter(Boolean)
@@ -188,28 +190,39 @@ const LivePreview = ({
         }}
       >
         <div className="flex items-center gap-2 flex-shrink-0">
-          {!splitContext?.overlayMode && (
-            <span className="text-[11px] font-bold tracking-wider select-none uppercase opacity-80 pl-1">
-              PREVIEW ENGINE
+          <button
+            onClick={() => setOverlay(!isOverlay)}
+            className={`w-7 h-7 flex items-center justify-center rounded-md transition-all ${isOverlay ? 'bg-[var(--color-accent-primary)] text-white' : 'hover:bg-black/5 dark:hover:bg-white/5 opacity-60 hover:opacity-100'}`}
+            title={isOverlay ? 'Switch to Split View' : 'Switch to Overlay Mode'}
+          >
+            <Layers size={14} />
+          </button>
+
+          {!isOverlay && (
+            <span className="text-[10px] font-bold tracking-widest select-none uppercase opacity-50 pl-1">
+              PREVIEW
             </span>
           )}
-          {splitContext?.overlayMode && (
-            <div className="flex items-center gap-1 h-4">
+          {isOverlay && (
+            <div className="flex items-center gap-1 h-4 ml-1">
               <button
                 onClick={() => splitContext.setOverlayWidth(25)}
-                className={`p-1 rounded ${splitContext.overlayWidth === 25 ? 'text-[var(--color-accent-primary)]' : 'text-[var(--color-text-tertiary)]'}`}
+                className={`p-1 rounded transition-colors ${splitContext.overlayWidth === 25 ? 'bg-[var(--color-accent-primary)] text-white' : 'text-[var(--color-text-tertiary)] hover:bg-black/5 dark:hover:bg-white/5'}`}
+                title="Phone View"
               >
                 <Smartphone size={14} />
               </button>
               <button
                 onClick={() => splitContext.setOverlayWidth(50)}
-                className={`p-1 rounded ${splitContext.overlayWidth === 50 ? 'text-[var(--color-accent-primary)]' : 'text-[var(--color-text-tertiary)]'}`}
+                className={`p-1 rounded transition-colors ${splitContext.overlayWidth === 50 ? 'bg-[var(--color-accent-primary)] text-white' : 'text-[var(--color-text-tertiary)] hover:bg-black/5 dark:hover:bg-white/5'}`}
+                title="Tablet View"
               >
                 <Tablet size={14} />
               </button>
               <button
                 onClick={() => splitContext.setOverlayWidth(75)}
-                className={`p-1 rounded ${splitContext.overlayWidth === 75 ? 'text-[var(--color-accent-primary)]' : 'text-[var(--color-text-tertiary)]'}`}
+                className={`p-1 rounded transition-colors ${splitContext.overlayWidth === 75 ? 'bg-[var(--color-accent-primary)] text-white' : 'text-[var(--color-text-tertiary)] hover:bg-black/5 dark:hover:bg-white/5'}`}
+                title="Desktop View"
               >
                 <Monitor size={14} />
               </button>

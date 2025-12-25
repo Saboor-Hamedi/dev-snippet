@@ -15,7 +15,22 @@ export const createTables = (db) => {
       type TEXT NOT NULL DEFAULT 'snippet',
       tags TEXT DEFAULT '',
       is_draft INTEGER DEFAULT 0,
-      sort_index INTEGER
+      sort_index INTEGER,
+      folder_id TEXT,
+      is_deleted INTEGER DEFAULT 0,
+      deleted_at INTEGER
+    );
+
+    CREATE TABLE IF NOT EXISTS folders (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      parent_id TEXT,
+      collapsed INTEGER DEFAULT 0,
+      sort_index INTEGER,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      is_deleted INTEGER DEFAULT 0,
+      deleted_at INTEGER
     );
 
     CREATE TABLE IF NOT EXISTS settings (

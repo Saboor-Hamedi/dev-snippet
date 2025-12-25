@@ -15,12 +15,17 @@ const ModalLoader = () => (
   </div>
 )
 
-export const ModalProvider = ({ children, snippets, onSelectSnippet }) => {
+export const ModalProvider = ({ children, snippets, folders, onSelectSnippet }) => {
   // Input State for Prompts
   const [promptInputValue, setPromptInputValue] = useState('')
 
   // Modal States
-  const [renameModal, setRenameModal] = useState({ isOpen: false, item: null, onConfirm: null })
+  const [renameModal, setRenameModal] = useState({
+    isOpen: false,
+    item: null,
+    onConfirm: null,
+    title: 'Rename Snippet'
+  })
   const [deleteModal, setDeleteModal] = useState({
     isOpen: false,
     snippetId: null,
@@ -31,13 +36,13 @@ export const ModalProvider = ({ children, snippets, onSelectSnippet }) => {
   const [imageExportModal, setImageExportModal] = useState({ isOpen: false, snippet: null })
 
   // API exposed to consumers
-  const openRenameModal = useCallback((item, onConfirm) => {
-    setRenameModal({ isOpen: true, item, onConfirm })
-    setPromptInputValue(item?.title || '') // Initialize input
+  const openRenameModal = useCallback((item, onConfirm, customTitle = 'Rename Snippet') => {
+    setRenameModal({ isOpen: true, item, onConfirm, title: customTitle || 'Rename Snippet' })
+    setPromptInputValue(item?.title || item?.name || '') // Initialize input
   }, [])
 
-  const openDeleteModal = useCallback((snippetId, onConfirm) => {
-    setDeleteModal({ isOpen: true, snippetId, onConfirm })
+  const openDeleteModal = useCallback((idOrIds, onConfirm) => {
+    setDeleteModal({ isOpen: true, snippetId: idOrIds, onConfirm })
   }, [])
 
   const openImageExportModal = useCallback((snippet) => {
@@ -104,13 +109,17 @@ export const ModalProvider = ({ children, snippets, onSelectSnippet }) => {
         {renameModal.isOpen && (
           <Prompt
             isOpen={true}
-            title="Rename Snippet"
-            message={`Rename "${renameModal.item?.title || ''}"`}
-            confirmLabel="Rename"
+            title={renameModal.title}
+            message={
+              renameModal.item
+                ? `Rename "${renameModal.item?.title || renameModal.item?.name || ''}"`
+                : 'Enter a name'
+            }
+            confirmLabel="Confirm"
             showInput={true}
             inputValue={promptInputValue}
             onInputChange={setPromptInputValue}
-            placeholder="Enter snippet name..."
+            placeholder="Enter name..."
             onClose={() => setRenameModal((prev) => ({ ...prev, isOpen: false }))}
             onConfirm={(newName) => {
               if (renameModal.onConfirm) renameModal.onConfirm(newName)
@@ -123,7 +132,15 @@ export const ModalProvider = ({ children, snippets, onSelectSnippet }) => {
           <Prompt
             isOpen={true}
             variant="danger"
-            title={deleteModal.snippetId === 'empty-trash' ? 'Empty Trash' : 'Delete Snippet'}
+            title={
+              deleteModal.snippetId === 'empty-trash'
+                ? 'Empty Trash'
+                : Array.isArray(deleteModal.snippetId)
+                  ? 'Delete Selected'
+                  : folders?.some((f) => f.id === deleteModal.snippetId)
+                    ? 'Delete Folder'
+                    : 'Delete Snippet'
+            }
             message={
               deleteModal.snippetId === 'empty-trash' ? (
                 <span>
@@ -133,13 +150,22 @@ export const ModalProvider = ({ children, snippets, onSelectSnippet }) => {
                   </span>{' '}
                   in the trash? This action cannot be undone.
                 </span>
+              ) : Array.isArray(deleteModal.snippetId) ? (
+                <span>
+                  Are you sure you want to delete{' '}
+                  <span className="font-bold text-slate-800 dark:text-slate-100">
+                    {deleteModal.snippetId.length} items
+                  </span>
+                  ?
+                </span>
               ) : (
                 <span>
                   This action is permanent. Delete{' '}
                   <span className="font-bold text-slate-800 dark:text-slate-100">
                     "
                     {deleteModal.snippetId
-                      ? snippets?.find((s) => s.id === deleteModal.snippetId)?.title
+                      ? snippets?.find((s) => s.id === deleteModal.snippetId)?.title ||
+                        folders?.find((f) => f.id === deleteModal.snippetId)?.name
                       : 'this'}
                     "
                   </span>
@@ -188,6 +214,7 @@ export const ModalProvider = ({ children, snippets, onSelectSnippet }) => {
 ModalProvider.propTypes = {
   children: PropTypes.node.isRequired,
   snippets: PropTypes.array,
+  folders: PropTypes.array,
   onSelectSnippet: PropTypes.func
 }
 

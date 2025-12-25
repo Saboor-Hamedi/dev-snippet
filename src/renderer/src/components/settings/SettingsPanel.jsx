@@ -8,9 +8,11 @@ import {
   Palette,
   Type,
   Keyboard,
-  Database
+  Database,
+  Layers
 } from 'lucide-react'
 import { useSettings, useAutoSave } from '../../hook/useSettingsContext'
+import useAdvancedSplitPane from '../splitPanels/useAdvancedSplitPane.js'
 import { useToast } from '../../hook/useToast'
 import ToastNotification from '../../utils/ToastNotification'
 import UserSettings from '../preference/UserSettings.jsx'
@@ -34,14 +36,7 @@ const SettingsPanel = ({ onClose }) => {
   // Typography & UI settings (Self-managed by components)
   const [wordWrap, setWordWrap] = useState('on')
   const [autoSave, setAutoSave] = useAutoSave()
-  const [overlayMode, setOverlayMode] = useState(() => {
-    try {
-      const saved = localStorage.getItem('overlayMode')
-      return saved ? saved === 'true' : false
-    } catch (e) {
-      return false
-    }
-  })
+  const { overlayMode, setOverlayMode } = useAdvancedSplitPane()
 
   // UI state
   const hideWelcomePage = getSetting('ui.hideWelcomePage') || false
@@ -109,12 +104,7 @@ const SettingsPanel = ({ onClose }) => {
   }
 
   const handleOverlayModeChange = (checked) => {
-    try {
-      setOverlayMode(checked)
-      localStorage.setItem('overlayMode', checked ? 'true' : 'false')
-    } catch (e) {
-      setOverlayMode((s) => !s)
-    }
+    setOverlayMode(checked)
   }
 
   const navItems = [

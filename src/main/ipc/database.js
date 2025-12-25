@@ -104,7 +104,8 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
         // Ensure tags is a string for storage
         tags: Array.isArray(snippet.tags) ? snippet.tags.join(',') : snippet.tags || '',
         is_draft: snippet.is_draft ? 1 : 0,
-        sort_index: snippet.sort_index ?? null
+        sort_index: snippet.sort_index ?? null,
+        folder_id: snippet.folder_id ?? null
       }
       preparedStatements.save.run(dbPayload)
       return true
@@ -131,11 +132,6 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
   ipcMain.handle('db:permanentDeleteSnippet', (event, id) => {
     preparedStatements.permanentDelete.run(id)
     return true
-  })
-
-  // Get Trash
-  ipcMain.handle('db:getTrash', () => {
-    return preparedStatements.getTrash.all().map(transformRow)
   })
 
   // Save snippet draft
@@ -169,6 +165,67 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
   // Save setting
   ipcMain.handle('db:saveSetting', (event, key, value) => {
     db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(key, value)
+    return true
+  })
+
+  // --- FOLDERS ---
+  ipcMain.handle('db:getFolders', () => {
+    return preparedStatements.getFolders.all()
+  })
+
+  ipcMain.handle('db:saveFolder', (event, folder) => {
+    try {
+      const dbPayload = {
+        id: folder.id,
+        name: folder.name,
+        parent_id: folder.parent_id || null,
+        collapsed: folder.collapsed ? 1 : 0,
+        sort_index: folder.sort_index || 0,
+        created_at: folder.created_at || Date.now(),
+        updated_at: Date.now()
+      }
+      preparedStatements.saveFolder.run(dbPayload)
+      return true
+    } catch (err) {
+      console.error('db:saveFolder failed:', err)
+      throw err
+    }
+  })
+
+  ipcMain.handle('db:deleteFolder', (event, id) => {
+    preparedStatements.softDeleteFolder.run(Date.now(), id)
+    return true
+  })
+
+  ipcMain.handle('db:restoreFolder', (event, id) => {
+    preparedStatements.restoreFolder.run(id)
+    return true
+  })
+
+  ipcMain.handle('db:permanentDeleteFolder', (event, id) => {
+    preparedStatements.deleteFolder.run(id)
+    return true
+  })
+
+  // Get Trash (unified)
+  ipcMain.handle('db:getTrash', () => {
+    const snippets = preparedStatements.getTrash.all().map(transformRow)
+    const folders = preparedStatements.getFolderTrash.all().map((f) => ({ ...f, type: 'folder' }))
+    return [...snippets, ...folders].sort((a, b) => (b.deleted_at || 0) - (a.deleted_at || 0))
+  })
+
+  ipcMain.handle('db:moveSnippet', (event, snippetId, folderId) => {
+    preparedStatements.updateSnippetFolder.run(folderId || null, Date.now(), snippetId)
+    return true
+  })
+
+  ipcMain.handle('db:moveFolder', (event, folderId, parentId) => {
+    preparedStatements.updateFolderParent.run(parentId || null, Date.now(), folderId)
+    return true
+  })
+
+  ipcMain.handle('db:toggleFolderCollapse', (event, folderId, collapsed) => {
+    preparedStatements.toggleFolderCollapse.run(collapsed ? 1 : 0, folderId)
     return true
   })
 }

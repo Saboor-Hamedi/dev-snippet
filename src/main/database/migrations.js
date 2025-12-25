@@ -11,19 +11,33 @@ export const runMigrations = (db) => {
 
   // Ensure optional columns exist
   try {
-    const colsSnippets = db.prepare('PRAGMA table_info(snippets)').all()
-    const ensureCol = (name, ddl) => {
-      if (!colsSnippets.some((c) => c.name === name)) {
+    const ensureCol = (table, name, ddl) => {
+      const info = db.prepare(`PRAGMA table_info(${table})`).all()
+      if (!info.some((c) => c.name === name)) {
         db.exec(ddl)
       }
     }
 
-    ensureCol('tags', 'ALTER TABLE snippets ADD COLUMN tags TEXT')
-    ensureCol('code_draft', 'ALTER TABLE snippets ADD COLUMN code_draft TEXT')
-    ensureCol('is_draft', 'ALTER TABLE snippets ADD COLUMN is_draft INTEGER')
-    ensureCol('sort_index', 'ALTER TABLE snippets ADD COLUMN sort_index INTEGER')
-    ensureCol('is_deleted', 'ALTER TABLE snippets ADD COLUMN is_deleted INTEGER DEFAULT 0') // Default to 0 (not deleted)
-    ensureCol('deleted_at', 'ALTER TABLE snippets ADD COLUMN deleted_at INTEGER') // Timestamp of deletion
+    // Snippets table migrations
+    ensureCol('snippets', 'tags', 'ALTER TABLE snippets ADD COLUMN tags TEXT')
+    ensureCol('snippets', 'code_draft', 'ALTER TABLE snippets ADD COLUMN code_draft TEXT')
+    ensureCol('snippets', 'is_draft', 'ALTER TABLE snippets ADD COLUMN is_draft INTEGER')
+    ensureCol('snippets', 'sort_index', 'ALTER TABLE snippets ADD COLUMN sort_index INTEGER')
+    ensureCol(
+      'snippets',
+      'is_deleted',
+      'ALTER TABLE snippets ADD COLUMN is_deleted INTEGER DEFAULT 0'
+    )
+    ensureCol('snippets', 'deleted_at', 'ALTER TABLE snippets ADD COLUMN deleted_at INTEGER')
+    ensureCol('snippets', 'folder_id', 'ALTER TABLE snippets ADD COLUMN folder_id TEXT')
+
+    // Folders table migrations
+    ensureCol(
+      'folders',
+      'is_deleted',
+      'ALTER TABLE folders ADD COLUMN is_deleted INTEGER DEFAULT 0'
+    )
+    ensureCol('folders', 'deleted_at', 'ALTER TABLE folders ADD COLUMN deleted_at INTEGER')
   } catch (e) {
     console.warn('Migration warning:', e.message)
   }

@@ -12,7 +12,6 @@ export const DEFAULT_SETTINGS = {
     fontFamily: 'JetBrains Mono',
     lineNumbers: true,
     wordWrap: 'off',
-    overlayMode: false,
     tabSize: 2,
     theme: 'dark'
   },
@@ -35,7 +34,8 @@ export const DEFAULT_SETTINGS = {
     bgColor: '#232731',
     borderColor: '#232731',
     borderWidth: 0,
-    borderRound: 0
+    borderRound: 0,
+    overlayMode: false
   },
   ui: {
     activityBarBg: '#333333',

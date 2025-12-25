@@ -268,11 +268,14 @@ const SnippetEditor = ({
     }
 
     const payload = {
+      ...initialSnippet,
       id: initialSnippet?.id || Date.now().toString(),
       title: finalTitle,
       code: code,
-      is_draft: false
+      is_draft: false,
+      folder_id: initialSnippet?.folder_id || null // Double-check preservation
     }
+    console.log(`[Editor] Saving snippet payload:`, payload)
 
     if (saveTimerRef.current) {
       clearTimeout(saveTimerRef.current)
@@ -297,12 +300,6 @@ const SnippetEditor = ({
       window.dispatchEvent(new CustomEvent('autosave-status', { detail: { status: null } }))
     }
   }
-
-  useEffect(() => {
-    const fn = () => handleSave(true) // Force save on manual trigger
-    window.addEventListener('force-save', fn)
-    return () => window.removeEventListener('force-save', fn)
-  }, [code, title, initialSnippet])
 
   useEffect(() => {
     if (justRenamed && !namePrompt.isOpen) {
@@ -368,6 +365,17 @@ const SnippetEditor = ({
     }
   }, [generateFullHtml, title, showToast])
 
+  useEffect(() => {
+    const fn = () => handleSave(true) // Force save on manual trigger
+    const pdfFn = () => handleExportPDF()
+    window.addEventListener('force-save', fn)
+    window.addEventListener('app:trigger-export-pdf', pdfFn)
+    return () => {
+      window.removeEventListener('force-save', fn)
+      window.removeEventListener('app:trigger-export-pdf', pdfFn)
+    }
+  }, [code, title, initialSnippet, handleExportPDF])
+
   return (
     <>
       {!isCreateMode && (!initialSnippet || !initialSnippet.id) && !hideWelcomePage ? (
@@ -384,7 +392,7 @@ const SnippetEditor = ({
             <AdvancedSplitPane
               rightHidden={!showPreview}
               unifiedScroll={false}
-              overlayMode={settings?.editor?.overlayMode || false}
+              overlayMode={settings?.livePreview?.overlayMode || false}
               left={
                 <div ref={editorContainerRef} className="w-full h-full">
                   <CodeEditor

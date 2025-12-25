@@ -1,19 +1,20 @@
 import React, { useMemo, useState } from 'react'
 import PropTypes from 'prop-types'
-import { File, Trash2, RotateCcw, Search } from 'lucide-react'
+import { File, Trash2, RotateCcw, Search, Folder } from 'lucide-react'
 import SidebarHeader from '../layout/SidebarHeader'
 import VirtualList from '../common/VirtualList'
 import ContextMenu from '../common/ContextMenu'
 
-const getFileIcon = () => {
-  return { icon: File, color: '#9CA3AF' } // Gray for trash
+const getFileIcon = (type) => {
+  if (type === 'folder') return { icon: Folder, color: '#facc15' } // Yellow for folder
+  return { icon: File, color: '#9CA3AF' } // Gray for trash snippet
 }
 
 const Row = ({ index, style, data }) => {
   const { items, onRestore, onPermanentDelete, onContextMenu } = data
   const item = items[index]
 
-  const { icon: Icon } = getFileIcon(item.language, item.title)
+  const { icon: Icon, color } = getFileIcon(item.type)
 
   return (
     <div style={style} className=" group">
@@ -24,12 +25,15 @@ const Row = ({ index, style, data }) => {
           onContextMenu(e, item)
         }}
       >
-        <div className="flex-shrink-0 flex items-center justify-center opacity-40 group-hover:opacity-100 transition-opacity">
+        <div
+          className="flex-shrink-0 flex items-center justify-center opacity-40 group-hover:opacity-100 transition-opacity"
+          style={{ color }}
+        >
           <Icon size={14} strokeWidth={1.5} />
         </div>
 
         <span className="flex-1 min-w-0 truncate font-light opacity-50 decoration-slate-600 group-hover:opacity-90 transition-opacity normal-case">
-          {item.title || 'Untitled'}
+          {item.title || item.name || 'Untitled'}
         </span>
 
         {/* Floating Action Buttons */}
@@ -66,7 +70,9 @@ const TrashSidebar = ({ items, onRestore, onPermanentDelete, onLoadTrash, openDe
 
   const filteredItems = useMemo(() => {
     if (!filter) return items
-    return items.filter((i) => (i.title || '').toLowerCase().includes(filter.toLowerCase()))
+    return items.filter((i) =>
+      (i.title || i.name || '').toLowerCase().includes(filter.toLowerCase())
+    )
   }, [items, filter])
 
   // Load trash on mount

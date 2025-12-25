@@ -37,19 +37,7 @@ const EditorSettings = ({
         label="Preview Overlay Mode"
         description="Float preview over editor instead of side-by-side."
         checked={overlayMode}
-        onChange={(checked) => {
-          onOverlayModeChange(checked)
-          // Notify editor about change
-          try {
-            window.dispatchEvent(
-              new CustomEvent('overlayMode:toggle', {
-                detail: { enabled: checked }
-              })
-            )
-          } catch (e) {
-            console.warn('Failed to dispatch overlay mode event:', e)
-          }
-        }}
+        onChange={onOverlayModeChange}
         noBorder
       />
     </SettingSection>

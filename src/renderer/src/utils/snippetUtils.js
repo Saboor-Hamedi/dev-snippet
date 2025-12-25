@@ -54,6 +54,7 @@ export const normalizeSnippet = (snippet) => {
     type: snippet.type || 'snippet',
     tags: extractTags(code),
     timestamp: snippet.timestamp || Date.now(),
-    is_draft: snippet.is_draft || false
+    is_draft: snippet.is_draft || false,
+    folder_id: snippet.folder_id || null
   }
 }

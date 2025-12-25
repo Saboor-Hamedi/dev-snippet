@@ -41,6 +41,18 @@ const api = {
   // Drafts
   saveSnippetDraft: (payload) => electronAPI.ipcRenderer.invoke('db:saveSnippetDraft', payload),
   commitSnippetDraft: (id) => electronAPI.ipcRenderer.invoke('db:commitSnippetDraft', id),
+
+  // Folders
+  getFolders: () => electronAPI.ipcRenderer.invoke('db:getFolders'),
+  saveFolder: (folder) => electronAPI.ipcRenderer.invoke('db:saveFolder', folder),
+  deleteFolder: (id) => electronAPI.ipcRenderer.invoke('db:deleteFolder', id),
+  moveSnippet: (snippetId, folderId) =>
+    electronAPI.ipcRenderer.invoke('db:moveSnippet', snippetId, folderId),
+  moveFolder: (folderId, parentId) =>
+    electronAPI.ipcRenderer.invoke('db:moveFolder', folderId, parentId),
+  toggleFolderCollapse: (id, collapsed) =>
+    electronAPI.ipcRenderer.invoke('db:toggleFolderCollapse', id, collapsed),
+
   // Window controls
   minimize: () => electronAPI.ipcRenderer.invoke('window:minimize'),
   maximize: () => electronAPI.ipcRenderer.invoke('window:maximize'),

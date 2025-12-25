@@ -17,7 +17,9 @@ import {
   FilePlus,
   Monitor,
   X,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Layers,
+  FileDown
 } from 'lucide-react'
 
 /**
@@ -100,6 +102,20 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
         icon: ImageIcon,
         description: 'Export snippet code as an image',
         action: () => window.dispatchEvent(new CustomEvent('app:command-copy-image'))
+      },
+      {
+        id: 'cmd-overlay',
+        title: 'Toggle Preview Overlay',
+        icon: Layers,
+        description: 'Switch between Side-by-Side and Overlay preview',
+        action: () => window.dispatchEvent(new CustomEvent('app:toggle-overlay'))
+      },
+      {
+        id: 'cmd-export-pdf',
+        title: 'Export to PDF',
+        icon: FileDown,
+        description: 'Generate a professional PDF of the snippet',
+        action: () => window.dispatchEvent(new CustomEvent('app:export-pdf'))
       },
       {
         id: 'cmd-close-window',
@@ -197,10 +213,10 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
   }, [isOpen, initialMode])
 
   const handleKeyDown = (e) => {
-    if (e.key === 'ArrowDown') {
+    if (e.key === 'ArrowDown' || (e.key === 'Tab' && !e.shiftKey)) {
       e.preventDefault()
       setSelectedIndex((prev) => (prev < filteredItems.length - 1 ? prev + 1 : prev))
-    } else if (e.key === 'ArrowUp') {
+    } else if (e.key === 'ArrowUp' || (e.key === 'Tab' && e.shiftKey)) {
       e.preventDefault()
       setSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0))
     } else if (e.key === 'Enter') {
@@ -234,12 +250,12 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
     const regex = new RegExp(`(${terms.join('|')})`, 'gi')
     const parts = text.split(regex)
     return (
-      <span>
+      <span className="opacity-100">
         {parts.map((part, i) =>
           part.toLowerCase() === highlight.toLowerCase() ? (
             <span
               key={`match-${i}`}
-              className="text-emerald-500 dark:text-emerald-400 font-bold underline decoration-emerald-500/30"
+              className="text-[var(--color-accent-primary)] font-bold decoration-[var(--color-accent-primary)]/30"
             >
               {part}
             </span>
@@ -261,19 +277,19 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
       {/* Background with blur (User loves this) */}
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[12px] animate-in fade-in duration-500" />
 
-      {/* Main UI Container (Lean & Compact) */}
+      {/* Main UI Container (Refined & Professional) */}
       <div
         onMouseDown={(e) => e.stopPropagation()}
-        className="relative w-full max-w-xl bg-[var(--bg-secondary)] rounded-3xl shadow-[0_25px_70px_-15px_rgba(0,0,0,0.6)] border border-[var(--color-border)] overflow-hidden flex flex-col animate-in zoom-in-95 slide-in-from-top-6 duration-300 backdrop-blur-md"
+        className="relative w-full max-w-xl bg-[var(--bg-secondary)] rounded-xl shadow-2xl border border-[var(--color-border)] overflow-hidden flex flex-col animate-in zoom-in-95 slide-in-from-top-4 duration-200 backdrop-blur-xl outline-none ring-0"
       >
-        {/* Ultra-Clean Input Header */}
-        <div className="flex items-center px-5 py-3.5 bg-transparent border-none shadow-none">
+        {/* Search Header Area */}
+        <div className="flex items-center px-4 py-4 bg-[var(--bg-tertiary)]/30 border-b border-[var(--color-border)]">
           {isCommandMode ? (
-            <Command size={18} className="text-[var(--color-accent-primary)] mr-4 stroke-[2.5]" />
+            <Command size={18} className="text-[var(--color-accent-primary)] mr-3.5 stroke-[2]" />
           ) : (
             <Search
               size={18}
-              className="text-[var(--color-text-tertiary)] mr-4 stroke-[2.5] opacity-50"
+              className="text-[var(--color-text-tertiary)] mr-3.5 stroke-[2] opacity-40"
             />
           )}
 
@@ -286,7 +302,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
             placeholder={
               isCommandMode ? 'Type a command...' : 'Search files or type > for commands'
             }
-            className="flex-1 bg-transparent border-none outline-none focus:ring-0 focus:outline-none shadow-none appearance-none text-[14px] font-normal tracking-tight placeholder:text-[var(--color-text-tertiary)] text-[var(--color-text-primary)]"
+            className="flex-1 theme-exempt bg-transparent border-none border-0 outline-none outline-0 focus:outline-none focus:ring-0 focus:border-none focus:bg-transparent shadow-none p-0 text-[14px] font-normal tracking-tight placeholder:text-[var(--color-text-tertiary)]/50 text-[var(--color-text-primary)]"
             autoComplete="off"
             spellCheck={false}
           />
@@ -300,7 +316,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
         {/* Dynamic List */}
         <div
           ref={scrollRef}
-          className="flex-1 overflow-y-auto max-h-[60vh] p-2 custom-scrollbar transition-all"
+          className="flex-1 overflow-y-auto max-h-[60vh] p-2 custom-scrollbar transition-all outline-none"
         >
           {filteredItems.length > 0 ? (
             <div className="space-y-0.5">
@@ -313,15 +329,17 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
                   return (
                     <div
                       key={item.id}
-                      onMouseEnter={() => setSelectedIndex(index)}
+                      onMouseMove={() => {
+                        if (selectedIndex !== index) setSelectedIndex(index)
+                      }}
                       onClick={() => {
                         item.action()
                         onClose()
                       }}
-                      className={`group relative px-4 py-2.5 rounded-sm flex items-center gap-4 cursor-pointer transition-all duration-150 ${
+                      className={`group relative px-4 py-3 rounded-lg flex items-center gap-3 cursor-pointer transition-colors duration-100 outline-none ${
                         isSelected
-                          ? 'bg-[var(--selected-bg)] pl-[13px] border-l-[3px] border-[var(--color-accent-primary)]'
-                          : 'hover:bg-[var(--hover-bg)] border-l-[3px] border-transparent'
+                          ? 'bg-blue-500/10 dark:bg-blue-400/10'
+                          : 'hover:bg-black/5 dark:hover:bg-white/5'
                       }`}
                     >
                       <div
@@ -361,22 +379,24 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
                 return (
                   <div
                     key={item.id}
-                    onMouseEnter={() => setSelectedIndex(index)}
+                    onMouseMove={() => {
+                      if (selectedIndex !== index) setSelectedIndex(index)
+                    }}
                     onClick={() => {
                       onSelect(item)
                       onClose()
                     }}
-                    className={`group relative px-4 py-2.5 rounded-sm flex items-center gap-4 cursor-pointer transition-all duration-150 ${
+                    className={`group relative px-4 py-3 rounded-lg flex items-center gap-3 cursor-pointer transition-colors duration-100 outline-none ${
                       isSelected
-                        ? 'bg-[var(--selected-bg)] pl-[13px] border-l-[3px] border-[var(--color-accent-primary)]'
-                        : 'hover:bg-[var(--hover-bg)] border-l-[3px] border-transparent'
+                        ? 'bg-blue-500/10 dark:bg-blue-400/10'
+                        : 'hover:bg-black/5 dark:hover:bg-white/5'
                     }`}
                   >
                     {/* Visual Icon Stack */}
                     <div
                       className={`p-2 rounded-xl transition-all duration-200 ${
                         isSelected
-                          ? 'text-[var(--selected-text)] scale-105 shadow-inner'
+                          ? 'text-[var(--selected-text)] scale-105'
                           : 'text-[var(--color-text-secondary)] group-hover:text-[var(--hover-text)]'
                       }`}
                     >
@@ -429,7 +449,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
                           </div>
                         )}
                         {item.match_context ? (
-                          <div className="mt-1.5 text-[11px] font-mono text-[var(--color-text-tertiary)] bg-[var(--bg-tertiary)] px-1.5 py-0.5 rounded border border-[var(--color-border)] w-full truncate">
+                          <div className="mt-1.5 text-[11px] font-mono text-[var(--color-text-tertiary)] bg-[var(--bg-tertiary)]/50 px-1.5 py-0.5 rounded w-full truncate">
                             <span className="opacity-60">...</span>
                             {item.match_context
                               .split(/(__MARK__|__\/MARK__)/)
@@ -465,10 +485,10 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
                     {/* Right-side Badge & Arrow */}
                     <div className="flex items-center gap-3 shrink-0">
                       <span
-                        className={`px-1 py-0.5 rounded text-[8px] font-bold border transition-colors tracking-widest ${
+                        className={`px-1.5 py-0.5 rounded text-[8px] font-extrabold transition-colors tracking-widest ${
                           isSelected
-                            ? 'bg-[var(--bg-primary)] border-[var(--color-border)] text-[var(--selected-text)] opacity-80'
-                            : 'bg-[var(--bg-tertiary)] border-[var(--color-border)] text-[var(--color-text-secondary)]'
+                            ? 'bg-[var(--color-accent-primary)] text-white'
+                            : 'bg-[var(--bg-tertiary)] text-[var(--color-text-secondary)]'
                         }`}
                       >
                         {lang}
@@ -486,7 +506,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
             </div>
           ) : (
             <div className="py-12 text-center animate-in fade-in zoom-in-95 duration-500">
-              <div className="inline-flex p-3 rounded-2xl bg-[var(--bg-tertiary)] mb-3 border border-[var(--color-border)]">
+              <div className="inline-flex p-3 rounded-2xl bg-[var(--bg-tertiary)] mb-3">
                 <ShieldCheck size={24} className="text-[var(--color-text-tertiary)]" />
               </div>
               <h3 className="text-[var(--color-text-primary)] font-bold text-[14px] tracking-tight">

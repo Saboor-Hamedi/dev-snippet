@@ -44,7 +44,21 @@ const Workbench = ({
   // Lifted state props
   isSidebarOpen,
   setIsSidebarOpen,
-  onRename
+  onRename,
+  // Folder Props
+  folders,
+  onToggleFolder,
+  onNewFolder,
+  onMoveSnippet,
+  onMoveFolder,
+  selectedFolderId,
+  onSelectFolder,
+  onRenameSnippet,
+  onRenameFolder,
+  onDeleteFolder,
+  onDeleteBulk,
+  selectedIds,
+  onSelectionChange
 }) => {
   const handleSave = (snippet) => {
     onSave(snippet)
@@ -187,6 +201,7 @@ const Workbench = ({
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         onSave={() => selectedSnippet && onSave(selectedSnippet)}
         onNewSnippet={onNewSnippet}
+        onNewFolder={onNewFolder}
         onSearch={() => {
           if (activeView === 'settings' && onCloseSettings) {
             onCloseSettings()
@@ -195,6 +210,7 @@ const Workbench = ({
         }}
         sidebarWidth={250}
         onRename={onRename}
+        onClose={onCloseSnippet}
       />
 
       {/* Main Workspace (ActivityBar + Sidebar + Editor) */}
@@ -239,9 +255,23 @@ const Workbench = ({
             <SnippetSidebar
               isOpen={true} // Child always thinks it's open
               snippets={snippets}
+              folders={folders}
               selectedSnippet={selectedSnippet}
+              selectedFolderId={selectedFolderId}
+              onSelectFolder={onSelectFolder}
               onNew={onNewSnippet}
+              onNewFolder={onNewFolder}
               onSearch={onSearchSnippets}
+              onToggleFolder={onToggleFolder}
+              onMoveSnippet={onMoveSnippet}
+              onMoveFolder={onMoveFolder}
+              onRenameSnippet={onRenameSnippet}
+              onRenameFolder={onRenameFolder}
+              onDeleteFolder={onDeleteFolder}
+              onDeleteSnippet={onDeleteRequest}
+              onDeleteBulk={onDeleteBulk}
+              selectedIds={selectedIds}
+              onSelectionChange={onSelectionChange}
               onSelect={(s) => {
                 if (onSelectSnippet) onSelectSnippet(s)
               }}
@@ -305,7 +335,10 @@ Workbench.propTypes = {
   onOpenSettings: PropTypes.func,
   onCloseSettings: PropTypes.func,
   showToast: PropTypes.func,
-  hideWelcomePage: PropTypes.bool
+  hideWelcomePage: PropTypes.bool,
+  folders: PropTypes.array,
+  onToggleFolder: PropTypes.func,
+  onNewFolder: PropTypes.func
 }
 
 export default Workbench

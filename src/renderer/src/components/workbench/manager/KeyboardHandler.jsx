@@ -14,8 +14,13 @@ const KeyboardHandler = ({
   isCreatingSnippet,
   setIsCreatingSnippet,
   showToast,
-  handleRename, // Pass the rename logic function
-  onToggleSidebar // Pass the sidebar toggle function
+  handleRename,
+  onToggleSidebar,
+  // Selection Props
+  selectedIds = [],
+  setSelectedIds,
+  selectedFolderId,
+  setSelectedFolderId
 }) => {
   const { toggleCommandPalette, openDeleteModal, openRenameModal, isAnyOpen, closeAll } = useModal()
   const { activeView, navigateTo, togglePreview, showPreview } = useView()
@@ -28,7 +33,18 @@ const KeyboardHandler = ({
         focusEditor()
         return true
       }
-      // Priority 2: Close creating mode or settings
+
+      // Priority 2: Clear Selection (Multi-select or Folder select)
+      const hasSelection = (selectedIds && selectedIds.length > 0) || selectedFolderId
+      if (hasSelection) {
+        if (setSelectedIds) setSelectedIds([])
+        if (setSelectedFolderId) setSelectedFolderId(null)
+        // We do NOT clear selectedSnippet here to keep the editor open
+        // if the user wants to close the editor, they can use the specific shortcut or click away
+        return true
+      }
+
+      // Priority 3: Close creating mode or settings
       if (isCreatingSnippet) {
         setIsCreatingSnippet(false)
         navigateTo('snippets')

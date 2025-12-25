@@ -5,6 +5,7 @@ import { useSnippetData } from '../../hook/useSnippetData'
 import { handleRenameSnippet } from '../../hook/handleRenameSnippet'
 import Workbench from './Workbench'
 import { useSettings, useZoomLevel, useEditorZoomLevel } from '../../hook/useSettingsContext'
+import useAdvancedSplitPane from '../splitPanels/useAdvancedSplitPane.js'
 import useFontSettings from '../../hook/settings/useFontSettings'
 // Removed redundant import from useZoomLevel wrapper
 import { ViewProvider, useView } from '../../context/ViewContext'
@@ -22,7 +23,16 @@ const SnippetLibraryInner = ({ snippetData }) => {
     setSnippets,
     saveSnippet,
     deleteItem,
+    deleteItems,
     searchSnippetList,
+    // Folder props
+    folders,
+    saveFolder,
+    deleteFolder,
+    deleteFolders,
+    toggleFolderCollapse,
+    moveSnippet,
+    moveFolder,
     // Trash props
     trash,
     loadTrash,
@@ -41,6 +51,9 @@ const SnippetLibraryInner = ({ snippetData }) => {
   const [isCreatingSnippet, setIsCreatingSnippet] = useState(false)
   const [zoomLevel, setZoomLevel] = useZoomLevel()
   const [editorZoom, setEditorZoom] = useEditorZoomLevel()
+  const [selectedFolderId, setSelectedFolderId] = useState(null)
+  const [selectedIds, setSelectedIds] = useState([])
+  const { overlayMode, setOverlayMode } = useAdvancedSplitPane()
 
   // Lifted Sidebar State - defaults to closed, remembers last state
   const [isSidebarOpen, setIsSidebarOpen] = useState(
@@ -97,11 +110,12 @@ const SnippetLibraryInner = ({ snippetData }) => {
   }, [setZoomLevel, setEditorZoom])
 
   // --- Draft Logic ---
-  const createDraftSnippet = (initialTitle = '') => {
+  const createDraftSnippet = (initialTitle = '', folderId = null) => {
     // Singleton Pattern: If an empty draft exists, reuse it instead of creating a new one.
-    if (!initialTitle) {
+    if (!initialTitle && !folderId) {
       const existingBlank = snippets.find(
-        (s) => (!s.title || s.title.trim() === '') && (!s.code || s.code.trim() === '')
+        (s) =>
+          (!s.title || s.title.trim() === '') && (!s.code || s.code.trim() === '') && !s.folder_id
       )
 
       if (existingBlank) {
@@ -119,7 +133,8 @@ const SnippetLibraryInner = ({ snippetData }) => {
       code: '',
       timestamp: Date.now(),
       type: 'snippet',
-      is_draft: true
+      is_draft: true,
+      folder_id: folderId
     }
     setSnippets((prev) => [draft, ...prev])
     setSelectedSnippet(draft)
@@ -191,6 +206,13 @@ const SnippetLibraryInner = ({ snippetData }) => {
         showToast('Open a snippet to export as image', 'info')
       }
     }
+    const onCommandOverlay = () => {
+      setOverlayMode(!overlayMode)
+      showToast(`Overlay Mode ${!overlayMode ? 'Enabled' : 'Disabled'}`, 'info')
+    }
+    const onCommandExportPDF = () => {
+      window.dispatchEvent(new CustomEvent('app:trigger-export-pdf'))
+    }
 
     window.addEventListener('app:command-new-snippet', onCommandNew)
     window.addEventListener('app:toggle-theme', onCommandTheme)
@@ -198,6 +220,8 @@ const SnippetLibraryInner = ({ snippetData }) => {
     window.addEventListener('app:toggle-preview', onCommandPreview)
     window.addEventListener('app:open-settings', onCommandSettings)
     window.addEventListener('app:command-copy-image', onCommandCopyImage)
+    window.addEventListener('app:toggle-overlay', onCommandOverlay)
+    window.addEventListener('app:export-pdf', onCommandExportPDF)
 
     return () => {
       window.removeEventListener('app:command-new-snippet', onCommandNew)
@@ -206,9 +230,47 @@ const SnippetLibraryInner = ({ snippetData }) => {
       window.removeEventListener('app:toggle-preview', onCommandPreview)
       window.removeEventListener('app:open-settings', onCommandSettings)
       window.removeEventListener('app:command-copy-image', onCommandCopyImage)
+      window.removeEventListener('app:toggle-overlay', onCommandOverlay)
+      window.removeEventListener('app:export-pdf', onCommandExportPDF)
     }
-  }, [createDraftSnippet, handleToggleSidebar, togglePreview, navigateTo, setTheme, showToast])
+  }, [
+    createDraftSnippet,
+    handleToggleSidebar,
+    togglePreview,
+    navigateTo,
+    setTheme,
+    showToast,
+    overlayMode,
+    setOverlayMode
+  ])
 
+  const handleNewFolder = (options = {}) => {
+    // Context: Passed parentId OR Selected folder OR parent folder of selected snippet
+    const parentId = options.parentId || selectedFolderId || selectedSnippet?.folder_id || null
+
+    openRenameModal(
+      null,
+      async (name) => {
+        if (name && name.trim()) {
+          try {
+            await saveFolder({
+              name: name.trim(),
+              parent_id: parentId
+            })
+            // Proactively expand parent so user sees the new folder
+            if (parentId) {
+              toggleFolderCollapse(parentId, false)
+            }
+            showToast(`Folder "${name}" created`, 'success')
+          } catch (e) {
+            console.error('Failed to create folder:', e)
+            showToast('Failed to create folder', 'error')
+          }
+        }
+      },
+      'New Folder'
+    )
+  }
   // --- Handlers for Workbench ---
   const handleDeleteRequest = (id) => {
     openDeleteModal(id, async (targetId) => {
@@ -218,7 +280,101 @@ const SnippetLibraryInner = ({ snippetData }) => {
 
   const handleSelectSnippet = (s) => {
     setSelectedSnippet(s)
+    setSelectedFolderId(null) // Focus moves to snippet, clear explicit folder selection
+    setSelectedIds(s ? [s.id] : [])
     navigateTo('editor')
+  }
+
+  const handleSelectFolder = (folderId) => {
+    setSelectedFolderId(folderId)
+    setSelectedIds(folderId ? [folderId] : [])
+  }
+
+  const handleSelectionChange = (ids) => {
+    setSelectedIds(ids)
+    // If only one snippet is selected, select it as the active one
+    if (ids.length === 1) {
+      const snippet = snippets.find((s) => s.id === ids[0])
+      if (snippet) {
+        setSelectedSnippet(snippet)
+        setSelectedFolderId(null)
+      } else {
+        setSelectedFolderId(ids[0])
+      }
+    }
+  }
+
+  const handleBulkDelete = (ids) => {
+    openDeleteModal(
+      ids,
+      async (targetIds) => {
+        // Logic inside SnippetLibraryInner already knows snippets vs folders if we pass both
+        // But let's keep it simple: find which are folders and which are snippets
+        const folderIds = ids.filter((id) => folders.some((f) => f.id === id))
+        const snippetIds = ids.filter((id) => snippets.some((s) => s.id === id))
+
+        if (snippetIds.length > 0) await deleteItems(snippetIds)
+        if (folderIds.length > 0) await deleteFolders(folderIds)
+
+        setSelectedIds([])
+      },
+      ids.length > 1 ? `${ids.length} items` : 'item'
+    )
+  }
+
+  const handleRenameFolder = (folder) => {
+    openRenameModal(
+      folder,
+      async (newName) => {
+        if (newName && newName.trim()) {
+          try {
+            await saveFolder({ ...folder, name: newName.trim() })
+            showToast(`Folder renamed to "${newName}"`, 'success')
+          } catch (e) {
+            console.error('Failed to rename folder:', e)
+            showToast('Failed to rename folder', 'error')
+          }
+        }
+      },
+      'Rename Folder'
+    )
+  }
+
+  const handleDeleteFolder = (folderId) => {
+    // We reuse the openDeleteModal but we need a specific folder delete version if it differs
+    // For now, let's assume it works for IDs.
+    // Wait, the delete modal might be specifically for snippets.
+    // Let's check how deleteFolder is handled.
+    openDeleteModal(
+      folderId,
+      async (id) => {
+        try {
+          await deleteFolder(id)
+          showToast('Folder deleted', 'success')
+        } catch (e) {
+          showToast('Failed to delete folder', 'error')
+        }
+      },
+      'Folder'
+    )
+  }
+
+  const handleRenameSnippetRequest = (snippet) => {
+    openRenameModal(
+      snippet,
+      async (newName) => {
+        handleRenameSnippet({
+          renameModal: { item: snippet, newName },
+          saveSnippet,
+          setSelectedSnippet,
+          setRenameModal: () => {}, // Modal already closing
+          setIsCreatingSnippet: () => {},
+          showToast,
+          snippets
+        })
+      },
+      'Rename Snippet'
+    )
   }
 
   return (
@@ -237,6 +393,11 @@ const SnippetLibraryInner = ({ snippetData }) => {
         showToast={showToast}
         handleRename={handleRenameRequest}
         onToggleSidebar={handleToggleSidebar}
+        // Selection Props
+        selectedIds={selectedIds}
+        setSelectedIds={setSelectedIds}
+        selectedFolderId={selectedFolderId}
+        setSelectedFolderId={setSelectedFolderId}
       />
 
       <div className="flex-1 flex flex-col items-stretch min-h-0 overflow-hidden bg-slate-50 dark:bg-slate-900 transition-colors duration-200">
@@ -252,6 +413,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
           onPermanentDeleteItem={permanentDeleteItem}
           onLoadTrash={loadTrash}
           onCloseSnippet={() => {
+            setIsCreatingSnippet(false)
             setSelectedSnippet(null)
             navigateTo('snippets')
           }}
@@ -304,8 +466,26 @@ const SnippetLibraryInner = ({ snippetData }) => {
               }
             }
           }}
+          onNewRequest={() => createDraftSnippet()}
           onDeleteRequest={handleDeleteRequest}
-          onNewSnippet={() => createDraftSnippet()}
+          onBulkDeleteRequest={handleBulkDelete}
+          onNewSnippet={(title, folderId) => {
+            const parentId = folderId || selectedFolderId || selectedSnippet?.folder_id || null
+            createDraftSnippet(title, parentId)
+          }}
+          onRenameSnippet={handleRenameSnippetRequest}
+          onNewFolder={handleNewFolder}
+          onRenameFolder={handleRenameFolder}
+          onDeleteFolder={handleDeleteFolder}
+          onDeleteBulk={handleBulkDelete}
+          folders={folders}
+          selectedFolderId={selectedFolderId}
+          selectedIds={selectedIds}
+          onSelectionChange={handleSelectionChange}
+          onSelectFolder={handleSelectFolder}
+          onToggleFolder={toggleFolderCollapse}
+          onMoveSnippet={moveSnippet}
+          onMoveFolder={moveFolder}
           onSelectSnippet={handleSelectSnippet}
           onSearchSnippets={searchSnippetList}
           onOpenSettings={() => navigateTo('settings')}
@@ -327,6 +507,7 @@ const SnippetLibrary = () => {
     <ViewProvider>
       <ModalProvider
         snippets={snippetData.snippets}
+        folders={snippetData.folders}
         onSelectSnippet={(s) => {
           // Dispatch event to be handled by Inner component which has full context access
           // This ensures we switch views (e.g. out of Settings) and set selection correctly
