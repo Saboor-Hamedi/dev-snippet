@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, memo } from 'react'
 import PropTypes from 'prop-types'
-import { useZoomLevel, useEditorZoomLevel } from '../hook/useZoomLevel'
+import { useZoomLevel, useEditorZoomLevel } from '../hook/useSettingsContext'
 
 const StatusBar = ({ title, isLargeFile = false, snippets = [] }) => {
   const [version, setVersion] = useState('...')

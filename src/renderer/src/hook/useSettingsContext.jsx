@@ -1,6 +1,8 @@
 import React, { useState, useEffect, createContext, useContext } from 'react'
 import settingsManager from '../config/settingsManager.js'
 import { DEFAULT_SETTINGS } from '../config/defaultSettings.js'
+import { MIN_ZOOM, MAX_ZOOM } from './useZoomLevel.js' // Integrated constants
+import { clamp, roundTo } from './useRoundedClamp.js' // Utility helpers
 
 // Settings Context
 const SettingsContext = createContext()
@@ -36,7 +38,7 @@ export const SettingsProvider = ({ children }) => {
   // 1. Live state for Global UI Zoom
   const [zoom, setZoomInternal] = useState(() => {
     const initial = settingsManager.get('editor.zoomLevel') ?? 1.0
-    return Math.max(0.5, Number(initial))
+    return clamp(Number(initial), MIN_ZOOM, MAX_ZOOM)
   })
 
   // 2. Live state for Editor-Only Font Zoom
@@ -73,14 +75,14 @@ export const SettingsProvider = ({ children }) => {
   const setZoom = (value) => {
     setZoomInternal((prev) => {
       const next = typeof value === 'function' ? value(prev) : value
-      return Math.max(0.5, Math.min(5.0, Math.round(next * 10) / 10))
+      return clamp(roundTo(next, 1), MIN_ZOOM, MAX_ZOOM)
     })
   }
 
   const setEditorZoom = (value) => {
     setEditorZoomInternal((prev) => {
       const next = typeof value === 'function' ? value(prev) : value
-      return Math.max(0.5, Math.min(5.0, Math.round(next * 10) / 10))
+      return clamp(roundTo(next, 1), MIN_ZOOM, MAX_ZOOM)
     })
   }
 

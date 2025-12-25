@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import PropTypes from 'prop-types'
 import { useKeyboardShortcuts } from '../../hook/useKeyboardShortcuts.js'
 import { useEditorFocus } from '../../hook/useEditorFocus.js'
-import { useZoomLevel } from '../../hook/useZoomLevel'
+import { useZoomLevel } from '../../hook/useSettingsContext' // Fixed import source
 import WelcomePage from '../WelcomePage.jsx'
 import StatusBar from '../StatusBar.jsx'
 import CodeEditor from '../CodeEditor/CodeEditor.jsx'

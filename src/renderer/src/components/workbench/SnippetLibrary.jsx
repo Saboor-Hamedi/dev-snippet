@@ -4,9 +4,9 @@ import ToastNotification from '../../utils/ToastNotification'
 import { useSnippetData } from '../../hook/useSnippetData'
 import { handleRenameSnippet } from '../../hook/handleRenameSnippet'
 import Workbench from './Workbench'
-import { useSettings } from '../../hook/useSettingsContext'
+import { useSettings, useZoomLevel, useEditorZoomLevel } from '../../hook/useSettingsContext'
 import useFontSettings from '../../hook/settings/useFontSettings'
-import { useZoomLevel, useEditorZoomLevel } from '../../hook/useZoomLevel'
+// Removed redundant import from useZoomLevel wrapper
 import { ViewProvider, useView } from '../../context/ViewContext'
 import { ModalProvider, useModal } from './manager/ModalManager'
 import KeyboardHandler from './manager/KeyboardHandler'
@@ -298,7 +298,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
             } catch (e) {
               setAutosaveStatus(null)
               if (e.message && e.message.includes('DUPLICATE_TITLE')) {
-                showToast('⚠️ Title conflict: Name already taken (DB)', 'error')
+                showToast('Title conflict: Name already taken (DB)', 'error')
               } else {
                 console.error(e)
               }

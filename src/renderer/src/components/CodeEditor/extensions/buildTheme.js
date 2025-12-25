@@ -139,17 +139,20 @@ const buildTheme = (EditorView, options = {}) => {
         borderRight:
           'var(--gutter-border-width, 1px) solid var(--gutter-border-color, transparent) !important',
         fontFamily: 'inherit',
+        fontSize: 'inherit', // Ensure line numbers scale with editor zoom
         lineHeight: '1.6',
         minHeight: '100%',
         boxSizing: 'border-box',
         padding: '0'
       },
       '.cm-lineNumbers .cm-gutterElement': {
-        minWidth: '3em !important',
-        padding: '0 4px !important',
-        justifyContent: 'center !important',
+        minWidth: '2.5em !important', // Use em to scale with font size
+        width: '100% !important',
+        padding: '0 0.2em !important', // Scale padding proportionally
         display: 'flex !important',
-        textAlign: 'center !important'
+        justifyContent: 'center !important',
+        textAlign: 'center !important',
+        lineHeight: '1.6'
       },
       '.cm-foldGutter .cm-gutterElement': {
         width: '1.5em !important',
