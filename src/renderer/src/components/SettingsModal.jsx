@@ -37,8 +37,7 @@ const UpdateSettings = React.lazy(() => import('./settings/sections/UpdateSettin
 const KeyboardShortcuts = React.lazy(() => import('./settings/sections/KeyboardShortcuts'))
 const DataSettings = React.lazy(() => import('./settings/sections/DataSettings'))
 const UserSettings = React.lazy(() => import('./preference/UserSettings'))
-const AppearanceSettings = React.lazy(() => import('./settings/sections/AppearanceSettings'))
-const EditorSettings = React.lazy(() => import('./settings/sections/EditorSettings'))
+// Appearance and Editor settings are kept inline to preserve specific custom logic + UI features that were missing in the external files
 
 const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) => {
   const [localSettings, setLocalSettings] = useState(currentSettings)
@@ -269,21 +268,131 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
                 )}
 
                 {activeTab === 'editor' && (
-                  <div className="animate-in slide-in-from-right-4 duration-300">
-                    <EditorSettings
-                      wordWrap={localSettings.editor?.wordWrap || 'off'}
-                      onWordWrapChange={(v) => updateSetting('editor.wordWrap', v)}
-                      autoSave={localSettings.behavior?.autoSave !== false}
-                      onAutoSaveChange={(v) => updateSetting('behavior.autoSave', v)}
-                      overlayMode={localSettings.ui?.compactMode || false}
-                      onOverlayModeChange={(v) => updateSetting('ui.compactMode', v)}
-                    />
+                  <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
+                    <SettingSection title="Typography" icon={Type}>
+                      <SettingSelect
+                        label="Font Family"
+                        description="Recommended: JetBrains Mono or Fira Code."
+                        value={localSettings.editor?.fontFamily || 'JetBrains Mono'}
+                        onChange={(v) => updateSetting('editor.fontFamily', v)}
+                        options={[
+                          'JetBrains Mono',
+                          'Fira Code',
+                          'Consolas',
+                          'Monaco',
+                          'Courier New'
+                        ]}
+                      />
+                      <SettingInput
+                        label="Font Size"
+                        description="Changes the global font size for code."
+                        value={localSettings.editor?.fontSize || 16}
+                        type="number"
+                        onChange={(v) => updateSetting('editor.fontSize', parseInt(v))}
+                      />
+                      <SettingToggle
+                        label="Font Ligatures"
+                        description="Enable symbols like => to display as arrows."
+                        checked={localSettings.editor?.fontLigatures !== false}
+                        onChange={(v) => updateSetting('editor.fontLigatures', v)}
+                      />
+                    </SettingSection>
+
+                    <SettingSection title="Layout" icon={Layout}>
+                      <SettingRow
+                        label="Zoom Level"
+                        description={`Global UI scaling: ${localSettings.editor?.zoomLevel || 1.0}x`}
+                      >
+                        <input
+                          type="range"
+                          min={MIN_ZOOM}
+                          max={MAX_ZOOM}
+                          step="0.1"
+                          value={localSettings.editor?.zoomLevel || 1.0}
+                          onChange={(e) =>
+                            updateSetting('editor.zoomLevel', parseFloat(e.target.value))
+                          }
+                          className="w-36 h-1.5 rounded-lg appearance-none cursor-pointer accent-[var(--color-accent-primary)]"
+                          style={{ backgroundColor: 'var(--color-bg-tertiary)' }}
+                        />
+                      </SettingRow>
+                      <SettingToggle
+                        label="Line Numbers"
+                        checked={localSettings.editor?.lineNumbers !== false}
+                        onChange={(v) => updateSetting('editor.lineNumbers', v)}
+                      />
+                      <SettingSelect
+                        label="Word Wrap"
+                        value={localSettings.editor?.wordWrap || 'off'}
+                        onChange={(v) => updateSetting('editor.wordWrap', v)}
+                        options={[
+                          { label: 'On', value: 'on' },
+                          { label: 'Off', value: 'off' }
+                        ]}
+                      />
+                      <SettingSelect
+                        label="Tab Size"
+                        value={localSettings.editor?.tabSize || 2}
+                        onChange={(v) => updateSetting('editor.tabSize', parseInt(v))}
+                        options={[
+                          { label: '2 Spaces', value: 2 },
+                          { label: '4 Spaces', value: 4 },
+                          { label: '8 Spaces', value: 8 }
+                        ]}
+                      />
+                    </SettingSection>
                   </div>
                 )}
 
                 {activeTab === 'appearance' && (
-                  <div className="animate-in slide-in-from-right-4 duration-300">
-                    <AppearanceSettings />
+                  <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
+                    <SettingSection title="UI Aesthetic" icon={Monitor}>
+                      <SettingToggle
+                        label="Compact Mode"
+                        description="Reduce vertical padding across the application."
+                        checked={localSettings.ui?.compactMode || false}
+                        onChange={(v) => updateSetting('ui.compactMode', v)}
+                      />
+                      <SettingToggle
+                        label="Show Header"
+                        description="Display the top title bar and action buttons."
+                        checked={localSettings.ui?.showHeader !== false}
+                        onChange={(v) => updateSetting('ui.showHeader', v)}
+                      />
+                      <SettingToggle
+                        label="Show Activity Bar"
+                        description="Display the leftmost navigation bar with Explorer and Themes icons."
+                        checked={localSettings.ui?.showActivityBar !== false}
+                        onChange={(v) => updateSetting('ui.showActivityBar', v)}
+                      />
+                      <SettingToggle
+                        label="Show Sidebar"
+                        description="Display the file explorer and search panel."
+                        checked={localSettings.ui?.showSidebar !== false}
+                        onChange={(v) => updateSetting('ui.showSidebar', v)}
+                      />
+                      <SettingToggle
+                        label="Show Status Bar"
+                        description="Display the bottom bar with file info and system status."
+                        checked={localSettings.ui?.showStatusBar !== false}
+                        onChange={(v) => updateSetting('ui.showStatusBar', v)}
+                      />
+                      <SettingToggle
+                        label="Flow Mode"
+                        description="Concentrate on your code with the Canvas (Alt+Shift+F)."
+                        checked={localSettings.ui?.showFlowMode || false}
+                        onChange={(v) => {
+                          // Cleanly dispatch Global Event instead of duplicating logic
+                          window.dispatchEvent(new CustomEvent('app:toggle-flow'))
+                        }}
+                      />
+                      <SettingInput
+                        label="Sidebar Icon Color"
+                        description="Customize the color of the sidebar file icons."
+                        value={localSettings.ui?.sidebarIconColor || '#c9d1d9'}
+                        onChange={(v) => updateSetting('ui.sidebarIconColor', v)}
+                      />
+                    </SettingSection>
                   </div>
                 )}
 
@@ -334,8 +443,8 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
                 {activeTab === 'system' && (
                   <div className="animate-in slide-in-from-right-4 duration-300">
                     <DataSettings
-                      hideWelcomePage={localSettings.ui?.hideWelcomePage || false}
-                      onWelcomePageToggle={(v) => updateSetting('ui.hideWelcomePage', v)}
+                      hideWelcomePage={localSettings.welcome?.hideWelcomePage || false}
+                      onWelcomePageToggle={(v) => updateSetting('welcome.hideWelcomePage', v)}
                       onExportData={async () => {
                         if (window.api?.exportJSON && window.api?.getSnippets) {
                           const snippets = await window.api.getSnippets({ metadataOnly: false })

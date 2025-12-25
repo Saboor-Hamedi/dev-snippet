@@ -60,7 +60,8 @@ export const DEFAULT_SETTINGS = {
     sidebarWidth: 250,
     previewPosition: 'right',
     previewFontSize: 14,
-    hideWelcomePage: false,
+    previewPosition: 'right',
+    previewFontSize: 14,
     theme: 'system'
   },
   activityBar: {

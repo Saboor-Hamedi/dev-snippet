@@ -236,7 +236,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
       } else if (!next && window.api?.restoreDefaultSize) {
         window.api.restoreDefaultSize()
       }
-      showToast(next ? 'Flow Mode enabled' : 'Flow Mode disabled', 'info')
+      // showToast(next ? 'Flow Mode enabled' : 'Flow Mode disabled', 'info')
     }
     const onCommandCopyImage = () => {
       if (selectedSnippet) openImageExportModal(selectedSnippet)
