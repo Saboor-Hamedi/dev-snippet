@@ -7,7 +7,7 @@ import PropTypes from 'prop-types'
  */
 const Pagination = ({ currentPage, totalPages, onPageChange, className = '' }) => {
   // Don't render if there's only one page or invalid data
-  if (totalPages < 1 || currentPage < 1 || currentPage > totalPages) {
+  if (totalPages <= 1 || currentPage < 1 || currentPage > totalPages) {
     return null
   }
 

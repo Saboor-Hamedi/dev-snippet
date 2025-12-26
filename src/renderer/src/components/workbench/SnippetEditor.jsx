@@ -55,12 +55,6 @@ const SnippetEditor = ({
 
   // Debounced code for live preview
   const [debouncedCode, setDebouncedCode] = useState(code)
-  useEffect(() => {
-    const wait = code.length > 50000 ? 1000 : code.length > 10000 ? 500 : 300
-    const timer = setTimeout(() => setDebouncedCode(code), wait)
-    return () => clearTimeout(timer)
-  }, [code])
-
   // Stabilize language detection so the editor doesn't re-mount on every keystroke
   const detectedLang = useMemo(() => {
     const ext = title?.includes('.') ? title.split('.').pop()?.toLowerCase() : null
@@ -83,6 +77,18 @@ const SnippetEditor = ({
     }
     return lang
   }, [title, code.substring(0, 20)]) // Re-detect if title or start of code changes
+
+  useEffect(() => {
+    const wait = code.length > 50000 ? 1000 : code.length > 10000 ? 500 : 300
+    const timer = setTimeout(() => setDebouncedCode(code), wait)
+    // Broadcast live code to Ghost Preview
+    window.dispatchEvent(
+      new CustomEvent('app:code-update', {
+        detail: { code, language: detectedLang }
+      })
+    )
+    return () => clearTimeout(timer)
+  }, [code, detectedLang])
 
   // Unified AutoSave Hook - Source of Truth
   const [autoSaveEnabled] = useAutoSave()

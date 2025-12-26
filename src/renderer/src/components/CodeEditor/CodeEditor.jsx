@@ -73,7 +73,7 @@ const CodeEditor = ({
       const dark =
         document.documentElement.classList.contains('dark') ||
         document.documentElement.getAttribute('data-theme') === 'dark'
-      setIsDark(prevIsDark => {
+      setIsDark((prevIsDark) => {
         if (prevIsDark !== dark) {
           return dark
         }
@@ -124,6 +124,18 @@ const CodeEditor = ({
       }),
       lineNumbers({ formatNumber: (n) => n.toString() }),
       codeFolding(),
+      // SCROLL SYNC: Update on every change (typing, scrolling, selection)
+      EditorView.updateListener.of((update) => {
+        if (update.docChanged || update.selectionSet || update.viewportChanged) {
+          const view = update.view
+          if (view?.scrollDOM) {
+            const { scrollTop, scrollHeight, clientHeight } = view.scrollDOM
+            const maxScroll = scrollHeight - clientHeight
+            const percentage = maxScroll > 0 ? scrollTop / maxScroll : 0
+            window.dispatchEvent(new CustomEvent('app:editor-scroll', { detail: { percentage } }))
+          }
+        }
+      }),
       foldGutter({
         markerDOM: (open) => {
           const icon = document.createElement('span')
@@ -300,6 +312,17 @@ const CodeEditor = ({
         className={`${className} h-full`}
         onCreateEditor={(view) => {
           viewRef.current = view
+
+          // SCROLL SYNC: Dispatch scroll events to LivePreview
+          if (view?.scrollDOM) {
+            view.scrollDOM.addEventListener('scroll', () => {
+              const { scrollTop, scrollHeight, clientHeight } = view.scrollDOM
+              const percentage = scrollTop / (scrollHeight - clientHeight)
+              // Dispatch with high precision but use requestAnimationFrame if possible in receiver
+              window.dispatchEvent(new CustomEvent('app:editor-scroll', { detail: { percentage } }))
+            })
+          }
+
           // Pass view to parent if callback provided
           if (onEditorReady) {
             onEditorReady(view)

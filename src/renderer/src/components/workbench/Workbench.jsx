@@ -122,7 +122,7 @@ const Workbench = ({
       return (
         <SnippetEditor
           initialSnippet={selectedSnippet}
-          snippets={snippets}
+          snippets={allSnippets || snippets}
           onSave={onSave}
           onCancel={onCancelEditor}
           onNew={onNewSnippet}
@@ -142,7 +142,7 @@ const Workbench = ({
       return (
         <SnippetEditor
           initialSnippet={selectedSnippet}
-          snippets={snippets}
+          snippets={allSnippets || snippets}
           onSave={handleSave}
           onNew={onNewSnippet}
           onCancel={onCloseSnippet}
@@ -283,6 +283,7 @@ const Workbench = ({
                 onSelectionChange={onSelectionChange}
                 onSelect={(s) => {
                   if (onSelectSnippet) onSelectSnippet(s)
+                  if (window.innerWidth <= 768) setIsSidebarOpen(false)
                 }}
                 onToggle={() => setIsSidebarOpen(false)}
                 isCompact={isCompact}

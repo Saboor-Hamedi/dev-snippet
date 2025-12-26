@@ -55,8 +55,11 @@ const buildExtensions = async (options, handlers = {}) => {
       if (wikiLinkCompletionSource) {
         completionSources.push(wikiLinkCompletionSource(snippetTitles))
       }
+      // Add Slash Command completions for markdown
+      const { slashCommandCompletionSource } = await import('./slashCommandCompletion.js')
+      completionSources.push(slashCommandCompletionSource)
     } catch (e) {
-      console.warn('[WikiLink] Failed to load source', e)
+      console.warn('[Completion] Failed to load sources', e)
     }
   }
 
@@ -113,9 +116,18 @@ const buildExtensions = async (options, handlers = {}) => {
       defaultKeymap: true
     }
 
-    // Only use override if we are in markdown and have titles
-    const isMarkdown = language === 'markdown' || language === 'md'
-    if (isMarkdown && completionSources.length > 0) {
+    // Only use override if we are in markdown/text
+    const l = language.toLowerCase()
+    const isWikiEnabled =
+      l === 'markdown' ||
+      l === 'md' ||
+      l === 'plaintext' ||
+      l === 'text' ||
+      l === 'txt' ||
+      l === 'auto' // Add auto for safety
+
+    if (isWikiEnabled && completionSources.length > 0) {
+      console.log('[Editor] Registering completion sources:', completionSources.length)
       autoConfig.override = completionSources
     }
 

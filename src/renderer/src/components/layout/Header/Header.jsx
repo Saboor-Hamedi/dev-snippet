@@ -35,8 +35,10 @@ const Header = ({
   sidebarWidth = 250,
   onClose
 }) => {
+  const isMobile = window.innerWidth <= 768
   const activityBarWidth = 40
-  const sidebarAreaWidth = isSidebarOpen ? activityBarWidth + sidebarWidth : activityBarWidth
+  const sidebarAreaWidth =
+    isSidebarOpen && !isMobile ? activityBarWidth + sidebarWidth : activityBarWidth
 
   const displayTitle = snippetTitle ? `${snippetTitle} - ${title}` : title
 

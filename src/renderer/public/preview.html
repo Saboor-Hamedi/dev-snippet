@@ -19,8 +19,8 @@
           system-ui,
           -apple-system,
           sans-serif;
-        /* Smooth theme transition */
-        transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        /* Premium smoothness */
+        scroll-behavior: smooth !important;
       }
       body {
         overflow-y: auto !important;
@@ -29,15 +29,24 @@
         width: 100%;
         max-width: 1200px;
         box-sizing: border-box;
-        padding: 5px;
+        padding: 0px 15px 150px 15px !important;
         margin: 0 auto !important;
         background-color: transparent;
         min-height: 100%;
-        /* Smooth theme transition */
         transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       }
       .preview-container.is-live {
-        padding: 5px;
+        padding: 0px 15px 150px 15px !important;
+      }
+      .markdown-body {
+        padding: 0px !important;
+        margin-top: 0px !important;
+        background-color: transparent !important;
+      }
+      /* Force first element to be flush */
+      .markdown-body > *:first-child {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
       }
 
       /* Premium Scrollbars */
@@ -100,7 +109,7 @@
 
       // Handle content updates from parent
       window.addEventListener('message', (event) => {
-        const { type, html, styles, theme, isDark, isLive, mermaidConfig, mermaidEngine } =
+        const { type, html, styles, theme, isDark, isLive, mermaidConfig, mermaidEngine, initialScrollPercentage } =
           event.data
 
         if (type === 'render') {
@@ -143,26 +152,80 @@
           const contentDiv = document.getElementById('content')
           if (contentDiv && contentDiv.innerHTML !== html) {
             contentDiv.innerHTML = html
+
+            // Restore/Apply Scroll Position on next frame for perfect layout sync
+            requestAnimationFrame(() => {
+              if (typeof initialScrollPercentage === 'number') {
+                const body = document.body
+                const docHtml = document.documentElement
+                const height = Math.max(
+                  body.scrollHeight,
+                  body.offsetHeight,
+                  docHtml.clientHeight,
+                  docHtml.scrollHeight,
+                  docHtml.offsetHeight
+                )
+                const windowHeight = window.innerHeight
+                const scrollTarget = (height - windowHeight) * initialScrollPercentage
+
+                window.scrollTo({ top: scrollTarget, behavior: 'instant' })
+                document.body.scrollTop = scrollTarget
+                document.documentElement.scrollTop = scrollTarget
+              }
+            })
           }
 
           // 4. Process Logic
-          const runLogic = () => {
+          const runLogic = async () => {
             if (window.hljs) highlight()
 
-            if (window.mermaid && window.diagramEngine) {
-              window.diagramEngine.init(
-                mermaidConfig || { startOnLoad: false, theme: 'default' }
-              )
-              window.diagramEngine.run()
-            } else if (window.mermaid || window.diagramEngine) {
-              // Something is missing, try again soon
-              setTimeout(runLogic, 200)
+            if (window.mermaid) {
+              try {
+                const theme = isDark ? 'dark' : 'neutral'
+                window.mermaid.initialize({
+                  startOnLoad: false,
+                  theme,
+                  securityLevel: 'loose', // Important for complex graphs
+                  ...mermaidConfig
+                })
+
+                // Find all mermaid divs that haven't been processed yet
+                const elements = document.querySelectorAll('.mermaid:not([data-processed="true"])')
+                if (elements.length > 0) {
+                  await window.mermaid.run({
+                    nodes: elements
+                  })
+                }
+              } catch (err) {
+                console.error('Mermaid render error:', err)
+              }
             }
           }
 
           runLogic()
           // Safety poll
           setTimeout(runLogic, 1000)
+        }
+
+        if (type === 'scroll') {
+          const { percentage } = event.data
+          if (typeof percentage === 'number') {
+            const body = document.body
+            const html = document.documentElement
+            const height = Math.max(
+              body.scrollHeight,
+              body.offsetHeight,
+              html.clientHeight,
+              html.scrollHeight,
+              html.offsetHeight
+            )
+            const windowHeight = window.innerHeight
+
+            const scrollTarget = (height - windowHeight) * percentage
+            window.scrollTo({ top: scrollTarget, behavior: 'auto' })
+            document.body.scrollTop = scrollTarget
+            document.documentElement.scrollTop = scrollTarget
+          }
         }
       })
 
@@ -192,15 +255,15 @@
         // 1.5 Copy Image Button
         const imgBtn = e.target.closest('.copy-image-btn')
         if (imgBtn) {
-           const raw = imgBtn.dataset.code
+          const raw = imgBtn.dataset.code
             .replace(/&amp;/g, '&')
             .replace(/&lt;/g, '<')
             .replace(/&gt;/g, '>')
             .replace(/&quot;/g, '"')
-           
-           const lang = imgBtn.dataset.lang || 'text'
-           window.parent.postMessage({ type: 'app:copy-as-image', code: raw, language: lang }, '*')
-           return
+
+          const lang = imgBtn.dataset.lang || 'text'
+          window.parent.postMessage({ type: 'app:copy-as-image', code: raw, language: lang }, '*')
+          return
         }
 
         // 2. Quick Links (Internal Wiki Links)
@@ -256,6 +319,8 @@
           '*'
         )
       })
+      // Notify parent that we are ready
+      window.parent.postMessage({ type: 'app:ready' }, '*')
     </script>
   </body>
 </html>

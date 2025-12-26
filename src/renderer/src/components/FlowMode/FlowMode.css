@@ -49,7 +49,7 @@
   height: 600px !important;
   max-width: 90% !important;
   max-height: 90% !important;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5); /* Reduced shadow */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* Minimal shadow */
   background-color: var(--color-bg-primary) !important;
   display: flex !important;
   flex-direction: column !important;
@@ -80,4 +80,17 @@
 /* Ensure editor fills the focused content */
 .focus-mode-content > div {
   flex: 1 !important;
+}
+/* MOBILE FLOW MODE */
+@media (max-width: 768px) {
+  .flow-convas {
+    padding: 0 !important;
+  }
+  .flow-content {
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+  }
 }
