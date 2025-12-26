@@ -73,7 +73,13 @@ const ContextMenu = ({ x, y, items, onClose }) => {
             disabled={item.disabled}
           >
             <div className="flex items-center gap-2.5">
-              {item.icon && <item.icon size={14} strokeWidth={1.5} className="opacity-70" />}
+              {item.icon && (
+                typeof item.icon === 'string' ? (
+                  <span className="text-sm opacity-70">{item.icon}</span>
+                ) : (
+                  <item.icon size={14} strokeWidth={1.5} className="opacity-70" />
+                )
+              )}
               <span>{item.label}</span>
             </div>
             {item.shortcut && (
@@ -94,7 +100,7 @@ ContextMenu.propTypes = {
   items: PropTypes.arrayOf(
     PropTypes.shape({
       label: PropTypes.string.isRequired,
-      icon: PropTypes.elementType,
+      icon: PropTypes.oneOfType([PropTypes.string, PropTypes.elementType]),
       onClick: PropTypes.func.isRequired,
       danger: PropTypes.bool,
       disabled: PropTypes.bool

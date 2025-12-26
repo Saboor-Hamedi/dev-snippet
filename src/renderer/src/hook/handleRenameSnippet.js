@@ -19,7 +19,8 @@ export const handleRenameSnippet = async ({
   // Clean up name
   const baseName = (renameModal.newName || renameModal.item.title || '').trim() || 'Untitled'
 
-  // Client-Side Duplicate Check
+  // Client-Side Duplicate Check - commented out to rely on database check
+  /*
   const normalize = (t) => (t || '').toLowerCase().trim().replace(/\.md$/, '')
 
   if (snippets) {
@@ -38,6 +39,7 @@ export const handleRenameSnippet = async ({
       return
     }
   }
+  */
 
   const updatedItem = normalizeSnippet({
     ...renameModal.item,

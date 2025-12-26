@@ -14,7 +14,8 @@ export const useSidebarLogic = ({
   onSelectionChange,
   onToggleFolder,
   inputRef,
-  listRef
+  listRef,
+  setSidebarSelected
 }) => {
   const lastSelectedIdRef = useRef(null)
   const [createState, setCreateState] = useState(null) // { type: 'folder'|'snippet', parentId: string|null }
@@ -154,8 +155,9 @@ export const useSidebarLogic = ({
 
       lastSelectedIdRef.current = id
       onSelectionChange(newSelection)
+      setSidebarSelected(false)
     },
-    [treeItems, selectedIds, onSelectionChange, onSelect, onSelectFolder, snippets]
+    [treeItems, selectedIds, onSelectionChange, onSelect, onSelectFolder, snippets, setSidebarSelected]
   )
 
   // 3. Keyboard Navigation Logic
@@ -253,10 +255,13 @@ export const useSidebarLogic = ({
     (e) => {
       if (e.target === e.currentTarget) {
         onSelectionChange([])
+        onSelect(null)
+        onSelectFolder(null)
         lastSelectedIdRef.current = null
+        setSidebarSelected(true)
       }
     },
-    [onSelectionChange]
+    [onSelectionChange, onSelect, onSelectFolder, setSidebarSelected]
   )
 
   return {

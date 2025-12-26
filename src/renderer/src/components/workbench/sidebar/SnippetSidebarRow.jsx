@@ -96,11 +96,11 @@ const CreationInputRow = ({ style, depth, itemData, onConfirm, onCancel, isCompa
     <div style={style} className="pr-2">
       <div
         className="flex items-center w-full h-full pl-0 select-none"
-        style={{ paddingLeft: `${depth * 12 + 26}px` }}
+        style={{ paddingLeft: `${depth * 16 + 30}px` }}
       >
-        <div className="flex-1 flex items-center gap-[3px] bg-[var(--color-bg-secondary)] border border-[var(--color-accent-primary)]/50 rounded-sm h-[22px]">
+        <div className="flex-1 flex items-center gap-[3px] bg-[var(--color-bg-secondary)] border border-[var(--color-accent-primary)]/50 rounded-sm h-[20px]">
           <div
-            className="flex-shrink-0 flex items-center justify-center opacity-80 pl-1"
+            className="flex-shrink-0 flex items-center justify-center opacity-80 pl-1 border-r border-[var(--color-border)]/30 pr-1"
             style={{ color: 'var(--sidebar-icon-color)' }}
           >
             {isFolder ? <Folder size={isCompact ? 13 : 15} /> : <File size={isCompact ? 13 : 15} />}
@@ -108,10 +108,23 @@ const CreationInputRow = ({ style, depth, itemData, onConfirm, onCancel, isCompa
           <input
             ref={inputRef}
             type="text"
-            className="flex-1 min-w-0 bg-transparent outline-none border-none text-[12px] p-0 m-0 leading-none h-full"
             placeholder={isFolder ? 'Folder Name' : 'Snippet Name'}
             onKeyDown={handleKeyDown}
-            onBlur={() => onCancel()}
+            onFocus={(e) => {
+              e.target.style.backgroundColor = 'var(--color-bg-primary)'
+              e.target.style.borderColor = 'var(--color-accent-primary)'
+            }}
+            onBlur={(e) => {
+              e.target.style.backgroundColor = 'var(--color-bg-secondary)'
+              e.target.style.borderColor = 'var(--color-border)'
+              onCancel()
+            }}
+            className="flex-1 min-w-0 rounded-[5px] px-2 py-1 text-xs outline-none border border-[var(--color-border)] ring-0 focus:ring-0 focus:outline-none transition-none"
+            style={{
+              backgroundColor: 'var(--color-bg-secondary)',
+              color: 'var(--color-text-primary)',
+              boxShadow: 'none'
+            }}
           />
         </div>
       </div>
@@ -125,7 +138,7 @@ const IndentGuides = ({ depth }) => {
   return (
     <div
       className="absolute top-0 left-0 h-full pointer-events-none"
-      style={{ width: depth * 12 + 6 }}
+      style={{ width: depth * 16 + 6 }}
     >
       {Array.from({ length: depth }).map((_, i) => (
         <div
@@ -135,7 +148,7 @@ const IndentGuides = ({ depth }) => {
               ? 'bg-gradient-to-b from-transparent via-[var(--color-accent-primary)] to-transparent opacity-60' 
               : 'bg-gradient-to-b from-transparent via-[var(--color-border)] to-transparent opacity-30'
           }`}
-          style={{ left: `${i * 12 + 12}px` }}
+          style={{ left: `${i * 16 + 16}px` }}
         />
       ))}
     </div>
@@ -273,7 +286,9 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         newSelection = [itemData.id]
         onSelect(itemData)
       } else {
-        // For folders: toggle expand/collapse on normal click (don't select)
+        // For folders: select the folder AND toggle expand/collapse
+        newSelection = [itemData.id]
+        onSelectFolder(itemData.id)
         onToggleFolder(itemData.id, !item.isExpanded)
       }
     }
@@ -302,22 +317,22 @@ const SnippetSidebarRow = ({ index, style, data }) => {
       >
         <IndentGuides depth={depth} />
         <div
-          className={`group flex items-center gap-[3px] w-full h-full select-none border-none outline-none focus:outline-none transition-all duration-150 pr-2 relative ${
+          className={`group flex items-center gap-[3px] w-full h-full select-none border-none outline-none focus:outline-none transition-all duration-150 pr-2 relative rounded-[5px] ${
             isSelected ? 'bg-[var(--selected-bg)]' : ''
           } ${
             isDragOver
-              ? 'bg-[var(--selected-bg)] border border-[var(--color-accent-primary)]/30 rounded-sm'
+              ? 'bg-[var(--selected-bg)] border border-[var(--color-accent-primary)]/30'
               : isSelected
                 ? ''
-                : 'hover:bg-white/5 focus:bg-[var(--selected-bg)]'
+                : 'hover:bg-white/10 focus:bg-[var(--selected-bg)]'
           }`}
           style={{
             color: isSelected ? 'var(--selected-text)' : 'var(--sidebar-header-text)',
-            paddingLeft: `${depth * 12 + 6}px`,
+            paddingLeft: `${depth * 16 + 6}px`,
             borderLeft: isSelected
               ? '2px solid var(--color-accent-primary)'
               : '2px solid transparent',
-            borderRadius: isSelected ? '4px' : '0'
+            backgroundColor: isSelected ? 'var(--selected-bg)' : 'transparent'
           }}
         >
           {/* Toggle Button */}
@@ -326,7 +341,11 @@ const SnippetSidebarRow = ({ index, style, data }) => {
               e.stopPropagation()
               onToggleFolder(itemData.id, !itemData.collapsed)
             }}
-            className="flex-shrink-0 flex items-center justify-center opacity-60 group-hover:opacity-100 hover:bg-[var(--color-accent-primary)]/20 rounded transition-all duration-200 w-4 h-4"
+            className={`flex-shrink-0 flex items-center justify-center rounded transition-all duration-200 w-4 h-4 ${
+              isSelected
+                ? 'bg-white/10 hover:bg-white/20'
+                : 'opacity-60 hover:opacity-100 hover:bg-[var(--color-accent-primary)]/20'
+            }`}
           >
             <ChevronRight
               size={isCompact ? 12 : 14}
@@ -338,7 +357,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
 
           {/* Icon */}
           <div
-            className="flex-shrink-0 flex items-center justify-center opacity-80 group-hover:opacity-100"
+            className="flex-shrink-0 flex items-center justify-center opacity-80 group-hover:opacity-100 px-1"
             style={{ color: isSelected ? 'var(--selected-text)' : 'var(--sidebar-icon-color)' }}
           >
             <Folder size={isCompact ? 13 : 15} strokeWidth={2} />
@@ -399,14 +418,14 @@ const SnippetSidebarRow = ({ index, style, data }) => {
               ? 'rgba(var(--color-accent-primary-rgb), 0.1)'
               : 'transparent',
           color: isSelected ? 'var(--selected-text)' : 'var(--sidebar-text)',
-          paddingLeft: depth === 0 ? '2px' : `${depth * 10 + 6}px`,
+          paddingLeft: depth === 0 ? '2px' : `${depth * 14 + 6}px`,
           borderLeft: isSelected ? '2px solid var(--color-accent-primary)' : '2px solid transparent',
           borderRadius: isSelected ? '3px' : '0'
         }}
         tabIndex={0}
       >
         <div
-          className="flex-shrink-0 flex items-center justify-center opacity-80 group-hover/row:opacity-100"
+          className="flex-shrink-0 flex items-center justify-center opacity-80 group-hover/row:opacity-100 px-1"
           style={{ color: isSelected ? 'inherit' : color }}
         >
           <Icon size={isCompact ? 13 : 15} strokeWidth={1.5} />

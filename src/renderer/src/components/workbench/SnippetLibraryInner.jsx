@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useToast } from '../../hook/useToast'
 import ToastNotification from '../../utils/ToastNotification'
 import Workbench from './Workbench'
@@ -11,6 +11,7 @@ import KeyboardHandler from './manager/KeyboardHandler'
 import { useThemeManager } from '../../hook/useThemeManager'
 import { themeProps } from '../preference/theme/themeProps'
 import { usePagination } from '../../hook/pagination/usePagination'
+import { handleRenameSnippet } from '../../hook/handleRenameSnippet'
 
 // The Core Logic Component
 const SnippetLibraryInner = ({ snippetData }) => {
@@ -64,6 +65,9 @@ const SnippetLibraryInner = ({ snippetData }) => {
   const [selectedFolderId, setSelectedFolderId] = useState(null)
   const [selectedIds, setSelectedIds] = useState([])
   const { overlayMode, setOverlayMode } = useAdvancedSplitPane()
+
+  // Clipboard state for cut/copy/paste operations
+  const [clipboard, setClipboard] = useState(null) // { type: 'cut'|'copy', items: [{id, type, data}] }
 
   // Use pagination hook
   const handleSearchResults = useCallback((searchResults) => {
@@ -459,6 +463,136 @@ const SnippetLibraryInner = ({ snippetData }) => {
     }
   }
 
+  // Clipboard operations
+  const handleCopy = useCallback(() => {
+    if (selectedIds.length === 0) return
+
+    const items = selectedIds.map(id => {
+      const snippet = snippets.find(s => s.id === id)
+      if (snippet) return { id, type: 'snippet', data: snippet }
+
+      const folder = folders.find(f => f.id === id)
+      if (folder) return { id, type: 'folder', data: folder }
+
+      return null
+    }).filter(Boolean)
+
+    if (items.length > 0) {
+      setClipboard({ type: 'copy', items })
+      showToast(`Copied ${items.length} item${items.length > 1 ? 's' : ''}`, 'success')
+    }
+  }, [selectedIds, snippets, folders, showToast])
+
+  const handleCut = useCallback(() => {
+    if (selectedIds.length === 0) return
+
+    const items = selectedIds.map(id => {
+      const snippet = snippets.find(s => s.id === id)
+      if (snippet) return { id, type: 'snippet', data: snippet }
+
+      const folder = folders.find(f => f.id === id)
+      if (folder) return { id, type: 'folder', data: folder }
+
+      return null
+    }).filter(Boolean)
+
+    if (items.length > 0) {
+      setClipboard({ type: 'cut', items })
+      showToast(`Cut ${items.length} item${items.length > 1 ? 's' : ''}`, 'success')
+    }
+  }, [selectedIds, snippets, folders, showToast])
+
+  const handlePaste = useCallback(async () => {
+    if (!clipboard || clipboard.items.length === 0) return
+
+    const targetFolderId = selectedFolderId || null
+
+    try {
+      if (clipboard.type === 'cut') {
+        // Move existing items
+        for (const item of clipboard.items) {
+          if (item.type === 'snippet') {
+            await moveSnippet(item.id, targetFolderId)
+          } else if (item.type === 'folder') {
+            await moveFolder(item.id, targetFolderId)
+          }
+        }
+        setClipboard(null)
+        setSelectedIds([])
+        const destinationName = targetFolderId ? folders.find(f => f.id === targetFolderId)?.name || 'Unknown Folder' : 'Root'
+        showToast(`Moved ${clipboard.items.length} item${clipboard.items.length > 1 ? 's' : ''} to ${destinationName}`, 'success')
+      } else {
+        // Copy: create new items
+        let successCount = 0
+        for (const item of clipboard.items) {
+          if (item.type === 'snippet') {
+            // Generate unique name for duplicate snippets
+            const baseName = item.data.title || 'Untitled'
+            let finalName = baseName
+            let counter = 1
+
+            while (snippets.some(s =>
+              (s.title || '').toLowerCase() === finalName.toLowerCase() &&
+              (s.folder_id || null) === targetFolderId
+            )) {
+              finalName = `${baseName} (${counter})`
+              counter++
+            }
+
+            const newSnippet = {
+              ...item.data,
+              id: window.crypto?.randomUUID?.() || `snippet-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+              title: finalName,
+              folder_id: targetFolderId,
+              timestamp: Date.now()
+            }
+
+            await saveSnippet(newSnippet)
+            successCount++
+
+          } else if (item.type === 'folder') {
+            // Generate unique name for duplicate folders
+            const baseName = item.data.name || 'Untitled Folder'
+            let finalName = baseName
+            let counter = 1
+
+            while (folders.some(f =>
+              f.name.toLowerCase() === finalName.toLowerCase() &&
+              (f.parent_id || null) === targetFolderId
+            )) {
+              finalName = `${baseName} (${counter})`
+              counter++
+            }
+
+            const newFolder = {
+              ...item.data,
+              id: window.crypto?.randomUUID?.() || `folder-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+              name: finalName,
+              parent_id: targetFolderId,
+              created_at: Date.now(),
+              updated_at: Date.now()
+            }
+
+            await saveFolder(newFolder)
+            successCount++
+          }
+        }
+        showToast(`Pasted ${successCount} item${successCount > 1 ? 's' : ''}`, 'success')
+      }
+    } catch (error) {
+      console.error('Paste operation failed:', error)
+      showToast('Failed to paste items', 'error')
+    }
+  }, [clipboard, selectedFolderId, snippets, folders, moveSnippet, moveFolder, saveSnippet, saveFolder, showToast])
+
+  const handleSelectAll = useCallback(() => {
+    // Select all visible items (from current tree)
+    // This is a simplified version - in a real implementation you'd want to select all items in the current view
+    const allItemIds = [...snippets.map(s => s.id), ...folders.map(f => f.id)]
+    setSelectedIds(allItemIds)
+    showToast(`Selected ${allItemIds.length} items`, 'info')
+  }, [snippets, folders, showToast])
+
   const handleBulkDelete = (ids) => {
     openDeleteModal(
       ids,
@@ -648,6 +782,11 @@ const SnippetLibraryInner = ({ snippetData }) => {
           isSettingsOpen={isSettingsOpen}
           onCloseSettings={() => navigateTo('snippets')}
           onRename={handleRenameRequest}
+          // Clipboard operations
+          onCopy={handleCopy}
+          onCut={handleCut}
+          onPaste={handlePaste}
+          onSelectAll={handleSelectAll}
         />
       </div>
     </div>

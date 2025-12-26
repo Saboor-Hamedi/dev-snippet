@@ -95,7 +95,7 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
         const folderId = snippet.folder_id || null
         const existing = db
           .prepare(
-            'SELECT id FROM snippets WHERE title = ? COLLATE NOCASE AND id != ? AND (folder_id IS ?)'
+            'SELECT id FROM snippets WHERE title = ? COLLATE NOCASE AND id != ? AND (folder_id IS ?) AND is_draft = 0'
           )
           .get(snippet.title.trim(), snippet.id, folderId)
         if (existing) {
@@ -178,6 +178,18 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
 
   ipcMain.handle('db:saveFolder', (event, folder) => {
     try {
+      // Prevent duplicate folder names in the same parent (exclude soft deleted)
+      if (folder.name && folder.name.trim()) {
+        const parentId = folder.parent_id || null
+        const existing = db
+          .prepare(
+            'SELECT id FROM folders WHERE name = ? COLLATE NOCASE AND id != ? AND (parent_id IS ?) AND is_deleted = 0'
+          )
+          .get(folder.name.trim(), folder.id, parentId)
+        if (existing) {
+          throw new Error('DUPLICATE_FOLDER_NAME')
+        }
+      }
       const dbPayload = {
         id: folder.id,
         name: folder.name,

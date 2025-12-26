@@ -37,10 +37,18 @@ const SnippetSidebar = ({
   currentPage = 1,
   totalPages = 1,
   onPageChange = () => {},
-  enablePagination = true
+  enablePagination = true,
+  // Clipboard operations
+  onCopy,
+  onCut,
+  onPaste,
+  onSelectAll
 }) => {
   const [filter, setFilter] = useState('')
   const [contextMenu, setContextMenu] = useState(null)
+  const [showLocationModal, setShowLocationModal] = useState(false)
+  const [pendingCreationType, setPendingCreationType] = useState(null)
+  const [sidebarSelected, setSidebarSelected] = useState(false)
   const inputRef = React.useRef(null)
   const listRef = React.useRef(null)
   const parentRef = React.useRef(null)
@@ -65,7 +73,8 @@ const SnippetSidebar = ({
     onSelectionChange,
     onToggleFolder,
     inputRef,
-    listRef
+    listRef,
+    setSidebarSelected
   })
 
   // --- Creation Handlers ---
@@ -137,6 +146,19 @@ const SnippetSidebar = ({
     const isMulti = selectedIds.length > 1
     const menuItems = []
 
+    // Clipboard operations (always available when items are selected)
+    if (selectedIds.length > 0) {
+      menuItems.push(
+        { label: 'Cut', icon: '✂️', onClick: onCut },
+        { label: 'Copy', icon: '📋', onClick: onCopy },
+        { label: 'separator' }
+      )
+    }
+
+    // Paste operation (available when clipboard has items)
+    // menuItems.push({ label: 'Paste', icon: '📌', onClick: onPaste })
+    // menuItems.push({ label: 'separator' })
+
     if (type === 'folder') {
       menuItems.push({
         label: isMulti ? 'Delete Selected' : 'Delete',
@@ -144,6 +166,7 @@ const SnippetSidebar = ({
         onClick: () => (isMulti ? onDeleteBulk(selectedIds) : onDeleteFolder(itemData.id)),
         danger: true
       })
+      menuItems.push({ label: 'Paste', icon: '📌', onClick: onPaste })
       if (!isMulti) {
         menuItems.unshift(
           {
@@ -167,6 +190,7 @@ const SnippetSidebar = ({
         onClick: () => (isMulti ? onDeleteBulk(selectedIds) : onDeleteSnippet(itemData.id)),
         danger: true
       })
+      menuItems.push({ label: 'Paste', icon: '📌', onClick: onPaste })
       if (!isMulti) {
         menuItems.unshift({
           label: itemData.is_pinned ? 'Unpin' : 'Pin',
@@ -182,8 +206,11 @@ const SnippetSidebar = ({
     } else {
       // Background context menu
       menuItems.push(
-        { label: 'New Snippet', icon: FilePlus, onClick: () => startCreation('snippet', null) },
-        { label: 'New Folder', icon: FolderPlus, onClick: () => startCreation('folder', null) }
+        { label: 'New Snippet', icon: FilePlus, onClick: () => { setPendingCreationType('snippet'); setShowLocationModal(true) } },
+        { label: 'New Folder', icon: FolderPlus, onClick: () => { setPendingCreationType('folder'); setShowLocationModal(true) } },
+        { label: 'separator' },
+        { label: 'Paste', icon: '📌', onClick: onPaste },
+        { label: 'Select All', icon: '🎯', onClick: onSelectAll }
       )
     }
 
@@ -241,7 +268,7 @@ const SnippetSidebar = ({
       </SidebarHeader>
 
       <div
-        className="flex-1 overflow-hidden relative"
+        className={`flex-1 overflow-hidden relative ${sidebarSelected ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-600' : ''}`}
         ref={parentRef}
         onClick={handleBackgroundClick}
         onContextMenu={(e) => {
@@ -318,6 +345,24 @@ const SnippetSidebar = ({
         />
       )}
 
+      {showLocationModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowLocationModal(false)}>
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 max-w-sm w-full mx-4" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Choose Location</h3>
+            <div className="space-y-2">
+              <button className="w-full text-left p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-900 dark:text-white" onClick={() => { startCreation(pendingCreationType, null); setShowLocationModal(false) }}>
+                📁 Root
+              </button>
+              {folders.map(folder => (
+                <button key={folder.id} className="w-full text-left p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-900 dark:text-white" onClick={() => { startCreation(pendingCreationType, folder.id); setShowLocationModal(false) }}>
+                  📁 {folder.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
@@ -350,7 +395,12 @@ SnippetSidebar.propTypes = {
   currentPage: PropTypes.number,
   totalPages: PropTypes.number,
   onPageChange: PropTypes.func,
-  enablePagination: PropTypes.bool
+  enablePagination: PropTypes.bool,
+  // Clipboard operations
+  onCopy: PropTypes.func,
+  onCut: PropTypes.func,
+  onPaste: PropTypes.func,
+  onSelectAll: PropTypes.func
 }
 
 export default React.memo(SnippetSidebar)

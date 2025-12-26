@@ -39,6 +39,16 @@ const SnippetEditor = ({
   const [title, setTitle] = useState(initialSnippet?.title || '')
   const [justRenamed, setJustRenamed] = useState(false)
 
+  // Update title when initialSnippet changes (e.g., after rename)
+  useEffect(() => {
+    if (initialSnippet?.title && initialSnippet.title !== title) {
+      setTitle(initialSnippet.title)
+      setJustRenamed(true)
+      // Reset justRenamed after a short delay
+      setTimeout(() => setJustRenamed(false), 1000)
+    }
+  }, [initialSnippet?.title, title])
+
   const hideWelcomePage = getSetting('ui.hideWelcomePage') || false
   const saveTimerRef = useRef(null)
   const [isLargeFile, setIsLargeFile] = useState(false)

@@ -66,7 +66,12 @@ const Workbench = ({
   currentPage,
   totalPages,
   onPageChange,
-  enablePagination
+  enablePagination,
+  // Clipboard operations
+  onCopy,
+  onCut,
+  onPaste,
+  onSelectAll
 }) => {
   const { currentTheme } = useTheme()
   const handleSave = (snippet) => {
@@ -285,6 +290,11 @@ const Workbench = ({
                 totalPages={totalPages}
                 onPageChange={onPageChange}
                 enablePagination={enablePagination}
+                // Clipboard operations
+                onCopy={onCopy}
+                onCut={onCut}
+                onPaste={onPaste}
+                onSelectAll={onSelectAll}
               />
             )}
 
@@ -425,7 +435,12 @@ Workbench.propTypes = {
   currentPage: PropTypes.number,
   totalPages: PropTypes.number,
   onPageChange: PropTypes.func,
-  enablePagination: PropTypes.bool
+  enablePagination: PropTypes.bool,
+  // Clipboard operations
+  onCopy: PropTypes.func,
+  onCut: PropTypes.func,
+  onPaste: PropTypes.func,
+  onSelectAll: PropTypes.func
 }
 
 export default Workbench
