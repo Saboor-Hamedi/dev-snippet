@@ -96,14 +96,14 @@ const CreationInputRow = ({ style, depth, itemData, onConfirm, onCancel, isCompa
     <div style={style} className="pr-2">
       <div
         className="flex items-center w-full h-full pl-0 select-none"
-        style={{ paddingLeft: `${depth * 16 + 30}px` }}
+        style={{ paddingLeft: `${depth * 12 + 24}px` }}
       >
-        <div className="flex-1 flex items-center gap-[3px] bg-[var(--color-bg-secondary)] border border-[var(--color-accent-primary)]/50 rounded-sm h-[20px]">
+        <div className="flex-1 flex items-center gap-[6px] bg-[var(--color-bg-secondary)] border border-[var(--color-accent-primary)]/50 rounded-sm h-[20px]">
           <div
             className="flex-shrink-0 flex items-center justify-center opacity-80 pl-1 border-r border-[var(--color-border)]/30 pr-1"
             style={{ color: 'var(--sidebar-icon-color)' }}
           >
-            {isFolder ? <Folder size={isCompact ? 13 : 15} /> : <File size={isCompact ? 13 : 15} />}
+            {isFolder ? <Folder size={isCompact ? 13 : 14} /> : <File size={isCompact ? 13 : 14} />}
           </div>
           <input
             ref={inputRef}
@@ -132,23 +132,19 @@ const CreationInputRow = ({ style, depth, itemData, onConfirm, onCancel, isCompa
   )
 }
 
-// --- Indentation Guides ---
+// --- Indentation Guides (Obsidian Style: Strict Lines) ---
 const IndentGuides = ({ depth }) => {
   if (depth <= 0) return null
   return (
     <div
       className="absolute top-0 left-0 h-full pointer-events-none"
-      style={{ width: depth * 16 + 6 }}
+      style={{ width: depth * 12 + 6 }}
     >
       {Array.from({ length: depth }).map((_, i) => (
         <div
           key={i}
-          className={`absolute top-0 bottom-0 w-[1px] ${
-            i === depth - 1 
-              ? 'bg-gradient-to-b from-transparent via-[var(--color-accent-primary)] to-transparent opacity-60' 
-              : 'bg-gradient-to-b from-transparent via-[var(--color-border)] to-transparent opacity-30'
-          }`}
-          style={{ left: `${i * 16 + 16}px` }}
+          className="absolute top-0 bottom-0 w-[1px] bg-[var(--color-border)] opacity-30"
+          style={{ left: `${i * 12 + 12}px` }}
         />
       ))}
     </div>
@@ -317,21 +313,18 @@ const SnippetSidebarRow = ({ index, style, data }) => {
       >
         <IndentGuides depth={depth} />
         <div
-          className={`group flex items-center gap-[3px] w-full h-full select-none border-none outline-none focus:outline-none transition-all duration-150 pr-2 relative rounded-[5px] ${
+          className={`group flex items-center gap-[4px] w-full h-full select-none border-none outline-none focus:outline-none transition-all duration-150 pr-2 relative rounded-[4px] ${
             isSelected ? 'bg-[var(--selected-bg)]' : ''
           } ${
             isDragOver
               ? 'bg-[var(--selected-bg)] border border-[var(--color-accent-primary)]/30'
               : isSelected
                 ? ''
-                : 'hover:bg-white/10 focus:bg-[var(--selected-bg)]'
+                : 'hover:bg-white/[0.04] focus:bg-[var(--selected-bg)]'
           }`}
           style={{
             color: isSelected ? 'var(--selected-text)' : 'var(--sidebar-header-text)',
-            paddingLeft: `${depth * 16 + 6}px`,
-            borderLeft: isSelected
-              ? '2px solid var(--color-accent-primary)'
-              : '2px solid transparent',
+            paddingLeft: `${depth * 12 + 6}px`, // Tighter padding
             backgroundColor: isSelected ? 'var(--selected-bg)' : 'transparent'
           }}
         >
@@ -344,27 +337,27 @@ const SnippetSidebarRow = ({ index, style, data }) => {
             className={`flex-shrink-0 flex items-center justify-center rounded transition-all duration-200 w-4 h-4 ${
               isSelected
                 ? 'bg-white/10 hover:bg-white/20'
-                : 'opacity-60 hover:opacity-100 hover:bg-[var(--color-accent-primary)]/20'
+                : 'opacity-40 hover:opacity-100 hover:bg-[var(--color-accent-primary)]/10'
             }`}
           >
             <ChevronRight
-              size={isCompact ? 12 : 14}
+              size={isCompact ? 10 : 12} // Smaller chevron
               strokeWidth={2}
               className={`transition-transform duration-200 ${itemData.collapsed ? '' : 'rotate-90'}`}
-              style={{ color: isSelected ? 'var(--selected-text)' : 'var(--sidebar-icon-color)' }}
+              style={{ color: isSelected ? 'var(--selected-text)' : 'inherit' }}
             />
           </button>
 
           {/* Icon */}
           <div
-            className="flex-shrink-0 flex items-center justify-center opacity-80 group-hover:opacity-100 px-1"
+            className="flex-shrink-0 flex items-center justify-center opacity-70 group-hover:opacity-100 px-0.5"
             style={{ color: isSelected ? 'var(--selected-text)' : 'var(--sidebar-icon-color)' }}
           >
-            <Folder size={isCompact ? 13 : 15} strokeWidth={2} />
+            <Folder size={isCompact ? 13 : 14} strokeWidth={2} />
           </div>
 
           {/* Name */}
-          <span className="flex-1 min-w-0 text-left truncate font-semibold text-[12px] opacity-90 group-hover:opacity-100 pl-1">
+          <span className="flex-1 min-w-0 text-left truncate font-medium text-[12px] opacity-80 group-hover:opacity-100 pl-1 select-none">
             {itemData.name}
           </span>
 
@@ -389,8 +382,13 @@ const SnippetSidebarRow = ({ index, style, data }) => {
   const { icon: Icon, color } = getFileIcon(itemData.language, itemData.title)
 
   // Check if this item matches the current search query
-  const isSearchMatch = searchQuery && searchQuery.trim() && 
+  const isSearchMatch =
+    searchQuery &&
+    searchQuery.trim() &&
     (itemData.title || '').toLowerCase().includes(searchQuery.toLowerCase().trim())
+
+  // Determine icon color: Monochrome by default, Color on Hover/Selected
+  const finalIconColor = isSelected || isSearchMatch ? color : 'var(--sidebar-icon-color)' // Force gray
 
   return (
     <div style={style} className="relative group/row">
@@ -402,35 +400,56 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         onClick={handleItemClick}
         onKeyDown={(e) => handleItemKeyDown(e, index, itemData)}
         onContextMenu={(e) => onContextMenu(e, 'snippet', itemData)}
-        className={`flex items-center gap-[3px] w-full h-full select-none border-none outline-none focus:outline-none pr-2 relative ${
-          isCompact ? 'text-xs' : 'text-sm'
+        className={`flex items-center gap-[4px] w-full h-full select-none border-none outline-none focus:outline-none pr-2 relative ${
+          isCompact ? 'text-[11px]' : 'text-[12px]'
         } ${
-          isSelected 
-            ? 'bg-[var(--selected-bg)]' 
+          isSelected
+            ? 'bg-[var(--selected-bg)]'
             : isSearchMatch
               ? 'bg-[var(--color-accent-primary)]/10 hover:bg-[var(--color-accent-primary)]/15'
-              : 'hover:bg-white/[0.03] focus:bg-[var(--selected-bg)]'
-        }`}
+              : 'hover:bg-white/[0.04] focus:bg-[var(--selected-bg)]'
+        } rounded-[4px]`}
         style={{
-          backgroundColor: isSelected 
-            ? 'var(--selected-bg)' 
+          backgroundColor: isSelected
+            ? 'var(--selected-bg)'
             : isSearchMatch
               ? 'rgba(var(--color-accent-primary-rgb), 0.1)'
               : 'transparent',
           color: isSelected ? 'var(--selected-text)' : 'var(--sidebar-text)',
-          paddingLeft: depth === 0 ? '2px' : `${depth * 14 + 6}px`,
-          borderLeft: isSelected ? '2px solid var(--color-accent-primary)' : '2px solid transparent',
-          borderRadius: isSelected ? '3px' : '0'
+          paddingLeft: `${depth * 12 + 24}px` // Align with folders (chevron width compensation)
         }}
         tabIndex={0}
       >
         <div
-          className="flex-shrink-0 flex items-center justify-center opacity-80 group-hover/row:opacity-100 px-1"
-          style={{ color: isSelected ? 'inherit' : color }}
+          className={`flex-shrink-0 flex items-center justify-center px-0.5 transition-colors duration-200 ${
+            !isSelected
+              ? 'opacity-60 group-hover/row:opacity-100 group-hover/row:text-[color:var(--element-color)]'
+              : ''
+          }`}
+          style={{
+            '--element-color': color,
+            color: isSelected ? 'inherit' : 'var(--sidebar-icon-color)' // Default gray
+          }}
         >
-          <Icon size={isCompact ? 13 : 15} strokeWidth={1.5} />
+          {/* Apply hover color via CSS variable hack or js logic above */}
+          <Icon
+            size={isCompact ? 13 : 14}
+            strokeWidth={1.5}
+            style={{
+              color: isSelected ? 'inherit' : undefined // Let wrapper handle color or hover
+            }}
+            // On hover, we want the original color. React inline styles are tricky for hover.
+            // So we use the wrapper's css var approach or simple conditional if we want strict JS control.
+            // Since we want strict Obsidian feel, gray is best. Hover color is a nice bonus.
+          />
         </div>
-        <span className="flex-1 min-w-0 text-left truncate font-normal opacity-90 group-hover/row:opacity-100 normal-case pl-1">
+
+        {/* We need a specific hover effect for the icon to turn color. 
+            The wrapper has group-hover/row. We can use that. 
+            Actually, let's keep it simple: Gray by default. Colored if selected. 
+        */}
+
+        <span className="flex-1 min-w-0 text-left truncate font-normal opacity-80 group-hover/row:opacity-100 normal-case pl-1">
           <HighlightText text={itemData.title || 'Untitled'} highlight={searchQuery} />
         </span>
         {itemData.is_pinned === 1 && (

@@ -1,7 +1,9 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import ToggleButton from './ToggleButton'
-import { useSettings } from '../hook/useSettingsContext'
+import ToggleButton from '../../ToggleButton'
+import { useSettings } from '../../../hook/useSettingsContext'
+
+import './StatusBar.css'
 
 const SystemStatusFooter = ({ snippets = [] }) => {
   const { getSetting, updateSetting } = useSettings()
@@ -13,58 +15,45 @@ const SystemStatusFooter = ({ snippets = [] }) => {
   }, [])
 
   return (
-    <div
-      className="flex items-center justify-between px-3 py-0.5 select-none border-t"
-      style={{
-        backgroundColor: 'var(--footer-bg)',
-        color: 'var(--statusbar-text, var(--header-text))',
-        borderColor: 'var(--color-border)'
-      }}
-    >
-      <div
-        className="flex items-center gap-3 text-xs"
-        style={{ color: 'var(--statusbar-text, var(--header-text))' }}
-      >
+    <div className="status-bar-container text-xs">
+      <div className="status-bar-left">
         {/* System Ready */}
-        <div className="flex items-center gap-1.5 px-1 py-0.5 rounded hover:bg-white/5 transition-colors cursor-default">
+        <div className="status-bar-item">
           <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full"></div>
           <span className="font-mono tabular-nums opacity-80">System Ready</span>
         </div>
         {/* Version */}
-        <div className="px-1 py-0.5 rounded hover:bg-white/5 transition-colors cursor-default opacity-60">
+        <div className="status-bar-item opacity-60">
           <span className="font-mono tabular-nums">v{version}</span>
         </div>
-        <div className="w-px h-3 bg-white/10 mx-1"></div>
+        <div className="status-bar-divider"></div>
         <button
           onClick={() => window.dispatchEvent(new CustomEvent('app:toggle-flow'))}
           className="flex items-center gap-1.5 px-2 py-0.5 rounded hover:bg-blue-500/10 text-blue-400/80 hover:text-blue-400 transition-all group"
           title="Enter Flow Mode (Alt+Shift+F)"
         >
-          <span className="text-[14px] leading-none group-hover:scale-110 transition-transform">
+          <span className="text-xs leading-none group-hover:scale-110 transition-transform">
             🌀
           </span>
-          <span className="font-bold uppercase tracking-widest text-[10px]">Flow Mode</span>
+          <span className="font-mono text-xtiny opacity-90">Flow Mode</span>
         </button>
       </div>
 
-      <div
-        className="flex items-center gap-2 text-xs"
-        style={{ color: 'var(--statusbar-text, var(--header-text))' }}
-      >
+      <div className="status-bar-right">
         {/* Snippets Count */}
-        <div className="flex items-center gap-1 px-1 py-0.5 rounded hover:bg-white/5 transition-colors cursor-default opacity-80">
+        <div className="status-bar-item opacity-80">
           <span className="font-mono tabular-nums">{snippets.length}</span>
           <span className="font-mono tabular-nums">Snippets</span>
         </div>
         {/* Languages Count */}
-        <div className="flex items-center gap-1 px-1 py-0.5 rounded hover:bg-white/5 transition-colors cursor-default opacity-80">
+        <div className="status-bar-item opacity-80">
           <span className="font-mono tabular-nums">
             {new Set(snippets.map((s) => s.language)).size}
           </span>
           <span className="font-mono tabular-nums">Languages</span>
         </div>
 
-        <div className="w-px h-3 bg-white/10 mx-1"></div>
+        <div className="status-bar-divider"></div>
 
         <div className="flex items-center gap-2">
           <span className="opacity-60 px-1 py-0.5 font-mono tabular-nums hover:opacity-100 transition-opacity">

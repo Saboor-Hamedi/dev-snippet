@@ -20,7 +20,7 @@ const ActivityBar = ({
   ]
 
   return (
-    <div className="w-12 h-full flex flex-col items-center z-10 select-none transition-colors duration-300 bg-[var(--activity-bar-bg)] border-r border-[var(--color-border)]">
+    <div className="w-[40px] h-full flex flex-col items-center z-10 select-none transition-colors duration-300 bg-[var(--activity-bar-bg)] border-r border-[var(--color-border)]">
       <div className="flex flex-col w-full">
         {items.map((item) => {
           const isActive = activeTab === item.id
@@ -31,12 +31,13 @@ const ActivityBar = ({
             <button
               key={item.id}
               onClick={() => onTabChange(item.id)}
-              className="w-full h-12 flex items-center justify-center relative cursor-pointer transition-all duration-200"
+              className="w-full h-[40px] flex items-center justify-center relative cursor-pointer transition-all duration-200"
               style={itemStyle}
               title={item.label}
             >
               <div className="relative">
-                <Icon strokeWidth={isActive ? 2 : 1.5} size={22} color={itemStyle.color} />
+                {/* Native Look: 18px + Thin Stroke (1.5) */}
+                <Icon strokeWidth={isActive ? 2 : 1.5} size={18} color={itemStyle.color} />
 
                 {/* Badge for trash count */}
                 {item.badge > 0 && (
@@ -51,10 +52,10 @@ const ActivityBar = ({
                 )}
               </div>
 
-              {/* Active Indicator Bar (Left Border) */}
+              {/* Active Indicator Bar (Left Border) - Thinner/Smaller */}
               {isActive && (
                 <div
-                  className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-6 rounded-r-full"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-5 rounded-r-full"
                   style={styles.indicator}
                 />
               )}
@@ -66,18 +67,18 @@ const ActivityBar = ({
       <div className="mt-auto flex flex-col w-full">
         <button
           onClick={onSettings}
-          className="w-full h-12 flex items-center justify-center relative cursor-pointer transition-all duration-200"
+          className="w-full h-[40px] flex items-center justify-center relative cursor-pointer transition-all duration-200"
           style={styles.item(isSettingsOpen)}
           title="Settings"
         >
           <Settings
-            size={22}
+            size={18}
             strokeWidth={isSettingsOpen ? 2 : 1.5}
             color={styles.item(isSettingsOpen).color}
           />
           {isSettingsOpen && (
             <div
-              className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-6 rounded-r-full"
+              className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-5 rounded-r-full"
               style={styles.indicator}
             />
           )}

@@ -656,6 +656,7 @@ export const themes = [
       '--sidebar-border': '#404040',
       '--welcome-bg': '#171717',
       '--welcome-text': '#fafafa',
+
       '--gutter-bg-color': '#262626',
       '--gutter-border-color': '#404040',
       '--activity-bar-bg': '#262626',
@@ -800,6 +801,201 @@ export const themes = [
       }
     },
     previewColors: ['bg-[#ffffff]', 'bg-[#f6f6f6]', 'bg-gray-900']
+  },
+  {
+    id: 'magma',
+    name: 'Magma',
+    icon: '🌋',
+    description: 'Volcanic Dark & Orange',
+    colors: {
+      '--color-bg-primary': '#1c1917',
+      '--color-bg-secondary': '#292524',
+      '--color-bg-tertiary': '#44403c',
+      '--color-text-primary': '#ffffff',
+      '--color-text-secondary': '#d6d3d1',
+      '--color-text-tertiary': '#a8a29e',
+      '--color-accent-primary': '#f97316',
+      '--color-border': '#44403c',
+      '--hover-bg': '#404040',
+      '--hover-text': '#f97316',
+      '--selected-bg': '#431407',
+      '--selected-text': '#fdba74',
+      '--sidebar-text': '#d6d3d1',
+      '--sidebar-header-text': '#a8a29e',
+      // Search Highlighting
+      '--search-match-bg': 'rgba(249, 115, 22, 0.2)',
+      '--search-match-border': 'rgba(249, 115, 22, 0.4)',
+      '--search-match-current-bg': 'rgba(249, 115, 22, 0.45)',
+      '--search-match-current-border': 'rgba(249, 115, 22, 0.8)',
+      // Syntax Highlighting (Magma)
+      '--color-syntax-string': '#fb923c',
+      '--color-syntax-variable': '#fcd34d',
+      '--color-syntax-number': '#fbbf24',
+      '--color-syntax-boolean': '#f97316',
+      '--color-syntax-null': '#a8a29e',
+      '--color-syntax-keyword': '#f97316',
+      '--color-syntax-comment': '#78716c',
+      '--color-syntax-punctuation': '#d6d3d1',
+      // Component-specific variables
+      '--editor-bg': '#1c1917',
+      '--editor-text': '#ffffff',
+      '--gutter-text-color': '#78716c',
+      '--statusbar-bg': '#292524',
+      '--statusbar-text': '#d6d3d1',
+      '--header-bg': '#1c1917',
+      '--header-text': '#ffffff',
+      '--sidebar-bg': '#292524',
+      '--sidebar-border': '#44403c',
+      '--welcome-bg': '#1c1917',
+      '--welcome-text': '#ffffff',
+      // Gutter variables
+      '--gutter-bg-color': '#292524',
+      '--gutter-border-color': '#44403c',
+      '--activity-bar-bg': '#292524',
+      '--activity-bar-active-fg': '#f97316',
+      '--activity-bar-inactive-fg': 'rgba(255, 255, 255, 0.4)',
+      '--activity-bar-active-border': '#f97316',
+      '--activity-bar-badge-bg': '#f97316',
+      '--activity-bar-badge-fg': '#ffffff',
+      background: '#1c1917',
+      sidebar: '#292524',
+      text: '#ffffff',
+      accent: '#f97316',
+      border: '#44403c'
+    },
+    // Settings presets that get applied to settings.json
+    settings: {
+      welcome: {
+        welcomePage: '#1c1917'
+      },
+      editor: {
+        editorBgColor: '#1c1917'
+      },
+      gutter: {
+        gutterBgColor: '#292524',
+        gutterBorderColor: '#44403c',
+        gutterBorderWidth: 1
+      },
+      cursor: {
+        color: '#f97316'
+      },
+      livePreview: {
+        bgColor: '#1c1917',
+        borderColor: '#44403c',
+        borderWidth: 1,
+        borderRound: 4
+      },
+      activityBar: {
+        bgColor: '#292524',
+        activeFg: '#f97316',
+        inactiveFg: 'rgba(255, 255, 255, 0.4)',
+        activeBorder: '#f97316',
+        badgeBg: '#f97316',
+        badgeFg: '#ffffff'
+      },
+      header: {
+        bgColor: '#1c1917',
+        textColor: '#ffffff',
+        iconColor: '#f97316',
+        borderColor: '#44403c'
+      },
+      ui: {
+        sidebarBg: '#292524',
+        sidebarIconColor: '#f97316',
+        statusBarBg: '#292524',
+        footerBg: '#292524',
+        headerBg: '#1c1917'
+      }
+    },
+    previewColors: ['bg-[#1c1917]', 'bg-[#292524]', 'bg-orange-500']
+  },
+  {
+    id: 'obsidian',
+    name: 'Obsidian',
+    icon: '🔮',
+    description: 'Second Brain Focus',
+    colors: {
+      '--color-bg-primary': '#161616', // Deep void editor
+      '--color-bg-secondary': '#202020', // Sidebar / App Shell
+      '--color-bg-tertiary': '#2a2a2a', // Inputs / Hovers
+      '--color-text-primary': '#dcddde', // High legibility gray
+      '--color-text-secondary': '#999999', // Muted metadata
+      '--color-text-tertiary': '#666666',
+      '--color-accent-primary': '#7c3aed', // Obsidian Purple
+      '--color-border': '#2f3136', // Ultra subtle
+      '--hover-bg': '#2a2a2a',
+      '--hover-text': '#dcddde',
+      '--selected-bg': '#2c2440', // Very deep purple tint
+      '--selected-text': '#a78bfa',
+      '--sidebar-text': '#999999', // Dimmed sidebar by default
+      '--sidebar-header-text': '#666666',
+      // Syntax Highlighting (Obsidian/Prism)
+      '--color-syntax-string': '#ce9178',
+      '--color-syntax-variable': '#9cdcfe',
+      '--color-syntax-number': '#b5cea8',
+      '--color-syntax-boolean': '#569cd6',
+      '--color-syntax-null': '#569cd6',
+      '--color-syntax-keyword': '#c586c0',
+      '--color-syntax-comment': '#6a9955',
+      '--color-syntax-punctuation': '#d4d4d4',
+      // Component Variables
+      '--editor-bg': '#161616',
+      '--editor-text': '#dcddde',
+      '--gutter-text-color': '#4a4a4a',
+      '--statusbar-bg': '#202020',
+      '--statusbar-text': '#666666',
+      '--header-bg': '#202020', // Blends with sidebar
+      '--header-text': '#999999',
+      '--sidebar-bg': '#202020',
+      '--sidebar-border': '#2f3136',
+      '--welcome-bg': '#161616',
+      '--welcome-text': '#dcddde',
+      '--gutter-bg-color': '#161616',
+      '--gutter-border-color': 'transparent',
+      '--activity-bar-bg': '#1a1a1a', // Slightly darker than sidebar
+      '--activity-bar-active-fg': '#7c3aed',
+      '--activity-bar-inactive-fg': '#404040',
+      '--activity-bar-active-border': '#7c3aed',
+      '--activity-bar-badge-bg': '#7c3aed',
+      '--activity-bar-badge-fg': '#ffffff',
+      background: '#161616',
+      sidebar: '#202020',
+      text: '#dcddde',
+      accent: '#7c3aed',
+      border: '#2f3136'
+    },
+    settings: {
+      welcome: { welcomePage: '#161616' },
+      editor: {
+        editorBgColor: '#161616',
+        fontFamily: 'JetBrains Mono'
+      },
+      gutter: { gutterBgColor: '#161616', gutterBorderColor: 'transparent', gutterBorderWidth: 0 },
+      cursor: { color: '#7c3aed' },
+      livePreview: { bgColor: '#161616', borderColor: '#2f3136', borderWidth: 1, borderRound: 4 },
+      activityBar: {
+        bgColor: '#1a1a1a',
+        activeFg: '#7c3aed',
+        inactiveFg: '#404040',
+        activeBorder: '#7c3aed',
+        badgeBg: '#7c3aed',
+        badgeFg: '#ffffff'
+      },
+      header: {
+        bgColor: '#202020',
+        textColor: '#999999',
+        iconColor: '#999999',
+        borderColor: 'transparent' // Frameless look
+      },
+      ui: {
+        sidebarBg: '#202020',
+        sidebarIconColor: '#7c3aed',
+        statusBarBg: '#202020',
+        footerBg: '#202020',
+        headerBg: '#202020'
+      }
+    },
+    previewColors: ['bg-[#161616]', 'bg-[#202020]', 'bg-purple-600']
   }
 ]
 

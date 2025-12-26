@@ -409,7 +409,6 @@ h6 {
 }
 
 /* Status bar and toolbar */
-.status-bar,
 .toolbar,
 .header-toolbar {
   background-color: var(--color-bg-secondary) !important;

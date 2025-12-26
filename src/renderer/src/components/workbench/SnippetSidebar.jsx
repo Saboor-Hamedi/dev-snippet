@@ -1,6 +1,15 @@
 import React, { useState } from 'react'
 import PropTypes from 'prop-types'
-import { Search, Trash2, Edit2, FilePlus, FolderPlus, Pin } from 'lucide-react'
+import {
+  Search,
+  Trash2,
+  Edit2,
+  FilePlus,
+  FolderPlus,
+  Pin,
+  ChevronsUp,
+  RefreshCw
+} from 'lucide-react'
 import SidebarHeader from '../layout/SidebarHeader'
 import VirtualList from '../common/VirtualList'
 import ContextMenu from '../common/ContextMenu'
@@ -206,8 +215,22 @@ const SnippetSidebar = ({
     } else {
       // Background context menu
       menuItems.push(
-        { label: 'New Snippet', icon: FilePlus, onClick: () => { setPendingCreationType('snippet'); setShowLocationModal(true) } },
-        { label: 'New Folder', icon: FolderPlus, onClick: () => { setPendingCreationType('folder'); setShowLocationModal(true) } },
+        {
+          label: 'New Snippet',
+          icon: FilePlus,
+          onClick: () => {
+            setPendingCreationType('snippet')
+            setShowLocationModal(true)
+          }
+        },
+        {
+          label: 'New Folder',
+          icon: FolderPlus,
+          onClick: () => {
+            setPendingCreationType('folder')
+            setShowLocationModal(true)
+          }
+        },
         { label: 'separator' },
         { label: 'Paste', icon: '📌', onClick: onPaste },
         { label: 'Select All', icon: '🎯', onClick: onSelectAll }
@@ -243,27 +266,56 @@ const SnippetSidebar = ({
       className="h-full flex flex-col w-full"
       style={{ backgroundColor: 'var(--sidebar-bg)', color: 'var(--sidebar-text)' }}
     >
-      <SidebarHeader className="gap-2 z-10 relative">
+      <SidebarHeader className="gap-2 z-10 relative pr-0.5">
         <div className="relative group flex-1">
-          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-500" />
+          <Search
+            className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 opacity-50"
+            style={{ color: 'var(--color-text-secondary)' }}
+          />
           <input
             ref={inputRef}
             type="text"
             placeholder="Search..."
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="
-                w-full rounded-md py-1.5 pl-8 pr-4 
-                text-[12px] 
-                outline-none ring-1 ring-transparent focus:ring-[var(--color-accent-primary)] 
-                transition-all
-              "
+            className="w-full rounded-md py-1.5 pl-8 pr-4 text-[12px] outline-none ring-1 ring-transparent focus:ring-[var(--color-accent)] transition-all bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] placeholder-[var(--color-text-secondary)]"
             style={{
-              backgroundColor: 'var(--color-bg-tertiary)',
               color: 'var(--color-text-primary)'
             }}
           />
-          <div className="absolute right-3 top-1/2 h-3 w-[1px] -translate-y-1/2 bg-[var(--color-accent-primary)] animate-pulse" />
+        </div>
+
+        {/* Action Icons - Obsidian Style */}
+        <div className="flex items-center gap-0.5">
+          <button
+            onClick={() => onNew(null, selectedFolderId)}
+            className="p-1 rounded opacity-60 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all"
+            title="New Snippet"
+            style={{ color: 'var(--sidebar-text)' }}
+          >
+            <FilePlus size={16} strokeWidth={2} />
+          </button>
+          <button
+            onClick={() => onNewFolder(null, selectedFolderId)}
+            className="p-1 rounded opacity-60 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all"
+            title="New Folder"
+            style={{ color: 'var(--sidebar-text)' }}
+          >
+            <FolderPlus size={16} strokeWidth={2} />
+          </button>
+          <button
+            onClick={() => {
+              // Collapse all folders logic (mock or real)
+              // If we don't have a bulk action, we can trigger individual collapses or reload
+              // For now, let's just refresh/deselect as a placeholder or remove if not functional.
+              onSelect(null) // Deselect
+            }}
+            className="p-1 rounded opacity-60 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all"
+            title="Collapse / Deselect All"
+            style={{ color: 'var(--sidebar-text)' }}
+          >
+            <ChevronsUp size={16} strokeWidth={2} />
+          </button>
         </div>
       </SidebarHeader>
 
@@ -346,15 +398,36 @@ const SnippetSidebar = ({
       )}
 
       {showLocationModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowLocationModal(false)}>
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 max-w-sm w-full mx-4" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Choose Location</h3>
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={() => setShowLocationModal(false)}
+        >
+          <div
+            className="bg-white dark:bg-gray-800 rounded-lg p-4 max-w-sm w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+              Choose Location
+            </h3>
             <div className="space-y-2">
-              <button className="w-full text-left p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-900 dark:text-white" onClick={() => { startCreation(pendingCreationType, null); setShowLocationModal(false) }}>
+              <button
+                className="w-full text-left p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-900 dark:text-white"
+                onClick={() => {
+                  startCreation(pendingCreationType, null)
+                  setShowLocationModal(false)
+                }}
+              >
                 📁 Root
               </button>
-              {folders.map(folder => (
-                <button key={folder.id} className="w-full text-left p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-900 dark:text-white" onClick={() => { startCreation(pendingCreationType, folder.id); setShowLocationModal(false) }}>
+              {folders.map((folder) => (
+                <button
+                  key={folder.id}
+                  className="w-full text-left p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-900 dark:text-white"
+                  onClick={() => {
+                    startCreation(pendingCreationType, folder.id)
+                    setShowLocationModal(false)
+                  }}
+                >
                   📁 {folder.name}
                 </button>
               ))}
@@ -362,7 +435,6 @@ const SnippetSidebar = ({
           </div>
         </div>
       )}
-
     </div>
   )
 }

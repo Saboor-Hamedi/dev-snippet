@@ -9,9 +9,8 @@ import SidebarTheme from '../preference/SidebarTheme'
 import SnippetSidebar from './SnippetSidebar'
 import TrashSidebar from './TrashSidebar'
 import ActivityBar from '../layout/activityBar/ActivityBar'
-import StatusBar from '../StatusBar'
+import { StatusBar, SystemStatusFooter } from '../layout/StatusBar'
 import { useModal } from './manager/ModalContext'
-import SystemStatusFooter from '../SystemStatusFooter'
 import FlowStatusBadge from './FlowStatusBadge'
 import LivePreview from '../livepreview/LivePreview'
 import { useTheme } from '../../hook/useTheme'
@@ -229,10 +228,10 @@ const Workbench = ({
         {(settings?.ui?.showActivityBar !== false || showFlowMode) && (
           <div
             style={{
-              width: showFlowMode ? 0 : 48,
+              width: showFlowMode ? 0 : 40,
               opacity: showFlowMode ? 0 : 1,
               overflow: 'hidden',
-              transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
             }}
           >
             <ActivityBar
@@ -253,10 +252,10 @@ const Workbench = ({
             width: isSidebarOpen && !showFlowMode ? 250 : 0,
             opacity: isSidebarOpen && !showFlowMode ? 1 : 0,
             borderRightWidth: isSidebarOpen && !showFlowMode ? 1 : 0,
-            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
           }}
         >
-          <div className="h-full w-full flex flex-col overflow-hidden">
+          <div className="h-full min-w-[250px] w-[250px] flex flex-col overflow-hidden">
             {activeSidebarTab === 'explorer' && (
               <SnippetSidebar
                 isOpen={isSidebarOpen}

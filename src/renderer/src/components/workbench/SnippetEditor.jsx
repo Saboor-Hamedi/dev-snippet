@@ -4,7 +4,7 @@ import { useKeyboardShortcuts } from '../../hook/useKeyboardShortcuts.js'
 import { useEditorFocus } from '../../hook/useEditorFocus.js'
 import { useZoomLevel } from '../../hook/useSettingsContext' // Fixed import source
 import WelcomePage from '../WelcomePage.jsx'
-import StatusBar from '../StatusBar.jsx'
+import { StatusBar } from '../layout/StatusBar'
 import CodeEditor from '../CodeEditor/CodeEditor.jsx'
 import LivePreview from '../livepreview/LivePreview.jsx'
 import Prompt from '../modal/Prompt.jsx'
