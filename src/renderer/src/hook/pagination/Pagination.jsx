@@ -27,7 +27,11 @@ const Pagination = ({ currentPage, totalPages, onPageChange, className = '' }) =
     }
 
     // Show pages around current
-    for (let i = Math.max(1, currentPage - delta); i <= Math.min(totalPages, currentPage + delta); i++) {
+    for (
+      let i = Math.max(1, currentPage - delta);
+      i <= Math.min(totalPages, currentPage + delta);
+      i++
+    ) {
       pages.push(i)
     }
 
@@ -43,7 +47,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange, className = '' }) =
   }
 
   return (
-    <div className={`flex items-center justify-between p-2 ${className}`}>
+    <div className={`flex items-center justify-between px-3 py-0.5 ${className}`}>
       {/* Previous Button */}
       <button
         onClick={(e) => {
@@ -51,7 +55,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange, className = '' }) =
           onPageChange(currentPage - 1)
         }}
         disabled={currentPage === 1}
-        className="px-3 py-1 text-xs hover:bg-white/5 disabled:cursor-not-allowed rounded transition-colors"
+        className="px-2 py-0.5 text-xtiny hover:bg-white/5 disabled:cursor-not-allowed rounded transition-colors"
         style={{
           backgroundColor: 'var(--color-bg-tertiary)',
           color: 'var(--sidebar-text)',
@@ -62,7 +66,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange, className = '' }) =
       </button>
 
       {/* Page Info */}
-      <span className="px-3 py-1 text-xs text-gray-400">
+      <span className="px-2 py-0.5 text-xtiny text-gray-400 hover:bg-white/5 rounded cursor-pointer transition-colors">
         {currentPage} of {totalPages}
       </span>
 
@@ -73,7 +77,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange, className = '' }) =
           onPageChange(currentPage + 1)
         }}
         disabled={currentPage === totalPages}
-        className="px-3 py-1 text-xs hover:bg-white/5 disabled:cursor-not-allowed rounded transition-colors"
+        className="px-2 py-0.5 text-xtiny hover:bg-white/5 disabled:cursor-not-allowed rounded transition-colors"
         style={{
           backgroundColor: 'var(--color-bg-tertiary)',
           color: 'var(--sidebar-text)',

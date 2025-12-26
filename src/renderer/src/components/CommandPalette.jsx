@@ -133,6 +133,13 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
         action: () => window.api.closeWindow()
       },
       {
+        id: 'cmd-reset-window',
+        title: 'Reset Window Layout',
+        icon: Layout,
+        description: 'Restore default sidebar, activity bar, and exit modes',
+        action: () => window.dispatchEvent(new CustomEvent('app:reset-layout'))
+      },
+      {
         id: 'cmd-toggle-zen',
         title: 'Toggle All Sidebars (Zen Mode)',
         icon: Monitor,

@@ -62,6 +62,9 @@ const SystemStatusFooter = ({ snippets = [] }) => {
           <ToggleButton
             checked={hideWelcomePage}
             onChange={(checked) => updateSetting('welcome.hideWelcomePage', checked)}
+            width={30}
+            height={16}
+            padding={2}
           />
         </div>
       </div>

@@ -12,6 +12,7 @@ import { useThemeManager } from '../../hook/useThemeManager'
 import { themeProps } from '../preference/theme/themeProps'
 import { usePagination } from '../../hook/pagination/usePagination'
 import { handleRenameSnippet } from '../../hook/handleRenameSnippet'
+import { useFlowMode } from '../FlowMode/useFlowMode'
 
 // The Core Logic Component
 const SnippetLibraryInner = ({ snippetData }) => {
@@ -54,6 +55,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
   // Ensure global settings are applied when this component mounts/updates
   useFontSettings()
   useThemeManager()
+  useFlowMode({ showPreview, togglePreview })
 
   const isCompact = getSetting('ui.compactMode') || false
   const setIsCompact = (val) => updateSetting('ui.compactMode', val)
@@ -70,16 +72,19 @@ const SnippetLibraryInner = ({ snippetData }) => {
   const [clipboard, setClipboard] = useState(null) // { type: 'cut'|'copy', items: [{id, type, data}] }
 
   // Use pagination hook
-  const handleSearchResults = useCallback((searchResults) => {
-    // Auto-select first search result if available and pagination allows it
-    if (searchResults.length > 0) {
-      const firstResult = searchResults[0]
-      setSelectedSnippet(firstResult)
-      setSelectedFolderId(null)
-      setSelectedIds([firstResult.id])
-      navigateTo('editor')
-    }
-  }, [setSelectedSnippet, setSelectedFolderId, setSelectedIds, navigateTo])
+  const handleSearchResults = useCallback(
+    (searchResults) => {
+      // Auto-select first search result if available and pagination allows it
+      if (searchResults.length > 0) {
+        const firstResult = searchResults[0]
+        setSelectedSnippet(firstResult)
+        setSelectedFolderId(null)
+        setSelectedIds([firstResult.id])
+        navigateTo('editor')
+      }
+    },
+    [setSelectedSnippet, setSelectedFolderId, setSelectedIds, navigateTo]
+  )
 
   const {
     paginatedSnippets,
@@ -99,12 +104,15 @@ const SnippetLibraryInner = ({ snippetData }) => {
   } = usePagination(snippets, null, handleSearchResults)
 
   // Wrap handleSearchSnippets to clear folder selection when search is cleared
-  const handleSearchSnippetsWrapped = useCallback((query) => {
-    handleSearchSnippets(query)
-    if (!query || !query.trim()) {
-      setSelectedFolderId(null)
-    }
-  }, [handleSearchSnippets, setSelectedFolderId])
+  const handleSearchSnippetsWrapped = useCallback(
+    (query) => {
+      handleSearchSnippets(query)
+      if (!query || !query.trim()) {
+        setSelectedFolderId(null)
+      }
+    },
+    [handleSearchSnippets, setSelectedFolderId]
+  )
 
   // Lifted Sidebar State - defaults to closed, remembers last state
   const isSidebarOpen = settings?.ui?.showSidebar !== false
@@ -261,23 +269,19 @@ const SnippetLibraryInner = ({ snippetData }) => {
       updateSetting('ui.showSidebar', next)
       showToast(next ? 'Workspace expanded' : 'Zen Mode enabled', 'info')
     }
-    const onCommandFlow = () => {
-      const current = settings?.ui?.showFlowMode || false
-      const next = !current
-      updateSetting('ui.showFlowMode', next)
-
-      // Auto-close standard preview to avoid layout conflicts in Flow Mode
-      if (next && showPreview) {
-        togglePreview()
-      }
-
-      if (next && window.api?.setFlowSize) {
-        window.api.setFlowSize()
-      } else if (!next && window.api?.restoreDefaultSize) {
+    const onCommandReset = () => {
+      updateSetting('ui.showFlowMode', false)
+      // updateSetting('ui.showSidebar', true)
+      updateSetting('ui.showActivityBar', true)
+      updateSetting('ui.showHeader', true)
+      updateSetting('ui.showStatusBar', true)
+      // showToast('Window layout reset', 'success')
+      // Try to restore window size if API available
+      if (window.api?.restoreDefaultSize) {
         window.api.restoreDefaultSize()
       }
-      // showToast(next ? 'Flow Mode enabled' : 'Flow Mode disabled', 'info')
     }
+    // Flow Mode logic moved to useFlowMode hook
     const onCommandCopyImage = () => {
       if (selectedSnippet) openImageExportModal(selectedSnippet)
       else showToast('Open a snippet to export as image', 'info')
@@ -320,7 +324,8 @@ const SnippetLibraryInner = ({ snippetData }) => {
     window.addEventListener('app:open-settings', onCommandSettings)
     window.addEventListener('app:toggle-activity-bar', onCommandActivityBar)
     window.addEventListener('app:toggle-zen', onCommandZen)
-    window.addEventListener('app:toggle-flow', onCommandFlow)
+    window.addEventListener('app:reset-layout', onCommandReset)
+    // window.addEventListener('app:toggle-flow', onCommandFlow) - Handled in useFlowMode
     window.addEventListener('app:command-copy-image', onCommandCopyImage)
     window.addEventListener('app:toggle-overlay', onCommandOverlay)
     window.addEventListener('app:export-pdf', onCommandExportPDF)
@@ -336,7 +341,8 @@ const SnippetLibraryInner = ({ snippetData }) => {
       window.removeEventListener('app:open-settings', onCommandSettings)
       window.removeEventListener('app:toggle-activity-bar', onCommandActivityBar)
       window.removeEventListener('app:toggle-zen', onCommandZen)
-      window.removeEventListener('app:toggle-flow', onCommandFlow)
+      window.removeEventListener('app:reset-layout', onCommandReset)
+      // window.removeEventListener('app:toggle-flow', onCommandFlow)
       window.removeEventListener('app:command-copy-image', onCommandCopyImage)
       window.removeEventListener('app:toggle-overlay', onCommandOverlay)
       window.removeEventListener('app:export-pdf', onCommandExportPDF)
@@ -426,10 +432,10 @@ const SnippetLibraryInner = ({ snippetData }) => {
     // This prevents unwanted pagination when clicking snippets already visible in sidebar
     if (enablePagination) {
       // Check if the snippet is already in the current paginated results
-      const isSnippetVisible = paginatedSnippets.some(snippet => snippet.id === s.id)
+      const isSnippetVisible = paginatedSnippets.some((snippet) => snippet.id === s.id)
       if (!isSnippetVisible) {
         // Snippet is not visible, calculate which page it should be on
-        const snippetIndex = snippets.findIndex(snippet => snippet.id === s.id)
+        const snippetIndex = snippets.findIndex((snippet) => snippet.id === s.id)
         if (snippetIndex !== -1) {
           const pageSize = getSetting('pagination.pageSize') || 5
           const targetPage = Math.floor(snippetIndex / pageSize) + 1
@@ -467,15 +473,17 @@ const SnippetLibraryInner = ({ snippetData }) => {
   const handleCopy = useCallback(() => {
     if (selectedIds.length === 0) return
 
-    const items = selectedIds.map(id => {
-      const snippet = snippets.find(s => s.id === id)
-      if (snippet) return { id, type: 'snippet', data: snippet }
+    const items = selectedIds
+      .map((id) => {
+        const snippet = snippets.find((s) => s.id === id)
+        if (snippet) return { id, type: 'snippet', data: snippet }
 
-      const folder = folders.find(f => f.id === id)
-      if (folder) return { id, type: 'folder', data: folder }
+        const folder = folders.find((f) => f.id === id)
+        if (folder) return { id, type: 'folder', data: folder }
 
-      return null
-    }).filter(Boolean)
+        return null
+      })
+      .filter(Boolean)
 
     if (items.length > 0) {
       setClipboard({ type: 'copy', items })
@@ -486,15 +494,17 @@ const SnippetLibraryInner = ({ snippetData }) => {
   const handleCut = useCallback(() => {
     if (selectedIds.length === 0) return
 
-    const items = selectedIds.map(id => {
-      const snippet = snippets.find(s => s.id === id)
-      if (snippet) return { id, type: 'snippet', data: snippet }
+    const items = selectedIds
+      .map((id) => {
+        const snippet = snippets.find((s) => s.id === id)
+        if (snippet) return { id, type: 'snippet', data: snippet }
 
-      const folder = folders.find(f => f.id === id)
-      if (folder) return { id, type: 'folder', data: folder }
+        const folder = folders.find((f) => f.id === id)
+        if (folder) return { id, type: 'folder', data: folder }
 
-      return null
-    }).filter(Boolean)
+        return null
+      })
+      .filter(Boolean)
 
     if (items.length > 0) {
       setClipboard({ type: 'cut', items })
@@ -519,8 +529,13 @@ const SnippetLibraryInner = ({ snippetData }) => {
         }
         setClipboard(null)
         setSelectedIds([])
-        const destinationName = targetFolderId ? folders.find(f => f.id === targetFolderId)?.name || 'Unknown Folder' : 'Root'
-        showToast(`Moved ${clipboard.items.length} item${clipboard.items.length > 1 ? 's' : ''} to ${destinationName}`, 'success')
+        const destinationName = targetFolderId
+          ? folders.find((f) => f.id === targetFolderId)?.name || 'Unknown Folder'
+          : 'Root'
+        showToast(
+          `Moved ${clipboard.items.length} item${clipboard.items.length > 1 ? 's' : ''} to ${destinationName}`,
+          'success'
+        )
       } else {
         // Copy: create new items
         let successCount = 0
@@ -531,17 +546,22 @@ const SnippetLibraryInner = ({ snippetData }) => {
             let finalName = baseName
             let counter = 1
 
-            while (snippets.some(s =>
-              (s.title || '').toLowerCase() === finalName.toLowerCase() &&
-              (s.folder_id || null) === targetFolderId
-            )) {
+            while (
+              snippets.some(
+                (s) =>
+                  (s.title || '').toLowerCase() === finalName.toLowerCase() &&
+                  (s.folder_id || null) === targetFolderId
+              )
+            ) {
               finalName = `${baseName} (${counter})`
               counter++
             }
 
             const newSnippet = {
               ...item.data,
-              id: window.crypto?.randomUUID?.() || `snippet-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+              id:
+                window.crypto?.randomUUID?.() ||
+                `snippet-${Date.now()}-${Math.random().toString(36).slice(2)}`,
               title: finalName,
               folder_id: targetFolderId,
               timestamp: Date.now()
@@ -549,24 +569,28 @@ const SnippetLibraryInner = ({ snippetData }) => {
 
             await saveSnippet(newSnippet)
             successCount++
-
           } else if (item.type === 'folder') {
             // Generate unique name for duplicate folders
             const baseName = item.data.name || 'Untitled Folder'
             let finalName = baseName
             let counter = 1
 
-            while (folders.some(f =>
-              f.name.toLowerCase() === finalName.toLowerCase() &&
-              (f.parent_id || null) === targetFolderId
-            )) {
+            while (
+              folders.some(
+                (f) =>
+                  f.name.toLowerCase() === finalName.toLowerCase() &&
+                  (f.parent_id || null) === targetFolderId
+              )
+            ) {
               finalName = `${baseName} (${counter})`
               counter++
             }
 
             const newFolder = {
               ...item.data,
-              id: window.crypto?.randomUUID?.() || `folder-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+              id:
+                window.crypto?.randomUUID?.() ||
+                `folder-${Date.now()}-${Math.random().toString(36).slice(2)}`,
               name: finalName,
               parent_id: targetFolderId,
               created_at: Date.now(),
@@ -583,12 +607,22 @@ const SnippetLibraryInner = ({ snippetData }) => {
       console.error('Paste operation failed:', error)
       showToast('Failed to paste items', 'error')
     }
-  }, [clipboard, selectedFolderId, snippets, folders, moveSnippet, moveFolder, saveSnippet, saveFolder, showToast])
+  }, [
+    clipboard,
+    selectedFolderId,
+    snippets,
+    folders,
+    moveSnippet,
+    moveFolder,
+    saveSnippet,
+    saveFolder,
+    showToast
+  ])
 
   const handleSelectAll = useCallback(() => {
     // Select all visible items (from current tree)
     // This is a simplified version - in a real implementation you'd want to select all items in the current view
-    const allItemIds = [...snippets.map(s => s.id), ...folders.map(f => f.id)]
+    const allItemIds = [...snippets.map((s) => s.id), ...folders.map((f) => f.id)]
     setSelectedIds(allItemIds)
     showToast(`Selected ${allItemIds.length} items`, 'info')
   }, [snippets, folders, showToast])

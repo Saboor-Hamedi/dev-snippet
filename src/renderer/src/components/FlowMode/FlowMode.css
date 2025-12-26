@@ -1,0 +1,83 @@
+/* ===== FLOW MODE (Formerly Focus Mode) ===== */
+.flow-mode-active {
+  background-color: var(--color-bg-primary) !important;
+}
+
+/* The background layer is now called "The Flow Convas" */
+.flow-convas {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  z-index: 40; /* Above sidebar */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  background-color: var(--color-bg-secondary) !important;
+  padding: 1.5rem !important;
+  /* Removed global drag to allow window edge resizing */
+  animation: flowConvasFade 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden; /* Prevent shadow spill causing scrollbars */
+  /* Removed will-change to prevent shaking */
+}
+
+@keyframes flowConvasFade {
+  from {
+    background-color: var(--color-bg-primary);
+  }
+  to {
+    background-color: var(--color-bg-secondary);
+  }
+}
+
+/* Invisible Drag Handle for Flow Mode */
+.flow-drag-handle {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 40px;
+  z-index: 50;
+  -webkit-app-region: drag;
+}
+
+/* The editor area within Flow Mode */
+.flow-content {
+  flex: none !important;
+  width: 600px !important;
+  height: 600px !important;
+  max-width: 90% !important;
+  max-height: 90% !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5); /* Reduced shadow */
+  background-color: var(--color-bg-primary) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border: none !important;
+  border-radius: 16px;
+  overflow: hidden;
+  -webkit-app-region: no-drag !important;
+  animation: flowIslandAppear 0.7s cubic-bezier(0.19, 1, 0.22, 1);
+  /* Removed will-change to prevent shaking */
+}
+
+@keyframes flowIslandAppear {
+  0% {
+    opacity: 0;
+    transform: scale(0.96) translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Ensure editor fills the flow content island */
+.flow-content > div {
+  flex: 1 !important;
+}
+
+/* Ensure editor fills the focused content */
+.focus-mode-content > div {
+  flex: 1 !important;
+}
