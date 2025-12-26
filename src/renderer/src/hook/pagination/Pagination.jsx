@@ -6,12 +6,17 @@ import PropTypes from 'prop-types'
  * Displays Previous, page numbers, Next with ellipsis for large page counts
  */
 const Pagination = ({ currentPage, totalPages, onPageChange, className = '' }) => {
-  // Temporarily remove condition to force show for testing
-  // if (totalPages <= 1) return null
+  // Don't render if there's only one page or invalid data
+  if (totalPages < 1 || currentPage < 1 || currentPage > totalPages) {
+    return null
+  }
 
   const generatePages = () => {
     const pages = []
     const delta = 1 // Number of pages to show around current page
+
+    // Handle edge cases
+    if (totalPages <= 1) return []
 
     // Always show first page
     if (1 < currentPage - delta) {

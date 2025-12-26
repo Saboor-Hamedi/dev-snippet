@@ -16,6 +16,7 @@ const SnippetSidebar = ({
   onNew,
   onNewFolder,
   onSearch,
+  searchQuery,
   onToggleFolder,
   onMoveSnippet,
   onMoveFolder,
@@ -35,7 +36,8 @@ const SnippetSidebar = ({
   showToast,
   currentPage = 1,
   totalPages = 1,
-  onPageChange = () => {}
+  onPageChange = () => {},
+  enablePagination = true
 }) => {
   const [filter, setFilter] = useState('')
   const [contextMenu, setContextMenu] = useState(null)
@@ -110,6 +112,12 @@ const SnippetSidebar = ({
 
   // --- Debounced Search ---
   React.useEffect(() => {
+    // Handle empty search immediately for better UX
+    if (!filter || !filter.trim()) {
+      if (onSearch) onSearch('')
+      return
+    }
+
     const timer = setTimeout(() => {
       if (onSearch) onSearch(filter)
     }, 300)
@@ -281,6 +289,7 @@ const SnippetSidebar = ({
               onContextMenu: handleContextMenu,
               lastSelectedIdRef,
               onTogglePin,
+              searchQuery,
               // Creation Props
               onConfirmCreation: handleConfirmCreation,
               onCancelCreation: cancelCreation
@@ -300,12 +309,14 @@ const SnippetSidebar = ({
         />
       )}
 
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={onPageChange}
-        className="border-t border-gray-600"
-      />
+      {enablePagination && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={onPageChange}
+          className="border-t border-gray-600"
+        />
+      )}
 
     </div>
   )
@@ -338,7 +349,8 @@ SnippetSidebar.propTypes = {
   showToast: PropTypes.func,
   currentPage: PropTypes.number,
   totalPages: PropTypes.number,
-  onPageChange: PropTypes.func
+  onPageChange: PropTypes.func,
+  enablePagination: PropTypes.bool
 }
 
 export default React.memo(SnippetSidebar)

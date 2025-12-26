@@ -67,7 +67,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
 
   // Use pagination hook
   const handleSearchResults = useCallback((searchResults) => {
-    // Auto-select first search result if available
+    // Auto-select first search result if available and pagination allows it
     if (searchResults.length > 0) {
       const firstResult = searchResults[0]
       setSelectedSnippet(firstResult)
@@ -83,14 +83,24 @@ const SnippetLibraryInner = ({ snippetData }) => {
     currentPage,
     hasSearchResults,
     isSearching,
+    searchQuery,
     handlePageChange,
     handleSearchSnippets,
     clearSearch,
     resetPagination,
     hasMultiplePages,
     canGoNext,
-    canGoPrevious
-  } = usePagination(snippets, selectedFolderId, 5, handleSearchResults)
+    canGoPrevious,
+    enablePagination
+  } = usePagination(snippets, null, handleSearchResults)
+
+  // Wrap handleSearchSnippets to clear folder selection when search is cleared
+  const handleSearchSnippetsWrapped = useCallback((query) => {
+    handleSearchSnippets(query)
+    if (!query || !query.trim()) {
+      setSelectedFolderId(null)
+    }
+  }, [handleSearchSnippets, setSelectedFolderId])
 
   // Lifted Sidebar State - defaults to closed, remembers last state
   const isSidebarOpen = settings?.ui?.showSidebar !== false
@@ -397,9 +407,36 @@ const SnippetLibraryInner = ({ snippetData }) => {
   }
 
   const handleSelectSnippet = (s) => {
+    if (!s) {
+      setSelectedSnippet(null)
+      setSelectedFolderId(null)
+      setSelectedIds([])
+      return
+    }
+
     setSelectedSnippet(s)
     setSelectedFolderId(null)
-    setSelectedIds(s ? [s.id] : [])
+    setSelectedIds([s.id])
+
+    // Only switch pages if pagination is enabled AND the snippet is not currently visible
+    // This prevents unwanted pagination when clicking snippets already visible in sidebar
+    if (enablePagination) {
+      // Check if the snippet is already in the current paginated results
+      const isSnippetVisible = paginatedSnippets.some(snippet => snippet.id === s.id)
+      if (!isSnippetVisible) {
+        // Snippet is not visible, calculate which page it should be on
+        const snippetIndex = snippets.findIndex(snippet => snippet.id === s.id)
+        if (snippetIndex !== -1) {
+          const pageSize = getSetting('pagination.pageSize') || 5
+          const targetPage = Math.floor(snippetIndex / pageSize) + 1
+
+          if (targetPage !== currentPage) {
+            handlePageChange(targetPage)
+          }
+        }
+      }
+    }
+
     navigateTo('editor')
   }
 
@@ -519,9 +556,11 @@ const SnippetLibraryInner = ({ snippetData }) => {
           currentContext={activeView}
           selectedSnippet={selectedSnippet}
           snippets={paginatedSnippets}
+          allSnippets={snippets}
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={handlePageChange}
+          enablePagination={enablePagination}
           setSnippets={setSnippets}
           saveSnippet={saveSnippet}
           folders={folders}
@@ -603,7 +642,8 @@ const SnippetLibraryInner = ({ snippetData }) => {
           onMoveFolder={moveFolder}
           onTogglePin={togglePinnedSnippet}
           onSelectSnippet={handleSelectSnippet}
-          onSearchSnippets={handleSearchSnippets}
+          onSearchSnippets={handleSearchSnippetsWrapped}
+          searchQuery={searchQuery}
           onOpenSettings={() => openSettingsModal()}
           isSettingsOpen={isSettingsOpen}
           onCloseSettings={() => navigateTo('snippets')}

@@ -9,7 +9,6 @@ export const useSidebarLogic = ({
   snippets,
   selectedIds,
   selectedFolderId,
-  selectedSnippet,
   onSelect,
   onSelectFolder,
   onSelectionChange,
@@ -86,8 +85,11 @@ export const useSidebarLogic = ({
       return result
     }
 
-    return flatten(folders, snippets)
-  }, [snippets, folders, createState])
+    // Always show the full tree from root
+    const result = flatten(folders, snippets, 0, null)
+    
+    return result
+  }, [snippets, folders, createState, selectedFolderId])
 
   const startCreation = useCallback(
     (type, parentId = null) => {
@@ -234,7 +236,18 @@ export const useSidebarLogic = ({
     [treeItems, handleSelectionInternal, listRef, inputRef, onSelect, onToggleFolder]
   )
 
-  // 4. Background Click Handler
+  // 4. Auto-scroll to selected item when selection changes externally
+  React.useEffect(() => {
+    if (selectedIds.length === 1 && listRef.current) {
+      const selectedId = selectedIds[0]
+      const itemIndex = treeItems.findIndex((item) => item.id === selectedId)
+      if (itemIndex !== -1) {
+        listRef.current.scrollToItem(itemIndex)
+      }
+    }
+  }, [selectedIds, treeItems])
+
+  // 5. Background Click Handler
   // Deselects everything when clicking empty space
   const handleBackgroundClick = useCallback(
     (e) => {

@@ -405,7 +405,7 @@ export const useSnippetData = () => {
       } else {
         await api.invoke('db:toggleFolderCollapse', id, collapsed)
       }
-      setFolders((prev) => prev.map((f) => (f.id === id ? { ...f, collapsed } : f)))
+      setFolders((prev) => prev.map((f) => (f.id === id ? { ...f, collapsed: collapsed ? 1 : 0 } : f)))
     } catch (error) {
       console.error('Failed to toggle folder:', error)
     }

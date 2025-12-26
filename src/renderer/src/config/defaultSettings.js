@@ -60,9 +60,12 @@ export const DEFAULT_SETTINGS = {
     sidebarWidth: 250,
     previewPosition: 'right',
     previewFontSize: 14,
-    previewPosition: 'right',
-    previewFontSize: 14,
     theme: 'system'
+  },
+  pagination: {
+    enablePagination: true, // Enable/disable pagination entirely
+    pageSize: 5, // Items per page (5-50 recommended)
+    autoSelectOnSearch: true // Auto-select first search result
   },
   activityBar: {
     bgColor: '#18181b',

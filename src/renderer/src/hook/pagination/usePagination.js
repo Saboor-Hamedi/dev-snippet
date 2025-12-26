@@ -1,14 +1,28 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useSettings } from '../useSettingsContext'
 
 /**
- * Custom hook for managing snippet pagination with search and folder filtering
+ * Custom hook for managing snippet pagination with search
  * @param {Array} snippets - All available snippets
- * @param {string|null} selectedFolderId - Currently selected folder ID
- * @param {number} pageSize - Number of items per page (default: 5)
  * @param {Function} onSearchResults - Callback when search results change (optional)
  * @returns {Object} - Pagination state and handlers
  */
-export const usePagination = (snippets, selectedFolderId, pageSize = 5, onSearchResults = null) => {
+export const usePagination = (snippets, onSearchResults = null) => {
+  const { getSetting } = useSettings()
+
+  // Get pagination settings
+  const enablePagination = useMemo(() => {
+    return getSetting('pagination.enablePagination') !== false
+  }, [getSetting])
+
+  const pageSize = useMemo(() => {
+    const setting = getSetting('pagination.pageSize') || 5
+    return Math.max(1, Math.min(setting, 50)) // Clamp between 1-50
+  }, [getSetting])
+
+  const autoSelectOnSearch = useMemo(() => {
+    return getSetting('pagination.autoSelectOnSearch') !== false
+  }, [getSetting])
   // Search and pagination state
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
@@ -28,10 +42,7 @@ export const usePagination = (snippets, selectedFolderId, pageSize = 5, onSearch
       )
     }
 
-    // Apply folder filter
-    if (selectedFolderId) {
-      filtered = filtered.filter(snippet => snippet.folder_id === selectedFolderId)
-    }
+    // Apply folder filter (removed - folders don't filter the view)
 
     // Sort: pinned first, then by timestamp DESC (newest first)
     filtered.sort((a, b) => {
@@ -40,10 +51,24 @@ export const usePagination = (snippets, selectedFolderId, pageSize = 5, onSearch
       return b.timestamp - a.timestamp
     })
 
+    // If pagination is disabled, return all filtered snippets
+    if (!enablePagination) {
+      return {
+        snippets: filtered,
+        totalItems: filtered.length,
+        totalPages: 1,
+        currentPage: 1,
+        hasSearchResults: searchQuery.trim() !== '' && filtered.length > 0,
+        searchQuery,
+        isSearching: searchQuery.trim() !== '',
+        filteredCount: filtered.length
+      }
+    }
+
     // Calculate pagination
     const totalItems = filtered.length
-    const totalPages = Math.ceil(totalItems / pageSize)
-    const safeCurrentPage = Math.min(currentPage, Math.max(1, totalPages))
+    const totalPages = Math.max(1, Math.ceil(totalItems / pageSize))
+    const safeCurrentPage = Math.max(1, Math.min(currentPage, totalPages))
     const startIndex = (safeCurrentPage - 1) * pageSize
     const endIndex = startIndex + pageSize
     const paginatedItems = filtered.slice(startIndex, endIndex)
@@ -55,30 +80,24 @@ export const usePagination = (snippets, selectedFolderId, pageSize = 5, onSearch
       currentPage: safeCurrentPage,
       hasSearchResults: searchQuery.trim() !== '' && filtered.length > 0,
       searchQuery,
-      isSearching: searchQuery.trim() !== ''
+      isSearching: searchQuery.trim() !== '',
+      filteredCount: filtered.length
     }
-  }, [snippets, searchQuery, selectedFolderId, currentPage, pageSize])
+  }, [snippets, searchQuery, currentPage, pageSize, enablePagination])
 
-  // Call onSearchResults callback when search results change
+  // Reset to page 1 when page size changes
+  // Note: We don't reset when selectedFolderId changes to preserve pagination state
+  // when switching between folder and all-snippets views
   useEffect(() => {
-    if (onSearchResults && searchQuery.trim()) {
-      const filtered = snippets.filter(snippet =>
-        (snippet.title || '').toLowerCase().includes(searchQuery.toLowerCase().trim()) ||
-        (snippet.code || '').toLowerCase().includes(searchQuery.toLowerCase().trim()) ||
-        (snippet.language || '').toLowerCase().includes(searchQuery.toLowerCase().trim()) ||
-        (Array.isArray(snippet.tags) ? snippet.tags.join(' ') : (snippet.tags || '')).toLowerCase().includes(searchQuery.toLowerCase().trim())
-      ).filter(snippet => !selectedFolderId || snippet.folder_id === selectedFolderId)
+    setCurrentPage(1)
+  }, [pageSize])
 
-      onSearchResults(filtered)
-    }
-  }, [searchQuery, snippets, selectedFolderId, onSearchResults])
-
-  // Update current page when filters change
+  // Reset to page 1 when starting a new search
   useEffect(() => {
-    if (currentPage !== filteredAndPaginatedSnippets.currentPage) {
-      setCurrentPage(filteredAndPaginatedSnippets.currentPage)
+    if (searchQuery.trim()) {
+      setCurrentPage(1)
     }
-  }, [filteredAndPaginatedSnippets.currentPage, currentPage])
+  }, [searchQuery])
 
   // Extract values for easier use
   const paginatedSnippets = filteredAndPaginatedSnippets.snippets
@@ -89,7 +108,7 @@ export const usePagination = (snippets, selectedFolderId, pageSize = 5, onSearch
   // Page change handler with bounds checking
   const handlePageChange = useCallback((newPage) => {
     const safePage = Math.max(1, Math.min(newPage, filteredAndPaginatedSnippets.totalPages))
-    if (safePage !== currentPage) {
+    if (safePage !== currentPage && safePage >= 1 && safePage <= filteredAndPaginatedSnippets.totalPages) {
       setCurrentPage(safePage)
     }
   }, [filteredAndPaginatedSnippets.totalPages, currentPage])
@@ -121,6 +140,9 @@ export const usePagination = (snippets, selectedFolderId, pageSize = 5, onSearch
     isSearching,
     searchQuery,
 
+    // Settings
+    enablePagination,
+
     // Actions
     handlePageChange,
     handleSearchSnippets,
@@ -128,10 +150,10 @@ export const usePagination = (snippets, selectedFolderId, pageSize = 5, onSearch
     resetPagination,
 
     // Computed values
-    hasMultiplePages: totalPages > 1,
-    isOnFirstPage: currentPage === 1,
-    isOnLastPage: currentPage === totalPages,
-    canGoNext: currentPage < totalPages,
-    canGoPrevious: currentPage > 1
+    hasMultiplePages: enablePagination && totalPages > 1,
+    isOnFirstPage: enablePagination && currentPage === 1,
+    isOnLastPage: enablePagination && currentPage === totalPages,
+    canGoNext: enablePagination && currentPage < totalPages,
+    canGoPrevious: enablePagination && currentPage > 1
   }
 }

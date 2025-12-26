@@ -20,6 +20,7 @@ const Workbench = ({
   activeView,
   selectedSnippet,
   snippets,
+  allSnippets,
   trash,
   onRestoreItem,
   onPermanentDeleteItem,
@@ -42,6 +43,7 @@ const Workbench = ({
   showToast,
   hideWelcomePage,
   onSearchSnippets,
+  searchQuery,
   isSidebarOpen,
   setIsSidebarOpen,
   onRename,
@@ -63,7 +65,8 @@ const Workbench = ({
   isSettingsOpen,
   currentPage,
   totalPages,
-  onPageChange
+  onPageChange,
+  enablePagination
 }) => {
   const { currentTheme } = useTheme()
   const handleSave = (snippet) => {
@@ -176,7 +179,7 @@ const Workbench = ({
         onNewProject={() => {}}
         onOpenSettings={onOpenSettings}
         onSelectSnippet={onSelectSnippet}
-        snippets={snippets || []}
+        snippets={allSnippets || snippets || []}
         activeView={activeView}
       />
     )
@@ -260,6 +263,7 @@ const Workbench = ({
                 onNew={onNewSnippet}
                 onNewFolder={onNewFolder}
                 onSearch={onSearchSnippets}
+                searchQuery={searchQuery}
                 onToggleFolder={onToggleFolder}
                 onMoveSnippet={onMoveSnippet}
                 onMoveFolder={onMoveFolder}
@@ -280,6 +284,7 @@ const Workbench = ({
                 currentPage={currentPage}
                 totalPages={totalPages}
                 onPageChange={onPageChange}
+                enablePagination={enablePagination}
               />
             )}
 
@@ -374,6 +379,7 @@ Workbench.propTypes = {
   activeView: PropTypes.string.isRequired,
   selectedSnippet: PropTypes.object,
   snippets: PropTypes.array,
+  allSnippets: PropTypes.array,
   onSave: PropTypes.func.isRequired,
   onCloseSnippet: PropTypes.func.isRequired,
   onCancelEditor: PropTypes.func,
@@ -418,7 +424,8 @@ Workbench.propTypes = {
   onTogglePreview: PropTypes.func,
   currentPage: PropTypes.number,
   totalPages: PropTypes.number,
-  onPageChange: PropTypes.func
+  onPageChange: PropTypes.func,
+  enablePagination: PropTypes.bool
 }
 
 export default Workbench

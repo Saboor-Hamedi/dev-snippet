@@ -52,7 +52,7 @@ export const normalizeSnippet = (snippet) => {
     type: snippet.type || 'snippet',
     tags: extractTags(code),
     timestamp: snippet.timestamp || Date.now(),
-    is_draft: snippet.is_draft || false,
+    is_draft: false, // Always mark as not draft when normalizing/saving
     is_pinned: snippet.is_pinned || 0,
     folder_id: snippet.folder_id || null
   }

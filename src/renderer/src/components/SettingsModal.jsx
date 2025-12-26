@@ -19,7 +19,8 @@ import {
   Database,
   FileJson,
   Info,
-  Cloud
+  Cloud,
+  List
 } from 'lucide-react'
 import { DEFAULT_SETTINGS } from '../config/defaultSettings'
 import CodeEditor from './CodeEditor/CodeEditor'
@@ -82,6 +83,7 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
     { id: 'editor', label: 'Editor', icon: Type },
     { id: 'appearance', label: 'Appearance', icon: Monitor },
     { id: 'behavior', label: 'Behavior', icon: Zap },
+    { id: 'pagination', label: 'Pagination', icon: List },
     { id: 'shortcuts', label: 'Shortcuts', icon: Keyboard },
     { id: 'sync', label: 'Sync', icon: Cloud },
     { id: 'system', label: 'System & Data', icon: Database },
@@ -432,6 +434,36 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
                         label="Auto Complete"
                         checked={localSettings.advanced?.enableAutoComplete !== false}
                         onChange={(v) => updateSetting('advanced.enableAutoComplete', v)}
+                      />
+                    </SettingSection>
+                  </div>
+                )}
+
+                {activeTab === 'pagination' && (
+                  <div className="animate-in slide-in-from-right-4 duration-300">
+                    <SettingSection title="Snippet List" icon={List}>
+                      <SettingToggle
+                        label="Enable Pagination"
+                        description="Split snippets into pages for better performance with large collections."
+                        checked={localSettings.pagination?.enablePagination !== false}
+                        onChange={(v) => updateSetting('pagination.enablePagination', v)}
+                      />
+                      {localSettings.pagination?.enablePagination !== false && (
+                        <SettingInput
+                          label="Items Per Page"
+                          description="Number of snippets to show per page (5-50 recommended)."
+                          type="number"
+                          min={5}
+                          max={50}
+                          value={localSettings.pagination?.pageSize || 5}
+                          onChange={(v) => updateSetting('pagination.pageSize', Math.max(5, Math.min(50, parseInt(v) || 5)))}
+                        />
+                      )}
+                      <SettingToggle
+                        label="Auto-Select on Search"
+                        description="Automatically select the first search result."
+                        checked={localSettings.pagination?.autoSelectOnSearch !== false}
+                        onChange={(v) => updateSetting('pagination.autoSelectOnSearch', v)}
                       />
                     </SettingSection>
                   </div>

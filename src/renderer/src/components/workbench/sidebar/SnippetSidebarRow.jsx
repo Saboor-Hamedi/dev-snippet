@@ -1,6 +1,38 @@
 import React, { useState } from 'react'
 import { File, Plus, ChevronDown, ChevronRight, Folder, Pin } from 'lucide-react'
 
+// Helper to highlight matching text
+const HighlightText = ({ text, highlight }) => {
+  if (!highlight || !highlight.trim()) return <span>{text}</span>
+  // Support multi-term highlighting (e.g. "react hook" highlights both)
+  const terms = highlight
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+
+  if (terms.length === 0) return <span>{text}</span>
+
+  const regex = new RegExp(`(${terms.join('|')})`, 'gi')
+  const parts = text.split(regex)
+  return (
+    <span className="opacity-100">
+      {parts.map((part, i) =>
+        regex.test(part) ? (
+          <span
+            key={`match-${i}`}
+            className="text-[var(--color-accent-primary)] font-bold decoration-[var(--color-accent-primary)]/30"
+          >
+            {part}
+          </span>
+        ) : (
+          <span key={`text-${i}`}>{part}</span>
+        )
+      )}
+    </span>
+  )
+}
+
 // Helper to get file icon
 const getFileIcon = (lang, title = '') => {
   let cleanTitle = (title || '').toLowerCase()
@@ -98,8 +130,12 @@ const IndentGuides = ({ depth }) => {
       {Array.from({ length: depth }).map((_, i) => (
         <div
           key={i}
-          className="absolute top-0 bottom-0 w-[1px] bg-[var(--color-border)] opacity-30"
-          style={{ left: `${i * 12 + 11}px` }}
+          className={`absolute top-0 bottom-0 w-[1px] ${
+            i === depth - 1 
+              ? 'bg-gradient-to-b from-transparent via-[var(--color-accent-primary)] to-transparent opacity-60' 
+              : 'bg-gradient-to-b from-transparent via-[var(--color-border)] to-transparent opacity-30'
+          }`}
+          style={{ left: `${i * 12 + 12}px` }}
         />
       ))}
     </div>
@@ -124,6 +160,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
     onContextMenu,
     lastSelectedIdRef,
     onTogglePin,
+    searchQuery,
     onConfirmCreation,
     onCancelCreation
   } = data
@@ -232,9 +269,13 @@ const SnippetSidebarRow = ({ index, style, data }) => {
     }
     // Single Click (Select One)
     else {
-      newSelection = [itemData.id]
-      if (type === 'snippet') onSelect(itemData)
-      else onSelectFolder(itemData.id)
+      if (type === 'snippet') {
+        newSelection = [itemData.id]
+        onSelect(itemData)
+      } else {
+        // For folders: toggle expand/collapse on normal click (don't select)
+        onToggleFolder(itemData.id, !item.isExpanded)
+      }
     }
 
     lastSelectedIdRef.current = itemData.id
@@ -275,7 +316,8 @@ const SnippetSidebarRow = ({ index, style, data }) => {
             paddingLeft: `${depth * 12 + 6}px`,
             borderLeft: isSelected
               ? '2px solid var(--color-accent-primary)'
-              : '2px solid transparent'
+              : '2px solid transparent',
+            borderRadius: isSelected ? '4px' : '0'
           }}
         >
           {/* Toggle Button */}
@@ -284,25 +326,26 @@ const SnippetSidebarRow = ({ index, style, data }) => {
               e.stopPropagation()
               onToggleFolder(itemData.id, !itemData.collapsed)
             }}
-            className="flex-shrink-0 flex items-center justify-center opacity-70 group-hover:opacity-100 hover:bg-white/10 rounded w-4 h-4"
+            className="flex-shrink-0 flex items-center justify-center opacity-60 group-hover:opacity-100 hover:bg-[var(--color-accent-primary)]/20 rounded transition-all duration-200 w-4 h-4"
           >
             <ChevronRight
               size={isCompact ? 12 : 14}
               strokeWidth={2}
               className={`transition-transform duration-200 ${itemData.collapsed ? '' : 'rotate-90'}`}
+              style={{ color: isSelected ? 'var(--selected-text)' : 'var(--sidebar-icon-color)' }}
             />
           </button>
 
           {/* Icon */}
           <div
             className="flex-shrink-0 flex items-center justify-center opacity-80 group-hover:opacity-100"
-            style={{ color: 'var(--sidebar-icon-color)' }}
+            style={{ color: isSelected ? 'var(--selected-text)' : 'var(--sidebar-icon-color)' }}
           >
             <Folder size={isCompact ? 13 : 15} strokeWidth={2} />
           </div>
 
           {/* Name */}
-          <span className="flex-1 min-w-0 text-left truncate font-medium text-[12px] opacity-80 group-hover:opacity-100 pl-1">
+          <span className="flex-1 min-w-0 text-left truncate font-semibold text-[12px] opacity-90 group-hover:opacity-100 pl-1">
             {itemData.name}
           </span>
 
@@ -326,6 +369,10 @@ const SnippetSidebarRow = ({ index, style, data }) => {
     selectedIds.includes(itemData.id) || (selectedSnippet?.id === itemData.id && !selectedFolderId)
   const { icon: Icon, color } = getFileIcon(itemData.language, itemData.title)
 
+  // Check if this item matches the current search query
+  const isSearchMatch = searchQuery && searchQuery.trim() && 
+    (itemData.title || '').toLowerCase().includes(searchQuery.toLowerCase().trim())
+
   return (
     <div style={style} className="relative group/row">
       <IndentGuides depth={depth} />
@@ -338,12 +385,23 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         onContextMenu={(e) => onContextMenu(e, 'snippet', itemData)}
         className={`flex items-center gap-[3px] w-full h-full select-none border-none outline-none focus:outline-none pr-2 relative ${
           isCompact ? 'text-xs' : 'text-sm'
-        } ${isSelected ? 'bg-[var(--selected-bg)]' : 'hover:bg-white/[0.03] focus:bg-[var(--selected-bg)]'}`}
+        } ${
+          isSelected 
+            ? 'bg-[var(--selected-bg)]' 
+            : isSearchMatch
+              ? 'bg-[var(--color-accent-primary)]/10 hover:bg-[var(--color-accent-primary)]/15'
+              : 'hover:bg-white/[0.03] focus:bg-[var(--selected-bg)]'
+        }`}
         style={{
-          backgroundColor: isSelected ? 'var(--selected-bg)' : 'transparent',
+          backgroundColor: isSelected 
+            ? 'var(--selected-bg)' 
+            : isSearchMatch
+              ? 'rgba(var(--color-accent-primary-rgb), 0.1)'
+              : 'transparent',
           color: isSelected ? 'var(--selected-text)' : 'var(--sidebar-text)',
-          paddingLeft: `${depth * 12 + 26}px`,
-          borderLeft: isSelected ? '2px solid var(--color-accent-primary)' : '2px solid transparent'
+          paddingLeft: depth === 0 ? '2px' : `${depth * 10 + 6}px`,
+          borderLeft: isSelected ? '2px solid var(--color-accent-primary)' : '2px solid transparent',
+          borderRadius: isSelected ? '3px' : '0'
         }}
         tabIndex={0}
       >
@@ -354,7 +412,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
           <Icon size={isCompact ? 13 : 15} strokeWidth={1.5} />
         </div>
         <span className="flex-1 min-w-0 text-left truncate font-normal opacity-90 group-hover/row:opacity-100 normal-case pl-1">
-          {itemData.title || 'Untitled'}
+          <HighlightText text={itemData.title || 'Untitled'} highlight={searchQuery} />
         </span>
         {itemData.is_pinned === 1 && (
           <div
