@@ -11,6 +11,7 @@ import { registerBackupHandlers } from './backup'
 import { registerDialogHandlers } from './dialog'
 import { registerUpdatesHandlers } from './updates'
 import { registerExportHandlers } from './export'
+import { registerSyncHandlers } from './sync'
 
 export const registerAllHandlers = (app, mainWindow, db, preparedStatements, getDB) => {
   // Register all IPC handlers
@@ -23,6 +24,10 @@ export const registerAllHandlers = (app, mainWindow, db, preparedStatements, get
   registerUpdatesHandlers(mainWindow)
   console.log('✅ Registering Export Handlers...')
   registerExportHandlers()
+
+  console.log('✅ Registering Sync Handlers...')
+  registerSyncHandlers(db)
+
   return {
     settingsHandlers
   }

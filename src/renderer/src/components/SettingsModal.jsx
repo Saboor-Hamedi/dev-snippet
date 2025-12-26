@@ -18,7 +18,8 @@ import {
   RefreshCw,
   Database,
   FileJson,
-  Info
+  Info,
+  Cloud
 } from 'lucide-react'
 import { DEFAULT_SETTINGS } from '../config/defaultSettings'
 import CodeEditor from './CodeEditor/CodeEditor'
@@ -37,6 +38,7 @@ const UpdateSettings = React.lazy(() => import('./settings/sections/UpdateSettin
 const KeyboardShortcuts = React.lazy(() => import('./settings/sections/KeyboardShortcuts'))
 const DataSettings = React.lazy(() => import('./settings/sections/DataSettings'))
 const UserSettings = React.lazy(() => import('./preference/UserSettings'))
+const SyncSettings = React.lazy(() => import('./settings/sections/SyncSettings'))
 // Appearance and Editor settings are kept inline to preserve specific custom logic + UI features that were missing in the external files
 
 const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) => {
@@ -81,6 +83,7 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
     { id: 'appearance', label: 'Appearance', icon: Monitor },
     { id: 'behavior', label: 'Behavior', icon: Zap },
     { id: 'shortcuts', label: 'Shortcuts', icon: Keyboard },
+    { id: 'sync', label: 'Sync', icon: Cloud },
     { id: 'system', label: 'System & Data', icon: Database },
     { id: 'json', label: 'Configuration', icon: FileJson },
     { id: 'defaults', label: 'defaults', icon: Info },
@@ -437,6 +440,12 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
                 {activeTab === 'shortcuts' && (
                   <div className="animate-in slide-in-from-right-4 duration-300">
                     <KeyboardShortcuts modKey={navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'} />
+                  </div>
+                )}
+
+                {activeTab === 'sync' && (
+                  <div className="animate-in slide-in-from-right-4  duration-300">
+                    <SyncSettings />
                   </div>
                 )}
 

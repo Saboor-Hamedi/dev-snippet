@@ -79,6 +79,13 @@ const api = {
   // New Secure Export
   exportJSON: (data) => electronAPI.ipcRenderer.invoke('export:json', data),
 
+  // GitHub Sync
+  syncSetToken: (token) => electronAPI.ipcRenderer.invoke('sync:setToken', token),
+  syncHasToken: () => electronAPI.ipcRenderer.invoke('sync:hasToken'),
+  syncGetToken: () => electronAPI.ipcRenderer.invoke('sync:getToken'),
+  syncBackup: () => electronAPI.ipcRenderer.invoke('sync:backup'),
+  syncRestore: () => electronAPI.ipcRenderer.invoke('sync:restore'),
+
   // Auto-Update
   checkForUpdates: () => electronAPI.ipcRenderer.invoke('updates:check'),
   downloadUpdate: () => electronAPI.ipcRenderer.invoke('updates:download'),

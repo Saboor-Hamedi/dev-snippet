@@ -18,5 +18,5 @@ export const useThemeManager = () => {
     setTheme(currentThemeId)
     prevSettingsRef.current = settings
     prevThemeIdRef.current = currentThemeId
-  }, [currentThemeId, settings, setTheme])
+  }, [currentThemeId, settings])
 }

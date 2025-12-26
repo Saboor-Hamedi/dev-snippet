@@ -4,6 +4,7 @@ import { Search, Trash2, Edit2, FilePlus, FolderPlus, Pin } from 'lucide-react'
 import SidebarHeader from '../layout/SidebarHeader'
 import VirtualList from '../common/VirtualList'
 import ContextMenu from '../common/ContextMenu'
+import Pagination from '../../hook/pagination/Pagination'
 import SnippetSidebarRow from './sidebar/SnippetSidebarRow'
 import { useSidebarLogic } from './sidebar/useSidebarLogic'
 
@@ -31,14 +32,16 @@ const SnippetSidebar = ({
   isOpen,
   onToggle,
   isCompact = false,
-  showToast
+  showToast,
+  currentPage = 1,
+  totalPages = 1,
+  onPageChange = () => {}
 }) => {
   const [filter, setFilter] = useState('')
   const [contextMenu, setContextMenu] = useState(null)
   const inputRef = React.useRef(null)
   const listRef = React.useRef(null)
   const parentRef = React.useRef(null)
-
   // --- Logic Hook ---
   const {
     treeItems,
@@ -296,6 +299,14 @@ const SnippetSidebar = ({
           onClose={() => setContextMenu(null)}
         />
       )}
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={onPageChange}
+        className="border-t border-gray-600"
+      />
+
     </div>
   )
 }
@@ -324,7 +335,10 @@ SnippetSidebar.propTypes = {
   isOpen: PropTypes.bool,
   onToggle: PropTypes.func,
   isCompact: PropTypes.bool,
-  showToast: PropTypes.func
+  showToast: PropTypes.func,
+  currentPage: PropTypes.number,
+  totalPages: PropTypes.number,
+  onPageChange: PropTypes.func
 }
 
 export default React.memo(SnippetSidebar)

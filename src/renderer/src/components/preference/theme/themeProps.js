@@ -1,4 +1,5 @@
 import { useSettings } from '../../../hook/useSettingsContext'
+import { useCallback } from 'react'
 import { themes } from './themes'
 import { applyThemeOverrides } from './themeOverrides'
 
@@ -23,7 +24,7 @@ export const themeProps = () => {
     }
   })
 
-  const applyTheme = async (themeId) => {
+  const applyTheme = useCallback(async (themeId) => {
     const theme = themes.find((t) => t.id === themeId)
     if (!theme) return
 
@@ -70,7 +71,7 @@ export const themeProps = () => {
       // but preventing flat keys here is the most critical step.
       updateSettings(futureSettings)
     }
-  }
+  }, [settings, updateSettings])
 
   // Separate function for CSS application
   const applyThemeCSS = (theme, activeSettings = settings) => {
@@ -167,9 +168,9 @@ export const themeProps = () => {
     // updateSetting('ui.theme', theme.id)
   }
 
-  const setTheme = (themeId) => {
+  const setTheme = useCallback((themeId) => {
     applyTheme(themeId)
-  }
+  }, [applyTheme])
 
   return {
     currentThemeId,

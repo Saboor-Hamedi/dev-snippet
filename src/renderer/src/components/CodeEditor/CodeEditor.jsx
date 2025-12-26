@@ -73,7 +73,12 @@ const CodeEditor = ({
       const dark =
         document.documentElement.classList.contains('dark') ||
         document.documentElement.getAttribute('data-theme') === 'dark'
-      setIsDark(dark)
+      setIsDark(prevIsDark => {
+        if (prevIsDark !== dark) {
+          return dark
+        }
+        return prevIsDark
+      })
     }
 
     // Initial check

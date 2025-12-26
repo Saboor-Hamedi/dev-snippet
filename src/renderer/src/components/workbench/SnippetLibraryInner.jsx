@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { useToast } from '../../hook/useToast'
 import ToastNotification from '../../utils/ToastNotification'
 import Workbench from './Workbench'
@@ -10,7 +10,7 @@ import { useModal } from './manager/ModalContext'
 import KeyboardHandler from './manager/KeyboardHandler'
 import { useThemeManager } from '../../hook/useThemeManager'
 import { themeProps } from '../preference/theme/themeProps'
-import { handleRenameSnippet } from '../../hook/handleRenameSnippet'
+import { usePagination } from '../../hook/pagination/usePagination'
 
 // The Core Logic Component
 const SnippetLibraryInner = ({ snippetData }) => {
@@ -22,7 +22,6 @@ const SnippetLibraryInner = ({ snippetData }) => {
     saveSnippet,
     deleteItem,
     deleteItems,
-    searchSnippetList,
     // Folder props
     folders,
     saveFolder,
@@ -65,6 +64,33 @@ const SnippetLibraryInner = ({ snippetData }) => {
   const [selectedFolderId, setSelectedFolderId] = useState(null)
   const [selectedIds, setSelectedIds] = useState([])
   const { overlayMode, setOverlayMode } = useAdvancedSplitPane()
+
+  // Use pagination hook
+  const handleSearchResults = useCallback((searchResults) => {
+    // Auto-select first search result if available
+    if (searchResults.length > 0) {
+      const firstResult = searchResults[0]
+      setSelectedSnippet(firstResult)
+      setSelectedFolderId(null)
+      setSelectedIds([firstResult.id])
+      navigateTo('editor')
+    }
+  }, [setSelectedSnippet, setSelectedFolderId, setSelectedIds, navigateTo])
+
+  const {
+    paginatedSnippets,
+    totalPages,
+    currentPage,
+    hasSearchResults,
+    isSearching,
+    handlePageChange,
+    handleSearchSnippets,
+    clearSearch,
+    resetPagination,
+    hasMultiplePages,
+    canGoNext,
+    canGoPrevious
+  } = usePagination(snippets, selectedFolderId, 5, handleSearchResults)
 
   // Lifted Sidebar State - defaults to closed, remembers last state
   const isSidebarOpen = settings?.ui?.showSidebar !== false
@@ -380,6 +406,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
   const handleSelectFolder = (folderId) => {
     setSelectedFolderId(folderId)
     setSelectedIds(folderId ? [folderId] : [])
+    resetPagination() // Reset to first page when changing folders
   }
 
   const handleSelectionChange = (ids) => {
@@ -491,7 +518,12 @@ const SnippetLibraryInner = ({ snippetData }) => {
           activeView={isCreatingSnippet ? 'editor' : activeView}
           currentContext={activeView}
           selectedSnippet={selectedSnippet}
-          snippets={snippets}
+          snippets={paginatedSnippets}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+          setSnippets={setSnippets}
+          saveSnippet={saveSnippet}
           folders={folders}
           trash={trash}
           onRestoreItem={restoreItem}
@@ -571,7 +603,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
           onMoveFolder={moveFolder}
           onTogglePin={togglePinnedSnippet}
           onSelectSnippet={handleSelectSnippet}
-          onSearchSnippets={searchSnippetList}
+          onSearchSnippets={handleSearchSnippets}
           onOpenSettings={() => openSettingsModal()}
           isSettingsOpen={isSettingsOpen}
           onCloseSettings={() => navigateTo('snippets')}

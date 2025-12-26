@@ -60,7 +60,10 @@ const Workbench = ({
   selectedIds,
   onSelectionChange,
   settings,
-  isSettingsOpen
+  isSettingsOpen,
+  currentPage,
+  totalPages,
+  onPageChange
 }) => {
   const { currentTheme } = useTheme()
   const handleSave = (snippet) => {
@@ -274,6 +277,9 @@ const Workbench = ({
                 onToggle={() => setIsSidebarOpen(false)}
                 isCompact={isCompact}
                 showToast={showToast}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={onPageChange}
               />
             )}
 
@@ -409,7 +415,10 @@ Workbench.propTypes = {
   autosaveStatus: PropTypes.string,
   onAutosave: PropTypes.func,
   showPreview: PropTypes.bool,
-  onTogglePreview: PropTypes.func
+  onTogglePreview: PropTypes.func,
+  currentPage: PropTypes.number,
+  totalPages: PropTypes.number,
+  onPageChange: PropTypes.func
 }
 
 export default Workbench
