@@ -61,7 +61,15 @@ export const DEFAULT_SETTINGS = {
     sidebarWidth: 250,
     previewPosition: 'right',
     previewFontSize: 14,
-    theme: 'system'
+    theme: 'system',
+    modeSwitcher: {
+      isFloating: false, // UI State: Is the switcher currently floating?
+      disableDraggable: false, // ADMIN: Global kill-switch. If true, prevents floating entirely.
+      pos: { x: null, y: null } // SPATIAL MEMORY: Last known X/Y coordinates to restore position.
+    },
+    universalLock: {
+      modal: false // Universal Master Lock: If true, resets ALL floating elements (Modals + Switcher) to default positions and prevents moving.
+    }
   },
   statusBar: {
     showSystemStatus: true,

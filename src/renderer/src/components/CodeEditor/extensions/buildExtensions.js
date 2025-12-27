@@ -2,6 +2,7 @@ import buildTheme from './buildTheme'
 import { premiumTypingBundle } from './premiumFeatures'
 import { tags as t } from '@lezer/highlight'
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
+import { richMarkdownExtension } from './richMarkdown'
 
 /**
  * Lazy-load language names to keep the main bundle light.
@@ -190,14 +191,30 @@ const buildExtensions = async (options, handlers = {}) => {
     }
     // Priority 2: Markdown with extras
     else if (normalizedLang === 'markdown' || normalizedLang === 'md') {
-      console.log('[Editor] Loading standard Markdown engine (safe mode)...')
-      const { markdown } = await import('@codemirror/lang-markdown')
+      console.log('[Editor] Loading standard Markdown engine with Live Preview...')
+      const { markdown, markdownLanguage } = await import('@codemirror/lang-markdown')
+      const { languages } = await import('@codemirror/language-data')
+
+      // Attempt to load GFM extensions for Tables/TaskLists - Critical for Live Preview
+      let mdExtensions = [markdownLanguage]
+      try {
+        const { GFM, Table, TaskList } = await import('@lezer/markdown')
+        mdExtensions = [GFM, Table, TaskList]
+        console.log('[Editor] Markdown GFM extensions loaded.')
+      } catch (e) {
+        console.warn('[Editor] GFM extensions not found, falling back to CommonMark.', e)
+      }
+
       exts.push(
         markdown({
+          base: markdownLanguage,
+          extensions: mdExtensions,
+          codeLanguages: languages,
           addKeymap: true
-          // Disabled deep codeLanguages to prevent TilePointer measurement crashes
         })
       )
+      // Add Obsidian-style Live Preview
+      exts.push(richMarkdownExtension)
     }
     // Priority 3: Dynamic discovery
     else if (langDesc) {

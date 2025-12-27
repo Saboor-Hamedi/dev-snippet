@@ -12,7 +12,9 @@ import {
   Search,
   Save,
   File,
-  FilePlus
+  FilePlus,
+  BookOpen, // New: Read mode / Preview toggle
+  Columns // New: Split toggle
 } from 'lucide-react'
 import iconUrl from '../../../assets/icon.png'
 import AutosaveIndicator from './AutosaveIndicator'
@@ -33,7 +35,9 @@ const useHeader = ({
   onRename,
   isTab,
   sidebarWidth = 250,
-  onClose
+  onClose,
+  showPreview, // New prop
+  onTogglePreview // New prop
 }) => {
   const isMobile = window.innerWidth <= 768
   const activityBarWidth = 40
@@ -113,9 +117,11 @@ const useHeader = ({
                   >
                     {typeof displayTitle === 'string'
                       ? displayTitle.replace(/\.[^/.]+$/, '')
-                      : displayTitle || 'Untitled'}
+                      : 'Untitled'}
                   </span>
                 </div>
+
+                {/* Preview/Read Mode Toggle removed as per user request */}
 
                 {/* Close Button - Always visible but subtle, or hover */}
                 <button
@@ -125,9 +131,10 @@ const useHeader = ({
                   }}
                   onDoubleClick={(e) => e.stopPropagation()}
                   className="
-                    ml-2 p-0.5 rounded-md
+                    ml-1 p-0.5 rounded-md
                     opacity-0 group-hover:opacity-100
                     hover:bg-[var(--color-bg-tertiary)]
+                    text-[var(--color-text-primary)]
                     transition-all
                     flex items-center justify-center
                   "
@@ -140,7 +147,9 @@ const useHeader = ({
               </div>
             ) : (
               <div className="flex items-center h-full pb-1 pl-4 opacity-60">
-                <span className="text-[12px] font-medium">{displayTitle}</span>
+                <span className="text-[12px] font-medium">
+                  {typeof displayTitle === 'string' ? displayTitle : 'Quick Snippets'}
+                </span>
               </div>
             )}
 

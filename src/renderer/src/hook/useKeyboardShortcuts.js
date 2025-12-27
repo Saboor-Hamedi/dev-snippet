@@ -102,19 +102,27 @@ export const useKeyboardShortcuts = (shortcuts) => {
         }
       }
 
-      // Ctrl+\ toggles live preview
-      if ((e.ctrlKey || e.metaKey) && !e.shiftKey) {
-        const isBackslashKey =
-          e.key === '\\' || e.key === '|' || e.code === 'Backslash' || e.code === 'IntlBackslash'
-        if (isBackslashKey) {
+      // Ctrl+\ or Ctrl+E or Alt+E toggles live preview
+      const isBackslashKey =
+        (e.ctrlKey || e.metaKey) &&
+        (e.key === '\\' || e.key === '|' || e.code === 'Backslash' || e.code === 'IntlBackslash')
+      const isObsidianPreviewKey =
+        (e.ctrlKey || e.metaKey || e.altKey) && e.key?.toLowerCase() === 'e'
+
+      if (isBackslashKey || isObsidianPreviewKey) {
+        e.preventDefault()
+        if (shortcutsRef.current.onTogglePreview) {
           try {
-            e.preventDefault()
+            shortcutsRef.current.onTogglePreview()
           } catch {}
-          if (shortcutsRef.current.onTogglePreview) {
-            try {
-              shortcutsRef.current.onTogglePreview()
-            } catch {}
-          }
+        }
+      }
+
+      // Ctrl + / Cycles Modes (Obsidian style)
+      if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+        e.preventDefault()
+        if (shortcutsRef.current.onToggleMode) {
+          shortcutsRef.current.onToggleMode()
         }
       }
 

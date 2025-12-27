@@ -823,9 +823,26 @@ const SnippetLibraryInner = ({ snippetData }) => {
                     s.id !== item.id
                 )
                 if (duplicate) {
-                  showToast(`${item.title}: already taken in this folder`, 'error')
-                  setAutosaveStatus(null)
-                  return
+                  // Auto-increment instead of blocking
+                  let counter = 1
+                  let newTitle = item.title
+                  let newBase = targetBase
+
+                  while (
+                    snippets.find(
+                      (s) =>
+                        normalize(s.title) === newBase &&
+                        (s.folder_id || null) === (item.folder_id || null) &&
+                        s.id !== item.id
+                    )
+                  ) {
+                    newTitle = `${item.title.replace(/\.md$/, '')} (${counter}).md`
+                    newBase = normalize(newTitle)
+                    counter++
+                  }
+
+                  item.title = newTitle
+                  showToast(`Renamed to "${newTitle}" to avoid duplicate`, 'info')
                 }
               }
               const wasForce = !!window.__forceSave

@@ -9,7 +9,8 @@
  * @returns {string} - The normalized filename
  */
 export const ensureExtension = (name, ext = '.md') => {
-  let trimmed = (name || '').trim() || 'Untitled'
+  const safeName = typeof name === 'string' ? name : 'Untitled'
+  let trimmed = safeName.trim() || 'Untitled'
 
   if (!trimmed.toLowerCase().endsWith(ext)) {
     return `${trimmed}${ext}`
@@ -42,7 +43,7 @@ export const extractTags = (text) => {
  */
 export const normalizeSnippet = (snippet) => {
   const code = snippet.code || ''
-  const title = ensureExtension(snippet.title || 'Untitled')
+  const title = ensureExtension(snippet.title)
 
   return {
     ...snippet,
@@ -63,7 +64,10 @@ export const normalizeSnippet = (snippet) => {
  * @param {string} title
  * @returns {string} normalized title (lowercase, no .md)
  */
-export const getBaseTitle = (title) => (title || '').toLowerCase().trim().replace(/\.md$/, '')
+export const getBaseTitle = (title) => {
+  if (typeof title !== 'string') return ''
+  return title.toLowerCase().trim().replace(/\.md$/, '')
+}
 
 /**
  * Detects if a title represents a Daily Log/Journal date

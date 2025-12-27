@@ -48,7 +48,8 @@ const HighlightText = ({ text, highlight }) => {
 
 // Helper to get file icon
 const getFileIcon = (lang, title = '') => {
-  let cleanTitle = (title || '').toLowerCase()
+  const safeTitle = typeof title === 'string' ? title : ''
+  let cleanTitle = safeTitle.toLowerCase()
   let isMd = false
 
   if (cleanTitle.endsWith('.md')) {
@@ -416,9 +417,10 @@ const SnippetSidebarRow = ({ index, style, data }) => {
   const itemId = type === 'pinned_snippet' ? item.realId : itemData.id
   const isSelected =
     selectedIds.includes(itemId) || (selectedSnippet?.id === itemId && !selectedFolderId)
-  const { icon: Icon, color } = getFileIcon(itemData.language, itemData.title)
+  const safeTitle = typeof itemData.title === 'string' ? itemData.title : ''
+  const { icon: Icon, color } = getFileIcon(itemData.language, safeTitle)
   const isSearchMatch =
-    searchQuery && (itemData.title || '').toLowerCase().includes(searchQuery.toLowerCase().trim())
+    searchQuery && safeTitle.toLowerCase().includes(searchQuery.toLowerCase().trim())
 
   const todayStr = new Date().toISOString().split('T')[0]
   // Strict match for Today's Daily Note (ISO format)
@@ -458,7 +460,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
           <Icon size={14} />
         </div>
         <span className="flex-1 truncate opacity-80 group-hover/row:opacity-100 pl-1 text-left flex items-center gap-2">
-          <HighlightText text={itemData.title || 'Untitled'} highlight={searchQuery} />
+          <HighlightText text={safeTitle || 'Untitled'} highlight={searchQuery} />
           {isTodayLog && (
             <span className="text-[8px] px-1 py-0 rounded bg-[var(--color-accent-primary)]/10 text-[var(--color-accent-primary)] font-bold uppercase tracking-tighter animate-pulse">
               Today

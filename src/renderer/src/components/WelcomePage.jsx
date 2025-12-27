@@ -120,7 +120,7 @@ const WelcomePage = ({
                   </h2>
                   <div className="space-y-1">
                     <button
-                      onClick={onNewSnippet}
+                      onClick={() => onNewSnippet()}
                       className="w-full flex items-center justify-between px-0 py-2 text-left opacity-70 hover:opacity-100 transition-opacity bg-transparent hover:bg-transparent theme-exempt group"
                     >
                       <div className="flex items-center gap-3">

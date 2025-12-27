@@ -283,33 +283,34 @@ export const fastMarkdownToHtml = (text, existingTitles = []) => {
     }
   )
 
-  // 2. Tables (GFM Style with Alignment)
+  // 2. Tables (GFM Style with Alignment - More Robust Regex)
   processed = processed.replace(
-    /^\|(.+)\|\r?\n\|([-| :]+)\|\r?\n((?:\|.+\|\r?\n?)*)/gm,
+    /^[ \t]*\|(.+)\|[ \t]*\r?\n[ \t]*\|([-| :]+)\|[ \t]*\r?\n((?:[ \t]*\|.+\|[ \t]*\r?\n?)*)/gm,
     (match, header, separator, rows) => {
-      const aligns = separator
-        .split('|')
-        .filter((s) => s.trim())
-        .map((s) => {
-          if (s.startsWith(':') && s.endsWith(':')) return 'center'
-          if (s.endsWith(':')) return 'right'
-          return 'left'
-        })
+      const getCells = (l) =>
+        l
+          .trim()
+          .replace(/^\||\|$/g, '')
+          .split('|')
+          .map((s) => s.trim())
 
-      const headers = header
-        .split('|')
-        .filter((h) => h.trim())
-        .map((h, i) => `<th style="text-align: ${aligns[i] || 'left'}">${h.trim()}</th>`)
+      const aligns = getCells(separator).map((s) => {
+        if (s.startsWith(':') && s.endsWith(':')) return 'center'
+        if (s.endsWith(':')) return 'right'
+        return 'left'
+      })
+
+      const headers = getCells(header)
+        .map((h, i) => `<th style="text-align: ${aligns[i] || 'left'}">${h}</th>`)
         .join('')
 
       const bodyRows = rows
         .trim()
         .split('\n')
+        .filter((r) => r.trim())
         .map((row) => {
-          const cells = row
-            .split('|')
-            .filter((c, i, arr) => (i > 0 && i < arr.length - 1) || c.trim())
-            .map((c, i) => `<td style="text-align: ${aligns[i] || 'left'}">${c.trim()}</td>`)
+          const cells = getCells(row)
+            .map((c, i) => `<td style="text-align: ${aligns[i] || 'left'}">${c}</td>`)
             .join('')
           return `<tr>${cells}</tr>`
         })
@@ -318,7 +319,7 @@ export const fastMarkdownToHtml = (text, existingTitles = []) => {
       const id = `__TABLE_${placeholders.length}__`
       placeholders.push({
         id,
-        content: `<table><thead><tr>${headers}</tr></thead><tbody>${bodyRows}</tbody></table>`
+        content: `<div class="table-wrapper"><table><thead><tr>${headers}</tr></thead><tbody>${bodyRows}</tbody></table></div>`
       })
       return id
     }
