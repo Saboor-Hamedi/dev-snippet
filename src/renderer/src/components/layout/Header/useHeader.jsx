@@ -111,7 +111,9 @@ const useHeader = ({
                     className="text-[13px] truncate font-medium opacity-90 block normal-case"
                     style={{ color: 'var(--color-text-primary)' }}
                   >
-                    {displayTitle?.replace(/\.[^/.]+$/, '') || 'Untitled'}
+                    {typeof displayTitle === 'string'
+                      ? displayTitle.replace(/\.[^/.]+$/, '')
+                      : displayTitle || 'Untitled'}
                   </span>
                 </div>
 

@@ -9,13 +9,15 @@ import {
   Folder,
   FolderOpen,
   Pin,
-  Inbox
+  Inbox,
+  Star
 } from 'lucide-react'
+
+import { getBaseTitle, isDateTitle } from '../../../utils/snippetUtils'
 
 // Helper to highlight matching text
 const HighlightText = ({ text, highlight }) => {
   if (!highlight || !highlight.trim()) return <span>{text}</span>
-  // Support multi-term highlighting (e.g. "react hook" highlights both)
   const terms = highlight
     .trim()
     .split(/\s+/)
@@ -49,20 +51,20 @@ const getFileIcon = (lang, title = '') => {
   let cleanTitle = (title || '').toLowerCase()
   let isMd = false
 
-  // Handle .md masking (e.g. script.js.md -> detect js)
   if (cleanTitle.endsWith('.md')) {
     const temp = cleanTitle.slice(0, -3)
     if (temp.includes('.')) {
-      cleanTitle = temp // It's a code file masked as md
+      cleanTitle = temp
     } else {
-      isMd = true // It's actually a markdown file
+      isMd = true
     }
   }
 
   const extension = cleanTitle.split('.').pop() || ''
 
-  // Languages matching
-  // Code Files -> FileCode Icon
+  // Daily Note Detection (ISO or String dates)
+  if (isDateTitle(cleanTitle)) return { icon: Calendar, color: '#818cf8' } // Indigo for journals
+
   if (lang === 'javascript' || lang === 'js' || extension === 'js')
     return { icon: FileCode, color: '#f7df1e' }
   if (lang === 'typescript' || lang === 'ts' || extension === 'ts')
@@ -73,12 +75,32 @@ const getFileIcon = (lang, title = '') => {
   if (lang === 'html' || extension === 'html') return { icon: FileCode, color: '#e34c26' }
   if (lang === 'python' || extension === 'py') return { icon: FileCode, color: '#3776ab' }
 
-  // Markdown -> FileText Icon
   if (lang === 'markdown' || lang === 'md' || extension === 'md' || isMd)
     return { icon: FileText, color: '#519aba' }
 
-  // Fallback
   return { icon: File, color: 'var(--sidebar-icon-color)' }
+}
+
+import { Calendar } from 'lucide-react'
+
+const PinnedHeaderRow = ({ style, label }) => {
+  return (
+    <div
+      style={{ ...style, marginTop: '12px', marginBottom: '4px' }}
+      className="flex items-center px-4 select-none group/pinned-header"
+    >
+      <div className="flex items-center gap-2 w-full">
+        <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-[var(--color-accent-primary)]/40 to-transparent" />
+        <div className="flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[var(--color-accent-primary)]/5 border border-[var(--color-accent-primary)]/20 shadow-sm">
+          <Star size={10} className="text-[var(--color-accent-primary)] fill-current" />
+          <span className="text-[9px] font-black uppercase tracking-[0.15em] text-[var(--color-accent-primary)] opacity-90">
+            {label}
+          </span>
+        </div>
+        <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-[var(--color-accent-primary)]/40 to-transparent" />
+      </div>
+    </div>
+  )
 }
 
 const CreationInputRow = ({ style, depth, itemData, onConfirm, onCancel, isCompact }) => {
@@ -111,7 +133,6 @@ const CreationInputRow = ({ style, depth, itemData, onConfirm, onCancel, isCompa
     <div style={style} className="pr-2">
       <div
         className="flex items-center w-full h-full pl-0 select-none"
-        // Polish: Indent 16px. +24px base offset.
         style={{ paddingLeft: `${depth * 16 + 24}px` }}
       >
         <div className="flex-1 flex items-center bg-[var(--color-bg-secondary)] border border-[var(--color-accent-primary)]/50 rounded-sm h-[22px]">
@@ -147,7 +168,6 @@ const CreationInputRow = ({ style, depth, itemData, onConfirm, onCancel, isCompa
   )
 }
 
-// --- Indentation Guides (Obsidian Style: Strict Lines) ---
 const IndentGuides = ({ depth }) => {
   if (depth <= 0) return null
   return (
@@ -167,7 +187,6 @@ const IndentGuides = ({ depth }) => {
 }
 
 const SnippetSidebarRow = ({ index, style, data }) => {
-  // Always call hooks at the top level
   const [isDragOver, setIsDragOver] = useState(false)
 
   const {
@@ -197,7 +216,14 @@ const SnippetSidebarRow = ({ index, style, data }) => {
 
   const { type, data: itemData, depth } = item
 
-  // --- Creation Input ---
+  if (type === 'pinned_header') {
+    return <PinnedHeaderRow style={style} label={item.label} />
+  }
+
+  if (type === 'section_spacer') {
+    return <div style={{ ...style, height: '8px' }} className="pointer-events-none" />
+  }
+
   if (type === 'creation_input') {
     return (
       <CreationInputRow
@@ -211,17 +237,15 @@ const SnippetSidebarRow = ({ index, style, data }) => {
     )
   }
 
-  // --- Drag and Drop Handlers (Scoped to Row) ---
   const handleDragStart = (e) => {
     let dragIds = [itemData.id]
-    let dragTypes = [type]
+    let dragTypes = [type === 'pinned_snippet' ? 'snippet' : type]
 
-    // If dragging a selected item, drag ALL selected items
     if (selectedIds.includes(itemData.id)) {
       dragIds = selectedIds
       dragTypes = selectedIds.map((id) => {
-        const found = treeItems.find((i) => i.id === id)
-        return found ? found.type : 'snippet'
+        const found = treeItems.find((i) => i.id === id || i.realId === id)
+        return found ? (found.type === 'pinned_snippet' ? 'snippet' : found.type) : 'snippet'
       })
     }
 
@@ -229,58 +253,45 @@ const SnippetSidebarRow = ({ index, style, data }) => {
     e.dataTransfer.setData('sourceTypes', JSON.stringify(dragTypes))
     e.dataTransfer.effectAllowed = 'move'
 
-    // Create a custom ghost drag image
     const ghost = document.createElement('div')
     ghost.style.position = 'absolute'
     ghost.style.top = '-1000px'
     ghost.style.left = '-1000px'
-    ghost.style.padding = '4px 8px' // Tighter padding
+    ghost.style.padding = '4px 8px'
     ghost.style.background = 'var(--color-bg-secondary)'
     ghost.style.border = '1px solid var(--color-accent-primary)'
     ghost.style.borderRadius = '6px'
-    ghost.style.width = 'auto' // Auto width
-    ghost.style.maxWidth = '250px' // Cap width
-    ghost.style.zIndex = '9999'
+    ghost.style.maxWidth = '250px'
     ghost.style.display = 'flex'
     ghost.style.alignItems = 'center'
     ghost.style.gap = '6px'
     ghost.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)'
-    ghost.style.pointerEvents = 'none'
 
-    // Icon
     const iconDiv = document.createElement('div')
     iconDiv.innerHTML =
       type === 'folder'
         ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>'
         : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>'
-    iconDiv.style.opacity = '0.8'
     ghost.appendChild(iconDiv)
 
-    // Text
     const textSpan = document.createElement('span')
     textSpan.innerText =
       selectedIds.length > 1
         ? `${selectedIds.length} items`
         : itemData.name || itemData.title || 'Untitled'
-
     textSpan.style.color = 'var(--color-text-primary)'
-    textSpan.style.fontSize = '12px' // Explicit 12px
-    textSpan.style.fontWeight = '500'
-    textSpan.style.whiteSpace = 'nowrap'
-    textSpan.style.overflow = 'hidden'
-    textSpan.style.textOverflow = 'ellipsis'
+    textSpan.style.fontSize = '12px'
     ghost.appendChild(textSpan)
 
     document.body.appendChild(ghost)
-    e.dataTransfer.setDragImage(ghost, 10, 10) // Offset slightly
-
+    e.dataTransfer.setDragImage(ghost, 10, 10)
     setTimeout(() => document.body.removeChild(ghost), 0)
   }
 
   const handleDragOver = (e) => {
     if (type === 'folder') {
       e.preventDefault()
-      e.stopPropagation() // Important: Stop bubbling to Sidebar container
+      e.stopPropagation()
       setIsDragOver(true)
       e.dataTransfer.dropEffect = 'move'
     }
@@ -294,66 +305,48 @@ const SnippetSidebarRow = ({ index, style, data }) => {
       try {
         const sourceIds = JSON.parse(e.dataTransfer.getData('sourceIds') || '[]')
         const sourceTypes = JSON.parse(e.dataTransfer.getData('sourceTypes') || '[]')
-
-        // Prevent dropping onto itself selection
         if (sourceIds.includes(itemData.id)) return
-
-        const snippetIds = sourceIds.filter((_, idx) => sourceTypes[idx] === 'snippet')
-        const folderIds = sourceIds.filter((_, idx) => sourceTypes[idx] === 'folder')
-
-        if (snippetIds.length > 0) onMoveSnippet(snippetIds, itemData.id)
-        if (folderIds.length > 0) onMoveFolder(folderIds, itemData.id)
-      } catch (err) {
-        console.error('Drop error:', err)
-      }
+        const sIds = sourceIds.filter((_, idx) => sourceTypes[idx] === 'snippet')
+        const fIds = sourceIds.filter((_, idx) => sourceTypes[idx] === 'folder')
+        if (sIds.length > 0) onMoveSnippet(sIds, itemData.id)
+        if (fIds.length > 0) onMoveFolder(fIds, itemData.id)
+      } catch (err) {}
     }
   }
 
-  // --- Click Logic ---
   const handleItemClick = (e) => {
     let newSelection = []
+    const itemId = type === 'pinned_snippet' ? item.realId : itemData.id
 
-    // Check Shift Key (Range)
     if (e.shiftKey && lastSelectedIdRef.current) {
       const lastIndex = treeItems.findIndex((i) => i.id === lastSelectedIdRef.current)
-      const currentIndex = index
-
       if (lastIndex !== -1) {
-        const start = Math.min(lastIndex, currentIndex)
-        const end = Math.max(lastIndex, currentIndex)
-        newSelection = [...selectedIds] // Keep existing? Or replace? Standard is replace range.
-
-        // Populate range
+        const start = Math.min(lastIndex, index)
+        const end = Math.max(lastIndex, index)
+        newSelection = [...selectedIds]
         for (let i = start; i <= end; i++) {
-          const itemId = treeItems[i].id
-          if (!newSelection.includes(itemId)) newSelection.push(itemId)
+          const id = treeItems[i].type === 'pinned_snippet' ? treeItems[i].realId : treeItems[i].id
+          if (!newSelection.includes(id)) newSelection.push(id)
         }
       }
-    }
-    // Check Ctrl/Cmd Key (Toggle)
-    else if (e.ctrlKey || e.metaKey) {
-      newSelection = selectedIds.includes(itemData.id)
-        ? selectedIds.filter((id) => id !== itemData.id)
-        : [...selectedIds, itemData.id]
-    }
-    // Single Click (Select One)
-    else {
-      if (type === 'snippet') {
-        newSelection = [itemData.id]
+    } else if (e.ctrlKey || e.metaKey) {
+      newSelection = selectedIds.includes(itemId)
+        ? selectedIds.filter((id) => id !== itemId)
+        : [...selectedIds, itemId]
+    } else {
+      newSelection = [itemId]
+      if (type === 'snippet' || type === 'pinned_snippet') {
         onSelect(itemData)
       } else {
-        // For folders: select the folder AND toggle expand/collapse
-        newSelection = [itemData.id]
-        onSelectFolder(itemData.id)
-        onToggleFolder(itemData.id, !item.isExpanded)
+        onSelectFolder(itemId)
+        onToggleFolder(itemId, !item.isExpanded)
       }
     }
 
-    lastSelectedIdRef.current = itemData.id
+    lastSelectedIdRef.current = treeItems[index].id
     onSelectionChange(newSelection)
   }
 
-  // --- Render Folder ---
   if (type === 'folder') {
     const isSelected = selectedIds.includes(itemData.id) || selectedFolderId === itemData.id
     const isOpen = !itemData.collapsed
@@ -370,74 +363,49 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         onDrop={handleDrop}
         tabIndex={0}
         onClick={handleItemClick}
-        onKeyDown={(e) => handleItemKeyDown(e, index, itemData)}
+        onKeyDown={(e) => handleItemKeyDown(e, index)}
         onContextMenu={(e) => onContextMenu(e, 'folder', itemData)}
       >
         <IndentGuides depth={depth} />
         <div
-          className={`group flex items-center gap-[4px] w-full h-full select-none border-none outline-none focus:outline-none transition-all duration-150 pr-2 relative rounded-[4px] ${
-            isDragOver // Drag Over takes priority
+          className={`group flex items-center gap-[4px] w-full h-full select-none transition-all duration-150 pr-2 relative rounded-[4px] ${
+            isDragOver
               ? 'bg-[var(--color-accent-primary)] bg-opacity-20'
               : isSelected
                 ? 'bg-[var(--selected-bg)]'
-                : 'hover:bg-white/[0.02] focus:bg-[var(--selected-bg)]'
+                : 'hover:bg-white/[0.02]'
           }`}
           style={{
             color: isSelected ? 'var(--selected-text)' : 'var(--sidebar-header-text)',
-            // Folder hover
-            // Layout Polish: Indent=16px. Base=8px.
             paddingLeft: `${depth * 16 + 8}px`,
             width: 'calc(100% - 8px)',
-            margin: '0 4px',
-            backgroundColor: isDragOver ? undefined : isSelected ? 'var(--selected-bg)' : undefined
+            margin: '0 4px'
           }}
         >
-          {/* Toggle Button */}
           <button
             onClick={(e) => {
               e.stopPropagation()
               onToggleFolder(itemData.id, !itemData.collapsed)
             }}
-            className={`flex-shrink-0 flex items-center justify-center rounded transition-all duration-200 w-4 h-4 ${
-              isSelected
-                ? 'bg-white/10 hover:bg-white/20'
-                : 'opacity-40 hover:opacity-100 hover:bg-[var(--color-accent-primary)]/10'
+            className={`flex-shrink-0 flex items-center justify-center rounded w-4 h-4 ${
+              isSelected ? 'bg-white/10' : 'opacity-40 hover:opacity-100'
             }`}
           >
             <ChevronRight
-              size={isCompact ? 10 : 12} // Smaller chevron
-              strokeWidth={2}
+              size={isCompact ? 10 : 12}
               className={`transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}
-              style={{ color: isSelected ? 'var(--selected-text)' : 'inherit' }}
             />
           </button>
-
-          {/* Icon */}
-          <div
-            className="flex-shrink-0 flex items-center justify-center opacity-70 group-hover:opacity-100 px-0.5"
-            style={{
-              color: isSelected
-                ? 'var(--selected-text)'
-                : itemData.name === '📥 Inbox'
-                  ? '#818cf8'
-                  : 'var(--sidebar-icon-color)' // Default Folder Color
-            }}
-          >
+          <div className="flex-shrink-0 opacity-70 group-hover:opacity-100 px-0.5">
             {itemData.name === '📥 Inbox' ? (
-              <Inbox size={isCompact ? 13 : 14} strokeWidth={2.5} />
-            ) : // Dynamic Icon
-            isOpen ? (
-              <FolderOpen size={isCompact ? 13 : 14} strokeWidth={2} />
+              <Inbox size={14} className="text-indigo-400" />
+            ) : isOpen ? (
+              <FolderOpen size={14} />
             ) : (
-              <Folder size={isCompact ? 13 : 14} strokeWidth={2} />
+              <Folder size={14} />
             )}
           </div>
-
-          {/* Name */}
-          <span
-            title={itemData.name}
-            className={`flex-1 min-w-0 text-left truncate font-medium text-[12px] opacity-80 group-hover:opacity-100 pl-1 select-none ${itemData.name === '📥 Inbox' ? 'text-indigo-400 font-bold' : ''}`}
-          >
+          <span className="flex-1 truncate font-medium text-[12px] opacity-80 group-hover:opacity-100 pl-1">
             {itemData.name}
           </span>
         </div>
@@ -445,19 +413,16 @@ const SnippetSidebarRow = ({ index, style, data }) => {
     )
   }
 
-  // --- Render Snippet ---
+  const itemId = type === 'pinned_snippet' ? item.realId : itemData.id
   const isSelected =
-    selectedIds.includes(itemData.id) || (selectedSnippet?.id === itemData.id && !selectedFolderId)
+    selectedIds.includes(itemId) || (selectedSnippet?.id === itemId && !selectedFolderId)
   const { icon: Icon, color } = getFileIcon(itemData.language, itemData.title)
-
-  // Check if this item matches the current search query
   const isSearchMatch =
-    searchQuery &&
-    searchQuery.trim() &&
-    (itemData.title || '').toLowerCase().includes(searchQuery.toLowerCase().trim())
+    searchQuery && (itemData.title || '').toLowerCase().includes(searchQuery.toLowerCase().trim())
 
-  // Determine icon color: Monochrome by default, Color on Hover/Selected
-  const finalIconColor = isSelected || isSearchMatch ? color : 'var(--sidebar-icon-color)' // Force gray
+  const todayStr = new Date().toISOString().split('T')[0]
+  // Strict match for Today's Daily Note (ISO format)
+  const isTodayLog = getBaseTitle(itemData.title) === todayStr
 
   return (
     <div style={style} className="relative group/row">
@@ -465,74 +430,48 @@ const SnippetSidebarRow = ({ index, style, data }) => {
       <button
         id={`sidebar-item-${index}`}
         draggable
-        onDragStart={handleDragStart}
         onClick={handleItemClick}
-        onKeyDown={(e) => handleItemKeyDown(e, index, itemData)}
+        onKeyDown={(e) => handleItemKeyDown(e, index)}
         onContextMenu={(e) => onContextMenu(e, 'snippet', itemData)}
-        className={`flex items-center gap-[4px] w-full h-full select-none border-none outline-none focus:outline-none pr-2 relative ${
+        className={`flex items-center gap-[4px] w-full h-full select-none pr-2 relative ${
           isCompact ? 'text-[11px]' : 'text-[12px]'
         } ${
           isSelected
             ? 'bg-[var(--selected-bg)]'
             : isSearchMatch
-              ? 'bg-[var(--color-accent-primary)]/10 hover:bg-[var(--color-accent-primary)]/15'
-              : 'hover:bg-white/[0.02] focus:bg-[var(--selected-bg)]'
-        } rounded-[4px]`}
+              ? 'bg-[var(--color-accent-primary)]/10'
+              : 'hover:bg-white/[0.02]'
+        } rounded-[4px] ${type === 'pinned_snippet' ? 'border-l-2 border-[var(--color-accent-primary)]/30' : ''}`}
         style={{
-          backgroundColor: isSelected
-            ? 'var(--selected-bg)'
-            : isSearchMatch
-              ? 'rgba(var(--color-accent-primary-rgb), 0.1)'
-              : undefined,
           color: isSelected ? 'var(--selected-text)' : 'var(--sidebar-text)',
-          // Layout Polish: Indent=16px. Base=8px. + 16px (Chevron skip) = 24px.
           paddingLeft: `${depth * 16 + 24}px`,
           width: 'calc(100% - 8px)',
           margin: '0 4px'
         }}
-        tabIndex={0}
       >
         <div
-          className={`flex-shrink-0 flex items-center justify-center px-0.5 transition-colors duration-200 ${
-            !isSelected
-              ? 'opacity-60 group-hover/row:opacity-100 group-hover/row:text-[color:var(--element-color)]'
-              : ''
+          className={`flex-shrink-0 flex items-center justify-center px-0.5 ${
+            !isSelected ? 'opacity-60' : ''
           }`}
-          style={{
-            '--element-color': color,
-            color: isSelected ? 'inherit' : 'var(--sidebar-icon-color)' // Default gray
-          }}
+          style={{ color: isSelected ? 'inherit' : color }}
         >
-          {/* Apply hover color via CSS variable hack or js logic above */}
-          <Icon
-            size={isCompact ? 13 : 14}
-            strokeWidth={1.5}
-            style={{
-              color: isSelected ? 'inherit' : undefined // Let wrapper handle color or hover
-            }}
-            // On hover, we want the original color. React inline styles are tricky for hover.
-            // So we use the wrapper's css var approach or simple conditional if we want strict JS control.
-            // Since we want strict Obsidian feel, gray is best. Hover color is a nice bonus.
-          />
+          <Icon size={14} />
         </div>
-
-        {/* We need a specific hover effect for the icon to turn color. 
-            The wrapper has group-hover/row. We can use that. 
-            Actually, let's keep it simple: Gray by default. Colored if selected. 
-        */}
-
-        <span
-          title={itemData.title || 'Untitled'}
-          className="flex-1 min-w-0 text-left truncate font-normal opacity-80 group-hover/row:opacity-100 normal-case pl-1"
-        >
+        <span className="flex-1 truncate opacity-80 group-hover/row:opacity-100 pl-1 text-left flex items-center gap-2">
           <HighlightText text={itemData.title || 'Untitled'} highlight={searchQuery} />
+          {isTodayLog && (
+            <span className="text-[8px] px-1 py-0 rounded bg-[var(--color-accent-primary)]/10 text-[var(--color-accent-primary)] font-bold uppercase tracking-tighter animate-pulse">
+              Today
+            </span>
+          )}
         </span>
         {itemData.is_pinned === 1 && (
-          <div
-            className="flex-shrink-0 flex items-center justify-center text-[var(--color-accent-primary)] opacity-80"
-            title="Pinned"
-          >
-            <Pin size={10} className="fill-current rotate-45" />
+          <div className="flex-shrink-0 text-[var(--color-accent-primary)] opacity-80">
+            {type === 'pinned_snippet' ? (
+              <Star size={10} className="fill-current" />
+            ) : (
+              <Pin size={10} className="fill-current rotate-45" />
+            )}
           </div>
         )}
       </button>

@@ -7,6 +7,7 @@ const Prompt = lazy(() => import('../../modal/Prompt'))
 const CommandPalette = lazy(() => import('../../CommandPalette'))
 const ImageExportModal = lazy(() => import('../../CodeEditor/ImageExport/ImageExportModal'))
 const SettingsModal = lazy(() => import('../../SettingsModal'))
+const TrashModal = lazy(() => import('../../modal/TrashModal'))
 
 import { ModalContext } from './ModalContext'
 
@@ -17,7 +18,16 @@ const ModalLoader = () => (
   </div>
 )
 
-export const ModalProvider = ({ children, snippets, folders, onSelectSnippet }) => {
+export const ModalProvider = ({
+  children,
+  snippets,
+  folders,
+  trash,
+  onRestoreItem,
+  onPermanentDeleteItem,
+  onLoadTrash,
+  onSelectSnippet
+}) => {
   const { settings, updateSettings } = useSettings()
   // Input State for Prompts
   const [promptInputValue, setPromptInputValue] = useState('')
@@ -38,6 +48,7 @@ export const ModalProvider = ({ children, snippets, folders, onSelectSnippet }) 
   const [commandPaletteMode, setCommandPaletteMode] = useState(null) // null or 'command'
   const [imageExportModal, setImageExportModal] = useState({ isOpen: false, snippet: null })
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [isTrashOpen, setIsTrashOpen] = useState(false)
 
   // API exposed to consumers
   const openRenameModal = useCallback((item, onConfirm, customTitle = 'Rename Snippet') => {
@@ -55,6 +66,10 @@ export const ModalProvider = ({ children, snippets, folders, onSelectSnippet }) 
 
   const openSettingsModal = useCallback(() => {
     setIsSettingsOpen(true)
+  }, [])
+
+  const openTrashModal = useCallback(() => {
+    setIsTrashOpen(true)
   }, [])
 
   const toggleCommandPalette = useCallback(
@@ -94,6 +109,7 @@ export const ModalProvider = ({ children, snippets, folders, onSelectSnippet }) 
     setCommandPaletteMode(null)
     setImageExportModal({ isOpen: false, snippet: null })
     setIsSettingsOpen(false)
+    setIsTrashOpen(false)
   }, [])
 
   return (
@@ -103,15 +119,18 @@ export const ModalProvider = ({ children, snippets, folders, onSelectSnippet }) 
         openDeleteModal,
         openImageExportModal,
         openSettingsModal,
+        openTrashModal,
         toggleCommandPalette,
         closeAll,
         isSettingsOpen,
+        isTrashOpen,
         isAnyOpen:
           renameModal.isOpen ||
           deleteModal.isOpen ||
           isCommandPaletteOpen ||
           imageExportModal.isOpen ||
-          isSettingsOpen
+          isSettingsOpen ||
+          isTrashOpen
       }}
     >
       {children}
@@ -227,6 +246,18 @@ export const ModalProvider = ({ children, snippets, folders, onSelectSnippet }) 
             onSettingsChange={updateSettings}
           />
         )}
+
+        {isTrashOpen && (
+          <TrashModal
+            isOpen={true}
+            onClose={() => setIsTrashOpen(false)}
+            items={trash || []}
+            onRestore={onRestoreItem}
+            onPermanentDelete={onPermanentDeleteItem}
+            onLoadTrash={onLoadTrash}
+            openDeleteModal={openDeleteModal}
+          />
+        )}
       </Suspense>
     </ModalContext.Provider>
   )
@@ -236,6 +267,10 @@ ModalProvider.propTypes = {
   children: PropTypes.node.isRequired,
   snippets: PropTypes.array,
   folders: PropTypes.array,
+  trash: PropTypes.array,
+  onRestoreItem: PropTypes.func,
+  onPermanentDeleteItem: PropTypes.func,
+  onLoadTrash: PropTypes.func,
   onSelectSnippet: PropTypes.func
 }
 

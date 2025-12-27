@@ -6,6 +6,7 @@ import {
   Edit2,
   FilePlus,
   FolderPlus,
+  Calendar,
   Pin,
   ChevronsUp,
   RefreshCw
@@ -51,7 +52,8 @@ const SnippetSidebar = ({
   onCopy,
   onCut,
   onPaste,
-  onSelectAll
+  onSelectAll,
+  onDailyNote
 }) => {
   const [filter, setFilter] = useState('')
   const [contextMenu, setContextMenu] = useState(null)

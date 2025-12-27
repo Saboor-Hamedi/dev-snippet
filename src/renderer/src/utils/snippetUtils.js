@@ -57,3 +57,20 @@ export const normalizeSnippet = (snippet) => {
     folder_id: snippet.folder_id || null
   }
 }
+
+/**
+ * Strips extensions and standardizes a title for comparison/display logic
+ * @param {string} title
+ * @returns {string} normalized title (lowercase, no .md)
+ */
+export const getBaseTitle = (title) => (title || '').toLowerCase().trim().replace(/\.md$/, '')
+
+/**
+ * Detects if a title represents a Daily Log/Journal date
+ * @param {string} title
+ * @returns {boolean}
+ */
+export const isDateTitle = (title) => {
+  const base = getBaseTitle(title)
+  return /^\d{4}-\d{2}-\d{2}$/.test(base) || /^[a-zA-Z]{3} \d{1,2}, \d{4}$/.test(base)
+}

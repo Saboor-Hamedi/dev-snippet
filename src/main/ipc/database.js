@@ -99,7 +99,7 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
         const folderId = snippet.folder_id || null
         const existing = db
           .prepare(
-            'SELECT id FROM snippets WHERE title = ? COLLATE NOCASE AND id != ? AND (folder_id IS ?) AND is_draft = 0'
+            'SELECT id FROM snippets WHERE title = ? COLLATE NOCASE AND id != ? AND (folder_id IS ?) AND is_draft = 0 AND is_deleted = 0'
           )
           .get(snippet.title.trim(), snippet.id, folderId)
         if (existing) {

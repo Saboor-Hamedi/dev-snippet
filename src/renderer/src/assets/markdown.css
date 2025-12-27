@@ -297,7 +297,7 @@ html[data-theme='minimal-gray'] ::-webkit-scrollbar-track {
 
 /* Checkboxes (Task Lists) */
 .markdown-body input[type='checkbox'] {
-  margin: 0 0.4em 0.25em -1.6em !important;
+  margin: 0 0.4em 0.25em 0 !important;
   vertical-align: middle !important;
   accent-color: var(--color-accent-primary);
   cursor: pointer;
@@ -647,6 +647,8 @@ html[data-theme='minimal-gray'] ::-webkit-scrollbar-track {
   cursor: pointer;
   position: relative;
   margin-top: 5px !important;
+  margin-left: 0 !important;
+  margin-right: 8px !important;
   flex-shrink: 0;
   transition: all 0.2s ease;
 }
