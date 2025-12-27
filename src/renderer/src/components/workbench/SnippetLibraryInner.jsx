@@ -13,6 +13,7 @@ import { themeProps } from '../preference/theme/themeProps'
 import { usePagination } from '../../hook/pagination/usePagination'
 import { handleRenameSnippet } from '../../hook/handleRenameSnippet'
 import { useFlowMode } from '../FlowMode/useFlowMode'
+import { getBaseTitle } from '../../utils/snippetUtils'
 
 // The Core Logic Component
 const SnippetLibraryInner = ({ snippetData }) => {
@@ -160,6 +161,63 @@ const SnippetLibraryInner = ({ snippetData }) => {
     }
   }, [setZoomLevel, setEditorZoom])
 
+  const createDailyNote = async () => {
+    const now = new Date()
+    // Standard ISO title: e.g. "2025-12-27"
+    const dateTitle = now.toISOString().split('T')[0]
+    const targetBase = getBaseTitle(dateTitle)
+
+    // Find if a note for today already exists (with robust normalization)
+    const existing = snippets.find((s) => getBaseTitle(s.title) === targetBase && !s.is_deleted)
+
+    if (existing) {
+      handleSelectSnippet(existing)
+      showToast(`Opening today's log: ${dateTitle}`, 'info')
+      return
+    }
+
+    // Time signature for the initial log entry
+    const timeStr = now.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    })
+
+    // Premium Template
+    const initialCode = `# ${dateTitle}\n\n## Log Started at ${timeStr}\n\n- [ ] \n`
+
+    // Multi-Folder Detection: Support "Inbox", "Daily", or "Journal"
+    let targetFolder = folders.find((f) =>
+      ['inbox', 'daily', 'journal'].some((keyword) => f.name.toLowerCase().includes(keyword))
+    )
+
+    let folderId = targetFolder ? targetFolder.id : null
+
+    // Auto-create "📥 Inbox" if no suitable home is found
+    if (!targetFolder) {
+      try {
+        const folderResult = await saveFolder({ name: '📥 Inbox', parent_id: null })
+        folderId = folderResult.id
+      } catch (e) {
+        console.error('Failed to auto-create Inbox:', e)
+      }
+    }
+
+    const draft = createDraftSnippet(dateTitle, folderId, {
+      initialCode,
+      skipNavigation: false
+    })
+
+    // Save immediately with Auto-Pin enabled
+    await saveSnippet({
+      ...draft,
+      is_draft: false,
+      is_pinned: 1
+    })
+
+    showToast(`Journal entry "${dateTitle}" Pinned!`, 'success')
+  }
+
   const createDraftSnippet = (initialTitle = '', folderId = null, options = {}) => {
     if (!initialTitle && !folderId) {
       const existingBlank = snippets.find(
@@ -183,7 +241,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
         ? window.crypto.randomUUID()
         : `draft-${Date.now()}-${Math.random().toString(36).slice(2)}`,
       title: initialTitle,
-      code: '',
+      code: options.initialCode || '',
       timestamp: Date.now(),
       type: 'snippet',
       is_draft: true,
@@ -798,6 +856,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
           }}
           onRenameSnippet={handleRenameSnippetRequest}
           onNewFolder={handleNewFolder}
+          onDailyNote={createDailyNote}
           onRenameFolder={handleRenameFolder}
           onDeleteFolder={handleDeleteFolder}
           onDeleteBulk={handleBulkDelete}

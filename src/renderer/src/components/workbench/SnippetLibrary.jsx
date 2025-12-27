@@ -12,8 +12,11 @@ const SnippetLibrary = () => {
       <ModalProvider
         snippets={snippetData.snippets}
         folders={snippetData.folders}
+        trash={snippetData.trash}
+        onRestoreItem={snippetData.restoreItem}
+        onPermanentDeleteItem={snippetData.permanentDeleteItem}
+        onLoadTrash={snippetData.loadTrash}
         onSelectSnippet={(s) => {
-          // Cross-component communication via events ensures clean logic separation
           window.dispatchEvent(
             new CustomEvent('app:open-snippet', {
               detail: { title: s.title }

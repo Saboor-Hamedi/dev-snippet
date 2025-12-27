@@ -7,7 +7,6 @@ import { Header } from '../layout/Header'
 
 import SidebarTheme from '../preference/SidebarTheme'
 import SnippetSidebar from './SnippetSidebar'
-import TrashSidebar from './TrashSidebar'
 import ActivityBar from '../layout/activityBar/ActivityBar'
 import { useStatusBar as StatusBar, SystemStatusFooter } from '../layout/StatusBar/useStatusBar'
 import { useModal } from './manager/ModalContext'
@@ -72,23 +71,30 @@ const Workbench = ({
   onCopy,
   onCut,
   onPaste,
-  onSelectAll
+  onSelectAll,
+  onDailyNote
 }) => {
   const { currentTheme } = useTheme()
   const handleSave = (snippet) => {
     onSave(snippet)
   }
 
-  const { openDeleteModal } = useModal()
+  const { openDeleteModal, openTrashModal } = useModal()
   const [activeSidebarTab, setActiveSidebarTab] = React.useState('explorer')
   const [showFlowPreview, setShowFlowPreview] = React.useState(false)
 
   const handleTabChange = (tabId) => {
-    if (activeSidebarTab === tabId) {
-      setIsSidebarOpen(!isSidebarOpen)
+    // Only 'explorer' and 'themes' should open/toggle the sidebar
+    if (tabId === 'explorer' || tabId === 'themes') {
+      if (activeSidebarTab === tabId) {
+        setIsSidebarOpen(!isSidebarOpen)
+      } else {
+        setActiveSidebarTab(tabId)
+        setIsSidebarOpen(true)
+      }
     } else {
+      // For other tabs (like notifications or misc), just update the tab ID without opening
       setActiveSidebarTab(tabId)
-      setIsSidebarOpen(true)
     }
   }
 
@@ -247,6 +253,8 @@ const Workbench = ({
               activeTab={activeSidebarTab}
               onTabChange={handleTabChange}
               onSettings={onOpenSettings}
+              onDailyNote={onDailyNote}
+              onTrash={openTrashModal}
               isSettingsOpen={isSettingsOpen}
               trashCount={trash?.length || 0}
               settings={settings}
@@ -275,6 +283,7 @@ const Workbench = ({
                 onSelectFolder={onSelectFolder}
                 onNew={onNewSnippet}
                 onNewFolder={onNewFolder}
+                onDailyNote={onDailyNote}
                 onSearch={onSearchSnippets}
                 searchQuery={searchQuery}
                 onToggleFolder={onToggleFolder}
@@ -309,16 +318,6 @@ const Workbench = ({
 
             {activeSidebarTab === 'themes' && (
               <SidebarTheme isOpen={isSidebarOpen} onToggle={() => setIsSidebarOpen(false)} />
-            )}
-
-            {activeSidebarTab === 'trash' && (
-              <TrashSidebar
-                items={trash}
-                onRestore={onRestoreItem}
-                onPermanentDelete={onPermanentDeleteItem}
-                onLoadTrash={onLoadTrash}
-                openDeleteModal={openDeleteModal}
-              />
             )}
           </div>
         </aside>

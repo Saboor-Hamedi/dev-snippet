@@ -23,12 +23,48 @@ export const useSidebarLogic = ({
   // 1. Flatten Tree Logic
   // This is a pure function that runs only when data changes.
   const treeItems = useMemo(() => {
+    // Always show the full tree from root
+    let result = []
+
+    // 1. PINNED SECTION (Top Level)
+    const pinnedSnippets = snippets
+      .filter((s) => s.is_pinned === 1)
+      .sort((a, b) =>
+        (a.title || '').localeCompare(b.title || '', undefined, { sensitivity: 'base' })
+      )
+
+    if (pinnedSnippets.length > 0) {
+      result.push({
+        id: 'PINNED_HEADER',
+        type: 'pinned_header',
+        depth: 0,
+        label: 'Pinned'
+      })
+      pinnedSnippets.forEach((snippet) => {
+        result.push({
+          id: `pinned-${snippet.id}`, // Unique ID for virtual row
+          realId: snippet.id, // Reference to actual snippet
+          type: 'pinned_snippet',
+          data: snippet,
+          depth: 0.5 // Subtle indent
+        })
+      })
+
+      // Add a subtle spacer after the pinned section
+      result.push({
+        id: 'SECTION_SPACER',
+        type: 'section_spacer',
+        depth: 0
+      })
+    }
+
+    // 2. MAIN FOLDER TREE
     const flatten = (currentFolders, currentSnippets, depth = 0, parentId = null) => {
-      let result = []
+      let levelResult = []
 
       // INJECTION POINT: Input Row (Top of the level)
       if (createState && (createState.parentId || null) == (parentId || null)) {
-        result.push({
+        levelResult.push({
           id: 'TEMP_CREATION_INPUT',
           type: 'creation_input',
           depth,
@@ -47,7 +83,7 @@ export const useSidebarLogic = ({
 
       levelFolders.forEach((folder) => {
         const isExpanded = folder.collapsed === 0 || folder.collapsed === false
-        result.push({
+        levelResult.push({
           id: folder.id,
           type: 'folder',
           data: folder,
@@ -56,7 +92,9 @@ export const useSidebarLogic = ({
         })
 
         if (isExpanded) {
-          result = result.concat(flatten(currentFolders, currentSnippets, depth + 1, folder.id))
+          levelResult = levelResult.concat(
+            flatten(currentFolders, currentSnippets, depth + 1, folder.id)
+          )
         }
       })
 
@@ -77,7 +115,7 @@ export const useSidebarLogic = ({
         })
 
       levelSnippets.forEach((snippet) => {
-        result.push({
+        levelResult.push({
           id: snippet.id,
           type: 'snippet',
           data: snippet,
@@ -85,11 +123,10 @@ export const useSidebarLogic = ({
         })
       })
 
-      return result
+      return levelResult
     }
 
-    // Always show the full tree from root
-    const result = flatten(folders, snippets, 0, null)
+    result = result.concat(flatten(folders, snippets, 0, null))
 
     return result
   }, [snippets, folders, createState, selectedFolderId])
@@ -133,29 +170,35 @@ export const useSidebarLogic = ({
           newSelection = [...selectedIds]
 
           for (let i = start; i <= end; i++) {
-            const itemId = treeItems[i].id
-            if (!newSelection.includes(itemId)) newSelection.push(itemId)
+            const row = treeItems[i]
+            const targetId = row.realId || row.id
+            if (!newSelection.includes(targetId)) newSelection.push(targetId)
           }
         }
       }
       // CTRL/CMD + CLICK (Toggle Selection)
       else if (e.ctrlKey || e.metaKey) {
-        newSelection = selectedIds.includes(id)
-          ? selectedIds.filter((sid) => sid !== id)
-          : [...selectedIds, id]
+        const item = treeItems.find((i) => i.id === id)
+        const targetId = item?.realId || id
+        newSelection = selectedIds.includes(targetId)
+          ? selectedIds.filter((sid) => sid !== targetId)
+          : [...selectedIds, targetId]
       }
       // SINGLE CLICK (Reset Selection)
       else {
-        newSelection = [id]
-        if (type === 'snippet') {
-          const snippet = snippets.find((s) => s.id === id)
+        const item = treeItems.find((i) => i.id === id)
+        const targetId = item?.realId || id
+
+        newSelection = [targetId]
+        if (type === 'snippet' || type === 'pinned_snippet') {
+          const snippet = snippets.find((s) => s.id === targetId)
           if (snippet) onSelect(snippet)
         } else {
-          onSelectFolder(id)
+          onSelectFolder(targetId)
         }
       }
 
-      lastSelectedIdRef.current = id
+      lastSelectedIdRef.current = id // Store the VIRTUAL id for range navigation
       onSelectionChange(newSelection)
       setSidebarSelected(false)
     },
