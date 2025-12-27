@@ -18,6 +18,7 @@ const ModalLoader = () => (
   </div>
 )
 
+// Removed useSettings to prevent Context usage outside of Provider
 export const ModalProvider = ({
   children,
   snippets,
@@ -28,7 +29,9 @@ export const ModalProvider = ({
   onLoadTrash,
   onSelectSnippet
 }) => {
-  const { settings, updateSettings } = useSettings()
+  // const { settings, updateSettings } = useSettings() // REMOVED to fix crash
+  // If settings are needed for specific modals, they should be passed as props or retrieved within the modal itself.
+
   // Input State for Prompts
   const [promptInputValue, setPromptInputValue] = useState('')
 
@@ -242,8 +245,7 @@ export const ModalProvider = ({
           <SettingsModal
             isOpen={true}
             onClose={() => setIsSettingsOpen(false)}
-            currentSettings={settings}
-            onSettingsChange={updateSettings}
+            // SettingsModal should now use useSettings internally
           />
         )}
 

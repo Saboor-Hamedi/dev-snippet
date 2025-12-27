@@ -42,18 +42,21 @@ const UserSettings = React.lazy(() => import('./preference/UserSettings'))
 const SyncSettings = React.lazy(() => import('./settings/sections/SyncSettings'))
 // Appearance and Editor settings are kept inline to preserve specific custom logic + UI features that were missing in the external files
 
-const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) => {
-  const [localSettings, setLocalSettings] = useState(currentSettings)
+import { useSettings } from '../hook/useSettingsContext'
+
+const SettingsModal = ({ isOpen, onClose }) => {
+  const { settings, updateSettings, updateSetting: contextUpdateSetting } = useSettings()
+  const [localSettings, setLocalSettings] = useState(settings || DEFAULT_SETTINGS)
   const [activeTab, setActiveTab] = useState('updates')
   const [searchQuery, setSearchQuery] = useState('')
   const [showMobileMenu, setShowMobileMenu] = useState(false)
 
-  // Sync local settings when external settings change (without resetting the active tab)
+  // Sync local settings when context settings change
   useEffect(() => {
-    if (isOpen) {
-      setLocalSettings(currentSettings)
+    if (settings) {
+      setLocalSettings(settings)
     }
-  }, [currentSettings])
+  }, [settings])
 
   // Reset UI state only when the modal is freshly opened
   useEffect(() => {
@@ -61,9 +64,11 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
       setActiveTab('updates')
       setShowMobileMenu(false)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen])
 
   const updateSetting = (path, value) => {
+    // Optimistic UI update
     const pathArray = path.split('.')
     const newSettings = JSON.parse(JSON.stringify(localSettings)) // Deep clone
 
@@ -75,7 +80,9 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
 
     target[pathArray[pathArray.length - 1]] = value
     setLocalSettings(newSettings)
-    onSettingsChange(newSettings)
+
+    // Persist changes via context
+    contextUpdateSetting(path, value)
   }
 
   const sections = [
@@ -398,6 +405,28 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
                         onChange={(v) => updateSetting('ui.sidebarIconColor', v)}
                       />
                     </SettingSection>
+
+                    <SettingSection title="Interface Layout & Locks" icon={Layout}>
+                      <SettingToggle
+                        label="Universal Lock"
+                        description="Master switch: Lock ALL modals and floating toolbars in place."
+                        checked={localSettings.ui?.universalLock?.modal || false}
+                        onChange={(v) => updateSetting('ui.universalLock.modal', v)}
+                      />
+                      <SettingToggle
+                        label="Disable Mode Float"
+                        description="Prevent the mode switcher from entering floating mode."
+                        checked={localSettings.ui?.modeSwitcher?.disableDraggable || false}
+                        onChange={(v) => updateSetting('ui.modeSwitcher.disableDraggable', v)}
+                      />
+                    </SettingSection>
+
+                    <SettingInput
+                      label="Sidebar Icon Color"
+                      description="Customize the color of the sidebar file icons."
+                      value={localSettings.ui?.sidebarIconColor || '#c9d1d9'}
+                      onChange={(v) => updateSetting('ui.sidebarIconColor', v)}
+                    />
                   </div>
                 )}
 
@@ -516,9 +545,117 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
                   <div className="animate-in slide-in-from-right-4 duration-300 flex flex-col h-full">
                     <div className="flex-1 min-h-0 overflow-hidden border-t border-[var(--color-border)]">
                       <CodeEditor
-                        value={JSON.stringify(DEFAULT_SETTINGS, null, 2)}
+                        value={`// src/config/defaultSettings.js
+export const DEFAULT_SETTINGS = {
+  // Welcome settings Covers all tiny components
+  welcome: {
+    welcomePage: '#232731',
+    hideWelcomePage: false
+  },
+  editor: {
+    editorBgColor: '#232731',
+    zoomLevel: 1.0,
+    fontSize: 16,
+    fontFamily: 'JetBrains Mono',
+    fontLigatures: true,
+    lineNumbers: true,
+    wordWrap: 'off',
+    tabSize: 2,
+    theme: 'dark'
+  },
+  cursor: {
+    cursorWidth: 3,
+    cursorColor: '#58a6ff',
+    cursorShape: 'bar',
+    cursorBlinking: true,
+    cursorBlinkingSpeed: 500,
+    cursorSelectionBg: '#58a6ff33',
+    cursorActiveLineBg: 'rgba(88, 166, 255, 0.1)',
+    cursorShadowBoxColor: '#58a6ff'
+  },
+  gutter: {
+    gutterBgColor: '#232731',
+    gutterBorderColor: 'transparent',
+    gutterBorderWidth: 0,
+    showGutter: true
+  },
+  livePreview: {
+    bgColor: '#232731',
+    borderColor: '#232731',
+    borderWidth: 0,
+    borderRound: 0,
+    overlayMode: false
+  },
+  header: {
+    bgColor: '#232731',
+    textColor: '#c9d1d9',
+    iconColor: '#c9d1d9',
+    borderColor: '#30363d'
+  },
+  ui: {
+    sidebarBg: '#252526',
+    statusBarBg: '#232731', // Editor header status bar
+    footerBg: '#232731', // System status footer
+    headerBg: '#232731', // Main header
+    compactMode: false,
+    showSidebar: true,
+    showActivityBar: true,
+    showHeader: true,
+    showStatusBar: true,
+    showFlowMode: false,
+    showPreview: false,
+    sidebarIconColor: '#c9d1d9',
+    sidebarWidth: 250,
+    previewPosition: 'right',
+    previewFontSize: 14,
+    theme: 'system',
+    modeSwitcher: {
+      isFloating: false, // UI State: Is the switcher currently floating?
+      disableDraggable: false, // ADMIN: Global kill-switch. If true, prevents floating entirely.
+      pos: { x: null, y: null } // SPATIAL MEMORY: Last known X/Y coordinates to restore position.
+    },
+    universalModal: {
+      disableDrag: false // Set to true to force modals to stay centered and fixed.
+    }
+  },
+  statusBar: {
+    showSystemStatus: true,
+    showVersion: true,
+    showFlowMode: true,
+    showPerformance: true,
+    showLanguage: true,
+    showStats: true,
+    showZoom: true
+  },
+  pagination: {
+    enablePagination: true, // Enable/disable pagination entirely
+    pageSize: 5, // Items per page (5-50 recommended)
+    autoSelectOnSearch: true // Auto-select first search result
+  },
+  activityBar: {
+    bgColor: '#18181b',
+    activeFg: '#f1be36',
+    inactiveFg: 'rgba(255, 255, 255, 0.4)',
+    activeBorder: '#d946ef',
+    badgeBg: '#d946ef',
+    badgeFg: '#ffffff'
+  },
+  behavior: {
+    autoSave: true,
+    autoSaveDelay: 2000,
+    confirmDelete: true,
+    restoreSession: true
+  },
+  advanced: {
+    enableCodeFolding: true,
+    enableAutoComplete: true,
+    enableLinting: false,
+    disableComplexCM: false, // Disables background highlights (active line, selection match)
+    maxFileSize: 1048576 // 1MB
+  }
+}`}
                         readOnly={true}
-                        language="json"
+                        language="javascript"
                         wordWrap="off"
                       />
                     </div>

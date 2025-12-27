@@ -1,0 +1,129 @@
+.universal-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: uni-fade-in 0.2s ease;
+}
+
+.universal-modal {
+  background: var(--color-bg-tertiary, #1e1e1e);
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  position: absolute; /* Default for draggable */
+  min-width: 300px;
+  animation: uni-scale-up 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.universal-modal.locked {
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+  transform: none !important;
+  margin: auto;
+}
+
+.universal-modal-header {
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: move; /* Drag handle */
+}
+
+.universal-modal-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  user-select: none;
+}
+
+.universal-modal-close {
+  background: none !important;
+  border: none !important;
+  color: var(--color-text-tertiary) !important;
+  font-size: 18px !important;
+  cursor: pointer;
+  padding: 0 4px !important;
+  transition: color 0.2s ease;
+}
+
+.universal-modal-close:hover {
+  color: var(--color-text-primary) !important;
+}
+
+.universal-modal-content {
+  flex: 1;
+  padding: 12px;
+  overflow: auto;
+}
+
+.universal-modal-footer {
+  padding: 10px 14px;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@keyframes uni-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes uni-scale-up {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Drag Handle Styling for Mode Switcher */
+.drag-handle-hint {
+  width: 10px;
+  height: 12px;
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 2px;
+  opacity: 0.4;
+  margin-right: 8px;
+  cursor: move;
+  align-content: center;
+  justify-content: center;
+}
+
+/* Remove default button backgrounds/borders from any icon buttons inside the modal interactions */
+.universal-modal button {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+/* remove focus bg  */
+
+.drag-handle-hint span {
+  width: 2px;
+  height: 2px;
+  background: var(--color-text-primary);
+  border-radius: 50%;
+}

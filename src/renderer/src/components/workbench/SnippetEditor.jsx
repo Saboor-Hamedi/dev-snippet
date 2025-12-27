@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import PropTypes from 'prop-types'
+import { GripVertical } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../hook/useKeyboardShortcuts.js'
 import { useEditorFocus } from '../../hook/useEditorFocus.js'
 import { useZoomLevel } from '../../hook/useSettingsContext' // Fixed import source
@@ -13,6 +14,10 @@ import { useTheme } from '../../hook/useTheme'
 import AdvancedSplitPane from '../splitPanels/AdvancedSplitPane'
 import { extractTags } from '../../utils/snippetUtils.js'
 import { generatePreviewHtml } from '../../utils/previewGenerator'
+import { makeDraggable } from '../../utils/draggable.js'
+import UniversalModal from '../universal/UniversalModal'
+import { useUniversalModal } from '../universal/useUniversalModal'
+import '../universal/universalStyle.css'
 
 const SnippetEditor = ({
   onSave,
@@ -33,12 +38,160 @@ const SnippetEditor = ({
   const [code, setCode] = useState(initialSnippet?.code || '')
   const [isDirty, setIsDirty] = useState(false)
   const [zoomLevel] = useZoomLevel()
-  const { settings, getSetting } = useSettings()
+  const { settings, getSetting, updateSetting } = useSettings()
   const { currentTheme } = useTheme()
 
   const [title, setTitle] = useState(initialSnippet?.title || '')
   const [justRenamed, setJustRenamed] = useState(false)
+  const [isFloating, setIsFloating] = useState(
+    () => settings?.ui?.modeSwitcher?.isFloating || false
+  )
+  const switcherRef = useRef(null)
+  const dragHandleRef = useRef(null)
   const [cursorPos, setCursorPos] = useState({ line: 1, col: 1 })
+  const [activeMode, setActiveMode] = useState('live_preview')
+
+  const {
+    isOpen: isUniOpen,
+    title: uniTitle,
+    content: uniContent,
+    footer: uniFooter,
+    closeModal: closeUni,
+    openModal
+  } = useUniversalModal()
+
+  // Apply stored position on mount or when going floating
+  useEffect(() => {
+    if (isFloating && switcherRef.current) {
+      const pos = settings?.ui?.modeSwitcher?.pos
+      if (pos && pos.x !== null && pos.y !== null) {
+        switcherRef.current.style.left = `${pos.x}px`
+        switcherRef.current.style.top = `${pos.y}px`
+        switcherRef.current.style.bottom = 'auto'
+        switcherRef.current.style.right = 'auto'
+      }
+    }
+  }, [isFloating])
+
+  // Listen for mode changes from CM instance
+  useEffect(() => {
+    const handleModeChange = (e) => setActiveMode(e.detail.mode)
+    window.addEventListener('app:mode-changed', handleModeChange)
+    return () => window.removeEventListener('app:mode-changed', handleModeChange)
+  }, [activeMode])
+
+  // Listen for Source Modal requests from richMarkdown extension
+  useEffect(() => {
+    const handleSourceModal = (e) => {
+      const { view, from, to, initialCode } = e.detail
+      let currentInput = initialCode
+
+      openModal({
+        title: 'Edit Raw Source',
+        content: (
+          <div className="source-editor-container">
+            <textarea
+              className="cm-md-source-modal-input"
+              style={{
+                width: '100%',
+                minHeight: '300px',
+                background: 'transparent',
+                border: 'none',
+                color: 'inherit',
+                outline: 'none',
+                resize: 'none',
+                fontFamily: 'monospace',
+                fontSize: '13px',
+                lineHeight: '1.6'
+              }}
+              defaultValue={initialCode}
+              onChange={(evt) => {
+                currentInput = evt.target.value
+              }}
+              autoFocus
+            />
+          </div>
+        ),
+        footer: (
+          <button
+            className="cm-md-modal-save"
+            onClick={() => {
+              const newCode = currentInput
+              let finalCode = newCode
+              const oldSlice = view.state.doc.sliceString(from, to)
+
+              if (oldSlice.startsWith('```mermaid')) {
+                finalCode = '```mermaid\n' + newCode.trim() + '\n```'
+              } else if (oldSlice.startsWith('```')) {
+                const match = oldSlice.match(/^```(\w*)/)
+                const lang = match ? match[1] : ''
+                finalCode = '```' + lang + '\n' + newCode.trim() + '\n```'
+              }
+
+              view.dispatch({
+                changes: { from, to, insert: finalCode },
+                userEvent: 'input.source.modal'
+              })
+              closeUni()
+            }}
+          >
+            Apply Changes
+          </button>
+        )
+      })
+    }
+
+    window.addEventListener('app:open-source-modal', handleSourceModal)
+    return () => window.removeEventListener('app:open-source-modal', handleSourceModal)
+  }, [openModal, closeUni])
+
+  useEffect(() => {
+    // Check Universal Lock (Master Switch)
+    const isLocked = settings?.ui?.universalLock?.modal
+
+    if (isLocked) {
+      if (isFloating) {
+        setIsFloating(false)
+        updateSetting('ui.modeSwitcher.isFloating', false)
+      }
+
+      // FORCE RESET POSITION STYLES if locked
+      if (switcherRef.current) {
+        switcherRef.current.style.top = ''
+        switcherRef.current.style.left = ''
+        switcherRef.current.style.bottom = ''
+        switcherRef.current.style.right = ''
+        switcherRef.current.style.transform = ''
+        switcherRef.current.style.margin = ''
+      }
+      return
+    }
+
+    if (settings?.ui?.modeSwitcher?.disableDraggable) {
+      // Legacy/Local switch support if we kept it, but Universal Lock overrides all
+      if (isFloating) setIsFloating(false)
+      return
+    }
+
+    if (isFloating && switcherRef.current && dragHandleRef.current) {
+      return makeDraggable(switcherRef.current, dragHandleRef.current, (pos) => {
+        updateSetting('ui.modeSwitcher.pos', pos)
+      })
+    }
+  }, [
+    isFloating,
+    updateSetting,
+    settings?.ui?.modeSwitcher?.disableDraggable,
+    settings?.ui?.universalLock?.modal
+  ])
+
+  const cycleMode = useCallback(() => {
+    const modes = ['source', 'live_preview', 'reading']
+    const nextIndex = (modes.indexOf(activeMode) + 1) % modes.length
+    window.dispatchEvent(
+      new CustomEvent('app:set-editor-mode', { detail: { mode: modes[nextIndex] } })
+    )
+  }, [activeMode])
 
   // Update title when initialSnippet changes (e.g., after rename)
   useEffect(() => {
@@ -58,7 +211,8 @@ const SnippetEditor = ({
   const [debouncedCode, setDebouncedCode] = useState(code)
   // Stabilize language detection so the editor doesn't re-mount on every keystroke
   const detectedLang = useMemo(() => {
-    const ext = title?.includes('.') ? title.split('.').pop()?.toLowerCase() : null
+    const safeTitle = typeof title === 'string' ? title : ''
+    const ext = safeTitle.includes('.') ? safeTitle.split('.').pop()?.toLowerCase() : null
     let lang = ext || 'plaintext'
     if (!ext && code) {
       const trimmed = code.substring(0, 500).trim()
@@ -296,7 +450,8 @@ const SnippetEditor = ({
     },
     onCloseEditor: () => {
       if (onCancel) onCancel()
-    }
+    },
+    onToggleMode: cycleMode
   })
 
   const handleSave = async (forceSave = false, customTitle = null) => {
@@ -366,7 +521,8 @@ const SnippetEditor = ({
   // Helper to generate the complete HTML for external/mini previews
   const generateFullHtml = useCallback(
     (forPrint = false) => {
-      const ext = title?.includes('.') ? title.split('.').pop()?.toLowerCase() : null
+      const safeTitle = typeof title === 'string' ? title : ''
+      const ext = safeTitle.includes('.') ? safeTitle.split('.').pop()?.toLowerCase() : null
       const isMarkdown = !ext || ext === 'markdown' || ext === 'md'
       const existingTitles = snippets.map((s) => (s.title || '').trim()).filter(Boolean)
 
@@ -402,7 +558,8 @@ const SnippetEditor = ({
       // Generate HTML specifically optimized for PDF (White theme, no UI toolbars)
       const fullHtml = await generateFullHtml(true)
       if (window.api?.invoke) {
-        const sanitizedTitle = (title || 'snippet').replace(/[^a-z0-9]/gi, '_').toLowerCase()
+        const safeTitle = typeof title === 'string' ? title : 'snippet'
+        const sanitizedTitle = (safeTitle || 'snippet').replace(/[^a-z0-9]/gi, '_').toLowerCase()
         const success = await window.api.invoke('export:pdf', fullHtml, sanitizedTitle)
         if (success) {
           showToast?.('Snippet exported to PDF successfully!', 'success')
@@ -433,86 +590,257 @@ const SnippetEditor = ({
       {!isCreateMode && (!initialSnippet || !initialSnippet.id) && !hideWelcomePage ? (
         <WelcomePage onNewSnippet={onNew} />
       ) : (
-        <div
-          className="h-full overflow-hidden flex flex-col items-stretch relative"
-          style={{ backgroundColor: 'var(--editor-bg)' }}
-        >
-          <div
-            className="flex-1 min-h-0 overflow-hidden editor-container relative flex"
-            style={{ backgroundColor: 'var(--editor-bg)' }}
-          >
+        <div className="h-full overflow-hidden flex flex-col items-stretch relative fade-in">
+          <div className="flex-1 min-h-0 overflow-hidden editor-container relative flex">
             <AdvancedSplitPane
               rightHidden={!showPreview}
               unifiedScroll={false}
               overlayMode={settings?.livePreview?.overlayMode || false}
               left={
-                <div ref={editorContainerRef} className="w-full h-full">
-                  <CodeEditor
-                    value={code || ''}
-                    language={detectedLang}
-                    wordWrap={wordWrap}
-                    theme={currentTheme}
-                    onChange={(val) => {
-                      if (val !== code) {
-                        setCode(val || '')
-                        setIsDirty(true)
-                      }
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Escape') onCancel?.()
-                      if ((e.ctrlKey || e.metaKey) && e.key === ',') {
-                        e.preventDefault()
-                        onToggleCompactHandler()
-                      }
-                    }}
-                    height="100%"
-                    className="h-full"
-                    textareaRef={textareaRef}
-                    snippets={snippets}
-                    onCursorChange={setCursorPos}
-                  />
+                <div ref={editorContainerRef} className="w-full h-full flex justify-center">
+                  <div className="w-full h-full relative">
+                    <CodeEditor
+                      value={code || ''}
+                      language={detectedLang}
+                      wordWrap={wordWrap}
+                      theme={currentTheme}
+                      onChange={(val) => {
+                        if (val !== code) {
+                          setCode(val || '')
+                          setIsDirty(true)
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') onCancel?.()
+                        if ((e.ctrlKey || e.metaKey) && e.key === ',') {
+                          e.preventDefault()
+                          onToggleCompactHandler()
+                        }
+                        // Ctrl + / to cycle modes
+                        if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+                          e.preventDefault()
+                          cycleMode()
+                        }
+                      }}
+                      height="100%"
+                      className="h-full"
+                      textareaRef={textareaRef}
+                      snippets={snippets}
+                      onCursorChange={setCursorPos}
+                    />
+                  </div>
                 </div>
               }
               right={
-                <div className="h-full p-0">
-                  {useMemo(() => {
-                    const ext = title?.includes('.') ? title.split('.').pop()?.toLowerCase() : null
+                <div
+                  className="h-full w-full p-0 flex justify-center bg-[var(--color-bg-primary)] cursor-text overflow-y-auto text-left items-start"
+                  onDoubleClick={() => {
+                    // Disable "Double click to edit" in strictly Reading Mode
+                    if (activeMode === 'reading') return
 
-                    // Default detection from extension
-                    let detectedLang = ext || 'plaintext'
+                    // "Double click to edit" behavior for Live Preview
+                    // Dispatching the toggle event to revert/switch state.
+                    window.dispatchEvent(new CustomEvent('app:toggle-preview'))
+                  }}
+                >
+                  <div className="w-full max-w-[850px] min-h-full shadow-sm py-8 px-8">
+                    {useMemo(() => {
+                      const safeTitle = typeof title === 'string' ? title : ''
+                      const ext = safeTitle.includes('.')
+                        ? safeTitle.split('.').pop()?.toLowerCase()
+                        : null
 
-                    // Heuristic: If untitled/no-extension, check content for Markdown indicators
-                    if (!ext && debouncedCode) {
-                      const trimmed = debouncedCode.trim()
-                      if (
-                        trimmed.startsWith('# ') ||
-                        trimmed.startsWith('## ') ||
-                        trimmed.startsWith('### ') ||
-                        trimmed.startsWith('- ') ||
-                        trimmed.startsWith('* ') ||
-                        trimmed.startsWith('```') ||
-                        trimmed.startsWith('>')
-                      ) {
-                        detectedLang = 'markdown'
+                      // Default detection from extension
+                      let detectedLang = ext || 'plaintext'
+
+                      // Heuristic: If untitled/no-extension, check content for Markdown indicators
+                      if (!ext && debouncedCode) {
+                        const trimmed = debouncedCode.trim()
+                        if (
+                          trimmed.startsWith('# ') ||
+                          trimmed.startsWith('## ') ||
+                          trimmed.startsWith('### ') ||
+                          trimmed.startsWith('- ') ||
+                          trimmed.startsWith('* ') ||
+                          trimmed.startsWith('```') ||
+                          trimmed.startsWith('>')
+                        ) {
+                          detectedLang = 'markdown'
+                        }
                       }
-                    }
 
-                    return (
-                      <LivePreview
-                        code={debouncedCode}
-                        language={detectedLang}
-                        snippets={snippets}
-                        theme={currentTheme}
-                        fontFamily={settings?.editor?.fontFamily}
-                        onOpenExternal={handleOpenExternalPreview}
-                        onOpenMiniPreview={handleOpenMiniPreview}
-                        onExportPDF={handleExportPDF}
-                      />
-                    )
-                  }, [debouncedCode, title, snippets, currentTheme, settings?.editor?.fontFamily])}
+                      return (
+                        <LivePreview
+                          code={debouncedCode}
+                          language={detectedLang}
+                          snippets={snippets}
+                          theme={currentTheme}
+                          fontFamily={settings?.editor?.fontFamily}
+                          onOpenExternal={handleOpenExternalPreview}
+                          onOpenMiniPreview={handleOpenMiniPreview}
+                          onExportPDF={handleExportPDF}
+                        />
+                      )
+                    }, [
+                      debouncedCode,
+                      title,
+                      snippets,
+                      currentTheme,
+                      settings?.editor?.fontFamily
+                    ])}
+                  </div>
                 </div>
               }
             />
+
+            <div
+              ref={switcherRef}
+              className={`cm-editor-mode-switcher ${
+                isFloating ? 'is-floating' : ''
+              } animate-in fade-in slide-in-from-bottom-2 duration-300`}
+            >
+              {/* Drag Handle - Only show if draggable is enabled AND currently floating */}
+              {isFloating &&
+                !settings?.ui?.modeSwitcher?.disableDraggable &&
+                !settings?.ui?.universalLock?.modal && (
+                  <div
+                    ref={dragHandleRef}
+                    className="cm-mode-item"
+                    title="Drag to move"
+                    onClick={(e) => {
+                      // Prevent click propagation to avoid triggering adjacent logic if any
+                      e.stopPropagation()
+                    }}
+                    onMouseDown={(e) => {
+                      // Prevent focus stealing for smoother drag start
+                      e.preventDefault()
+                    }}
+                    style={{
+                      cursor: isFloating ? 'move' : 'default',
+                      opacity: isFloating ? 1 : 0.3
+                    }}
+                  >
+                    <GripVertical size={14} />
+                  </div>
+                )}
+
+              {/* Pin/Float Toggle - Only show if draggable is enabled */}
+              {!settings?.ui?.modeSwitcher?.disableDraggable &&
+                !settings?.ui?.universalLock?.modal && (
+                  <button
+                    className="cm-mode-item"
+                    onClick={(e) => {
+                      e.currentTarget.blur() // Remove focus ring to avoid confusion with active state
+                      if (switcherRef.current) {
+                        switcherRef.current.style.top = ''
+                        switcherRef.current.style.left = ''
+                        switcherRef.current.style.bottom = ''
+                        switcherRef.current.style.right = ''
+                        switcherRef.current.style.margin = ''
+                      }
+                      const newState = !isFloating
+                      setIsFloating(newState)
+                      updateSetting('ui.modeSwitcher.isFloating', newState)
+                    }}
+                  >
+                    {isFloating ? (
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="14"
+                        height="14"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path d="M21 10V4a2 2 0 0 0-2-2h-6"></path>
+                        <path d="M3 14v6a2 2 0 0 0 2 2h6"></path>
+                        <path d="M16 2l6 6"></path>
+                        <path d="M2 16l6 6"></path>
+                      </svg>
+                    ) : (
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="14"
+                        height="14"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"></path>
+                      </svg>
+                    )}
+                  </button>
+                )}
+              <div className="cm-mode-divider"></div>
+
+              {[
+                {
+                  id: 'source',
+                  label: 'Source',
+                  icon: (
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="14"
+                      height="14"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <polyline points="16 18 22 12 16 6"></polyline>
+                      <polyline points="8 6 2 12 8 18"></polyline>
+                    </svg>
+                  )
+                },
+                {
+                  id: 'live_preview',
+                  label: 'Live',
+                  icon: (
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="14"
+                      height="14"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                  )
+                },
+                {
+                  id: 'reading',
+                  label: 'Read',
+                  icon: (
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="14"
+                      height="14"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                    </svg>
+                  )
+                }
+              ].map((m) => (
+                <button
+                  key={m.id}
+                  className={`cm-mode-btn ${activeMode === m.id ? 'is-active' : ''}`}
+                  title={`${m.label} Mode`}
+                  onClick={() => {
+                    window.dispatchEvent(
+                      new CustomEvent('app:set-editor-mode', { detail: { mode: m.id } })
+                    )
+                  }}
+                >
+                  {m.icon}
+                  <span>{m.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
           <StatusBar
@@ -546,6 +874,16 @@ const SnippetEditor = ({
             }}
             placeholder="e.g. hello.js or notes"
           />
+
+          <UniversalModal
+            key={settings?.ui?.universalModal?.disableDrag ? 'locked' : 'draggable'}
+            isOpen={isUniOpen}
+            onClose={closeUni}
+            title={uniTitle}
+            footer={uniFooter}
+          >
+            {uniContent}
+          </UniversalModal>
         </div>
       )}
     </>

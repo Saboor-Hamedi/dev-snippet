@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, memo } from 'react'
 import { createPortal } from 'react-dom'
 import PropTypes from 'prop-types'
 import { useZoomLevel, useEditorZoomLevel, useSettings } from '../../../hook/useSettingsContext'
-import { Check } from 'lucide-react'
+import { Check, Eye, Edit2 } from 'lucide-react'
 
 import './StatusBar.css'
 
@@ -111,10 +111,20 @@ const useStatusBar = ({
           )}
 
           {/* Version (Restored) */}
-          {!minimal && showVersion && (
-            <div className="status-bar-item opacity-60 hover:opacity-100 transition-opacity">
-              <span className="font-mono tabular-nums">v{version}</span>
-            </div>
+          {/* View Mode Toggle - Obsidian Style Button */}
+          {!minimal && (
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('app:toggle-preview'))}
+              className="flex items-center gap-1.5 px-2 py-0.5 rounded hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-all group ml-1"
+              title="Toggle Reading Mode (Ctrl+E)"
+            >
+              <div className="text-[var(--color-accent-primary)]">
+                {/* We need to know current state - simplified for UI */}
+                <Edit2 size={12} className="group-hover:hidden" />
+                <Eye size={12} className="hidden group-hover:block" />
+              </div>
+              <span className="font-mono text-xtiny opacity-90">Mode</span>
+            </button>
           )}
 
           {/* Git Branch / Version Placeholder (Toggle via System Status) */}

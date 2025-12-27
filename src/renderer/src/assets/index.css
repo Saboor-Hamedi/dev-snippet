@@ -57,9 +57,9 @@
   --font-size-base: 1rem; /* 16px  */
   --font-size-lg: 1.125rem; /* 18px  */
   --font-size-xl: 1.25rem; /* 20px  */
-  --font-size-2xl: 1.5rem; /* 24px  */
-  --font-size-3xl: 1.875rem; /* 30px  */
-  --font-size-4xl: 2.25rem; /* 36px  */
+  --font-size-2xl: 1.75rem; /* 24px -> 28px */
+  --font-size-3xl: 2.25rem; /* 30px -> 36px */
+  --font-size-4xl: 3rem; /* 36px -> 48px */
   --font-size-5xl: 3rem; /* 48px  */
   --font-size-6xl: 3.75rem; /* 60px  */
   --font-size-7xl: 4.5rem; /* 72px  */
@@ -227,7 +227,9 @@ select:not(.theme-exempt):focus {
   border: 3px solid transparent;
   background-clip: content-box;
   border-radius: 99px;
+  background-clip: content-box;
   opacity: 0.8;
+  transition: background-color 0.2s;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -391,6 +393,27 @@ h4,
 h5,
 h6 {
   color: var(--color-text-primary) !important;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+h1 {
+  font-size: var(--font-size-4xl);
+}
+h2 {
+  font-size: var(--font-size-3xl);
+}
+h3 {
+  font-size: var(--font-size-2xl);
+}
+h4 {
+  font-size: var(--font-size-xl);
+}
+h5 {
+  font-size: var(--font-size-lg);
+}
+h6 {
+  font-size: var(--font-size-base);
 }
 
 /* Activity bar and sidebar headers */
@@ -583,6 +606,34 @@ body {
 .text-primary {
   color: var(--primary);
 }
+
+/* Polished Fade Effect */
+.fade-in {
+  animation: fadeIn 0.15s ease-out forwards;
+}
+
+/* 
+   STABILITY PATCH: Disable all transitions for the editor root.
+   Transitions on layout elements cause CodeMirror 6 measurement crashes.
+*/
+.cm-editor,
+.cm-scroller,
+.cm-content,
+.cm-gutters {
+  transition: none !important;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0.9;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 #root {
   width: 100%;
   height: 100vh;
@@ -1365,4 +1416,262 @@ li[aria-selected] .cm-completionDetail {
 [data-theme='polaris'] .code-editor-container,
 [data-theme='minimal-gray'] .code-editor-container {
   background-color: var(--editor-bg) !important;
+}
+
+/* --- PREMIUM OBSIDIAN-STYLE HEADER --- */
+.editor-premium-header {
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background-color: rgba(var(--editor-bg-rgb, 13, 17, 23), 0.82);
+  z-index: 50;
+  transition: all 0.2s ease;
+}
+
+.editor-premium-header input {
+  font-family: var(--editor-font-family);
+  width: auto;
+  min-width: 150px;
+}
+
+.mode-indicator-group {
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+.mode-indicator-group button {
+  color: var(--color-text-tertiary);
+  position: relative;
+  overflow: hidden;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.mode-indicator-group button:hover {
+  color: var(--color-text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.mode-indicator-group button.is-active {
+  background: rgba(88, 166, 255, 0.15) !important;
+  color: var(--color-accent-primary) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.mode-indicator-group button.is-active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 20%;
+  right: 20%;
+  height: 2px;
+  background: var(--color-accent-primary);
+  border-radius: 2px 2px 0 0;
+  box-shadow: 0 0 10px var(--color-accent-primary);
+}
+
+/* --- Mode Switcher (Floating Flow) --- */
+.cm-editor-mode-switcher {
+  position: absolute;
+  bottom: 12px;
+  right: 20px;
+  display: flex !important;
+  background: rgba(26, 26, 26, 0.85) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 5px;
+  padding: 2px;
+  gap: 2px;
+  z-index: 1000;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(24px);
+  user-select: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.cm-editor-mode-switcher.is-floating {
+  border-color: var(--color-accent-primary) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+}
+
+.cm-editor-mode-switcher.is-dragging {
+  opacity: 0.9;
+  cursor: move !important;
+}
+
+.cm-mode-item {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 4px;
+  border: none !important;
+  background: transparent !important;
+  color: var(--color-text-tertiary) !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cm-mode-item:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: var(--color-text-secondary) !important;
+}
+
+.cm-mode-toggle-float {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: none !important;
+  background: transparent !important;
+  color: var(--color-text-tertiary) !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cm-mode-toggle-float:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: var(--color-text-secondary) !important;
+}
+
+.cm-mode-toggle-float.is-active {
+  color: var(--color-accent-primary) !important;
+}
+
+.cm-mode-divider {
+  width: 1px;
+  height: 18px;
+  background: var(--color-border);
+  margin: 0 4px;
+  align-self: center;
+}
+
+.cm-mode-btn {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 75px;
+  height: 28px;
+  border-radius: 4px;
+  border: none !important;
+  background: transparent !important;
+  color: var(--color-text-secondary) !important;
+  font-size: 10.5px !important;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cm-mode-btn span {
+  display: inline;
+  opacity: 1;
+}
+
+.cm-mode-btn:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: var(--color-text-primary) !important;
+}
+
+.cm-mode-btn.is-active {
+  background: var(--color-accent-primary) !important;
+  color: #fff !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* --- Source Modal (Floating Editor) --- */
+.cm-md-source-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: cm-modal-fade 0.2s ease;
+}
+
+.cm-md-source-modal {
+  width: 550px;
+  max-width: 90vw;
+  max-height: 75vh;
+  background: var(--color-bg-tertiary, #1e1e1e);
+  border: 1px solid var(--color-border);
+  border-radius: 5px; /* Precision 5px radius */
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+.cm-md-source-modal-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.cm-md-modal-close {
+  background: none !important;
+  border: none !important;
+  color: var(--color-text-tertiary) !important;
+  font-size: 20px !important;
+  cursor: pointer;
+  padding: 0 4px !important;
+}
+
+.cm-md-source-modal-input {
+  flex: 1;
+  padding: 16px;
+  background: transparent !important;
+  border: none !important;
+  color: var(--color-text-primary) !important;
+  font-family: var(--editor-font-family, monospace) !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  resize: none !important;
+  outline: none !important;
+  min-height: 200px;
+}
+
+.cm-md-source-modal-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.cm-md-modal-save {
+  padding: 6px 16px !important;
+  background: var(--color-accent-primary) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+}
+
+@keyframes cm-modal-fade {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }

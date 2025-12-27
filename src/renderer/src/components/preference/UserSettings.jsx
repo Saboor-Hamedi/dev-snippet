@@ -56,25 +56,23 @@ const UserSettings = () => {
           <div className="flex items-center gap-2 sm:gap-4 ml-2">
             {/* Mode Switcher */}
             <div className="flex items-center">
-              {mode === 'ui' ? (
-                <button
-                  onClick={() => setMode('json')}
-                  className="flex items-center gap-1.5 px-2 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-[var(--color-border)] rounded-md text-[9px] font-bold text-slate-600 dark:text-slate-300 transition-all"
-                  title="Switch to Source Code"
-                >
-                  <Code size={10} className="opacity-70" />
-                  <span className="hidden sm:inline">Source Code</span>
-                </button>
-              ) : (
-                <button
-                  onClick={() => setMode('ui')}
-                  className="flex items-center gap-1.5 px-2 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-[var(--color-border)] rounded-md text-[9px] font-bold text-slate-600 dark:text-slate-300 transition-all"
-                  title="Switch to Visual Editor"
-                >
-                  <Sliders size={10} className="opacity-70" />
-                  <span className="hidden sm:inline">Visual Editor</span>
-                </button>
-              )}
+              <button
+                onClick={() => setMode(mode === 'ui' ? 'json' : 'ui')}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded-md text-[10px] font-medium transition-all"
+                title={mode === 'ui' ? 'Switch to Source Code' : 'Switch to Visual Editor'}
+              >
+                {mode === 'ui' ? (
+                  <>
+                    <Code size={12} className="opacity-70" />
+                    <span className="hidden sm:inline">View Source</span>
+                  </>
+                ) : (
+                  <>
+                    <Sliders size={12} className="opacity-70" />
+                    <span className="hidden sm:inline">Visual Editor</span>
+                  </>
+                )}
+              </button>
             </div>
 
             {/* Actions */}

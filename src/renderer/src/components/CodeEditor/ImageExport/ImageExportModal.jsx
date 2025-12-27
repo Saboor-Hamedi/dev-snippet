@@ -6,7 +6,7 @@ import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { toBlob, toPng } from 'html-to-image'
 import { saveAs } from 'file-saver'
 import PropTypes from 'prop-types'
-import ToggleButton from '../../ToggleButton'
+import {ToggleButton} from '../../ToggleButton'
 
 const customVscDarkPlus = {
   ...vscDarkPlus,

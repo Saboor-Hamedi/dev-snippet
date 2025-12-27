@@ -10,6 +10,7 @@ Welcome to the comprehensive documentation for **Dev Snippet**, a high-performan
 2. [Technical Architecture](#3-technical-architecture)
 3. [Core Layer Architecture](#4-core-layer-architecture)
 4. [Project Structure](#5-project-structure)
+5. [Changelog & Updates](#6-changelog--updates)
 
 ---
 
@@ -20,22 +21,34 @@ Welcome to the comprehensive documentation for **Dev Snippet**, a high-performan
 1.  **Markdown First**: Optimized for technical writing with GFM support.
 2.  **Local Privacy**: 100% offline, data stored in local database.
 3.  **Speed**: Keyboard-centric workflow with instant search.
+4.  **WYSIWYG 2.0**: Seamless transition between source code and rich document rendering.
 
 ### Key Features
 
-- **Pro Smart Editor**: 
-  - **Syntax Highlighting**: Auto-detects 100+ languages.
-  - **Social Elements**: Vibrant highlighting for `@mentions` and `#hashtags`.
-  - **Wiki-Links**: Connect snippets with `[[WikiLink]]` syntax and smart completion.
-  - **Smart Pairs**: Atomic deletion for common pairs like `[[ ]]`, `` ``` ``, `**`, etc.
-- **In-Editor Search**: VS Code-style search panel with regex, case-sensitivity, and match navigation. (See [Search Documentation](../src/renderer/src/components/CodeEditor/search/SearchDoc.md))
-- **Enhanced Tables**: Full-width striped background with bold headers and subtle delimiters.
-- **Live Preview**: Real-time rendering with **Mermaid** diagrams and **MathJax**.
+- **Pro Smart Editor (Obsidian-Style)**: 
+  - **Triple-Mode Workflow**: Switch between **Source** (Raw MD), **Live Preview** (Wysiwyg), and **Reading** (Document-only) modes.
+  - **Zero-Jump Rendering**: Advanced vertical rhythm synchronization ensures the document stays at the exact same scroll position when toggling modes.
+  - **Spreadsheet Tables**: Interactive tables with direct cell editing and toolbar-powered row/column insertion.
+  - **Mermaid Diagrams**: Instant Schematic rendering. Support for **Zoom & Pan** navigation in Live Preview.
+  - **Admonitions (Callouts)**: GitHub-style callouts using the `::: type` syntax.
+  - **Interactive Checkboxes**: Clickable task markers in Live Preview and Reading modes.
+  - **Social Elements**: High-fidelity highlighting for `@mentions` and `#hashtags`.
+  - **Wiki-Links**: Connect snippets with `[[Link]]` syntax and smart completion.
+
+- **Fast Track Media Engine**:
+  - **Inline Images**: Instant rendering of `![alt](url)` and wiki-style images directly within the editor.
+  - **Lazy Loading**: High-performance image loading that doesn't block the editor thread.
+  - **Code Block Headers**: Integrated language indicators and "Copy" buttons for all fenced code blocks.
+
 - **Flow Mode (Zen Mode)**: 
-  - **Distraction-Free**: Toggle with `Ctrl + Shift + F` to hide all UI (Sidebar, Activity Bar, Header, Footer) and focus solely on the editor.
-  - **Ghost Preview**: A floating, semi-transparent preview window that appears in Flow Mode to provide visual feedback without breaking focus.
-- **PDF Export**: Pro-grade `A4` PDF generation with custom margins.
-- **Mini Browser**: Detach the preview into a floating "Always on Top" window.
+  - **Distraction-Free**: Toggle with `Ctrl + Shift + F` to hide all UI and focus solely on the editor.
+  - **Ghost Preview**: A floating, semi-transparent preview window that provides visual feedback without breaking focus.
+
+- **In-Editor Search**: VS Code-style search panel with regex, case-sensitivity, and match navigation.
+
+- **Export & Preview**:
+  - **Pro PDF Export**: Pro-grade `A4` PDF generation with custom margins and themes.
+  - **Mini Browser**: Detach the preview into a floating "Always on Top" window.
 
 ### Keyboard Shortcuts
 
@@ -43,20 +56,17 @@ Welcome to the comprehensive documentation for **Dev Snippet**, a high-performan
 | :------------------- | :------------------- |
 | **New Snippet**      | `Ctrl + N`           |
 | **Save (Force)**     | `Ctrl + S`           |
-| **Flow Mode (Zen)**  | `Ctrl + Shift + F`  |
+| **Flow Mode (Zen)**  | `Ctrl + Shift + F`   |
 | **Toggle Sidebar**   | `Ctrl + B`           |
 | **Toggle Preview**   | `Ctrl + \`           |
-| **Quick Search**     | `Ctrl + P`           |
+| **Toggle Triple Mode**| `Ctrl + /` (Cycle) |
 | **In-Editor Search** | `Ctrl + F`           |
+| **Quick Search**     | `Ctrl + P`           |
 | **Rename Snippet**   | `Ctrl + R`           |
 | **Delete Snippet**   | `Ctrl + Shift + D`   |
-| **Copy Code**        | `Ctrl + Shift + C`   |
-| **Pin / Unpin**      | `Alt + P`            |
-| **Open Settings**    | `Ctrl + ,`           |
 | **App Zoom**         | `Ctrl + / - / 0`     |
 | **Editor Font Zoom** | `Ctrl + Mouse Wheel` |
 | **Close Editor**     | `Ctrl + Shift + W`   |
-| **Export PDF**       | `UI Button`          |
 
 ---
 
@@ -132,15 +142,12 @@ erDiagram
 
 - **`SnippetEditor.jsx`**: The heart of the app. Manages editor state, autosave timers, and preview coordination.
 - **`LivePreview.jsx`**: A React wrapper that manages the **Sandboxed Preview**.
-  - _Security_: Uses an `iframe` (`public/preview.html`) to render user content.
-  - _Performance_: Uses `fastMarkdown.js` (Regex-based) for instant rendering of massive files.
-- **`previewGenerator.js`**: Shared logic for generating HTML for **PDF Export** and **Mini Browser**.
+- **`richMarkdown.js`**: High-performance CodeMirror 6 extension for live rendering.
+- **`buildTheme.js`**: Custom theme engine with support for glassmorphism and premium typography.
 
 ---
 
 ## 4. Core Layer Architecture
-
-This section details the interaction between the three critical layers: Typing, System, and Sandbox.
 
 ### Typing Code System & Sandbox Layer
 
@@ -168,7 +175,7 @@ flowchart TD
         Script -->|Parse| FastMD[FastMarkdown Engine]
         Script -->|Render| DOM[DOM Tree]
 
-        DOM -.->|Reflow| Mermaid[Mermaid Diagrams]
+        DOM -.->|Reflow| Mermaid[Diagrams]
         DOM -.->|Paint| HLJS[Syntax Highlighting]
     end
 
@@ -192,132 +199,64 @@ flowchart TD
     class EditorComp,ReactState,PreviewMgr,UserInput react
     class IPCHandler,PDFEngine electron
     class IframeWindow,Script,FastMD,DOM,Mermaid,HLJS sandbox
-    class Timer,SQLite,DB storage
+    class SQLite,DB storage
 ```
-
-### Layer Descriptions
-
-1.  **Typing Layer**:
-    - Handles high-frequency user input events.
-    - Manages React state for the editor UI.
-    - Debounces saves to prevent database thrashing.
-    - Immediately propagates changes to the Preview Manager.
-
-2.  **System Layer**:
-    - Operates in the Electron Main Process (Node.js environment).
-    - Handles file system access and database persistence.
-    - Executes heavy operations like PDF generation off the main UI thread.
-
-3.  **Sandbox Layer**:
-    - A completely isolated `iframe` environment.
-    - Receives content via `postMessage` protocol (Zero shared state).
-    - Renders unsafe HTML/Markdown locally without risking the main application's security.
-    - Runs heavy rendering scripts (Mermaid, Highlight.js) independently.
 
 ---
 
-## 5. Project Structure (Mindmap)
+## 5. Feature Showcase (Editor Demo)
 
+### Callouts Example
+::: Tip Pro Tip
+You can now use `Ctrl + /` to quickly cycle between Source, Live, and Reading modes!
+:::
+
+::: Warning Performance
+For very large files, switching to Source Mode can improve typing responsiveness.
+:::
+
+### Mermaid Diagrams
 ```mermaid
-mindmap
-  root((Dev Snippet))
-    src
-      main(Main Process)
-        "index.js"
-        database
-          "schema.js"
-        ipc
-          "export.js"
-          "database.js"
-      renderer(Renderer Process)
-        "index.html"
-        src
-          "App.jsx"
-          components
-            LivePreview
-            SnippetEditor
-            Mermaid
-          utils
-            "fastMarkdown.js"
-            "previewGenerator.js"
-          assets
-            "markdown.css"
-            "variables.css"
-    resources
-      icons
-    "package.json"
+graph LR
+    A[Raw Markdown] -->|Live Preview| B(Document View)
+    B -->|Reading Mode| C{Final Review}
+    C -->|Export| D[Professional PDF]
 ```
+
+### Spreadsheet Tables
+| Feature | Mode | Supported |
+| :--- | :--- | :--- |
+| Cell Editing | Live | ✅ |
+| Row Insertion | Live | ✅ |
+| View Source | All | ✅ |
 
 ---
 
 ## 6. Changelog & Updates
 
-### Version 1.2.1 (Latest)
+### Version 1.3.0 (Latest Major Update)
 
-**Status Bar & Editor Enhancements:**
+**Wysiwyg 2.0 & Triple Mode Engine:**
 
-- **Enhanced Status Bar**:
-  - **Cursor Position**: Real-time display of line and column numbers (`Ln 42, Col 15`)
-  - **Indentation Info**: Shows current indentation setting (`Spaces: 2`)
-  - **Encoding Display**: UTF-8 encoding indicator
-  - **Word Count Statistics**: Live character and word count (`1,240 chars, 215 words`)
-    - Optimized with O(1) memory algorithm for millions of words
-    - Uses debounced updates to prevent typing lag
-  - **Zoom Level**: Editor zoom percentage display (`100%`)
-  - **All Toggleable**: Every status bar item can be shown/hidden via context menu
-  
-- **Toggle Gutter**:
-  - New command to show/hide line numbers and code folding arrows
-  - Accessible via Command Palette (`Ctrl+Shift+P` → "Toggle Gutter")
-  - Preserves cursor position and automatically refocuses editor after toggle
-  - Added to `defaultSettings.js` with `showGutter: true` default
-
-- **Font Family Selector**:
-  - New dropdown in Editor Settings to choose between:
-    - **Monospace**: JetBrains Mono, Fira Code, Consolas, Monaco, Courier New
-    - **Sans-serif**: Inter, Roboto, System Default
-  - Live preview of font changes in editor
-  - Stored in `editor.fontFamily` setting
-
-**UI Consistency & Polish:**
-
-- **Standardized Search Inputs**: 
-  - Unified styling across Explorer, Theme Tab, and Trash Tab
-  - All placeholders now use `text-xtiny` (10px) for consistency
-  - Consistent focus behavior with `ring-1` and accent color
-  
-- **Trash Badge Fix**:
-  - Trash count badge now displays immediately on app load
-  - No longer requires visiting trash tab first
-  - Auto-loads trash items on mount for accurate badge count
-
-**Bug Fixes:**
-
-- Fixed cursor position race condition in gutter toggle
-- Added safety checks for zoom level display (prevents NaN%)
-- Fixed stale closure in gutter toggle event listener
-- Eliminated unnecessary event listener re-registrations
-- Double RAF for reliable cursor restoration after gutter toggle
-
-### Version 1.2.0
-
-**Pro Editor & UX Enhancements:**
-
-- **Pro Smart Editor**: 
-  - **Social Highlighting**: Vibrant colors and background capsules for `@mentions` and `#hashtags`.
-  - **Table Overhaul**: Full-width striped backgrounds for table rows, bolded headers, and subtle pipe delimiters.
-  - **Atomic Units**: Entire pairs like `[[ ]]`, `` ``` ``, `**`, `~~` are now deleted as single units.
-  - **Triple-Backtick Pairing**: Typing the 3rd backtick now automatically generates the full code block unit `` ``` ``` ``.
-- **In-Editor Search**: Integration of VS Code-style search panel with full regex and navigation support.
-- **Robustness Fixes**: Implemented crash protection for undefined Markdown tags and refined regex to prevent "swallowing" document content.
-
-**Search Engine & Performance Overhaul (v1.1.6):**
-
-- **Hybrid Search Engine**: Integrates instant local type-ahead (Prefix Matching) with powerful Backend Full-Text Search (FTS5).
-- **Infinite Scroll**: Virtualized list rendering for seamless navigation through thousands of snippets.
-- **Search Highlighting**: Real-time visual feedback for matches directly within the editor and library views.
-- **Global Error Handling**: Improved `ErrorBoundary` (Safe Mode) coverage for cleaner recovery from runtime glitches.
+- **Triple-Mode Obsidian state**: 
+  - **Source Mode**: Raw syntax with consistent header sizing to prevent jumps.
+  - **Live Preview Mode**: Interactive document editing with rich widgets.
+  - **Reading Mode**: Pure, distraction-free document viewer with hidden cursors and markers.
+- **Unified Vertical Rhythm**: Engineered a "Zero-Jump" system that synchronizes font-sizes and line-heights across all three modes.
+- **Spreadsheet Tables**:
+  - Implemented `contentEditable` cells for direct table editing.
+  - Added "Plus" buttons for one-click row and column insertion.
+  - Added a "View Source" modal for quick bulk edits.
+- **Mermaid 10.x Integration**:
+  - Instant, synchronous rendering in Reading Mode.
+  - Interactive **Zoom & Pan** support in Live Preview.
+- **Hybrid Image Engine**: Surgical injection of images for `![alt](url)` and wiki-style patterns.
+- **Admonition Support**: Integrated GitHub-style callouts with premium icons and glassmorphism styling.
+- **Interface Polish**:
+  - **Floating Mode Switcher**: Glassmorphism utility at the bottom-right for rapid state toggling.
+  - **Pixel-Perfect Selection**: Optimized hit-testing for headers and rich elements.
+  - **Cursor IQ**: Automatic transformation of cursor from I-beam to pointer based on interactive context.
 
 ---
 
-_Documentation generated for Dev Snippet v1.2.1_
+_Documentation updated for Dev Snippet v1.3.0_
