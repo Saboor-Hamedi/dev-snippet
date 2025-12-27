@@ -37,6 +37,7 @@ const SettingsPanel = ({ onClose }) => {
   const [wordWrap, setWordWrap] = useState('on')
   const [autoSave, setAutoSave] = useAutoSave()
   const { overlayMode, setOverlayMode } = useAdvancedSplitPane()
+  const fontFamily = getSetting('editor.fontFamily') || 'JetBrains Mono'
 
   // UI state
   const hideWelcomePage = getSetting('ui.hideWelcomePage') || false
@@ -105,6 +106,10 @@ const SettingsPanel = ({ onClose }) => {
 
   const handleOverlayModeChange = (checked) => {
     setOverlayMode(checked)
+  }
+
+  const handleFontFamilyChange = (value) => {
+    updateSetting('editor.fontFamily', value)
   }
 
   const navItems = [
@@ -229,6 +234,8 @@ const SettingsPanel = ({ onClose }) => {
                   onAutoSaveChange={setAutoSave}
                   overlayMode={overlayMode}
                   onOverlayModeChange={handleOverlayModeChange}
+                  fontFamily={fontFamily}
+                  onFontFamilyChange={handleFontFamilyChange}
                 />
               )}
 

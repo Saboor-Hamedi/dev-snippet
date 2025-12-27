@@ -1,11 +1,13 @@
-import React from 'react'
+import React, { useState } from 'react'
+import { createPortal } from 'react-dom'
 import PropTypes from 'prop-types'
-import ToggleButton from '../../ToggleButton'
+import { ToggleButton } from '../../ToggleButton'
 import { useSettings } from '../../../hook/useSettingsContext'
+import { Check } from 'lucide-react'
 
 import './StatusBar.css'
 
-const SystemStatusFooter = ({ snippets = [] }) => {
+const SystemStatusFooter = ({ snippets = [], line = 1, col = 1 }) => {
   const { getSetting, updateSetting } = useSettings()
   const hideWelcomePage = getSetting('welcome.hideWelcomePage') || false
   const [version, setVersion] = React.useState('...')
@@ -14,66 +16,155 @@ const SystemStatusFooter = ({ snippets = [] }) => {
     window.api?.getVersion().then(setVersion)
   }, [])
 
+  // Visibility Settings
+  const showVersion = getSetting('statusBar.showVersion') !== false
+  const showCursorPosition = getSetting('statusBar.showCursorPosition') !== false
+  const showIndentation = getSetting('statusBar.showIndentation') !== false
+  const showEncoding = getSetting('statusBar.showEncoding') !== false
+  const showLanguage = getSetting('statusBar.showLanguage') !== false
+  const showStats = getSetting('statusBar.showStats') !== false
+
+  // Context Menu State
+  const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0 })
+
+  const handleContextMenu = (e) => {
+    e.preventDefault()
+    setContextMenu({ visible: true, x: e.clientX, y: e.clientY })
+  }
+
+  // Close context menu on click outside
+  React.useEffect(() => {
+    const handleClick = () => {
+      if (contextMenu.visible) setContextMenu({ ...contextMenu, visible: false })
+    }
+    window.addEventListener('click', handleClick)
+    return () => window.removeEventListener('click', handleClick)
+  }, [contextMenu])
+
+  const menuItems = [
+    { label: 'Version', key: 'statusBar.showVersion', checked: showVersion },
+    { label: 'Cursor Position', key: 'statusBar.showCursorPosition', checked: showCursorPosition },
+    { label: 'Indentation', key: 'statusBar.showIndentation', checked: showIndentation },
+    { label: 'Encoding', key: 'statusBar.showEncoding', checked: showEncoding },
+    { label: 'Snippet Count', key: 'statusBar.showStats', checked: showStats },
+    {
+      label: 'Welcome Toggle',
+      key: 'welcome.hideWelcomePage',
+      checked: !hideWelcomePage,
+      inverse: true
+    } // Inverse logic for hide
+  ]
+
   return (
-    <div className="status-bar-container text-xs">
-      <div className="status-bar-left">
-        {/* System Ready */}
-        <div className="status-bar-item">
-          <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full"></div>
-          <span className="font-mono tabular-nums opacity-80">System Ready</span>
+    <>
+      <div
+        className="status-bar-container text-xs select-none"
+        onContextMenu={handleContextMenu}
+        style={{ color: 'var(--color-text-secondary)' }}
+      >
+        <div className="status-bar-left">
+          {/* Version (Restored) */}
+          {showVersion && (
+            <div className="status-bar-item opacity-60 hover:opacity-100 transition-opacity">
+              <span className="font-mono tabular-nums">v{version}</span>
+            </div>
+          )}
+          <div className="status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer opacity-60 hover:opacity-100 flex items-center gap-1">
+            <span className="icon-branch text-[10px]">main*</span>
+          </div>
         </div>
-        {/* Version */}
-        <div className="status-bar-item opacity-60">
-          <span className="font-mono tabular-nums">v{version}</span>
+
+        <div className="status-bar-right flex items-center gap-0">
+          {/* Cursor Position */}
+          {showCursorPosition && (
+            <div className="status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer min-w-[80px] justify-end">
+              <span className="font-mono tabular-nums">
+                Ln {line}, Col {col}
+              </span>
+            </div>
+          )}
+
+          {/* Indentation */}
+          {showIndentation && (
+            <div className="status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer">
+              <span className="font-sans">Spaces: 2</span>
+            </div>
+          )}
+
+          {/* Encoding */}
+          {showEncoding && (
+            <div className="status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer">
+              <span className="font-sans">UTF-8</span>
+            </div>
+          )}
+
+          {/* Snippet Count */}
+          {showStats && (
+            <div className="status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer">
+              <span className="font-sans">{snippets.length} Snippets</span>
+            </div>
+          )}
+
+          {/* Welcome Toggle */}
+          <div
+            className="status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer"
+            onClick={() => updateSetting('welcome.hideWelcomePage', !hideWelcomePage)}
+            title="Toggle Welcome Page"
+          >
+            <div
+              className={`w-2 h-2 rounded-full ${!hideWelcomePage ? 'bg-current opacity-100' : 'border border-current opacity-40'}`}
+            ></div>
+          </div>
         </div>
-        <div className="status-bar-divider"></div>
-        <button
-          onClick={() => window.dispatchEvent(new CustomEvent('app:toggle-flow'))}
-          className="flex items-center gap-1.5 px-2 py-0.5 rounded hover:bg-blue-500/10 text-blue-400/80 hover:text-blue-400 transition-all group"
-          title="Enter Flow Mode (Alt+Shift+F)"
-        >
-          <span className="text-xs leading-none group-hover:scale-110 transition-transform">
-            🌀
-          </span>
-          <span className="font-mono text-xtiny opacity-90">Flow Mode</span>
-        </button>
       </div>
 
-      <div className="status-bar-right">
-        {/* Snippets Count */}
-        <div className="status-bar-item opacity-80">
-          <span className="font-mono tabular-nums">{snippets.length}</span>
-          <span className="font-mono tabular-nums">Snippets</span>
-        </div>
-        {/* Languages Count */}
-        <div className="status-bar-item opacity-80">
-          <span className="font-mono tabular-nums">
-            {new Set(snippets.map((s) => s.language)).size}
-          </span>
-          <span className="font-mono tabular-nums">Languages</span>
-        </div>
-
-        <div className="status-bar-divider"></div>
-
-        <div className="flex items-center gap-2">
-          <span className="opacity-60 px-1 py-0.5 font-mono tabular-nums hover:opacity-100 transition-opacity">
-            Don't show again
-          </span>
-          <ToggleButton
-            checked={hideWelcomePage}
-            onChange={(checked) => updateSetting('welcome.hideWelcomePage', checked)}
-            width={30}
-            height={16}
-            padding={2}
-          />
-        </div>
-      </div>
-    </div>
+      {/* Context Menu using Portal */}
+      {contextMenu.visible &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[9999]"
+            onClick={() => setContextMenu({ ...contextMenu, visible: false })}
+            onContextMenu={(e) => {
+              e.preventDefault()
+              setContextMenu({ ...contextMenu, visible: false })
+            }}
+          >
+            <div
+              className="status-bar-context-menu"
+              style={{
+                left: Math.min(contextMenu.x, window.innerWidth - 200),
+                bottom: window.innerHeight - contextMenu.y + 10
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {menuItems.map((item) => (
+                <div
+                  key={item.key}
+                  className="context-menu-item"
+                  onClick={() =>
+                    updateSetting(item.key, item.inverse ? hideWelcomePage : !item.checked)
+                  }
+                >
+                  <div className="context-menu-check">
+                    {(item.inverse ? !hideWelcomePage : item.checked) && (
+                      <Check size={14} strokeWidth={3} />
+                    )}
+                  </div>
+                  <span>{item.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>,
+          document.body
+        )}
+    </>
   )
 }
 
 SystemStatusFooter.propTypes = {
-  snippets: PropTypes.array
+  snippets: PropTypes.array,
+  line: PropTypes.number,
+  col: PropTypes.number
 }
 
 export default SystemStatusFooter

@@ -1,5 +1,16 @@
 import React, { useState } from 'react'
-import { File, Plus, ChevronDown, ChevronRight, Folder, Pin } from 'lucide-react'
+import {
+  File,
+  FileCode,
+  FileText,
+  Plus,
+  ChevronDown,
+  ChevronRight,
+  Folder,
+  FolderOpen,
+  Pin,
+  Inbox
+} from 'lucide-react'
 
 // Helper to highlight matching text
 const HighlightText = ({ text, highlight }) => {
@@ -51,19 +62,23 @@ const getFileIcon = (lang, title = '') => {
   const extension = cleanTitle.split('.').pop() || ''
 
   // Languages matching
+  // Code Files -> FileCode Icon
   if (lang === 'javascript' || lang === 'js' || extension === 'js')
-    return { icon: File, color: '#f7df1e' }
+    return { icon: FileCode, color: '#f7df1e' }
   if (lang === 'typescript' || lang === 'ts' || extension === 'ts')
-    return { icon: File, color: '#007acc' }
+    return { icon: FileCode, color: '#007acc' }
   if (lang === 'react' || extension === 'jsx' || extension === 'tsx')
-    return { icon: File, color: '#61dafb' }
-  if (lang === 'css' || extension === 'css') return { icon: File, color: '#264de4' }
-  if (lang === 'html' || extension === 'html') return { icon: File, color: '#e34c26' }
-  if (lang === 'python' || extension === 'py') return { icon: File, color: '#3776ab' }
-  if (lang === 'markdown' || lang === 'md' || extension === 'md' || isMd)
-    return { icon: File, color: '#519aba' }
+    return { icon: FileCode, color: '#61dafb' }
+  if (lang === 'css' || extension === 'css') return { icon: FileCode, color: '#264de4' }
+  if (lang === 'html' || extension === 'html') return { icon: FileCode, color: '#e34c26' }
+  if (lang === 'python' || extension === 'py') return { icon: FileCode, color: '#3776ab' }
 
-  return { icon: File, color: 'var(--sidebar-icon-color)' } // Default
+  // Markdown -> FileText Icon
+  if (lang === 'markdown' || lang === 'md' || extension === 'md' || isMd)
+    return { icon: FileText, color: '#519aba' }
+
+  // Fallback
+  return { icon: File, color: 'var(--sidebar-icon-color)' }
 }
 
 const CreationInputRow = ({ style, depth, itemData, onConfirm, onCancel, isCompact }) => {
@@ -96,15 +111,10 @@ const CreationInputRow = ({ style, depth, itemData, onConfirm, onCancel, isCompa
     <div style={style} className="pr-2">
       <div
         className="flex items-center w-full h-full pl-0 select-none"
-        style={{ paddingLeft: `${depth * 12 + 24}px` }}
+        // Polish: Indent 16px. +24px base offset.
+        style={{ paddingLeft: `${depth * 16 + 24}px` }}
       >
-        <div className="flex-1 flex items-center gap-[6px] bg-[var(--color-bg-secondary)] border border-[var(--color-accent-primary)]/50 rounded-sm h-[20px]">
-          <div
-            className="flex-shrink-0 flex items-center justify-center opacity-80 pl-1 border-r border-[var(--color-border)]/30 pr-1"
-            style={{ color: 'var(--sidebar-icon-color)' }}
-          >
-            {isFolder ? <Folder size={isCompact ? 13 : 14} /> : <File size={isCompact ? 13 : 14} />}
-          </div>
+        <div className="flex-1 flex items-center bg-[var(--color-bg-secondary)] border border-[var(--color-accent-primary)]/50 rounded-sm h-[22px]">
           <input
             ref={inputRef}
             type="text"
@@ -119,11 +129,16 @@ const CreationInputRow = ({ style, depth, itemData, onConfirm, onCancel, isCompa
               e.target.style.borderColor = 'var(--color-border)'
               onCancel()
             }}
-            className="flex-1 min-w-0 rounded-[5px] px-2 py-1 text-xs outline-none border border-[var(--color-border)] ring-0 focus:ring-0 focus:outline-none transition-none"
+            spellCheck="false"
+            autoComplete="off"
+            className={`flex-1 min-w-0 rounded-[5px] px-2 py-0.5 outline-none border border-[var(--color-border)] ring-0 focus:ring-0 focus:outline-none transition-none ${
+              isCompact ? 'text-[11px]' : 'text-[12px]'
+            }`}
             style={{
-              backgroundColor: 'var(--color-bg-secondary)',
+              backgroundColor: 'transparent',
               color: 'var(--color-text-primary)',
-              boxShadow: 'none'
+              boxShadow: 'none',
+              height: '100%'
             }}
           />
         </div>
@@ -138,13 +153,13 @@ const IndentGuides = ({ depth }) => {
   return (
     <div
       className="absolute top-0 left-0 h-full pointer-events-none"
-      style={{ width: depth * 12 + 6 }}
+      style={{ width: depth * 16 + 8 }}
     >
       {Array.from({ length: depth }).map((_, i) => (
         <div
           key={i}
           className="absolute top-0 bottom-0 w-[1px] bg-[var(--color-border)] opacity-30"
-          style={{ left: `${i * 12 + 12}px` }}
+          style={{ left: `${i * 16 + 12}px` }}
         />
       ))}
     </div>
@@ -152,6 +167,9 @@ const IndentGuides = ({ depth }) => {
 }
 
 const SnippetSidebarRow = ({ index, style, data }) => {
+  // Always call hooks at the top level
+  const [isDragOver, setIsDragOver] = useState(false)
+
   const {
     treeItems,
     selectedSnippet,
@@ -178,7 +196,6 @@ const SnippetSidebarRow = ({ index, style, data }) => {
   if (!item) return null
 
   const { type, data: itemData, depth } = item
-  const [isDragOver, setIsDragOver] = useState(false)
 
   // --- Creation Input ---
   if (type === 'creation_input') {
@@ -212,15 +229,58 @@ const SnippetSidebarRow = ({ index, style, data }) => {
     e.dataTransfer.setData('sourceTypes', JSON.stringify(dragTypes))
     e.dataTransfer.effectAllowed = 'move'
 
-    // Create a ghost drag image (transparent)
-    const dragImg = new Image()
-    dragImg.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
-    e.dataTransfer.setDragImage(dragImg, 0, 0)
+    // Create a custom ghost drag image
+    const ghost = document.createElement('div')
+    ghost.style.position = 'absolute'
+    ghost.style.top = '-1000px'
+    ghost.style.left = '-1000px'
+    ghost.style.padding = '4px 8px' // Tighter padding
+    ghost.style.background = 'var(--color-bg-secondary)'
+    ghost.style.border = '1px solid var(--color-accent-primary)'
+    ghost.style.borderRadius = '6px'
+    ghost.style.width = 'auto' // Auto width
+    ghost.style.maxWidth = '250px' // Cap width
+    ghost.style.zIndex = '9999'
+    ghost.style.display = 'flex'
+    ghost.style.alignItems = 'center'
+    ghost.style.gap = '6px'
+    ghost.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)'
+    ghost.style.pointerEvents = 'none'
+
+    // Icon
+    const iconDiv = document.createElement('div')
+    iconDiv.innerHTML =
+      type === 'folder'
+        ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>'
+        : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>'
+    iconDiv.style.opacity = '0.8'
+    ghost.appendChild(iconDiv)
+
+    // Text
+    const textSpan = document.createElement('span')
+    textSpan.innerText =
+      selectedIds.length > 1
+        ? `${selectedIds.length} items`
+        : itemData.name || itemData.title || 'Untitled'
+
+    textSpan.style.color = 'var(--color-text-primary)'
+    textSpan.style.fontSize = '12px' // Explicit 12px
+    textSpan.style.fontWeight = '500'
+    textSpan.style.whiteSpace = 'nowrap'
+    textSpan.style.overflow = 'hidden'
+    textSpan.style.textOverflow = 'ellipsis'
+    ghost.appendChild(textSpan)
+
+    document.body.appendChild(ghost)
+    e.dataTransfer.setDragImage(ghost, 10, 10) // Offset slightly
+
+    setTimeout(() => document.body.removeChild(ghost), 0)
   }
 
   const handleDragOver = (e) => {
     if (type === 'folder') {
       e.preventDefault()
+      e.stopPropagation() // Important: Stop bubbling to Sidebar container
       setIsDragOver(true)
       e.dataTransfer.dropEffect = 'move'
     }
@@ -296,6 +356,8 @@ const SnippetSidebarRow = ({ index, style, data }) => {
   // --- Render Folder ---
   if (type === 'folder') {
     const isSelected = selectedIds.includes(itemData.id) || selectedFolderId === itemData.id
+    const isOpen = !itemData.collapsed
+
     return (
       <div
         id={`sidebar-item-${index}`}
@@ -314,18 +376,20 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         <IndentGuides depth={depth} />
         <div
           className={`group flex items-center gap-[4px] w-full h-full select-none border-none outline-none focus:outline-none transition-all duration-150 pr-2 relative rounded-[4px] ${
-            isSelected ? 'bg-[var(--selected-bg)]' : ''
-          } ${
-            isDragOver
-              ? 'bg-[var(--selected-bg)] border border-[var(--color-accent-primary)]/30'
+            isDragOver // Drag Over takes priority
+              ? 'bg-[var(--color-accent-primary)] bg-opacity-20'
               : isSelected
-                ? ''
-                : 'hover:bg-white/[0.04] focus:bg-[var(--selected-bg)]'
+                ? 'bg-[var(--selected-bg)]'
+                : 'hover:bg-white/[0.02] focus:bg-[var(--selected-bg)]'
           }`}
           style={{
             color: isSelected ? 'var(--selected-text)' : 'var(--sidebar-header-text)',
-            paddingLeft: `${depth * 12 + 6}px`, // Tighter padding
-            backgroundColor: isSelected ? 'var(--selected-bg)' : 'transparent'
+            // Folder hover
+            // Layout Polish: Indent=16px. Base=8px.
+            paddingLeft: `${depth * 16 + 8}px`,
+            width: 'calc(100% - 8px)',
+            margin: '0 4px',
+            backgroundColor: isDragOver ? undefined : isSelected ? 'var(--selected-bg)' : undefined
           }}
         >
           {/* Toggle Button */}
@@ -343,7 +407,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
             <ChevronRight
               size={isCompact ? 10 : 12} // Smaller chevron
               strokeWidth={2}
-              className={`transition-transform duration-200 ${itemData.collapsed ? '' : 'rotate-90'}`}
+              className={`transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}
               style={{ color: isSelected ? 'var(--selected-text)' : 'inherit' }}
             />
           </button>
@@ -351,26 +415,31 @@ const SnippetSidebarRow = ({ index, style, data }) => {
           {/* Icon */}
           <div
             className="flex-shrink-0 flex items-center justify-center opacity-70 group-hover:opacity-100 px-0.5"
-            style={{ color: isSelected ? 'var(--selected-text)' : 'var(--sidebar-icon-color)' }}
+            style={{
+              color: isSelected
+                ? 'var(--selected-text)'
+                : itemData.name === '📥 Inbox'
+                  ? '#818cf8'
+                  : 'var(--sidebar-icon-color)' // Default Folder Color
+            }}
           >
-            <Folder size={isCompact ? 13 : 14} strokeWidth={2} />
+            {itemData.name === '📥 Inbox' ? (
+              <Inbox size={isCompact ? 13 : 14} strokeWidth={2.5} />
+            ) : // Dynamic Icon
+            isOpen ? (
+              <FolderOpen size={isCompact ? 13 : 14} strokeWidth={2} />
+            ) : (
+              <Folder size={isCompact ? 13 : 14} strokeWidth={2} />
+            )}
           </div>
 
           {/* Name */}
-          <span className="flex-1 min-w-0 text-left truncate font-medium text-[12px] opacity-80 group-hover:opacity-100 pl-1 select-none">
+          <span
+            title={itemData.name}
+            className={`flex-1 min-w-0 text-left truncate font-medium text-[12px] opacity-80 group-hover:opacity-100 pl-1 select-none ${itemData.name === '📥 Inbox' ? 'text-indigo-400 font-bold' : ''}`}
+          >
             {itemData.name}
           </span>
-
-          {/* Quick Action (Add) */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onNew(null, itemData.id)
-            }}
-            className="hidden group-hover:flex items-center justify-center p-0.5 rounded hover:bg-white/20 opacity-60 hover:opacity-100"
-          >
-            <Plus size={12} />
-          </button>
         </div>
       </div>
     )
@@ -407,16 +476,19 @@ const SnippetSidebarRow = ({ index, style, data }) => {
             ? 'bg-[var(--selected-bg)]'
             : isSearchMatch
               ? 'bg-[var(--color-accent-primary)]/10 hover:bg-[var(--color-accent-primary)]/15'
-              : 'hover:bg-white/[0.04] focus:bg-[var(--selected-bg)]'
+              : 'hover:bg-white/[0.02] focus:bg-[var(--selected-bg)]'
         } rounded-[4px]`}
         style={{
           backgroundColor: isSelected
             ? 'var(--selected-bg)'
             : isSearchMatch
               ? 'rgba(var(--color-accent-primary-rgb), 0.1)'
-              : 'transparent',
+              : undefined,
           color: isSelected ? 'var(--selected-text)' : 'var(--sidebar-text)',
-          paddingLeft: `${depth * 12 + 24}px` // Align with folders (chevron width compensation)
+          // Layout Polish: Indent=16px. Base=8px. + 16px (Chevron skip) = 24px.
+          paddingLeft: `${depth * 16 + 24}px`,
+          width: 'calc(100% - 8px)',
+          margin: '0 4px'
         }}
         tabIndex={0}
       >
@@ -449,7 +521,10 @@ const SnippetSidebarRow = ({ index, style, data }) => {
             Actually, let's keep it simple: Gray by default. Colored if selected. 
         */}
 
-        <span className="flex-1 min-w-0 text-left truncate font-normal opacity-80 group-hover/row:opacity-100 normal-case pl-1">
+        <span
+          title={itemData.title || 'Untitled'}
+          className="flex-1 min-w-0 text-left truncate font-normal opacity-80 group-hover/row:opacity-100 normal-case pl-1"
+        >
           <HighlightText text={itemData.title || 'Untitled'} highlight={searchQuery} />
         </span>
         {itemData.is_pinned === 1 && (

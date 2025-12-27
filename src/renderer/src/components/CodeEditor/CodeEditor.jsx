@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import useCursorProp from '../../hook/settings/useCursorProp.js'
 import useGutterProp from '../../hook/settings/useGutterProp.js'
+import { useSettings } from '../../hook/useSettingsContext'
+import useFocus from '../../hook/useFocus'
 import settingsManager from '../../config/settingsManager'
 import CodeMirror from '@uiw/react-codemirror'
 import { EditorView } from '@codemirror/view'
@@ -32,7 +34,8 @@ const CodeEditor = ({
   readOnly = false,
   snippets = [],
   language = 'markdown',
-  theme = 'midnight-pro'
+  theme = 'midnight-pro',
+  onCursorChange
 }) => {
   // Zoom level is now managed globally by useZoomLevel at the root/SettingsProvider level.
   // Individual components consume the result via CSS variables.
@@ -56,16 +59,20 @@ const CodeEditor = ({
     cursorActiveLineBg,
     cursorShadowBoxColor
   } = useCursorProp()
-  const { gutterBgColor, gutterBorderColor, gutterBorderWidth } = useGutterProp()
+  const { gutterBgColor, gutterBorderColor, gutterBorderWidth, showGutter } = useGutterProp()
+  const { getSetting } = useSettings()
+  const fontFamily =
+    getSetting('editor.fontFamily') || "'JetBrains Mono', 'Fira Code', Consolas, monospace"
+
   const viewRef = useRef(null)
-
-  // Determine dark mode
   const [isDark, setIsDark] = useState(false)
-
-  // Search panel state (persistent across open/close)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [lastSearchQuery, setLastSearchQuery] = useState('')
 
+  // Use focus hook for gutter toggle
+  useFocus(viewRef, showGutter)
+
+  // Detect dark mode
   useEffect(() => {
     if (typeof document === 'undefined') return
 
@@ -81,10 +88,7 @@ const CodeEditor = ({
       })
     }
 
-    // Initial check
     updateTheme()
-
-    // Observe changes to class or data-theme
     const observer = new MutationObserver(updateTheme)
     observer.observe(document.documentElement, {
       attributes: true,
@@ -94,7 +98,27 @@ const CodeEditor = ({
     return () => observer.disconnect()
   }, [])
 
-  // Ctrl+F to open search (listen on editor container only)
+  // Listen for focus-editor event (from backup, etc.)
+  useEffect(() => {
+    const handleFocusEditor = () => {
+      console.log('[CodeEditor] Received focus-editor event')
+      if (viewRef.current) {
+        requestAnimationFrame(() => {
+          if (viewRef.current) {
+            console.log('[CodeEditor] Focusing editor')
+            viewRef.current.focus()
+          }
+        })
+      } else {
+        console.warn('[CodeEditor] viewRef.current is null, cannot focus')
+      }
+    }
+
+    window.addEventListener('app:focus-editor', handleFocusEditor)
+    return () => window.removeEventListener('app:focus-editor', handleFocusEditor)
+  }, [])
+
+  // Ctrl+F to open search
   useEffect(() => {
     const editorContainer = editorDomRef.current
     if (!editorContainer) return
@@ -107,24 +131,23 @@ const CodeEditor = ({
       }
     }
 
-    editorContainer.addEventListener('keydown', handleKeyDown, true) // Use capture phase
+    editorContainer.addEventListener('keydown', handleKeyDown, true)
     return () => editorContainer.removeEventListener('keydown', handleKeyDown, true)
   }, [])
 
-  // 1. Permanent Static Frame (Theme + Gutters) - Renders instantly, never shifts
+  // 1. Permanent Static Frame (Theme + Gutters) - MUST BE DEFINED BEFORE EFFECTS THAT USE IT
   const baseExtensions = useMemo(() => {
-    return [
+    const extensions = [
       buildTheme(EditorView, {
         isDark,
         caretColor: cursorColor,
         fontSize: 'var(--editor-font-size, 14px)',
+        fontFamily,
         cursorWidth,
         cursorShape,
         disableComplexCM: settingsManager.get('advanced.disableComplexCM')
       }),
-      lineNumbers({ formatNumber: (n) => n.toString() }),
-      codeFolding(),
-      // SCROLL SYNC: Update on every change (typing, scrolling, selection)
+      // SCROLL SYNC
       EditorView.updateListener.of((update) => {
         if (update.docChanged || update.selectionSet || update.viewportChanged) {
           const view = update.view
@@ -134,18 +157,73 @@ const CodeEditor = ({
             const percentage = maxScroll > 0 ? scrollTop / maxScroll : 0
             window.dispatchEvent(new CustomEvent('app:editor-scroll', { detail: { percentage } }))
           }
-        }
-      }),
-      foldGutter({
-        markerDOM: (open) => {
-          const icon = document.createElement('span')
-          icon.className = 'cm-fold-marker'
-          icon.innerHTML = open ? '▾' : '▸'
-          return icon
+          // Track cursor
+          if (update.selectionSet) {
+            const state = update.state
+            if (state) {
+              const pos = state.selection.main.head
+              const line = state.doc.lineAt(pos)
+              const col = pos - line.from + 1
+              if (onCursorChange) onCursorChange({ line: line.number, col })
+            }
+          }
         }
       })
     ]
-  }, [isDark, cursorColor, cursorWidth, cursorShape])
+
+    // Conditionally add Gutters (Line Numbers + Folding)
+    if (showGutter) {
+      extensions.push(
+        lineNumbers({ formatNumber: (n) => n.toString() }),
+        foldGutter({
+          markerDOM: (open) => {
+            const icon = document.createElement('span')
+            icon.className = 'cm-fold-marker'
+            icon.innerHTML = open ? '▾' : '▸'
+            return icon
+          }
+        }),
+        codeFolding()
+      )
+    }
+
+    return extensions
+  }, [isDark, cursorColor, cursorWidth, cursorShape, showGutter, fontFamily, onCursorChange])
+
+  // Preserve cursor position when gutter toggles
+  const lastCursorPos = useRef(null)
+  const previousShowGutter = useRef(showGutter)
+
+  useEffect(() => {
+    // Save cursor position BEFORE gutter changes
+    if (previousShowGutter.current !== showGutter && viewRef.current) {
+      const state = viewRef.current.state
+      if (state) {
+        lastCursorPos.current = state.selection.main.head
+      }
+    }
+
+    // Update previous value
+    previousShowGutter.current = showGutter
+  }, [showGutter])
+
+  useEffect(() => {
+    // Restore cursor position AFTER gutter has changed
+    if (lastCursorPos.current !== null && viewRef.current) {
+      requestAnimationFrame(() => {
+        if (viewRef.current) {
+          const view = viewRef.current
+          const pos = Math.min(lastCursorPos.current, view.state.doc.length)
+          view.dispatch({
+            selection: { anchor: pos, head: pos },
+            scrollIntoView: true
+          })
+          // Reset after restoration
+          lastCursorPos.current = null
+        }
+      })
+    }
+  }, [showGutter])
 
   // 2. Dynamic Content Extensions (Syntax Highlighting, Autocomplete, etc.)
   const [dynamicExtensions, setDynamicExtensions] = useState([])

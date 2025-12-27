@@ -6,6 +6,11 @@ import { RangeSetBuilder, Prec } from '@codemirror/state'
  * Adds visual styling without modifying the parser
  */
 
+/**
+ * Decorator for WikiLinks [[link]], @mentions, #hashtags, and TABLES
+ * Optimized for zero-latency in large documents.
+ */
+
 const wikiLinkDeco = Decoration.mark({ class: 'cm-wikilink' })
 const mentionDeco = Decoration.mark({ class: 'cm-mention' })
 const hashtagDeco = Decoration.mark({ class: 'cm-hashtag' })
@@ -13,52 +18,71 @@ const tableRowDeco = Decoration.line({ class: 'cm-md-table-row' })
 
 function buildDecorations(view) {
   const builder = new RangeSetBuilder()
-  const text = view.state.doc.toString()
   const doc = view.state.doc
 
+  // 1. VIEWPORT-AWARE PROCESSING (Crucial for stability and performance)
+  // We only calculate decorations for the visible part + some buffer
+  const viewport = view.viewport
+  const from = viewport.from
+  const to = viewport.to
+
+  // Slice only the visible part for regex matching
+  const text = doc.sliceString(from, to)
   const matches = []
 
-  // 1. INLINE MATCHES (WikiLinks, Mentions, Hashtags)
+  // 2. INLINE MATCHES (WikiLinks, Mentions, Hashtags)
+  // Regexes are applied to the viewport slice. Indices are then offset by 'from'.
 
   // WikiLinks: [[text]]
-  const wikiLinkRegex = /\[\[[^\]]+\]\]/g
+  const wikiLinkRegex = /\[\[[^\]\n]+\]\]/g
   let match
   while ((match = wikiLinkRegex.exec(text)) !== null) {
-    matches.push({ from: match.index, to: match.index + match[0].length, deco: wikiLinkDeco })
+    matches.push({
+      from: from + match.index,
+      to: from + match.index + match[0].length,
+      deco: wikiLinkDeco
+    })
   }
 
-  // @mentions: @word (only if preceded by space or start of line)
+  // @mentions: @word
   const mentionRegex = /(?:^|\s)(@[\w]+)/g
   while ((match = mentionRegex.exec(text)) !== null) {
     const fullMatch = match[0]
     const mention = match[1]
     const start = match.index + (fullMatch.length - mention.length)
-    matches.push({ from: start, to: start + mention.length, deco: mentionDeco })
+    matches.push({ from: from + start, to: from + start + mention.length, deco: mentionDeco })
   }
 
-  // #hashtags: #word (only if preceded by space or start of line)
+  // #hashtags: #word
   const hashtagRegex = /(?:^|\s)(#[\w]+)/g
   while ((match = hashtagRegex.exec(text)) !== null) {
     const fullMatch = match[0]
     const hashtag = match[1]
     const start = match.index + (fullMatch.length - hashtag.length)
-    matches.push({ from: start, to: start + hashtag.length, deco: hashtagDeco })
+    matches.push({ from: from + start, to: from + start + hashtag.length, deco: hashtagDeco })
   }
 
-  // 2. LINE MATCHES (Tables)
-  // We iterate through lines to find table rows for full-width background
-  for (let i = 1; i <= doc.lines; i++) {
-    const line = doc.line(i)
-    const lineText = line.text.trim()
-    // Markdown tables usually start and end with pipes, or at least contain pipes
-    // We target lines that look like table rows
-    if (lineText.startsWith('|') && lineText.endsWith('|') && lineText.length > 2) {
-      matches.push({ from: line.from, to: line.from, deco: tableRowDeco, isLine: true })
+  // 3. LINE-BASED DECORATIONS (Tables)
+  // We iterate through lines only within the visible viewport
+  try {
+    const startLine = doc.lineAt(from).number
+    const endLine = doc.lineAt(to).number
+
+    for (let i = startLine; i <= endLine; i++) {
+      const line = doc.line(i)
+      const lineText = line.text.trim()
+      // Detect Markdown tables: start/end with pipes and have meaningful content
+      if (lineText.startsWith('|') && lineText.endsWith('|') && lineText.length > 2) {
+        matches.push({ from: line.from, to: line.from, deco: tableRowDeco, isLine: true })
+      }
     }
+  } catch (e) {
+    // Safety for edge cases during rapid doc updates
   }
 
-  // Sort by position (required by RangeSetBuilder)
-  // Line decorations MUST come before mark decorations at the same position
+  // 4. SORT AND BUILD
+  // CodeMirror requires RangeSetBuilder to receive decorations in ascending order.
+  // Line decorations MUST come before mark decorations at the same position.
   matches.sort((a, b) => {
     if (a.from !== b.from) return a.from - b.from
     if (a.isLine && !b.isLine) return -1
@@ -66,12 +90,15 @@ function buildDecorations(view) {
     return 0
   })
 
-  // Add to builder
   for (const m of matches) {
+    // Final boundary check to prevent out-of-bounds errors
+    const safeFrom = Math.max(0, Math.min(m.from, doc.length))
+    const safeTo = Math.max(safeFrom, Math.min(m.to || safeFrom, doc.length))
+
     if (m.isLine) {
-      builder.add(m.from, m.from, m.deco)
-    } else {
-      builder.add(m.from, m.to, m.deco)
+      builder.add(safeFrom, safeFrom, m.deco)
+    } else if (safeTo > safeFrom) {
+      builder.add(safeFrom, safeTo, m.deco)
     }
   }
 
@@ -85,6 +112,7 @@ export const markdownExtrasPlugin = ViewPlugin.fromClass(
       this.decorations = buildDecorations(view)
     }
     update(update) {
+      // Re-calculate on content change OR scroll (viewport changed)
       if (update.docChanged || update.viewportChanged) {
         this.decorations = buildDecorations(update.view)
       }

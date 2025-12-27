@@ -59,6 +59,12 @@ class SyncManager {
     try {
       const token = this.getToken()
       if (!token) throw new Error('No GitHub Token found')
+      console.log(
+        '[Sync] Setting token for backup, length:',
+        token.length,
+        'starts with:',
+        token.substring(0, 4)
+      )
       GitHubService.setToken(token)
 
       // Verify token first
@@ -113,6 +119,17 @@ class SyncManager {
       const token = this.getToken()
       if (!token) throw new Error('No GitHub Token found')
       GitHubService.setToken(token)
+
+      // Verify token first
+      try {
+        const user = await GitHubService.getUser()
+        console.log(`[Sync] Authenticated as GitHub user: ${user.login}`)
+      } catch (e) {
+        console.error('[Sync] Token verification failed during restore:', e.message)
+        throw new Error(
+          'Authentication failed: Token is invalid or expired. Please generate a new token.'
+        )
+      }
 
       // 1. Find Gist
       const gist = await GitHubService.findGistByDescription(GIST_DESCRIPTION)

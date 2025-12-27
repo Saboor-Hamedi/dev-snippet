@@ -252,6 +252,53 @@ mindmap
 
 ## 6. Changelog & Updates
 
+### Version 1.2.1 (Latest)
+
+**Status Bar & Editor Enhancements:**
+
+- **Enhanced Status Bar**:
+  - **Cursor Position**: Real-time display of line and column numbers (`Ln 42, Col 15`)
+  - **Indentation Info**: Shows current indentation setting (`Spaces: 2`)
+  - **Encoding Display**: UTF-8 encoding indicator
+  - **Word Count Statistics**: Live character and word count (`1,240 chars, 215 words`)
+    - Optimized with O(1) memory algorithm for millions of words
+    - Uses debounced updates to prevent typing lag
+  - **Zoom Level**: Editor zoom percentage display (`100%`)
+  - **All Toggleable**: Every status bar item can be shown/hidden via context menu
+  
+- **Toggle Gutter**:
+  - New command to show/hide line numbers and code folding arrows
+  - Accessible via Command Palette (`Ctrl+Shift+P` → "Toggle Gutter")
+  - Preserves cursor position and automatically refocuses editor after toggle
+  - Added to `defaultSettings.js` with `showGutter: true` default
+
+- **Font Family Selector**:
+  - New dropdown in Editor Settings to choose between:
+    - **Monospace**: JetBrains Mono, Fira Code, Consolas, Monaco, Courier New
+    - **Sans-serif**: Inter, Roboto, System Default
+  - Live preview of font changes in editor
+  - Stored in `editor.fontFamily` setting
+
+**UI Consistency & Polish:**
+
+- **Standardized Search Inputs**: 
+  - Unified styling across Explorer, Theme Tab, and Trash Tab
+  - All placeholders now use `text-xtiny` (10px) for consistency
+  - Consistent focus behavior with `ring-1` and accent color
+  
+- **Trash Badge Fix**:
+  - Trash count badge now displays immediately on app load
+  - No longer requires visiting trash tab first
+  - Auto-loads trash items on mount for accurate badge count
+
+**Bug Fixes:**
+
+- Fixed cursor position race condition in gutter toggle
+- Added safety checks for zoom level display (prevents NaN%)
+- Fixed stale closure in gutter toggle event listener
+- Eliminated unnecessary event listener re-registrations
+- Double RAF for reliable cursor restoration after gutter toggle
+
 ### Version 1.2.0
 
 **Pro Editor & UX Enhancements:**
@@ -273,4 +320,4 @@ mindmap
 
 ---
 
-_Documentation generated for Dev Snippet v1.2.0_
+_Documentation generated for Dev Snippet v1.2.1_

@@ -41,6 +41,16 @@ const api = {
   // Drafts
   saveSnippetDraft: (payload) => electronAPI.ipcRenderer.invoke('db:saveSnippetDraft', payload),
   commitSnippetDraft: (id) => electronAPI.ipcRenderer.invoke('db:commitSnippetDraft', id),
+  onDataChanged: (callback) => {
+    const sub = () => callback()
+    electronAPI.ipcRenderer.on('db:data-changed', sub)
+    return () => electronAPI.ipcRenderer.removeListener('db:data-changed', sub)
+  },
+  onResetCapture: (callback) => {
+    const sub = () => callback()
+    electronAPI.ipcRenderer.on('qc:reset', sub)
+    return () => electronAPI.ipcRenderer.removeListener('qc:reset', sub)
+  },
 
   // Folders
   getFolders: () => electronAPI.ipcRenderer.invoke('db:getFolders'),

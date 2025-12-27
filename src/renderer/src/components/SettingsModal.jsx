@@ -25,7 +25,7 @@ import {
 import { DEFAULT_SETTINGS } from '../config/defaultSettings'
 import CodeEditor from './CodeEditor/CodeEditor'
 import { MIN_ZOOM, MAX_ZOOM } from '../hook/useZoomLevel'
-import ToggleButton from './ToggleButton'
+import { ToggleButton } from './ToggleButton'
 import {
   SettingRow,
   SettingSection,
@@ -456,7 +456,12 @@ const SettingsModal = ({ isOpen, onClose, currentSettings, onSettingsChange }) =
                           min={5}
                           max={50}
                           value={localSettings.pagination?.pageSize || 5}
-                          onChange={(v) => updateSetting('pagination.pageSize', Math.max(5, Math.min(50, parseInt(v) || 5)))}
+                          onChange={(v) =>
+                            updateSetting(
+                              'pagination.pageSize',
+                              Math.max(5, Math.min(50, parseInt(v) || 5))
+                            )
+                          }
                         />
                       )}
                       <SettingToggle

@@ -29,7 +29,8 @@ export const DEFAULT_SETTINGS = {
   gutter: {
     gutterBgColor: '#232731',
     gutterBorderColor: 'transparent',
-    gutterBorderWidth: 0
+    gutterBorderWidth: 0,
+    showGutter: true
   },
   livePreview: {
     bgColor: '#232731',
@@ -61,6 +62,15 @@ export const DEFAULT_SETTINGS = {
     previewPosition: 'right',
     previewFontSize: 14,
     theme: 'system'
+  },
+  statusBar: {
+    showSystemStatus: true,
+    showVersion: true,
+    showFlowMode: true,
+    showPerformance: true,
+    showLanguage: true,
+    showStats: true,
+    showZoom: true
   },
   pagination: {
     enablePagination: true, // Enable/disable pagination entirely

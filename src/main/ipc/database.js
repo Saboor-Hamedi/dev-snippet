@@ -1,8 +1,12 @@
-/**
- * Database IPC Handlers
- */
+import { ipcMain, BrowserWindow } from 'electron'
 
-import { ipcMain } from 'electron'
+const notifyDataChanged = () => {
+  BrowserWindow.getAllWindows().forEach((win) => {
+    if (!win.isDestroyed()) {
+      win.webContents.send('db:data-changed')
+    }
+  })
+}
 
 const transformRow = (row) => {
   if (!row) return row
@@ -103,14 +107,20 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
         }
       }
       const dbPayload = {
-        ...snippet,
-        // Ensure tags is a string for storage
+        id: snippet.id,
+        title: snippet.title || '',
+        code: snippet.code || '',
+        language: snippet.language || 'markdown',
+        timestamp: snippet.timestamp || Date.now(),
+        type: snippet.type || 'snippet',
         tags: Array.isArray(snippet.tags) ? snippet.tags.join(',') : snippet.tags || '',
         is_draft: snippet.is_draft ? 1 : 0,
+        is_pinned: snippet.is_pinned ? 1 : 0,
         sort_index: snippet.sort_index ?? null,
         folder_id: snippet.folder_id ?? null
       }
       preparedStatements.save.run(dbPayload)
+      notifyDataChanged()
       return true
     } catch (err) {
       console.error('Failed to save snippet to DB:', err)
@@ -122,18 +132,21 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
   ipcMain.handle('db:deleteSnippet', (event, id) => {
     // preparedStatements.delete is now permanentDelete, we use softDelete
     preparedStatements.softDelete.run(Date.now(), id)
+    notifyDataChanged()
     return true
   })
 
   // Restore snippet
   ipcMain.handle('db:restoreSnippet', (event, id) => {
     preparedStatements.restore.run(id)
+    notifyDataChanged()
     return true
   })
 
   // Permanent Delete
   ipcMain.handle('db:permanentDeleteSnippet', (event, id) => {
     preparedStatements.permanentDelete.run(id)
+    notifyDataChanged()
     return true
   })
 
@@ -200,6 +213,7 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
         updated_at: Date.now()
       }
       preparedStatements.saveFolder.run(dbPayload)
+      notifyDataChanged()
       return true
     } catch (err) {
       console.error('db:saveFolder failed:', err)
@@ -209,6 +223,7 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
 
   ipcMain.handle('db:deleteFolder', (event, id) => {
     preparedStatements.softDeleteFolder.run(Date.now(), id)
+    notifyDataChanged()
     return true
   })
 
@@ -231,11 +246,13 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
 
   ipcMain.handle('db:moveSnippet', (event, snippetId, folderId) => {
     preparedStatements.updateSnippetFolder.run(folderId || null, Date.now(), snippetId)
+    notifyDataChanged()
     return true
   })
 
   ipcMain.handle('db:moveFolder', (event, folderId, parentId) => {
     preparedStatements.updateFolderParent.run(parentId || null, Date.now(), folderId)
+    notifyDataChanged()
     return true
   })
 

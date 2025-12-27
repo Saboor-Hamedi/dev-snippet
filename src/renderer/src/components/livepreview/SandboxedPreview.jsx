@@ -58,7 +58,10 @@ const SandboxedPreview = ({
   }, [html, theme, isDark])
 
   return (
-    <div className="w-full h-full overflow-hidden bg-transparent rounded-[5px]">
+    <div
+      className="w-full h-full overflow-hidden rounded-[5px]"
+      style={{ backgroundColor: isDark ? 'transparent' : '#ffffff' }}
+    >
       <iframe
         ref={iframeRef}
         title="Live Preview Sandbox"

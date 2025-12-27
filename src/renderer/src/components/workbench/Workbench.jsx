@@ -3,13 +3,13 @@ import PropTypes from 'prop-types'
 import SnippetEditor from './SnippetEditor'
 import SettingsPanel from '../SettingsPanel'
 import WelcomePage from '../WelcomePage'
-import Header from '../layout/Header'
+import { Header } from '../layout/Header'
 
 import SidebarTheme from '../preference/SidebarTheme'
 import SnippetSidebar from './SnippetSidebar'
 import TrashSidebar from './TrashSidebar'
 import ActivityBar from '../layout/activityBar/ActivityBar'
-import { StatusBar, SystemStatusFooter } from '../layout/StatusBar'
+import { useStatusBar as StatusBar, SystemStatusFooter } from '../layout/StatusBar/useStatusBar'
 import { useModal } from './manager/ModalContext'
 import FlowStatusBadge from '../FlowMode/FlowStatusBadge'
 import FlowPreview from '../FlowMode/FlowPreview'
@@ -98,6 +98,13 @@ const Workbench = ({
     }
   }
 
+  const handleCloseSnippet = () => {
+    onCloseSnippet()
+    // Explicitly deselect in sidebar when closing
+    if (onSelectionChange) onSelectionChange([])
+    if (onSelectSnippet) onSelectSnippet(null)
+  }
+
   const getHeaderTitle = () => {
     switch (activeView) {
       case 'editor':
@@ -145,7 +152,7 @@ const Workbench = ({
           snippets={allSnippets || snippets}
           onSave={handleSave}
           onNew={onNewSnippet}
-          onCancel={onCloseSnippet}
+          onCancel={handleCloseSnippet}
           onDelete={onDeleteRequest}
           onSettingsClick={handleSettingsClick}
           isCompact={isCompact}
@@ -220,7 +227,7 @@ const Workbench = ({
           }}
           sidebarWidth={250}
           onRename={onRename}
-          onClose={onCloseSnippet}
+          onClose={handleCloseSnippet}
         />
       )}
 
@@ -329,21 +336,15 @@ const Workbench = ({
             {renderContent()}
           </div>
 
-          {/* Status Bar */}
-          {settings?.ui?.showStatusBar !== false && !showFlowMode && (
-            <div className="flex-none border-t border-[var(--color-border)] bg-[var(--footer-bg)]">
-              {selectedSnippet ? (
-                <StatusBar
-                  title={selectedSnippet?.title}
-                  onSettingsClick={handleSettingsClick}
-                  snippets={snippets || []}
-                  hideWelcomePage={hideWelcomePage}
-                />
-              ) : (
+          {/* Status Bar - Only show SystemStatusFooter when NOT in editor mode (SnippetEditor has its own StatusBar) */}
+          {settings?.ui?.showStatusBar !== false &&
+            !showFlowMode &&
+            !selectedSnippet &&
+            activeView !== 'editor' && (
+              <div className="flex-none border-t border-[var(--color-border)] bg-[var(--footer-bg)]">
                 <SystemStatusFooter snippets={snippets || []} />
-              )}
-            </div>
-          )}
+              </div>
+            )}
         </div>
       </div>
 

@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import './ToggleButton.css'
 
-const ToggleButton = ({ checked, onChange, disabled, width = 36, height = 20, padding = 3 }) => {
+const useToggleButton = ({ checked, onChange, disabled, width = 36, height = 20, padding = 3 }) => {
   const thumbSize = height - padding * 2
   const translate = width - height
 
@@ -30,7 +30,7 @@ const ToggleButton = ({ checked, onChange, disabled, width = 36, height = 20, pa
   )
 }
 
-ToggleButton.propTypes = {
+useToggleButton.propTypes = {
   checked: PropTypes.bool.isRequired,
   onChange: PropTypes.func.isRequired,
   disabled: PropTypes.bool,
@@ -39,4 +39,4 @@ ToggleButton.propTypes = {
   padding: PropTypes.number
 }
 
-export default ToggleButton
+export default useToggleButton

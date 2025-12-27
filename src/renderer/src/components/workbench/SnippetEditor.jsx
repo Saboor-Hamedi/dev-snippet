@@ -4,7 +4,7 @@ import { useKeyboardShortcuts } from '../../hook/useKeyboardShortcuts.js'
 import { useEditorFocus } from '../../hook/useEditorFocus.js'
 import { useZoomLevel } from '../../hook/useSettingsContext' // Fixed import source
 import WelcomePage from '../WelcomePage.jsx'
-import { StatusBar } from '../layout/StatusBar'
+import { useStatusBar as StatusBar } from '../layout/StatusBar/useStatusBar'
 import CodeEditor from '../CodeEditor/CodeEditor.jsx'
 import LivePreview from '../livepreview/LivePreview.jsx'
 import Prompt from '../modal/Prompt.jsx'
@@ -38,6 +38,7 @@ const SnippetEditor = ({
 
   const [title, setTitle] = useState(initialSnippet?.title || '')
   const [justRenamed, setJustRenamed] = useState(false)
+  const [cursorPos, setCursorPos] = useState({ line: 1, col: 1 })
 
   // Update title when initialSnippet changes (e.g., after rename)
   useEffect(() => {
@@ -143,14 +144,17 @@ const SnippetEditor = ({
         if (!id) return
 
         const updatedSnippet = {
+          ...initialSnippet,
           id: id,
           title: title,
           code: code,
-          language: 'markdown', // Always mark as markdown/text for now
+          language: detectedLang || 'markdown',
           timestamp: Date.now(),
-          type: initialSnippet.type || 'snippet',
+          type: initialSnippet?.type || 'snippet',
           tags: extractTags(code),
-          is_draft: false
+          is_draft: false,
+          folder_id: initialSnippet?.folder_id || null,
+          is_pinned: initialSnippet?.is_pinned || 0
         }
 
         try {
@@ -240,6 +244,35 @@ const SnippetEditor = ({
 
   const [namePrompt, setNamePrompt] = useState({ isOpen: false, initialName: '' })
 
+  // Low-priority stats calculation using debounced code to prevent typing lag
+  const stats = useMemo(() => {
+    const text = debouncedCode || ''
+    const len = text.length
+
+    // Optimized Word Count (O(n) time, O(1) memory) - No array allocation
+    let words = 0
+    let inWord = false
+
+    // Loop optimized for performance on large strings
+    for (let i = 0; i < len; i++) {
+      const code = text.charCodeAt(i)
+      // Check for whitespace: space (32), tab (9), newline (10), cr (13)
+      const isWhitespace = code === 32 || code === 9 || code === 10 || code === 13 || code === 160 // 160 is NBSP
+
+      if (isWhitespace) {
+        inWord = false
+      } else if (!inWord) {
+        inWord = true
+        words++
+      }
+    }
+
+    return {
+      chars: len,
+      words: words
+    }
+  }, [debouncedCode])
+
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false
@@ -291,7 +324,8 @@ const SnippetEditor = ({
       title: finalTitle,
       code: code,
       is_draft: false,
-      folder_id: initialSnippet?.folder_id || null // Double-check preservation
+      folder_id: initialSnippet?.folder_id || null,
+      is_pinned: initialSnippet?.is_pinned || 0
     }
     console.log(`[Editor] Saving snippet payload:`, payload)
 
@@ -435,6 +469,7 @@ const SnippetEditor = ({
                     className="h-full"
                     textareaRef={textareaRef}
                     snippets={snippets}
+                    onCursorChange={setCursorPos}
                   />
                 </div>
               }
@@ -479,6 +514,16 @@ const SnippetEditor = ({
               }
             />
           </div>
+
+          <StatusBar
+            title={title}
+            isLargeFile={code.length > 50000}
+            snippets={snippets}
+            stats={stats}
+            line={cursorPos.line}
+            col={cursorPos.col}
+            minimal={settings?.ui?.showFlowMode}
+          />
 
           <Prompt
             isOpen={namePrompt.isOpen}

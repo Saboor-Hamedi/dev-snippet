@@ -7,25 +7,20 @@ export const themes = [
     icon: '☀️',
     description: '',
     colors: {
-      '--color-bg-primary': '#ffffff',
-      '--color-bg-secondary': '#f6f8fa',
-      '--color-bg-tertiary': '#f1f3f4',
-      '--color-text-primary': '#24292f',
-      '--color-text-secondary': '#586069',
-      '--color-text-tertiary': '#6a737d',
+      '--color-bg-primary': 'rgba(255, 255, 255, 0.7)', // Frosty White Glass
+      '--color-bg-secondary': 'rgba(246, 248, 250, 0.6)',
+      '--color-bg-tertiary': 'rgba(241, 243, 244, 0.5)',
+      '--color-text-primary': '#000000',
+      '--color-text-secondary': '#000000',
+      '--color-text-tertiary': '#404040',
       '--color-accent-primary': '#0366d6',
-      '--color-border': '#d1d9e0',
-      '--hover-bg': '#f3f4f6',
+      '--color-border': 'rgba(3, 102, 214, 0.2)',
+      '--hover-bg': 'rgba(3, 102, 214, 0.1)',
       '--hover-text': '#0366d6',
-      '--selected-bg': '#ddf4ff',
+      '--selected-bg': 'rgba(3, 102, 214, 0.15)',
       '--selected-text': '#0969da',
-      '--sidebar-text': '#24292f',
-      '--sidebar-header-text': '#586069',
-      // Search Highlighting
-      '--search-match-bg': 'rgba(3, 102, 214, 0.15)',
-      '--search-match-border': 'rgba(3, 102, 214, 0.3)',
-      '--search-match-current-bg': 'rgba(3, 102, 214, 0.35)',
-      '--search-match-current-border': 'rgba(3, 102, 214, 0.6)',
+      '--sidebar-text': '#000000',
+      '--sidebar-header-text': '#000000',
       // Syntax Highlighting (Light Mode)
       '--color-syntax-string': '#404040',
       '--color-syntax-variable': '#171717',
@@ -36,31 +31,34 @@ export const themes = [
       '--color-syntax-comment': '#737373',
       '--color-syntax-punctuation': '#404040',
       // Component-specific variables
-      '--editor-bg': '#ffffff',
-      '--editor-text': '#24292f',
-      '--gutter-text-color': '#586069',
-      '--statusbar-bg': '#f6f8fa',
-      '--statusbar-text': '#586069',
-      '--header-bg': '#ffffff',
-      '--header-text': '#24292f',
-      '--sidebar-bg': '#f6f8fa',
-      '--sidebar-border': '#d1d9e0',
-      '--welcome-bg': '#ffffff',
-      '--welcome-text': '#24292f',
-      // Gutter variables
-      '--gutter-bg-color': '#f6f8fa',
-      '--gutter-border-color': '#d1d9e0',
-      '--activity-bar-bg': '#f6f8fa',
-      '--activity-bar-active-fg': '#24292f',
-      '--activity-bar-inactive-fg': 'rgba(36, 41, 47, 0.4)',
+      '--editor-bg': 'rgba(255, 255, 255, 0.7)',
+      '--editor-text': '#000000',
+      '--gutter-text-color': '#000000',
+      '--statusbar-bg': 'rgba(246, 248, 250, 0.85)',
+      '--statusbar-text': '#000000',
+      '--header-bg': 'rgba(255, 255, 255, 0.8)',
+      '--header-text': '#000000',
+      '--sidebar-bg': 'rgba(246, 248, 250, 0.65)',
+      '--sidebar-border': 'rgba(209, 217, 224, 0.3)',
+      '--welcome-bg': 'rgba(255, 255, 255, 0.7)',
+      '--welcome-text': '#000000',
+
+      '--gutter-bg-color': 'rgba(246, 248, 250, 0.05)',
+      '--gutter-border-color': 'rgba(3, 102, 214, 0.05)',
+      '--activity-bar-bg': 'rgba(246, 248, 250, 0.6)',
+      '--activity-bar-active-fg': '#000000',
+      '--activity-bar-inactive-fg': 'rgba(0, 0, 0, 0.4)',
       '--activity-bar-active-border': '#0969da',
       '--activity-bar-badge-bg': '#0969da',
       '--activity-bar-badge-fg': '#ffffff',
-      background: '#ffffff',
-      sidebar: '#f6f8fa',
-      text: '#24292f',
+      background: 'rgba(255, 255, 255, 0.7)',
+      sidebar: 'rgba(246, 248, 250, 0.65)',
+      text: '#000000',
       accent: '#0366d6',
-      border: '#d1d9e0'
+      border: 'rgba(3, 102, 214, 0.2)',
+      // ENABLING GLASS BLUR
+      backdropFilter: 'blur(16px) saturate(180%)',
+      boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.1)'
     },
     // Settings presets that get applied to settings.json
     settings: {
@@ -112,27 +110,22 @@ export const themes = [
     id: 'midnight-pro',
     name: 'Midnight Pro',
     icon: '🌙',
-    description: '',
+    description: 'Deep Cosmic Glass',
     colors: {
-      '--color-bg-primary': '#0d1117',
-      '--color-bg-secondary': '#161b22',
-      '--color-bg-tertiary': '#21262d',
+      '--color-bg-primary': 'rgba(13, 17, 23, 0.55)', // Glassy Midnight Void
+      '--color-bg-secondary': 'rgba(13, 17, 23, 0.45)',
+      '--color-bg-tertiary': 'rgba(22, 27, 34, 0.45)',
       '--color-text-primary': '#c9d1d9',
       '--color-text-secondary': '#8b949e',
       '--color-text-tertiary': '#6e7681',
       '--color-accent-primary': '#58a6ff',
-      '--color-border': '#30363d',
-      '--hover-bg': '#1f2937',
-      '--hover-text': '#58a6ff',
-      '--selected-bg': '#264f78',
-      '--selected-text': '#79c0ff',
+      '--color-border': 'rgba(88, 166, 255, 0.3)',
+      '--hover-bg': 'rgba(88, 166, 255, 0.15)',
+      '--hover-text': '#79c0ff',
+      '--selected-bg': 'rgba(88, 166, 255, 0.25)',
+      '--selected-text': '#a5d6ff',
       '--sidebar-text': '#c9d1d9',
       '--sidebar-header-text': '#8b949e',
-      // Search Highlighting
-      '--search-match-bg': 'rgba(88, 166, 255, 0.15)',
-      '--search-match-border': 'rgba(88, 166, 255, 0.3)',
-      '--search-match-current-bg': 'rgba(88, 166, 255, 0.35)',
-      '--search-match-current-border': 'rgba(88, 166, 255, 0.6)',
       // Syntax Highlighting (Dark Mode)
       '--color-syntax-string': '#f1be36',
       '--color-syntax-variable': '#d946ef',
@@ -143,54 +136,41 @@ export const themes = [
       '--color-syntax-comment': '#71717a',
       '--color-syntax-punctuation': '#a1a1aa',
       // Component-specific variables
-      '--editor-bg': '#0d1117',
+      '--editor-bg': 'rgba(13, 17, 23, 0.55)',
       '--editor-text': '#c9d1d9',
       '--gutter-text-color': '#8b949e',
-      '--statusbar-bg': '#161b22',
+      '--statusbar-bg': 'rgba(13, 17, 23, 0.8)',
       '--statusbar-text': '#8b949e',
-      '--header-bg': '#0d1117',
+      '--header-bg': 'rgba(13, 17, 23, 0.7)',
       '--header-text': '#c9d1d9',
-      '--sidebar-bg': '#161b22',
-      '--sidebar-border': '#30363d',
-      '--welcome-bg': '#0d1117',
+      '--sidebar-bg': 'rgba(13, 17, 23, 0.45)',
+      '--sidebar-border': 'rgba(88, 166, 255, 0.2)',
+      '--welcome-bg': 'rgba(13, 17, 23, 0.55)',
       '--welcome-text': '#c9d1d9',
-      // Gutter variables
-      '--gutter-bg-color': '#161b22',
-      '--gutter-border-color': '#30363d',
-      '--activity-bar-bg': '#161b22',
-      '--activity-bar-active-fg': '#c9d1d9',
-      '--activity-bar-inactive-fg': 'rgba(201, 209, 217, 0.4)',
+
+      '--gutter-bg-color': 'rgba(13, 17, 23, 0.05)',
+      '--gutter-border-color': 'rgba(88, 166, 255, 0.1)',
+      '--activity-bar-bg': 'rgba(13, 17, 23, 0.5)',
+      '--activity-bar-active-fg': '#58a6ff',
+      '--activity-bar-inactive-fg': '#404040',
       '--activity-bar-active-border': '#58a6ff',
       '--activity-bar-badge-bg': '#58a6ff',
       '--activity-bar-badge-fg': '#ffffff',
-      background: '#0d1117',
-      sidebar: '#161b22',
+      background: 'rgba(13, 17, 23, 0.55)',
+      sidebar: 'rgba(13, 17, 23, 0.45)',
       text: '#c9d1d9',
       accent: '#58a6ff',
-      border: '#30363d'
+      border: 'rgba(88, 166, 255, 0.3)',
+      // ENABLING GLASS BLUR
+      backdropFilter: 'blur(16px) saturate(180%)',
+      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.5)'
     },
-    // Settings presets that get applied to settings.json
     settings: {
-      welcome: {
-        welcomePage: '#161b22'
-      },
-      editor: {
-        editorBgColor: '#0d1117'
-      },
-      gutter: {
-        gutterBgColor: '#161b22',
-        gutterBorderColor: '#30363d',
-        gutterBorderWidth: 1
-      },
-      cursor: {
-        color: '#58a6ff'
-      },
-      livePreview: {
-        bgColor: '#0d1117',
-        borderColor: '#30363d',
-        borderWidth: 1,
-        borderRound: 4
-      },
+      welcome: { welcomePage: '#161b22' },
+      editor: { editorBgColor: '#0d1117' },
+      gutter: { gutterBgColor: '#161b22', gutterBorderColor: '#30363d', gutterBorderWidth: 1 },
+      cursor: { color: '#58a6ff' },
+      livePreview: { bgColor: '#0d1117', borderColor: '#30363d', borderWidth: 1, borderRound: 4 },
       activityBar: {
         bgColor: '#161b22',
         activeFg: '#c9d1d9',
@@ -221,25 +201,20 @@ export const themes = [
     icon: '🪐',
     description: '',
     colors: {
-      '--color-bg-primary': '#09090b',
-      '--color-bg-secondary': '#18181b',
-      '--color-bg-tertiary': '#27272a',
+      '--color-bg-primary': 'rgba(9, 9, 11, 0.55)', // Glassy Cosmic Void
+      '--color-bg-secondary': 'rgba(9, 9, 11, 0.45)',
+      '--color-bg-tertiary': 'rgba(24, 24, 27, 0.45)',
       '--color-text-primary': '#ffffff',
-      '--color-text-secondary': '#ffffff',
-      '--color-text-tertiary': '#ffffff',
-      '--color-accent-primary': '#d946ef',
-      '--color-border': '#27272a',
-      '--hover-bg': '#1e1b4b',
-      '--hover-text': '#d946ef',
-      '--selected-bg': '#4c1d95',
-      '--selected-text': '#e879f9',
+      '--color-text-secondary': '#e2e8f0',
+      '--color-text-tertiary': '#94a3b8',
+      '--color-accent-primary': '#d946ef', // Nebula Fuchsia
+      '--color-border': 'rgba(217, 70, 239, 0.3)',
+      '--hover-bg': 'rgba(217, 70, 239, 0.15)',
+      '--hover-text': '#f0abfc',
+      '--selected-bg': 'rgba(139, 92, 246, 0.4)', // Deep Violet Highlight (Fixed white issue)
+      '--selected-text': '#ffffff',
       '--sidebar-text': '#ffffff',
-      '--sidebar-header-text': '#ffffff',
-      // Search Highlighting
-      '--search-match-bg': 'rgba(34, 211, 238, 0.2)',
-      '--search-match-border': 'rgba(34, 211, 238, 0.4)',
-      '--search-match-current-bg': 'rgba(34, 211, 238, 0.45)',
-      '--search-match-current-border': 'rgba(34, 211, 238, 0.8)',
+      '--sidebar-header-text': '#e2e8f0',
       // Syntax Highlighting (Nebula)
       '--color-syntax-string': '#38bdf8',
       '--color-syntax-variable': '#818cf8',
@@ -250,31 +225,34 @@ export const themes = [
       '--color-syntax-comment': '#64748b',
       '--color-syntax-punctuation': '#94a3b8',
       // Component-specific variables
-      '--editor-bg': '#09090b',
+      '--editor-bg': 'rgba(9, 9, 11, 0.55)',
       '--editor-text': '#ffffff',
       '--gutter-text-color': '#ffffff',
-      '--statusbar-bg': '#18181b',
+      '--statusbar-bg': 'rgba(9, 9, 11, 0.8)',
       '--statusbar-text': '#ffffff',
-      '--header-bg': '#09090b',
+      '--header-bg': 'rgba(9, 9, 11, 0.7)',
       '--header-text': '#ffffff',
-      '--sidebar-bg': '#18181b',
-      '--sidebar-border': '#27272a',
-      '--welcome-bg': '#09090b',
+      '--sidebar-bg': 'rgba(9, 9, 11, 0.45)',
+      '--sidebar-border': 'rgba(217, 70, 239, 0.2)',
+      '--welcome-bg': 'rgba(9, 9, 11, 0.55)',
       '--welcome-text': '#ffffff',
-      // Gutter variables
-      '--gutter-bg-color': '#18181b',
-      '--gutter-border-color': '#27272a',
-      '--activity-bar-bg': '#18181b',
+
+      '--gutter-bg-color': 'rgba(9, 9, 11, 0.05)',
+      '--gutter-border-color': 'rgba(217, 70, 239, 0.1)',
+      '--activity-bar-bg': 'rgba(9, 9, 11, 0.5)',
       '--activity-bar-active-fg': '#d946ef',
-      '--activity-bar-inactive-fg': 'rgba(255, 255, 255, 0.4)',
+      '--activity-bar-inactive-fg': '#404040',
       '--activity-bar-active-border': '#d946ef',
       '--activity-bar-badge-bg': '#d946ef',
       '--activity-bar-badge-fg': '#ffffff',
-      background: '#09090b',
-      sidebar: '#18181b',
+      background: 'rgba(9, 9, 11, 0.55)',
+      sidebar: 'rgba(9, 9, 11, 0.45)',
       text: '#ffffff',
       accent: '#d946ef',
-      border: '#27272a'
+      border: 'rgba(217, 70, 239, 0.3)',
+      // ENABLING GLASS BLUR
+      backdropFilter: 'blur(16px) saturate(180%)',
+      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.5)'
     },
     // Settings presets that get applied to settings.json
     settings: {
@@ -328,25 +306,20 @@ export const themes = [
     icon: '🌲',
     description: '',
     colors: {
-      '--color-bg-primary': '#1c1917',
-      '--color-bg-secondary': '#292524',
-      '--color-bg-tertiary': '#44403c',
+      '--color-bg-primary': 'rgba(23, 28, 25, 0.55)', // Glassy Forest Void
+      '--color-bg-secondary': 'rgba(23, 28, 25, 0.45)',
+      '--color-bg-tertiary': 'rgba(34, 42, 38, 0.45)',
       '--color-text-primary': '#ffffff',
       '--color-text-secondary': '#ffffff',
       '--color-text-tertiary': '#ffffff',
-      '--color-accent-primary': '#22c55e',
-      '--color-border': '#44403c',
-      '--hover-bg': '#374151',
-      '--hover-text': '#22c55e',
-      '--selected-bg': '#14532d',
-      '--selected-text': '#4ade80',
+      '--color-accent-primary': '#22c55e', // Forest Green
+      '--color-border': 'rgba(34, 197, 94, 0.3)',
+      '--hover-bg': 'rgba(34, 197, 94, 0.15)',
+      '--hover-text': '#4ade80',
+      '--selected-bg': 'rgba(34, 197, 94, 0.25)',
+      '--selected-text': '#86efac',
       '--sidebar-text': '#ffffff',
       '--sidebar-header-text': '#ffffff',
-      // Search Highlighting
-      '--search-match-bg': 'rgba(74, 222, 128, 0.2)',
-      '--search-match-border': 'rgba(74, 222, 128, 0.4)',
-      '--search-match-current-bg': 'rgba(74, 222, 128, 0.45)',
-      '--search-match-current-border': 'rgba(74, 222, 128, 0.8)',
       // Syntax Highlighting (Forest)
       '--color-syntax-string': '#fb923c',
       '--color-syntax-variable': '#f87171',
@@ -357,31 +330,34 @@ export const themes = [
       '--color-syntax-comment': '#737373',
       '--color-syntax-punctuation': '#a3a3a3',
       // Component-specific variables
-      '--editor-bg': '#1c1917',
+      '--editor-bg': 'rgba(23, 28, 25, 0.55)',
       '--editor-text': '#ffffff',
       '--gutter-text-color': '#ffffff',
-      '--statusbar-bg': '#292524',
+      '--statusbar-bg': 'rgba(23, 28, 25, 0.8)',
       '--statusbar-text': '#ffffff',
-      '--header-bg': '#1c1917',
+      '--header-bg': 'rgba(23, 28, 25, 0.7)',
       '--header-text': '#ffffff',
-      '--sidebar-bg': '#292524',
-      '--sidebar-border': '#44403c',
-      '--welcome-bg': '#1c1917',
+      '--sidebar-bg': 'rgba(23, 28, 25, 0.45)',
+      '--sidebar-border': 'rgba(34, 197, 94, 0.2)',
+      '--welcome-bg': 'rgba(23, 28, 25, 0.55)',
       '--welcome-text': '#ffffff',
-      // Gutter variables
-      '--gutter-bg-color': '#292524',
-      '--gutter-border-color': '#44403c',
-      '--activity-bar-bg': '#292524',
+
+      '--gutter-bg-color': 'rgba(23, 28, 25, 0.05)',
+      '--gutter-border-color': 'rgba(34, 197, 94, 0.1)',
+      '--activity-bar-bg': 'rgba(23, 28, 25, 0.5)',
       '--activity-bar-active-fg': '#4ade80',
-      '--activity-bar-inactive-fg': 'rgba(255, 255, 255, 0.4)',
+      '--activity-bar-inactive-fg': '#404040',
       '--activity-bar-active-border': '#22c55e',
       '--activity-bar-badge-bg': '#22c55e',
       '--activity-bar-badge-fg': '#ffffff',
-      background: '#1c1917',
-      sidebar: '#292524',
+      background: 'rgba(23, 28, 25, 0.55)',
+      sidebar: 'rgba(23, 28, 25, 0.45)',
       text: '#ffffff',
       accent: '#22c55e',
-      border: '#44403c'
+      border: 'rgba(34, 197, 94, 0.3)',
+      // ENABLING GLASS BLUR
+      backdropFilter: 'blur(16px) saturate(180%)',
+      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.5)'
     },
     // Settings presets that get applied to settings.json
     settings: {
@@ -433,20 +409,20 @@ export const themes = [
     id: 'royal-gold',
     name: 'Royal Gold',
     icon: '👑',
-    description: 'Gold & Purple on Dark',
+    description: 'Luxurious Gold Glass',
     colors: {
-      '--color-bg-primary': '#18181b',
-      '--color-bg-secondary': '#27272a',
-      '--color-bg-tertiary': '#3f3f46',
+      '--color-bg-primary': 'rgba(24, 24, 27, 0.55)', // Glassy Zinc Void
+      '--color-bg-secondary': 'rgba(24, 24, 27, 0.45)',
+      '--color-bg-tertiary': 'rgba(39, 39, 42, 0.45)',
       '--color-text-primary': '#ffffff',
       '--color-text-secondary': '#a1a1aa',
       '--color-text-tertiary': '#71717a',
-      '--color-accent-primary': '#f1be36',
-      '--color-border': '#3f3f46',
-      '--hover-bg': '#3f3f46',
-      '--hover-text': '#f1be36',
-      '--selected-bg': '#f1be36',
-      '--selected-text': '#18181b',
+      '--color-accent-primary': '#f1be36', // Royal Gold
+      '--color-border': 'rgba(241, 190, 54, 0.3)',
+      '--hover-bg': 'rgba(241, 190, 54, 0.15)',
+      '--hover-text': '#fbd24e',
+      '--selected-bg': 'rgba(241, 190, 54, 0.25)',
+      '--selected-text': '#ffffff',
       '--sidebar-text': '#ffffff',
       '--sidebar-header-text': '#ffffff',
       // Syntax Highlighting
@@ -459,53 +435,41 @@ export const themes = [
       '--color-syntax-comment': '#71717a',
       '--color-syntax-punctuation': '#a1a1aa',
       // Component-specific variables
-      '--editor-bg': '#18181b',
+      '--editor-bg': 'rgba(24, 24, 27, 0.55)',
       '--editor-text': '#ffffff',
       '--gutter-text-color': '#71717a',
-      '--statusbar-bg': '#27272a',
+      '--statusbar-bg': 'rgba(24, 24, 27, 0.8)',
       '--statusbar-text': '#f1be36',
-      '--header-bg': '#18181b',
+      '--header-bg': 'rgba(24, 24, 27, 0.7)',
       '--header-text': '#ffffff',
-      '--sidebar-bg': '#27272a',
-      '--sidebar-border': '#3f3f46',
-      '--welcome-bg': '#18181b',
+      '--sidebar-bg': 'rgba(24, 24, 27, 0.45)',
+      '--sidebar-border': 'rgba(241, 190, 54, 0.2)',
+      '--welcome-bg': 'rgba(24, 24, 27, 0.55)',
       '--welcome-text': '#ffffff',
-      // Gutter variables
-      '--gutter-bg-color': '#27272a',
-      '--gutter-border-color': '#3f3f46',
-      '--activity-bar-bg': '#27272a',
+
+      '--gutter-bg-color': 'rgba(24, 24, 27, 0.05)',
+      '--gutter-border-color': 'rgba(241, 190, 54, 0.1)',
+      '--activity-bar-bg': 'rgba(24, 24, 27, 0.5)',
       '--activity-bar-active-fg': '#f1be36',
-      '--activity-bar-inactive-fg': 'rgba(241, 190, 54, 0.6)',
+      '--activity-bar-inactive-fg': '#404040',
       '--activity-bar-active-border': '#f1be36',
       '--activity-bar-badge-bg': '#f1be36',
       '--activity-bar-badge-fg': '#18181b',
-      background: '#18181b',
-      sidebar: '#27272a',
+      background: 'rgba(24, 24, 27, 0.55)',
+      sidebar: 'rgba(24, 24, 27, 0.45)',
       text: '#ffffff',
       accent: '#f1be36',
-      border: '#3f3f46'
+      border: 'rgba(241, 190, 54, 0.3)',
+      // ENABLING GLASS BLUR
+      backdropFilter: 'blur(16px) saturate(180%)',
+      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.5)'
     },
     settings: {
-      welcome: {
-        welcomePage: '#18181b'
-      },
-      editor: {
-        editorBgColor: '#18181b'
-      },
-      gutter: {
-        gutterBgColor: '#27272a',
-        gutterBorderColor: '#3f3f46',
-        gutterBorderWidth: 1
-      },
-      cursor: {
-        color: '#f1be36'
-      },
-      livePreview: {
-        bgColor: '#18181b',
-        borderColor: '#3f3f46',
-        borderWidth: 1,
-        borderRound: 4
-      },
+      welcome: { welcomePage: '#18181b' },
+      editor: { editorBgColor: '#18181b' },
+      gutter: { gutterBgColor: '#27272a', gutterBorderColor: '#3f3f46', gutterBorderWidth: 1 },
+      cursor: { color: '#f1be36' },
+      livePreview: { bgColor: '#18181b', borderColor: '#3f3f46', borderWidth: 1, borderRound: 4 },
       activityBar: {
         bgColor: '#18181b',
         activeFg: '#f1be36',
@@ -536,54 +500,57 @@ export const themes = [
     icon: '🌊',
     description: 'Deep Blue & Cyan',
     colors: {
-      '--color-bg-primary': '#0f172a', // Slate 900
-      '--color-bg-secondary': '#1e293b', // Slate 800
-      '--color-bg-tertiary': '#334155', // Slate 700
-      '--color-text-primary': '#f8fafc', // Slate 50
-      '--color-text-secondary': '#94a3b8', // Slate 400
-      '--color-text-tertiary': '#64748b', // Slate 500
-      '--color-accent-primary': '#38bdf8', // Sky 400
-      '--color-border': '#334155',
-      '--hover-bg': '#334155',
-      '--hover-text': '#38bdf8',
-      '--selected-bg': '#0c4a6e', // Sky 900
-      '--selected-text': '#7dd3fc', // Sky 300
+      '--color-bg-primary': 'rgba(15, 23, 42, 0.55)', // Deep Sea Glass Void
+      '--color-bg-secondary': 'rgba(15, 23, 42, 0.45)',
+      '--color-bg-tertiary': 'rgba(30, 41, 59, 0.45)',
+      '--color-text-primary': '#f8fafc',
+      '--color-text-secondary': '#94a3b8',
+      '--color-text-tertiary': '#64748b',
+      '--color-accent-primary': '#38bdf8', // Oceanic Cyan
+      '--color-border': 'rgba(56, 189, 248, 0.3)',
+      '--hover-bg': 'rgba(56, 189, 248, 0.15)',
+      '--hover-text': '#7dd3fc',
+      '--selected-bg': 'rgba(56, 189, 248, 0.25)',
+      '--selected-text': '#bae6fd',
       '--sidebar-text': '#f8fafc',
       '--sidebar-header-text': '#94a3b8',
       // Syntax Highlighting
       '--color-syntax-string': '#38bdf8',
-      '--color-syntax-variable': '#818cf8', // Indigo
-      '--color-syntax-number': '#34d399', // Emerald
+      '--color-syntax-variable': '#818cf8',
+      '--color-syntax-number': '#34d399',
       '--color-syntax-boolean': '#f472b6',
       '--color-syntax-null': '#94a3b8',
       '--color-syntax-keyword': '#818cf8',
       '--color-syntax-comment': '#64748b',
       '--color-syntax-punctuation': '#94a3b8',
       // Components
-      '--editor-bg': '#0f172a',
+      '--editor-bg': 'rgba(15, 23, 42, 0.55)',
       '--editor-text': '#f8fafc',
       '--gutter-text-color': '#64748b',
-      '--statusbar-bg': '#1e293b',
+      '--statusbar-bg': 'rgba(15, 23, 42, 0.8)',
       '--statusbar-text': '#f8fafc',
-      '--header-bg': '#0f172a',
+      '--header-bg': 'rgba(15, 23, 42, 0.7)',
       '--header-text': '#f8fafc',
-      '--sidebar-bg': '#1e293b',
-      '--sidebar-border': '#334155',
-      '--welcome-bg': '#0f172a',
+      '--sidebar-bg': 'rgba(15, 23, 42, 0.45)',
+      '--sidebar-border': 'rgba(56, 189, 248, 0.2)',
+      '--welcome-bg': 'rgba(15, 23, 42, 0.55)',
       '--welcome-text': '#f8fafc',
-      '--gutter-bg-color': '#1e293b',
-      '--gutter-border-color': '#334155',
-      '--activity-bar-bg': '#1e293b',
+      '--gutter-bg-color': 'rgba(15, 23, 42, 0.05)',
+      '--gutter-border-color': 'rgba(56, 189, 248, 0.1)',
+      '--activity-bar-bg': 'rgba(15, 23, 42, 0.5)',
       '--activity-bar-active-fg': '#38bdf8',
-      '--activity-bar-inactive-fg': 'rgba(255, 255, 255, 0.4)',
+      '--activity-bar-inactive-fg': '#404040',
       '--activity-bar-active-border': '#38bdf8',
       '--activity-bar-badge-bg': '#38bdf8',
-      '--activity-bar-badge-fg': '#0f172a',
-      background: '#0f172a',
-      sidebar: '#1e293b',
+      '--activity-bar-badge-fg': '#ffffff',
+      background: 'rgba(15, 23, 42, 0.55)',
+      sidebar: 'rgba(15, 23, 42, 0.45)',
       text: '#f8fafc',
       accent: '#38bdf8',
-      border: '#334155'
+      border: 'rgba(56, 189, 248, 0.3)',
+      // ENABLING GLASS BLUR
+      backdropFilter: 'blur(16px) saturate(180%)',
+      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.5)'
     },
     settings: {
       welcome: { welcomePage: '#1e293b' },
@@ -621,55 +588,58 @@ export const themes = [
     icon: '🌋',
     description: 'Fiery Red & Dark',
     colors: {
-      '--color-bg-primary': '#171717', // Neutral 900
-      '--color-bg-secondary': '#262626', // Neutral 800
-      '--color-bg-tertiary': '#404040', // Neutral 700
-      '--color-text-primary': '#fafafa', // Neutral 50
-      '--color-text-secondary': '#a3a3a3', // Neutral 400
-      '--color-text-tertiary': '#737373', // Neutral 500
-      '--color-accent-primary': '#f97316', // Orange 500
-      '--color-border': '#404040',
-      '--hover-bg': '#404040',
-      '--hover-text': '#f97316',
-      '--selected-bg': '#431407', // Orange 950
-      '--selected-text': '#fdba74', // Orange 300
+      '--color-bg-primary': 'rgba(28, 25, 23, 0.55)', // Glassy Ember Void
+      '--color-bg-secondary': 'rgba(28, 25, 23, 0.45)',
+      '--color-bg-tertiary': 'rgba(45, 38, 32, 0.45)',
+      '--color-text-primary': '#fafafa',
+      '--color-text-secondary': '#a3a3a3',
+      '--color-text-tertiary': '#737373',
+      '--color-accent-primary': '#f97316', // Magma Orange
+      '--color-border': 'rgba(249, 115, 22, 0.3)',
+      '--hover-bg': 'rgba(249, 115, 22, 0.15)',
+      '--hover-text': '#fb923c',
+      '--selected-bg': 'rgba(249, 115, 22, 0.25)',
+      '--selected-text': '#fdba74',
       '--sidebar-text': '#fafafa',
       '--sidebar-header-text': '#a3a3a3',
       // Syntax Highlighting
-      '--color-syntax-string': '#fb923c', // Orange 400
-      '--color-syntax-variable': '#f87171', // Red 400
-      '--color-syntax-number': '#fcd34d', // Amber 300
+      '--color-syntax-string': '#fb923c',
+      '--color-syntax-variable': '#f87171',
+      '--color-syntax-number': '#fcd34d',
       '--color-syntax-boolean': '#f87171',
       '--color-syntax-null': '#d4d4d4',
-      '--color-syntax-keyword': '#ef4444', // Red 500
+      '--color-syntax-keyword': '#ef4444',
       '--color-syntax-comment': '#737373',
       '--color-syntax-punctuation': '#a3a3a3',
       // Components
-      '--editor-bg': '#171717',
+      '--editor-bg': 'rgba(28, 25, 23, 0.55)',
       '--editor-text': '#fafafa',
       '--gutter-text-color': '#737373',
-      '--statusbar-bg': '#262626',
+      '--statusbar-bg': 'rgba(28, 25, 23, 0.8)',
       '--statusbar-text': '#fafafa',
-      '--header-bg': '#171717',
+      '--header-bg': 'rgba(28, 25, 23, 0.7)',
       '--header-text': '#fafafa',
-      '--sidebar-bg': '#262626',
-      '--sidebar-border': '#404040',
-      '--welcome-bg': '#171717',
+      '--sidebar-bg': 'rgba(28, 25, 23, 0.45)',
+      '--sidebar-border': 'rgba(249, 115, 22, 0.2)',
+      '--welcome-bg': 'rgba(28, 25, 23, 0.55)',
       '--welcome-text': '#fafafa',
 
-      '--gutter-bg-color': '#262626',
-      '--gutter-border-color': '#404040',
-      '--activity-bar-bg': '#262626',
+      '--gutter-bg-color': 'rgba(28, 25, 23, 0.05)',
+      '--gutter-border-color': 'rgba(249, 115, 22, 0.1)',
+      '--activity-bar-bg': 'rgba(28, 25, 23, 0.5)',
       '--activity-bar-active-fg': '#f97316',
-      '--activity-bar-inactive-fg': 'rgba(255, 255, 255, 0.4)',
+      '--activity-bar-inactive-fg': '#404040',
       '--activity-bar-active-border': '#ef4444',
       '--activity-bar-badge-bg': '#ef4444',
       '--activity-bar-badge-fg': '#ffffff',
-      background: '#171717',
-      sidebar: '#262626',
+      background: 'rgba(28, 25, 23, 0.55)',
+      sidebar: 'rgba(28, 25, 23, 0.45)',
       text: '#fafafa',
       accent: '#f97316',
-      border: '#404040'
+      border: 'rgba(249, 115, 22, 0.3)',
+      // ENABLING GLASS BLUR
+      backdropFilter: 'blur(16px) saturate(180%)',
+      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.5)'
     },
     settings: {
       welcome: { welcomePage: '#262626' },
@@ -707,17 +677,17 @@ export const themes = [
     icon: '☁️',
     description: 'Clean & minimal',
     colors: {
-      '--color-bg-primary': '#ffffff',
-      '--color-bg-secondary': '#f6f6f6',
-      '--color-bg-tertiary': '#ededed',
+      '--color-bg-primary': 'rgba(255, 255, 255, 0.7)', // Steel Glass Void
+      '--color-bg-secondary': 'rgba(246, 246, 246, 0.6)',
+      '--color-bg-tertiary': 'rgba(237, 237, 237, 0.5)',
       '--color-text-primary': '#000000',
-      '--color-text-secondary': '#000000',
-      '--color-text-tertiary': '#000000',
+      '--color-text-secondary': '#404040',
+      '--color-text-tertiary': '#737373',
       '--color-accent-primary': '#000000',
-      '--color-border': '#e5e5e5',
-      '--hover-bg': '#e5e5e5',
+      '--color-border': 'rgba(0, 0, 0, 0.1)',
+      '--hover-bg': 'rgba(0, 0, 0, 0.05)',
       '--hover-text': '#000000',
-      '--selected-bg': '#e5e5e5',
+      '--selected-bg': 'rgba(0, 0, 0, 0.1)',
       '--selected-text': '#000000',
       '--sidebar-text': '#000000',
       '--sidebar-header-text': '#000000',
@@ -731,31 +701,34 @@ export const themes = [
       '--color-syntax-comment': '#737373',
       '--color-syntax-punctuation': '#404040',
       // Component-specific variables
-      '--editor-bg': '#ffffff',
+      '--editor-bg': 'rgba(255, 255, 255, 0.7)',
       '--editor-text': '#000000',
       '--gutter-text-color': '#000000',
-      '--statusbar-bg': '#f6f6f6',
+      '--statusbar-bg': 'rgba(246, 246, 246, 0.8)',
       '--statusbar-text': '#000000',
-      '--header-bg': '#f6f6f6',
+      '--header-bg': 'rgba(246, 246, 246, 0.7)',
       '--header-text': '#000000',
-      '--sidebar-bg': '#f6f6f6',
-      '--sidebar-border': '#e5e5e5',
-      '--welcome-bg': '#ffffff',
+      '--sidebar-bg': 'rgba(246, 246, 246, 0.6)',
+      '--sidebar-border': 'rgba(0, 0, 0, 0.05)',
+      '--welcome-bg': 'rgba(255, 255, 255, 0.7)',
       '--welcome-text': '#000000',
-      // Gutter variables
-      '--gutter-bg-color': '#f6f6f6',
-      '--gutter-border-color': '#e5e5e5',
-      '--activity-bar-bg': '#f6f6f6',
+
+      '--gutter-bg-color': 'rgba(246, 246, 246, 0.05)',
+      '--gutter-border-color': 'rgba(0, 0, 0, 0.05)',
+      '--activity-bar-bg': 'rgba(246, 246, 246, 0.6)',
       '--activity-bar-active-fg': '#000000',
-      '--activity-bar-inactive-fg': 'rgba(0, 0, 0, 0.4)',
+      '--activity-bar-inactive-fg': '#737373',
       '--activity-bar-active-border': '#000000',
       '--activity-bar-badge-bg': '#000000',
       '--activity-bar-badge-fg': '#ffffff',
-      background: '#ffffff',
-      sidebar: '#f6f6f6',
+      background: 'rgba(255, 255, 255, 0.7)',
+      sidebar: 'rgba(246, 246, 246, 0.6)',
       text: '#000000',
       accent: '#000000',
-      border: '#e5e5e5'
+      border: 'rgba(0, 0, 0, 0.1)',
+      // ENABLING GLASS BLUR
+      backdropFilter: 'blur(16px) saturate(180%)',
+      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.05)'
     },
     settings: {
       welcome: {
@@ -803,133 +776,26 @@ export const themes = [
     previewColors: ['bg-[#ffffff]', 'bg-[#f6f6f6]', 'bg-gray-900']
   },
   {
-    id: 'magma',
-    name: 'Magma',
-    icon: '🌋',
-    description: 'Volcanic Dark & Orange',
-    colors: {
-      '--color-bg-primary': '#1c1917',
-      '--color-bg-secondary': '#292524',
-      '--color-bg-tertiary': '#44403c',
-      '--color-text-primary': '#ffffff',
-      '--color-text-secondary': '#d6d3d1',
-      '--color-text-tertiary': '#a8a29e',
-      '--color-accent-primary': '#f97316',
-      '--color-border': '#44403c',
-      '--hover-bg': '#404040',
-      '--hover-text': '#f97316',
-      '--selected-bg': '#431407',
-      '--selected-text': '#fdba74',
-      '--sidebar-text': '#d6d3d1',
-      '--sidebar-header-text': '#a8a29e',
-      // Search Highlighting
-      '--search-match-bg': 'rgba(249, 115, 22, 0.2)',
-      '--search-match-border': 'rgba(249, 115, 22, 0.4)',
-      '--search-match-current-bg': 'rgba(249, 115, 22, 0.45)',
-      '--search-match-current-border': 'rgba(249, 115, 22, 0.8)',
-      // Syntax Highlighting (Magma)
-      '--color-syntax-string': '#fb923c',
-      '--color-syntax-variable': '#fcd34d',
-      '--color-syntax-number': '#fbbf24',
-      '--color-syntax-boolean': '#f97316',
-      '--color-syntax-null': '#a8a29e',
-      '--color-syntax-keyword': '#f97316',
-      '--color-syntax-comment': '#78716c',
-      '--color-syntax-punctuation': '#d6d3d1',
-      // Component-specific variables
-      '--editor-bg': '#1c1917',
-      '--editor-text': '#ffffff',
-      '--gutter-text-color': '#78716c',
-      '--statusbar-bg': '#292524',
-      '--statusbar-text': '#d6d3d1',
-      '--header-bg': '#1c1917',
-      '--header-text': '#ffffff',
-      '--sidebar-bg': '#292524',
-      '--sidebar-border': '#44403c',
-      '--welcome-bg': '#1c1917',
-      '--welcome-text': '#ffffff',
-      // Gutter variables
-      '--gutter-bg-color': '#292524',
-      '--gutter-border-color': '#44403c',
-      '--activity-bar-bg': '#292524',
-      '--activity-bar-active-fg': '#f97316',
-      '--activity-bar-inactive-fg': 'rgba(255, 255, 255, 0.4)',
-      '--activity-bar-active-border': '#f97316',
-      '--activity-bar-badge-bg': '#f97316',
-      '--activity-bar-badge-fg': '#ffffff',
-      background: '#1c1917',
-      sidebar: '#292524',
-      text: '#ffffff',
-      accent: '#f97316',
-      border: '#44403c'
-    },
-    // Settings presets that get applied to settings.json
-    settings: {
-      welcome: {
-        welcomePage: '#1c1917'
-      },
-      editor: {
-        editorBgColor: '#1c1917'
-      },
-      gutter: {
-        gutterBgColor: '#292524',
-        gutterBorderColor: '#44403c',
-        gutterBorderWidth: 1
-      },
-      cursor: {
-        color: '#f97316'
-      },
-      livePreview: {
-        bgColor: '#1c1917',
-        borderColor: '#44403c',
-        borderWidth: 1,
-        borderRound: 4
-      },
-      activityBar: {
-        bgColor: '#292524',
-        activeFg: '#f97316',
-        inactiveFg: 'rgba(255, 255, 255, 0.4)',
-        activeBorder: '#f97316',
-        badgeBg: '#f97316',
-        badgeFg: '#ffffff'
-      },
-      header: {
-        bgColor: '#1c1917',
-        textColor: '#ffffff',
-        iconColor: '#f97316',
-        borderColor: '#44403c'
-      },
-      ui: {
-        sidebarBg: '#292524',
-        sidebarIconColor: '#f97316',
-        statusBarBg: '#292524',
-        footerBg: '#292524',
-        headerBg: '#1c1917'
-      }
-    },
-    previewColors: ['bg-[#1c1917]', 'bg-[#292524]', 'bg-orange-500']
-  },
-  {
     id: 'obsidian',
     name: 'Obsidian',
     icon: '🔮',
-    description: 'Second Brain Focus',
+    description: 'Glassmorphism with Purple Glow',
     colors: {
-      '--color-bg-primary': '#161616', // Deep void editor
-      '--color-bg-secondary': '#202020', // Sidebar / App Shell
-      '--color-bg-tertiary': '#2a2a2a', // Inputs / Hovers
-      '--color-text-primary': '#dcddde', // High legibility gray
-      '--color-text-secondary': '#999999', // Muted metadata
+      '--color-bg-primary': 'rgba(34, 30, 42, 0.5)', // Purple-tinted Void
+      '--color-bg-secondary': 'rgba(34, 30, 42, 0.4)',
+      '--color-bg-tertiary': 'rgba(48, 44, 62, 0.45)',
+      '--color-text-primary': '#dcddde',
+      '--color-text-secondary': '#999999',
       '--color-text-tertiary': '#666666',
       '--color-accent-primary': '#7c3aed', // Obsidian Purple
-      '--color-border': '#2f3136', // Ultra subtle
-      '--hover-bg': '#2a2a2a',
-      '--hover-text': '#dcddde',
-      '--selected-bg': '#2c2440', // Very deep purple tint
-      '--selected-text': '#a78bfa',
-      '--sidebar-text': '#999999', // Dimmed sidebar by default
-      '--sidebar-header-text': '#666666',
-      // Syntax Highlighting (Obsidian/Prism)
+      '--color-border': 'rgba(124, 58, 237, 0.3)',
+      '--hover-bg': 'rgba(124, 58, 237, 0.15)',
+      '--hover-text': '#a78bfa',
+      '--selected-bg': 'rgba(124, 58, 237, 0.25)',
+      '--selected-text': '#c4b5fd',
+      '--sidebar-text': '#dcddde',
+      '--sidebar-header-text': '#999999',
+      // Syntax Highlighting (Vibrant Obsidian)
       '--color-syntax-string': '#ce9178',
       '--color-syntax-variable': '#9cdcfe',
       '--color-syntax-number': '#b5cea8',
@@ -939,42 +805,54 @@ export const themes = [
       '--color-syntax-comment': '#6a9955',
       '--color-syntax-punctuation': '#d4d4d4',
       // Component Variables
-      '--editor-bg': '#161616',
+      '--editor-bg': 'rgba(34, 30, 42, 0.5)',
       '--editor-text': '#dcddde',
       '--gutter-text-color': '#4a4a4a',
-      '--statusbar-bg': '#202020',
+      '--statusbar-bg': 'rgba(34, 30, 42, 0.8)',
       '--statusbar-text': '#666666',
-      '--header-bg': '#202020', // Blends with sidebar
-      '--header-text': '#999999',
-      '--sidebar-bg': '#202020',
-      '--sidebar-border': '#2f3136',
-      '--welcome-bg': '#161616',
+      '--header-bg': 'rgba(34, 30, 42, 0.7)',
+      '--header-text': '#dcddde',
+      '--sidebar-bg': 'rgba(34, 30, 42, 0.4)',
+      '--sidebar-border': 'rgba(124, 58, 237, 0.2)',
+      '--welcome-bg': 'rgba(34, 30, 42, 0.5)',
       '--welcome-text': '#dcddde',
-      '--gutter-bg-color': '#161616',
-      '--gutter-border-color': 'transparent',
-      '--activity-bar-bg': '#1a1a1a', // Slightly darker than sidebar
+      '--gutter-bg-color': 'rgba(34, 30, 42, 0.05)',
+      '--gutter-border-color': 'rgba(124, 58, 237, 0.1)',
+      '--activity-bar-bg': 'rgba(34, 30, 42, 0.5)',
       '--activity-bar-active-fg': '#7c3aed',
       '--activity-bar-inactive-fg': '#404040',
       '--activity-bar-active-border': '#7c3aed',
       '--activity-bar-badge-bg': '#7c3aed',
       '--activity-bar-badge-fg': '#ffffff',
-      background: '#161616',
-      sidebar: '#202020',
+      background: 'rgba(34, 30, 42, 0.5)',
+      sidebar: 'rgba(34, 30, 42, 0.4)',
       text: '#dcddde',
       accent: '#7c3aed',
-      border: '#2f3136'
+      border: 'rgba(124, 58, 237, 0.3)',
+      // ENABLING GLASS BLUR
+      backdropFilter: 'blur(16px) saturate(180%)',
+      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.5)'
     },
     settings: {
-      welcome: { welcomePage: '#161616' },
+      welcome: { welcomePage: 'rgba(22, 22, 22, 0.85)' },
       editor: {
-        editorBgColor: '#161616',
+        editorBgColor: 'rgba(22, 22, 22, 0.85)',
         fontFamily: 'JetBrains Mono'
       },
-      gutter: { gutterBgColor: '#161616', gutterBorderColor: 'transparent', gutterBorderWidth: 0 },
+      gutter: {
+        gutterBgColor: 'rgba(22, 22, 22, 0.85)',
+        gutterBorderColor: 'rgba(124, 58, 237, 0.2)',
+        gutterBorderWidth: 1
+      },
       cursor: { color: '#7c3aed' },
-      livePreview: { bgColor: '#161616', borderColor: '#2f3136', borderWidth: 1, borderRound: 4 },
+      livePreview: {
+        bgColor: 'rgba(22, 22, 22, 0.85)',
+        borderColor: 'rgba(124, 58, 237, 0.3)',
+        borderWidth: 1,
+        borderRound: 8
+      },
       activityBar: {
-        bgColor: '#1a1a1a',
+        bgColor: 'rgba(32, 32, 32, 0.75)',
         activeFg: '#7c3aed',
         inactiveFg: '#404040',
         activeBorder: '#7c3aed',
@@ -982,20 +860,128 @@ export const themes = [
         badgeFg: '#ffffff'
       },
       header: {
-        bgColor: '#202020',
-        textColor: '#999999',
-        iconColor: '#999999',
-        borderColor: 'transparent' // Frameless look
+        bgColor: 'rgba(32, 32, 32, 0.85)',
+        textColor: '#dcddde',
+        iconColor: '#9f67ff',
+        borderColor: 'rgba(124, 58, 237, 0.2)'
       },
       ui: {
-        sidebarBg: '#202020',
+        sidebarBg: 'rgba(32, 32, 32, 0.75)',
         sidebarIconColor: '#7c3aed',
-        statusBarBg: '#202020',
-        footerBg: '#202020',
-        headerBg: '#202020'
+        statusBarBg: 'rgba(32, 32, 32, 0.75)',
+        footerBg: 'rgba(32, 32, 32, 0.75)',
+        headerBg: 'rgba(32, 32, 32, 0.85)',
+        commandPaletteBg: 'rgba(22, 22, 22, 0.95)'
       }
     },
-    previewColors: ['bg-[#161616]', 'bg-[#202020]', 'bg-purple-600']
+    previewColors: ['bg-[#1a1a1a]', 'bg-[rgba(32,32,32,0.75)]', 'bg-purple-600']
+  },
+  {
+    id: 'glass-blue',
+    name: 'Glass Blue',
+    icon: '💎',
+    description: 'Glassmorphism with Blue Glow',
+    colors: {
+      '--color-bg-primary': 'rgba(30, 41, 59, 0.75)', // Unified Glassy Cobalt
+      '--color-bg-secondary': 'rgba(30, 41, 59, 0.65)',
+      '--color-bg-tertiary': 'rgba(51, 65, 85, 0.5)',
+      '--color-text-primary': '#f1f5f9',
+      '--color-text-secondary': '#94a3b8',
+      '--color-text-tertiary': '#64748b',
+      '--color-accent-primary': '#3b82f6',
+      '--color-border': 'rgba(59, 130, 246, 0.3)',
+      '--hover-bg': 'rgba(59, 130, 246, 0.15)',
+      '--hover-text': '#60a5fa',
+      '--selected-bg': 'rgba(59, 130, 246, 0.3)',
+      '--selected-text': '#93c5fd',
+      '--sidebar-text': '#f1f5f9',
+      '--sidebar-header-text': '#cbd5e1',
+      // Search Highlighting
+      '--search-match-bg': 'rgba(59, 130, 246, 0.3)',
+      '--search-match-border': 'rgba(59, 130, 246, 0.5)',
+      '--search-match-current-bg': 'rgba(59, 130, 246, 0.5)',
+      '--search-match-current-border': 'rgba(147, 197, 253, 0.8)',
+      // Livewire/Blade Syntax Highlighting
+      '--color-syntax-string': '#38bdf8',
+      '--color-syntax-variable': '#818cf8',
+      '--color-syntax-number': '#fbbf24',
+      '--color-syntax-boolean': '#f472b6',
+      '--color-syntax-null': '#94a3b8',
+      '--color-syntax-keyword': '#60a5fa',
+      '--color-syntax-comment': '#475569',
+      '--color-syntax-punctuation': '#cbd5e1',
+      // Component-specific variables
+      '--editor-bg': 'rgba(30, 41, 59, 0.75)', // Matches primary background
+      '--editor-text': '#f1f5f9',
+      '--gutter-text-color': '#475569',
+      '--statusbar-bg': 'rgba(30, 41, 59, 0.9)',
+      '--statusbar-text': '#94a3b8',
+      '--header-bg': 'rgba(30, 41, 59, 0.8)',
+      '--header-text': '#f1f5f9',
+      '--sidebar-bg': 'rgba(30, 41, 59, 0.65)',
+      '--sidebar-border': 'rgba(59, 130, 246, 0.2)',
+      '--welcome-bg': 'rgba(30, 41, 59, 0.75)',
+      '--welcome-text': '#f1f5f9',
+      // Gutter variables
+      '--gutter-bg-color': 'rgba(30, 41, 59, 0.05)', // Very subtle gutter
+      '--gutter-border-color': 'rgba(59, 130, 246, 0.1)',
+      '--activity-bar-bg': 'rgba(30, 41, 59, 0.7)',
+      '--activity-bar-active-fg': '#3b82f6',
+      '--activity-bar-inactive-fg': '#64748b',
+      '--activity-bar-active-border': '#3b82f6',
+      '--activity-bar-badge-bg': '#3b82f6',
+      '--activity-bar-badge-fg': '#ffffff',
+      background: 'rgba(30, 41, 59, 0.75)',
+      sidebar: 'rgba(30, 41, 59, 0.65)',
+      text: '#f1f5f9',
+      accent: '#3b82f6',
+      border: 'rgba(59, 130, 246, 0.3)',
+      // ENABLING GLASS BLUR
+      backdropFilter: 'blur(16px) saturate(180%)',
+      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)'
+    },
+    settings: {
+      welcome: { welcomePage: 'rgba(30, 41, 59, 0.75)' },
+      editor: {
+        editorBgColor: 'rgba(15, 23, 42, 0.85)',
+        fontFamily: 'JetBrains Mono'
+      },
+      gutter: {
+        gutterBgColor: 'rgba(30, 41, 59, 0.75)',
+        gutterBorderColor: 'rgba(59, 130, 246, 0.2)',
+        gutterBorderWidth: 1
+      },
+      cursor: { color: '#3b82f6' },
+      livePreview: {
+        bgColor: 'rgba(15, 23, 42, 0.85)',
+        borderColor: 'rgba(59, 130, 246, 0.3)',
+        borderWidth: 1,
+        borderRound: 8
+      },
+      activityBar: {
+        bgColor: 'rgba(30, 41, 59, 0.75)',
+        activeFg: '#3b82f6',
+        inactiveFg: 'rgba(241, 245, 249, 0.4)',
+        activeBorder: '#3b82f6',
+        badgeBg: '#3b82f6',
+        badgeFg: '#ffffff'
+      },
+      header: {
+        bgColor: 'rgba(15, 23, 42, 0.85)',
+        textColor: '#f1f5f9',
+        iconColor: '#60a5fa',
+        borderColor: 'rgba(59, 130, 246, 0.2)'
+      },
+      ui: {
+        sidebarBg: 'rgba(30, 41, 59, 0.75)',
+        sidebarIconColor: '#3b82f6',
+        statusBarBg: 'rgba(30, 41, 59, 0.75)',
+        footerBg: 'rgba(30, 41, 59, 0.75)',
+        headerBg: 'rgba(15, 23, 42, 0.85)',
+        commandPaletteBg: 'rgba(15, 23, 42, 0.95)' // More opaque for readability
+      }
+    },
+    previewColors: ['bg-[rgba(15,23,42,0.85)]', 'bg-[rgba(30,41,59,0.75)]', 'bg-blue-500']
   }
 ]
 
@@ -1052,5 +1038,13 @@ export const themeStyles = {
     selectedText: '#000000',
     sidebarText: '#000000',
     sidebarHeaderText: '#000000'
+  },
+  'glass-blue': {
+    hoverBg: 'rgba(59, 130, 246, 0.15)',
+    hoverText: '#60a5fa',
+    selectedBg: 'rgba(59, 130, 246, 0.25)',
+    selectedText: '#93c5fd',
+    sidebarText: '#f1f5f9',
+    sidebarHeaderText: '#cbd5e1'
   }
 }

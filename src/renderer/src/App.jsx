@@ -2,11 +2,10 @@ import React, { useEffect } from 'react'
 import SnippetLibrary from './components/workbench/SnippetLibrary'
 import { SettingsProvider } from './hook/useSettingsContext'
 import ErrorBoundary from './components/ErrorBoundary'
+import QuickCapture from './components/QuickCapture/QuickCapture'
 
 function App() {
-  // Add a simple keyboard shortcut to restore the default window size
-  // (Ctrl/Cmd + Shift + R). This is lightweight and does not affect
-  // runtime performance.
+  // Global event handlers & shortcuts
   useEffect(() => {
     const onKey = (e) => {
       const isMod = e.ctrlKey || e.metaKey
@@ -36,6 +35,19 @@ function App() {
       window.removeEventListener('error', onGlobalError)
     }
   }, [])
+
+  const searchParams = new URLSearchParams(window.location.search)
+  const isQuickCapture = searchParams.get('mode') === 'quick-capture'
+
+  if (isQuickCapture) {
+    return (
+      <ErrorBoundary>
+        <SettingsProvider>
+          <QuickCapture />
+        </SettingsProvider>
+      </ErrorBoundary>
+    )
+  }
 
   return (
     <ErrorBoundary>

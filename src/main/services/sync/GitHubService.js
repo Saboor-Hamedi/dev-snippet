@@ -11,6 +11,7 @@ class GitHubService {
   }
 
   setToken(token) {
+    console.log('[GitHubService] setToken called, new token length:', token ? token.length : 'NULL')
     this.token = token
   }
 
@@ -18,14 +19,32 @@ class GitHubService {
     if (!this.token) {
       throw new Error('GitHub Token not set')
     }
+
+    // Validate token format
+    const isClassicToken = this.token.startsWith('ghp_')
+    const isFineGrainedToken = this.token.startsWith('github_pat_')
+
+    if (!isClassicToken && !isFineGrainedToken) {
+      console.warn(
+        '[GitHubService] Token does not start with ghp_ or github_pat_ - might be invalid'
+      )
+    }
+
     // Debug log to catch "Bad credentials" cause
     console.log(
       '[GitHubService] Making request with token:',
-      this.token.substring(0, 6) + '...' + this.token.substring(this.token.length - 4)
+      this.token.substring(0, 6) + '...' + this.token.substring(this.token.length - 4),
+      'Length:',
+      this.token.length,
+      'Type:',
+      isClassicToken ? 'Classic' : isFineGrainedToken ? 'Fine-grained' : 'Unknown'
     )
 
+    // Fine-grained tokens require 'Bearer', classic tokens use 'token'
+    const authPrefix = isFineGrainedToken ? 'Bearer' : 'token'
+
     return {
-      Authorization: `token ${this.token}`,
+      Authorization: `${authPrefix} ${this.token}`,
       Accept: 'application/vnd.github.v3+json',
       'Content-Type': 'application/json',
       'User-Agent': 'Electron-Dev-Snippet-App'

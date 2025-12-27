@@ -18,7 +18,7 @@ import iconUrl from '../../../assets/icon.png'
 import AutosaveIndicator from './AutosaveIndicator'
 import '../../../assets/css/header.css'
 
-const Header = ({
+const useHeader = ({
   isCompact,
   onToggleCompact,
   title,
@@ -191,4 +191,4 @@ const Header = ({
   )
 }
 
-export default Header
+export default useHeader

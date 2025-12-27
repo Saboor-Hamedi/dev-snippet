@@ -53,10 +53,10 @@ export const useSnippetData = () => {
       try {
         if (window.api?.getSnippets) {
           // Fetch only recent metadata for the sidebar/list - MUCH faster
-          // We limit to 100 for instant startup; older items are accessed via Search.
+          // We limit to 500 for a comprehensive view
           const loadedSnippets = await window.api.getSnippets({
             metadataOnly: true,
-            limit: 500, // Increased limit for better tree view
+            limit: 500,
             offset: 0
           })
           setSnippets(loadedSnippets || [])
@@ -65,20 +65,26 @@ export const useSnippetData = () => {
         if (window.api?.getFolders) {
           const loadedFolders = await window.api.getFolders()
           setFolders(loadedFolders || [])
-        } else if (window.api?.invoke) {
-          // Fallback to direct invoke if wrapper is missing
-          const loadedFolders = await window.api.invoke('db:getFolders')
-          setFolders(loadedFolders || [])
-        } else {
-          console.warn('Folder API (getFolders) not found in window.api')
         }
       } catch (error) {
         console.error('Data loading error:', error)
-        showToast('❌ Failed to load data')
       }
     }
 
     loadData()
+
+    // Listen for cross-window / background changes
+    let unsubscribe = null
+    if (window.api?.onDataChanged) {
+      unsubscribe = window.api.onDataChanged(() => {
+        console.log('🔄 Database changed, refreshing UI...')
+        loadData()
+      })
+    }
+
+    return () => {
+      if (unsubscribe) unsubscribe()
+    }
   }, [])
 
   // Save or update a snippet
@@ -256,6 +262,11 @@ export const useSnippetData = () => {
     }
   }
 
+  // Load trash count on mount for badge display
+  useEffect(() => {
+    loadTrash()
+  }, [])
+
   // Search snippets
   const searchSnippetList = async (query) => {
     try {
@@ -405,7 +416,9 @@ export const useSnippetData = () => {
       } else {
         await api.invoke('db:toggleFolderCollapse', id, collapsed)
       }
-      setFolders((prev) => prev.map((f) => (f.id === id ? { ...f, collapsed: collapsed ? 1 : 0 } : f)))
+      setFolders((prev) =>
+        prev.map((f) => (f.id === id ? { ...f, collapsed: collapsed ? 1 : 0 } : f))
+      )
     } catch (error) {
       console.error('Failed to toggle folder:', error)
     }

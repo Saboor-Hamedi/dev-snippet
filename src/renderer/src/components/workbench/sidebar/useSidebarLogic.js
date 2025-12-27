@@ -39,9 +39,11 @@ export const useSidebarLogic = ({
       // Folders
       const levelFolders = currentFolders
         .filter((f) => (f.parent_id || null) == (parentId || null))
-        .sort((a, b) =>
-          (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
-        )
+        .sort((a, b) => {
+          if (a.name === '📥 Inbox') return -1
+          if (b.name === '📥 Inbox') return 1
+          return (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
+        })
 
       levelFolders.forEach((folder) => {
         const isExpanded = folder.collapsed === 0 || folder.collapsed === false
@@ -88,7 +90,7 @@ export const useSidebarLogic = ({
 
     // Always show the full tree from root
     const result = flatten(folders, snippets, 0, null)
-    
+
     return result
   }, [snippets, folders, createState, selectedFolderId])
 
@@ -157,7 +159,15 @@ export const useSidebarLogic = ({
       onSelectionChange(newSelection)
       setSidebarSelected(false)
     },
-    [treeItems, selectedIds, onSelectionChange, onSelect, onSelectFolder, snippets, setSidebarSelected]
+    [
+      treeItems,
+      selectedIds,
+      onSelectionChange,
+      onSelect,
+      onSelectFolder,
+      snippets,
+      setSidebarSelected
+    ]
   )
 
   // 3. Keyboard Navigation Logic
@@ -249,14 +259,39 @@ export const useSidebarLogic = ({
     }
   }, [selectedIds, treeItems])
 
+  // 5. Semantic Selection Recovery (Collapse -> Select Parent)
+  React.useEffect(() => {
+    // If we have a selection that is NOT in the treeItems (visible),
+    // visual focus is lost. We should select the parent folder.
+    if (selectedIds.length === 1) {
+      const selectedId = selectedIds[0]
+      const isVisible = treeItems.some((i) => i.id === selectedId)
+
+      if (!isVisible) {
+        // Find the item in raw data to get parent
+        const snippet = snippets.find((s) => s.id === selectedId)
+        const folder = folders.find((f) => f.id === selectedId)
+        const parentId = snippet ? snippet.folder_id : folder ? folder.parent_id : null
+
+        if (parentId) {
+          // Select the parent folder
+          // Check if parent is visible? It should be if we just collapsed it.
+          handleSelectionInternal({ shiftKey: false, ctrlKey: false }, parentId, 'folder')
+        } else {
+          // Verify if we are at root? If hidden at root (impossible usually unless filtered), do nothing.
+        }
+      }
+    }
+  }, [treeItems, selectedIds, snippets, folders, handleSelectionInternal])
+
   // 5. Background Click Handler
-  // Deselects everything when clicking empty space
   const handleBackgroundClick = useCallback(
     (e) => {
-      if (e.target === e.currentTarget) {
+      // Only if we clicked directly on the container (virtual list container)
+      if (e.target === e.currentTarget || e.target.classList.contains('virtual-list-container')) {
         onSelectionChange([])
-        onSelect(null)
-        onSelectFolder(null)
+        onSelect(null) // Clear snippet
+        onSelectFolder(null) // Clear folder selection -> target ROOT
         lastSelectedIdRef.current = null
         setSidebarSelected(true)
       }

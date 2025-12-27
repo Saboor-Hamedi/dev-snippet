@@ -20,7 +20,9 @@ import {
   Image as ImageIcon,
   Layers,
   Layout,
-  FileDown
+  FileDown,
+  Cloud,
+  CloudDownload
 } from 'lucide-react'
 
 /**
@@ -32,8 +34,18 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
   const [search, setSearch] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [searchResults, setSearchResults] = useState(null)
+  const [isLoading, setIsLoading] = useState(false)
   const inputRef = useRef(null)
   const scrollRef = useRef(null)
+
+  // Toast notification helper
+  const showToast = (message, type = 'info') => {
+    window.dispatchEvent(
+      new CustomEvent('app:toast', {
+        detail: { message, type }
+      })
+    )
+  }
 
   // 1. HYBRID SEARCH ENGINE
   // - Empty query: Show local Recent files (Immediate)
@@ -48,11 +60,14 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
     const timer = setTimeout(async () => {
       // Use Backend Search if available (supports Content Search + FTS)
       if (window.api?.searchSnippets) {
+        setIsLoading(true)
         try {
           const results = await window.api.searchSnippets(query)
           setSearchResults(results)
         } catch (e) {
           console.error('Search failed', e)
+        } finally {
+          setIsLoading(false)
         }
       }
     }, 150) // 150ms debounce
@@ -68,6 +83,76 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
         icon: FilePlus,
         description: 'Start a new draft',
         action: () => window.dispatchEvent(new CustomEvent('app:command-new-snippet'))
+      },
+      {
+        id: 'cmd-backup',
+        title: 'Backup to Cloud',
+        icon: Cloud,
+        description: 'Backup all snippets to GitHub Gist',
+        action: async () => {
+          try {
+            await window.api.syncBackup()
+            // No notification on success
+          } catch (err) {
+            console.error('Backup failed:', err)
+            const errorMsg = err.message || 'Unknown error'
+            if (errorMsg.includes('401') || errorMsg.includes('Invalid Token')) {
+              showToast('❌ Backup failed: Invalid or expired token', 'error')
+            } else if (errorMsg.includes('403')) {
+              showToast('❌ Backup failed: Token lacks gist permissions', 'error')
+            } else if (errorMsg.includes('No GitHub Token')) {
+              showToast('❌ Backup failed: No token configured', 'error')
+            } else {
+              showToast(`❌ Backup failed: ${errorMsg}`, 'error')
+            }
+          } finally {
+            // Close palette first, then focus editor
+            console.log('[Backup] Closing palette and focusing editor')
+            onClose()
+            setTimeout(() => {
+              console.log('[Backup] Dispatching focus-editor event')
+              window.dispatchEvent(new CustomEvent('app:focus-editor'))
+            }, 200)
+          }
+        }
+      },
+      {
+        id: 'cmd-restore',
+        title: 'Restore from Cloud',
+        icon: CloudDownload,
+        description: 'Restore all snippets from GitHub Gist (overwrites local data)',
+        action: async () => {
+          if (
+            !confirm('⚠️ This will OVERWRITE your local data with the GitHub backup. Are you sure?')
+          ) {
+            onClose()
+            return
+          }
+          try {
+            await window.api.syncRestore()
+            // No notification on success
+          } catch (err) {
+            console.error('Restore failed:', err)
+            const errorMsg = err.message || 'Unknown error'
+            if (errorMsg.includes('401') || errorMsg.includes('Invalid Token')) {
+              showToast('❌ Restore failed: Invalid or expired token', 'error')
+            } else if (errorMsg.includes('403')) {
+              showToast('❌ Restore failed: Token lacks gist permissions', 'error')
+            } else if (errorMsg.includes('No GitHub Token')) {
+              showToast('❌ Restore failed: No token configured', 'error')
+            } else if (errorMsg.includes('No backup found')) {
+              showToast('❌ Restore failed: No backup found on GitHub', 'error')
+            } else {
+              showToast(`❌ Restore failed: ${errorMsg}`, 'error')
+            }
+          } finally {
+            // Close palette and focus editor
+            onClose()
+            setTimeout(() => {
+              window.dispatchEvent(new CustomEvent('app:focus-editor'))
+            }, 200)
+          }
+        }
       },
       {
         id: 'cmd-theme',
@@ -166,6 +251,13 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
         icon: ShieldCheck,
         description: 'Show or hide the bottom information bar',
         action: () => window.dispatchEvent(new CustomEvent('app:toggle-status-bar'))
+      },
+      {
+        id: 'cmd-toggle-gutter',
+        title: 'Toggle Gutter',
+        icon: Layers,
+        description: 'Show or hide line numbers and folding arrows',
+        action: () => window.dispatchEvent(new CustomEvent('app:toggle-gutter'))
       }
     ],
     []
@@ -361,7 +453,11 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
           ref={scrollRef}
           className="flex-1 overflow-y-auto max-h-[60vh] p-2 custom-scrollbar transition-all outline-none"
         >
-          {filteredItems.length > 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center h-48">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-accent-primary)]"></div>
+            </div>
+          ) : filteredItems.length > 0 ? (
             <div className="space-y-0.5">
               {filteredItems.map((item, index) => {
                 const isSelected = index === selectedIndex

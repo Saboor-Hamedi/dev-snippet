@@ -153,6 +153,19 @@ html,
     color 0.3s ease;
 }
 
+/*
+   Solid foundations for glass themes to prevent the underlying
+   Electron window background (usually black) from showing through.
+*/
+[data-theme='polaris'] body,
+[data-theme='polaris'] html,
+[data-theme='polaris'] #root,
+[data-theme='minimal-gray'] body,
+[data-theme='minimal-gray'] html,
+[data-theme='minimal-gray'] #root {
+  background-color: #ffffff !important;
+}
+
 /* All modals, dialogs, and overlays */
 .modal,
 .dialog,
@@ -199,6 +212,7 @@ select:not(.theme-exempt):focus {
 }
 
 /* Refined Scrollbar Styles */
+/* Refined Scrollbar Styles */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -209,14 +223,16 @@ select:not(.theme-exempt):focus {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: var(--color-border);
+  background: var(--color-border);
   border: 3px solid transparent;
   background-clip: content-box;
   border-radius: 99px;
+  opacity: 0.8;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background-color: var(--color-text-secondary);
+  border: 2px solid transparent; /* Slightly larger on hover */
 }
 
 ::-webkit-scrollbar-corner {
@@ -1173,4 +1189,180 @@ li[aria-selected] .cm-completionDetail {
     height: 18px !important;
     font-size: 9px !important;
   }
+}
+
+/* ============================================
+   GLASS BLUE THEME - Minimal Clean Version
+   ============================================ */
+
+/* Subtle hover effect */
+[data-theme='glass-blue'] .snippet-item:hover,
+[data-theme='glass-blue'] .folder-item:hover,
+[data-theme='glass-blue'] button:hover,
+[data-theme='glass-blue'] a:hover {
+  background: rgba(59, 130, 246, 0.1) !important;
+}
+
+[data-theme='obsidian'] .snippet-item:hover,
+[data-theme='obsidian'] .folder-item:hover,
+[data-theme='obsidian'] button:hover,
+[data-theme='obsidian'] a:hover {
+  background: rgba(124, 58, 237, 0.1) !important;
+}
+
+[data-theme='magma'] .snippet-item:hover,
+[data-theme='magma'] .folder-item:hover,
+[data-theme='magma'] button:hover,
+[data-theme='magma'] a:hover {
+  background: rgba(249, 115, 22, 0.1) !important;
+}
+
+[data-theme='oceanic'] .snippet-item:hover,
+[data-theme='oceanic'] .folder-item:hover,
+[data-theme='oceanic'] button:hover,
+[data-theme='oceanic'] a:hover {
+  background: rgba(56, 189, 248, 0.1) !important;
+}
+
+[data-theme='forest'] .snippet-item:hover,
+[data-theme='forest'] .folder-item:hover,
+[data-theme='forest'] button:hover,
+[data-theme='forest'] a:hover {
+  background: rgba(34, 197, 94, 0.1) !important;
+}
+
+[data-theme='nebula'] .snippet-item:hover,
+[data-theme='nebula'] .folder-item:hover,
+[data-theme='nebula'] button:hover,
+[data-theme='nebula'] a:hover {
+  background: rgba(217, 70, 239, 0.1) !important;
+}
+
+[data-theme='polaris'] .snippet-item:hover,
+[data-theme='polaris'] .folder-item:hover,
+[data-theme='polaris'] button:hover,
+[data-theme='polaris'] a:hover {
+  background: rgba(3, 102, 214, 0.1) !important;
+}
+
+/* Subtle selected effect */
+[data-theme='glass-blue'] .snippet-item.selected,
+[data-theme='glass-blue'] .folder-item.selected,
+[data-theme='glass-blue'] [aria-selected='true'] {
+  background: rgba(59, 130, 246, 0.2) !important;
+}
+
+[data-theme='obsidian'] .snippet-item.selected,
+[data-theme='obsidian'] .folder-item.selected,
+[data-theme='obsidian'] [aria-selected='true'] {
+  background: rgba(124, 58, 237, 0.25) !important;
+}
+
+[data-theme='magma'] .snippet-item.selected,
+[data-theme='magma'] .folder-item.selected,
+[data-theme='magma'] [aria-selected='true'] {
+  background: rgba(249, 115, 22, 0.25) !important;
+}
+
+[data-theme='oceanic'] .snippet-item.selected,
+[data-theme='oceanic'] .folder-item.selected,
+[data-theme='oceanic'] [aria-selected='true'] {
+  background: rgba(56, 189, 248, 0.25) !important;
+}
+
+[data-theme='forest'] .snippet-item.selected,
+[data-theme='forest'] .folder-item.selected,
+[data-theme='forest'] [aria-selected='true'] {
+  background: rgba(34, 197, 94, 0.25) !important;
+}
+
+[data-theme='nebula'] .snippet-item.selected,
+[data-theme='nebula'] .folder-item.selected,
+[data-theme='nebula'] [aria-selected='true'] {
+  background: rgba(217, 70, 239, 0.25) !important;
+}
+
+[data-theme='polaris'] .snippet-item.selected,
+[data-theme='polaris'] .folder-item.selected,
+[data-theme='polaris'] [aria-selected='true'] {
+  background: rgba(3, 102, 214, 0.15) !important;
+}
+
+/* Ensure glassmorphism works for Glass Blue and Obsidian */
+[data-theme='glass-blue'] .sidebar,
+[data-theme='glass-blue'] .activity-bar,
+[data-theme='glass-blue'] .header,
+[data-theme='glass-blue'] .status-bar,
+[data-theme='glass-blue'] .command-palette-container,
+[data-theme='glass-blue'] .settings-modal-container,
+[data-theme='obsidian'] .sidebar,
+[data-theme='obsidian'] .activity-bar,
+[data-theme='obsidian'] .header,
+[data-theme='obsidian'] .status-bar,
+[data-theme='obsidian'] .command-palette-container,
+[data-theme='obsidian'] .settings-modal-container,
+[data-theme='magma'] .sidebar,
+[data-theme='magma'] .activity-bar,
+[data-theme='magma'] .header,
+[data-theme='magma'] .status-bar,
+[data-theme='magma'] .command-palette-container,
+[data-theme='magma'] .settings-modal-container,
+[data-theme='oceanic'] .sidebar,
+[data-theme='oceanic'] .activity-bar,
+[data-theme='oceanic'] .header,
+[data-theme='oceanic'] .status-bar,
+[data-theme='oceanic'] .command-palette-container,
+[data-theme='oceanic'] .settings-modal-container,
+[data-theme='forest'] .sidebar,
+[data-theme='forest'] .activity-bar,
+[data-theme='forest'] .header,
+[data-theme='forest'] .status-bar,
+[data-theme='forest'] .command-palette-container,
+[data-theme='forest'] .settings-modal-container,
+[data-theme='nebula'] .sidebar,
+[data-theme='nebula'] .activity-bar,
+[data-theme='nebula'] .header,
+[data-theme='nebula'] .status-bar,
+[data-theme='nebula'] .command-palette-container,
+[data-theme='nebula'] .settings-modal-container,
+[data-theme='royal-gold'] .sidebar,
+[data-theme='royal-gold'] .activity-bar,
+[data-theme='royal-gold'] .header,
+[data-theme='royal-gold'] .status-bar,
+[data-theme='royal-gold'] .command-palette-container,
+[data-theme='royal-gold'] .settings-modal-container,
+[data-theme='midnight-pro'] .sidebar,
+[data-theme='midnight-pro'] .activity-bar,
+[data-theme='midnight-pro'] .header,
+[data-theme='midnight-pro'] .status-bar,
+[data-theme='midnight-pro'] .command-palette-container,
+[data-theme='midnight-pro'] .settings-modal-container,
+[data-theme='polaris'] .sidebar,
+[data-theme='polaris'] .activity-bar,
+[data-theme='polaris'] .header,
+[data-theme='polaris'] .status-bar,
+[data-theme='polaris'] .command-palette-container,
+[data-theme='polaris'] .settings-modal-container,
+[data-theme='minimal-gray'] .sidebar,
+[data-theme='minimal-gray'] .activity-bar,
+[data-theme='minimal-gray'] .header,
+[data-theme='minimal-gray'] .status-bar,
+[data-theme='minimal-gray'] .command-palette-container,
+[data-theme='minimal-gray'] .settings-modal-container {
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  background-color: var(--color-bg-secondary) !important;
+}
+
+[data-theme='glass-blue'] .code-editor-container,
+[data-theme='obsidian'] .code-editor-container,
+[data-theme='magma'] .code-editor-container,
+[data-theme='oceanic'] .code-editor-container,
+[data-theme='forest'] .code-editor-container,
+[data-theme='nebula'] .code-editor-container,
+[data-theme='royal-gold'] .code-editor-container,
+[data-theme='midnight-pro'] .code-editor-container,
+[data-theme='polaris'] .code-editor-container,
+[data-theme='minimal-gray'] .code-editor-container {
+  background-color: var(--editor-bg) !important;
 }

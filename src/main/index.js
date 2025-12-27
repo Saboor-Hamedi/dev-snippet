@@ -3,7 +3,7 @@
  * Refactored for better organization and maintainability
  */
 
-const { app, BrowserWindow } = require('electron')
+const { app, BrowserWindow, globalShortcut } = require('electron')
 
 // AUTO-DETECT: Enable DevTools in Dev, Disable in Production
 const ENABLE_DEVTOOLS = !app.isPackaged
@@ -11,18 +11,17 @@ const ENABLE_DEVTOOLS = !app.isPackaged
 // --- GLOBAL ERROR HANDLING (Prevent App Collapse) ---
 process.on('uncaughtException', (error) => {
   console.error('CRITICAL MAIN PROCESS ERROR (Uncaught):', error)
-  // We don't exit here immediately to allow some self-healing or logging
 })
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('UNHANDLED PROMISE REJECTION in Main Process:', reason)
 })
-// ----------------------------------------------------
 
 // Import modules
 import { initDB, getDB, getPreparedStatements } from './database'
 import { createWindow } from './window'
 import { registerAllHandlers } from './ipc'
+import { toggleQuickCapture } from '../renderer/src/components/QuickCapture/useQuickCapture'
 
 // Main window reference
 let mainWindow = null
@@ -36,9 +35,6 @@ app.whenReady().then(() => {
     app.setAppUserModelId('com.devsnippet.app')
   }
 
-  // App User Data Path verification
-  console.log('📂 User Data Path:', app.getPath('userData'))
-
   // Initialize database
   const db = initDB(app)
   const preparedStatements = getPreparedStatements()
@@ -46,8 +42,18 @@ app.whenReady().then(() => {
   // Create main window
   mainWindow = createWindow(app, ENABLE_DEVTOOLS)
 
+  // 🚀 Register Global Quick Capture (Shift + Alt + Space)
+  const shortcut = 'Shift+Alt+Space'
+  const ret = globalShortcut.register(shortcut, () => {
+    toggleQuickCapture(app, ENABLE_DEVTOOLS)
+  })
+  if (!ret) {
+    console.warn(`❌ Global shortcut [${shortcut}] registration failed.`)
+  } else {
+    console.log(`🚀 Global shortcut [${shortcut}] registered successfully.`)
+  }
+
   // Register all IPC handlers
-  console.log('📦 Initializing all IPC handlers...')
   registerAllHandlers(app, mainWindow, db, preparedStatements, () => getDB(app))
 
   // macOS: Re-create window when dock icon is clicked
@@ -55,6 +61,11 @@ app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0) {
       mainWindow = createWindow(app, ENABLE_DEVTOOLS)
     }
+  })
+
+  // Cleanup shortcuts on quit
+  app.on('will-quit', () => {
+    globalShortcut.unregisterAll()
   })
 })
 

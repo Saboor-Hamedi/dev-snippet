@@ -58,6 +58,7 @@ const SnippetSidebar = ({
   const [showLocationModal, setShowLocationModal] = useState(false)
   const [pendingCreationType, setPendingCreationType] = useState(null)
   const [sidebarSelected, setSidebarSelected] = useState(false)
+  const [isDragOver, setIsDragOver] = useState(false) // State for root drop target visual
   const inputRef = React.useRef(null)
   const listRef = React.useRef(null)
   const parentRef = React.useRef(null)
@@ -126,6 +127,33 @@ const SnippetSidebar = ({
       onNewFolder(name, parentId)
     }
     confirmCreation()
+  }
+
+  // --- Smart Creation Logic (VS Code Style) ---
+  const handleSmartCreation = (type) => {
+    let targetParentId = null
+
+    // 1. If we have invalid selection state, default to root
+    if (selectedIds.length === 1) {
+      const selectedId = selectedIds[0]
+      // Find the item in our tree or raw data
+      const snippet = snippets.find((s) => s.id === selectedId)
+      if (snippet) {
+        // It's a snippet, create in same folder
+        targetParentId = snippet.folder_id || null
+      } else {
+        const folder = folders.find((f) => f.id === selectedId)
+        if (folder) {
+          // It's a folder, create inside it
+          targetParentId = folder.id
+        }
+      }
+    } else if (selectedFolderId) {
+      // Fallback or explicit sidebar folder selection
+      targetParentId = selectedFolderId
+    }
+
+    startCreation(type, targetParentId)
   }
 
   // --- Debounced Search ---
@@ -220,7 +248,12 @@ const SnippetSidebar = ({
           icon: FilePlus,
           onClick: () => {
             setPendingCreationType('snippet')
-            setShowLocationModal(true)
+            // Default to root if no specific folder is targeted
+            if (selectedFolderId) {
+              startCreation('snippet', selectedFolderId)
+            } else {
+              startCreation('snippet', null)
+            }
           }
         },
         {
@@ -228,7 +261,11 @@ const SnippetSidebar = ({
           icon: FolderPlus,
           onClick: () => {
             setPendingCreationType('folder')
-            setShowLocationModal(true)
+            if (selectedFolderId) {
+              startCreation('folder', selectedFolderId)
+            } else {
+              startCreation('folder', null)
+            }
           }
         },
         { label: 'separator' },
@@ -261,6 +298,21 @@ const SnippetSidebar = ({
     return () => ro.disconnect()
   }, [])
 
+  // --- Global Drag Cleanup ---
+  React.useEffect(() => {
+    // Ensure dragged visuals are cleared no matter where the drop happens
+    const cleanup = () => {
+      setIsDragOver(false)
+    }
+    // Use capture phase to catch events even if propagation is stopped by children
+    window.addEventListener('drop', cleanup, true)
+    window.addEventListener('dragend', cleanup, true)
+    return () => {
+      window.removeEventListener('drop', cleanup, true)
+      window.removeEventListener('dragend', cleanup, true)
+    }
+  }, [])
+
   return (
     <div
       className="h-full flex flex-col w-full"
@@ -278,17 +330,14 @@ const SnippetSidebar = ({
             placeholder="Search..."
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="w-full rounded-md py-1.5 pl-8 pr-4 text-[12px] outline-none ring-1 ring-transparent focus:ring-[var(--color-accent)] transition-all bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] placeholder-[var(--color-text-secondary)]"
-            style={{
-              color: 'var(--color-text-primary)'
-            }}
+            className="w-full rounded-md py-1.5 pl-8 pr-4 text-[12px] outline-none ring-1 ring-transparent focus:ring-[var(--color-accent-primary)] bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] placeholder:text-xtiny placeholder-[var(--color-text-secondary)] transition-all"
           />
         </div>
 
         {/* Action Icons - Obsidian Style */}
         <div className="flex items-center gap-0.5">
           <button
-            onClick={() => onNew(null, selectedFolderId)}
+            onClick={() => handleSmartCreation('snippet')}
             className="p-1 rounded opacity-60 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all"
             title="New Snippet"
             style={{ color: 'var(--sidebar-text)' }}
@@ -296,7 +345,7 @@ const SnippetSidebar = ({
             <FilePlus size={16} strokeWidth={2} />
           </button>
           <button
-            onClick={() => onNewFolder(null, selectedFolderId)}
+            onClick={() => handleSmartCreation('folder')}
             className="p-1 rounded opacity-60 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all"
             title="New Folder"
             style={{ color: 'var(--sidebar-text)' }}
@@ -306,9 +355,8 @@ const SnippetSidebar = ({
           <button
             onClick={() => {
               // Collapse all folders logic (mock or real)
-              // If we don't have a bulk action, we can trigger individual collapses or reload
-              // For now, let's just refresh/deselect as a placeholder or remove if not functional.
               onSelect(null) // Deselect
+              setSidebarSelected(true)
             }}
             className="p-1 rounded opacity-60 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all"
             title="Collapse / Deselect All"
@@ -320,18 +368,76 @@ const SnippetSidebar = ({
       </SidebarHeader>
 
       <div
-        className={`flex-1 overflow-hidden relative ${sidebarSelected ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-600' : ''}`}
+        className={`flex-1 overflow-hidden relative transition-colors duration-200 outline-none`}
+        style={{
+          backgroundColor: isDragOver
+            ? 'rgba(0, 0, 0, 0.04)'
+            : sidebarSelected
+              ? 'rgba(0, 0, 0, 0.02)'
+              : 'transparent',
+          // Fix: Use box-shadow (inset) for focus border to avoid layout shifts and clipping (right side issue).
+          boxShadow: isDragOver
+            ? 'inset 0 0 0 1px var(--color-accent-primary)'
+            : sidebarSelected
+              ? 'inset 0 0 0 1px var(--color-accent-primary)'
+              : 'none'
+        }}
         ref={parentRef}
-        onClick={handleBackgroundClick}
+        tabIndex={0} // Allow focus
+        onBlur={(e) => {
+          // Restore unselect behavior when clicking outside
+          if (!e.currentTarget.contains(e.relatedTarget)) {
+            setSidebarSelected(false)
+          }
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') {
+            e.preventDefault()
+            e.stopPropagation()
+            setSidebarSelected(false)
+            onSelect(null)
+            onSelectionChange([])
+          }
+        }}
+        onClick={(e) => {
+          // Force background selection on any click in this container
+          // that hasn't been stopped by a child.
+          // This replaces/augments handleBackgroundClick to be more robust.
+          if (e.target !== e.currentTarget && e.target.closest('[draggable]')) {
+            // It's a row click that bubbled? Usually rows stop propagation.
+            // If rows bubble, we shouldn't deselect.
+            // But SnippetSidebarRow onClick doesn't stop prop?
+            // Logic check: SnippetSidebarRow onClick DOES NOT stop prop.
+            // So we must check if we clicked a row.
+            return
+          }
+
+          setSidebarSelected(true)
+          onSelectionChange([])
+          onSelect(null)
+          onSelectFolder(null)
+          if (inputRef.current) inputRef.current.blur() // Defocus search info
+        }}
         onContextMenu={(e) => {
           handleContextMenu(e, 'background', null)
         }}
         onDragOver={(e) => {
           e.preventDefault()
           e.dataTransfer.dropEffect = 'move'
+          if (!isDragOver) setIsDragOver(true)
+        }}
+        onDragEnter={(e) => {
+          e.preventDefault()
+          setIsDragOver(true)
+        }}
+        onDragLeave={(e) => {
+          // Prevent flickering when dragging over children
+          if (e.currentTarget.contains(e.relatedTarget)) return
+          setIsDragOver(false)
         }}
         onDrop={(e) => {
           e.preventDefault()
+          setIsDragOver(false)
           try {
             const ids = JSON.parse(e.dataTransfer.getData('sourceIds') || '[]')
             const types = JSON.parse(e.dataTransfer.getData('sourceTypes') || '[]')
@@ -343,7 +449,9 @@ const SnippetSidebar = ({
         }}
       >
         {treeItems.length === 0 ? (
-          <div className="p-4 text-center opacity-50 text-xs mt-4">No results found</div>
+          <div className="p-4 text-center opacity-50 text-xs mt-4">
+            {filter ? 'No results found' : 'No snippets yet'}
+          </div>
         ) : (
           <VirtualList
             ref={listRef}
@@ -395,45 +503,6 @@ const SnippetSidebar = ({
           onPageChange={onPageChange}
           className="border-t border-gray-600"
         />
-      )}
-
-      {showLocationModal && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-          onClick={() => setShowLocationModal(false)}
-        >
-          <div
-            className="bg-white dark:bg-gray-800 rounded-lg p-4 max-w-sm w-full mx-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
-              Choose Location
-            </h3>
-            <div className="space-y-2">
-              <button
-                className="w-full text-left p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-900 dark:text-white"
-                onClick={() => {
-                  startCreation(pendingCreationType, null)
-                  setShowLocationModal(false)
-                }}
-              >
-                📁 Root
-              </button>
-              {folders.map((folder) => (
-                <button
-                  key={folder.id}
-                  className="w-full text-left p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-900 dark:text-white"
-                  onClick={() => {
-                    startCreation(pendingCreationType, folder.id)
-                    setShowLocationModal(false)
-                  }}
-                >
-                  📁 {folder.name}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
       )}
     </div>
   )

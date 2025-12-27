@@ -190,18 +190,14 @@ const buildExtensions = async (options, handlers = {}) => {
     }
     // Priority 2: Markdown with extras
     else if (normalizedLang === 'markdown' || normalizedLang === 'md') {
-      console.log('[Editor] Loading Markdown with rich styling...')
+      console.log('[Editor] Loading standard Markdown engine (safe mode)...')
       const { markdown } = await import('@codemirror/lang-markdown')
-      const { richMarkdownExtension } = await import('./richMarkdown.js')
-      const { markdownExtrasExtension } = await import('./markdownExtras.js')
       exts.push(
         markdown({
-          addKeymap: true,
-          codeLanguages: allLangs
+          addKeymap: true
+          // Disabled deep codeLanguages to prevent TilePointer measurement crashes
         })
       )
-      exts.push(richMarkdownExtension)
-      exts.push(markdownExtrasExtension)
     }
     // Priority 3: Dynamic discovery
     else if (langDesc) {

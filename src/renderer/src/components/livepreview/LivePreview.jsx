@@ -112,11 +112,14 @@ const LivePreview = ({
       `
 
       const fontOverride = `
-        .markdown-body, .mermaid-wrapper, .mermaid-diagram, .actor, .node label { 
-          font-family: ${fontFamily}, sans-serif !important; 
-          color: var(--color-text-primary);
-          transition: color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+    html, body {
+      background-color: transparent !important;
+    }
+    .markdown-body, .mermaid-wrapper, .mermaid-diagram, .actor, .node label { 
+      font-family: ${fontFamily}, sans-serif !important; 
+      color: var(--color-text-primary);
+      transition: color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
         .preview-container {
           transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -798,7 +801,7 @@ const LivePreview = ({
   }, [enableScrollSync])
 
   return (
-    <div className="w-full h-full flex flex-col bg-transparent overflow-hidden">
+    <div className="w-full h-full flex flex-col bg-transparent overflow-hidden live-preview-container">
       {showHeader && (
         <div
           className="flex items-center justify-between px-3 py-2 z-10 sticky top-0 transition-colors duration-300 overflow-x-auto"
@@ -903,7 +906,10 @@ const LivePreview = ({
           </div>
         </div>
       )}
-      <div className="flex-1 overflow-hidden">
+      <div
+        className="flex-1 overflow-hidden"
+        style={{ backgroundColor: isDark ? 'transparent' : '#ffffff' }}
+      >
         <iframe
           ref={iframeRef}
           title="Live Preview"

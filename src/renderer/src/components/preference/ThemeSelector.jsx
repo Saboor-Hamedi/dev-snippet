@@ -46,16 +46,7 @@ const ThemeSelector = ({ onClose }) => {
             placeholder="Search themes..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="
-                w-full rounded-md py-1.5 pl-8 pr-4 
-                text-[12px] 
-                outline-none ring-1 ring-transparent focus:ring-[var(--color-accent)] 
-                transition-all
-              "
-            style={{
-              backgroundColor: 'var(--color-bg-tertiary)',
-              color: 'var(--color-text-primary)'
-            }}
+            className="w-full rounded-md py-1.5 pl-8 pr-4 text-[12px] outline-none ring-1 ring-transparent focus:ring-[var(--color-accent-primary)] bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] placeholder:text-xtiny placeholder-[var(--color-text-secondary)] transition-all"
           />
           <div className="absolute right-3 top-1/2 h-3 w-[1px] -translate-y-1/2 bg-cyan-500 animate-pulse" />
         </div>

@@ -2,8 +2,7 @@ import React, { useEffect, useRef } from 'react'
 import PropTypes from 'prop-types'
 
 /**
- * Simple Context Menu Component
- * Shows a menu at cursor position on right-click
+ * Premium VS Code-inspired Context Menu Component
  */
 const ContextMenu = ({ x, y, items, onClose }) => {
   const menuRef = useRef(null)
@@ -30,66 +29,88 @@ const ContextMenu = ({ x, y, items, onClose }) => {
     }
   }, [onClose])
 
-  // Boundary detection
-  const menuX = Math.min(x, window.innerWidth - 180)
-  const menuY = Math.min(y, window.innerHeight - 250)
+  // Simple boundary detection (prevent menu from going off-screen)
+  const menuX = Math.min(x, window.innerWidth - 200)
+  const menuY = Math.min(y, window.innerHeight - 300)
 
   return (
     <div
       ref={menuRef}
-      className="fixed z-[9999] min-w-[180px] rounded-md shadow-[0_8px_24px_rgba(0,0,0,0.3)] border py-1 animate-in fade-in zoom-in-95 duration-75 ease-out select-none"
+      className="fixed z-[9999] min-w-[200px] rounded-md border shadow-2xl backdrop-blur-xl py-1 animate-in fade-in zoom-in-95 duration-75 ease-out select-none"
       style={{
         left: `${menuX}px`,
         top: `${menuY}px`,
         backgroundColor: 'var(--color-bg-tertiary)',
         borderColor: 'var(--color-border)',
-        boxShadow: 'var(--context-menu-shadow, 0 8px 32px rgba(0,0,0,0.4))'
+        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)'
       }}
     >
-      {items.map((item, index) => {
-        if (item.label === 'separator') {
+      <div className="flex flex-col">
+        {items.map((item, index) => {
+          if (item.label === 'separator') {
+            return <div key={index} className="h-[1px] my-1 mx-1 bg-white/10" />
+          }
+
           return (
-            <div
+            <button
               key={index}
-              className="h-px my-1 opacity-20"
-              style={{ backgroundColor: 'var(--color-text-tertiary)' }}
-            />
-          )
-        }
-        return (
-          <button
-            key={index}
-            onClick={(e) => {
-              e.stopPropagation()
-              item.onClick()
-              onClose()
-            }}
-            className={`theme-exempt w-full px-3 py-1.5 text-left text-[11px] flex items-center justify-between transition-all duration-100 border-none outline-none bg-transparent ${
-              item.danger ? 'text-red-400 hover:bg-red-500/20' : 'hover:bg-white/10'
-            }`}
-            style={{
-              color: item.danger ? undefined : 'var(--color-text-primary)'
-            }}
-            disabled={item.disabled}
-          >
-            <div className="flex items-center gap-2.5">
-              {item.icon && (
-                typeof item.icon === 'string' ? (
-                  <span className="text-sm opacity-70">{item.icon}</span>
-                ) : (
-                  <item.icon size={14} strokeWidth={1.5} className="opacity-70" />
-                )
+              onClick={(e) => {
+                e.stopPropagation()
+                if (!item.disabled) {
+                  item.onClick()
+                  onClose()
+                }
+              }}
+              className={`
+                group relative flex w-full items-center justify-between px-3 py-[4px]
+                text-left text-[12px] leading-tight outline-none border-none
+                ${item.disabled ? 'opacity-40 cursor-default' : 'hover:bg-[#0060c0] hover:text-white cursor-pointer'}
+                ${item.danger && !item.disabled ? 'text-red-400' : ''}
+              `}
+              style={{
+                color: item.disabled ? 'var(--color-text-tertiary)' : 'var(--color-text-primary)'
+              }}
+              disabled={item.disabled}
+            >
+              {/* Left Section: Icon + Label */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center w-4 h-4">
+                  {item.icon &&
+                    (typeof item.icon === 'string' ? (
+                      <span className="text-[14px]">{item.icon}</span>
+                    ) : (
+                      <item.icon size={14} strokeWidth={1.5} className="group-hover:text-white" />
+                    ))}
+                </div>
+                <span className="font-medium tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">
+                  {item.label}
+                </span>
+              </div>
+
+              {/* Right Section: Shortcut */}
+              {item.shortcut && (
+                <span className="ml-8 text-[11px] font-mono opacity-50 group-hover:opacity-100 group-hover:text-white font-normal whitespace-nowrap">
+                  {item.shortcut}
+                </span>
               )}
-              <span>{item.label}</span>
-            </div>
-            {item.shortcut && (
-              <span className="text-[9px] opacity-40 font-mono tracking-tighter">
-                {item.shortcut}
-              </span>
-            )}
-          </button>
-        )
-      })}
+
+              {/* Toggle indicator (VS Code style) */}
+              {item.checked && (
+                <div className="absolute left-1.5 flex items-center justify-center w-3 h-3 text-white">
+                  <svg
+                    viewBox="0 0 16 16"
+                    fill="currentColor"
+                    stroke="currentColor"
+                    className="w-2.5 h-2.5"
+                  >
+                    <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z" />
+                  </svg>
+                </div>
+              )}
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -101,9 +122,11 @@ ContextMenu.propTypes = {
     PropTypes.shape({
       label: PropTypes.string.isRequired,
       icon: PropTypes.oneOfType([PropTypes.string, PropTypes.elementType]),
-      onClick: PropTypes.func.isRequired,
+      onClick: PropTypes.func,
       danger: PropTypes.bool,
-      disabled: PropTypes.bool
+      disabled: PropTypes.bool,
+      shortcut: PropTypes.string,
+      checked: PropTypes.bool
     })
   ).isRequired,
   onClose: PropTypes.func.isRequired

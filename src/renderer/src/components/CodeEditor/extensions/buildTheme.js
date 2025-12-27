@@ -15,9 +15,7 @@ const buildTheme = (EditorView, options = {}) => {
         fontSize: fontSize,
         lineHeight: '1.6',
         height: '100%',
-        paddingLeft: '0',
-        transition:
-          'background-color 400ms cubic-bezier(0.4, 0, 0.2, 1), color 400ms cubic-bezier(0.4, 0, 0.2, 1)'
+        paddingLeft: '0'
       },
 
       // Syntax Highlighting is now handled by HighlightStyle in buildExtensions.js
@@ -79,9 +77,7 @@ const buildTheme = (EditorView, options = {}) => {
         boxSizing: 'border-box',
         position: 'relative',
         // Anchor the scrollbar so content NEVER jumps when it appears
-        scrollbarGutter: 'stable !important',
-        transition:
-          'background-color 400ms cubic-bezier(0.4, 0, 0.2, 1), color 400ms cubic-bezier(0.4, 0, 0.2, 1)'
+        scrollbarGutter: 'stable !important'
       },
 
       /* Custom Scrollbars */
