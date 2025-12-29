@@ -59,6 +59,7 @@ const Workbench = ({
   onDeleteFolder,
   onDeleteBulk,
   onTogglePin,
+  onToggleFavorite,
   selectedIds,
   onSelectionChange,
   settings,
@@ -79,6 +80,13 @@ const Workbench = ({
     onSave(snippet)
   }
 
+  const headerIsFavorited = (() => {
+    const id = selectedSnippet?.id
+    if (!id) return false
+    const fromAll = (allSnippets || []).find((s) => s.id === id)
+    if (fromAll && typeof fromAll.is_favorite !== 'undefined') return fromAll.is_favorite === 1
+    return selectedSnippet?.is_favorite === 1
+  })()
   const { openDeleteModal, openTrashModal } = useModal()
   const [activeSidebarTab, setActiveSidebarTab] = React.useState('explorer')
   const [showFlowPreview, setShowFlowPreview] = React.useState(false)
@@ -216,6 +224,8 @@ const Workbench = ({
       {settings?.ui?.showHeader !== false && !showFlowMode && (
         <Header
           title={getHeaderTitle()}
+          snippetTitle={selectedSnippet?.title}
+          isFavorited={headerIsFavorited}
           isTab={activeView === 'editor' || (activeView === 'snippets' && !!selectedSnippet)}
           isCompact={isCompact}
           onToggleCompact={onToggleCompact}
@@ -274,7 +284,7 @@ const Workbench = ({
         >
           <div className="h-full min-w-[250px] w-[250px] flex flex-col overflow-hidden">
             {activeSidebarTab === 'explorer' && (
-              <SnippetSidebar
+                <SnippetSidebar
                 isOpen={isSidebarOpen}
                 snippets={snippets}
                 folders={folders}
@@ -295,12 +305,18 @@ const Workbench = ({
                 onDeleteSnippet={onDeleteRequest}
                 onDeleteBulk={onDeleteBulk}
                 onTogglePin={onTogglePin}
+                onToggleFavorite={onToggleFavorite}
                 selectedIds={selectedIds}
-                onSelectionChange={onSelectionChange}
-                onSelect={(s) => {
-                  if (onSelectSnippet) onSelectSnippet(s)
-                  if (window.innerWidth <= 768) setIsSidebarOpen(false)
-                }}
+                  onSelectionChange={onSelectionChange}
+                  onSelect={(s) => {
+                    // Prevent deselecting the editor view by clicking sidebar background
+                    if (s === null && activeView === 'editor') {
+                      // keep editor open and selection as-is
+                      return
+                    }
+                    if (onSelectSnippet) onSelectSnippet(s)
+                    if (window.innerWidth <= 768) setIsSidebarOpen(false)
+                  }}
                 onToggle={() => setIsSidebarOpen(false)}
                 isCompact={isCompact}
                 showToast={showToast}
@@ -401,6 +417,7 @@ Workbench.propTypes = {
   onDeleteFolder: PropTypes.func,
   onDeleteBulk: PropTypes.func,
   onTogglePin: PropTypes.func,
+  onToggleFavorite: PropTypes.func,
   selectedIds: PropTypes.array,
   onSelectionChange: PropTypes.func,
   settings: PropTypes.object,

@@ -17,6 +17,7 @@ const KeyboardHandler = ({
   handleRename,
   onToggleSidebar,
   onTogglePin,
+  onOpenPinPopover,
   // Selection Props
   selectedIds = [],
   setSelectedIds,
@@ -149,9 +150,22 @@ const KeyboardHandler = ({
     onEditorZoomOut: () => window.dispatchEvent(new CustomEvent('app:editor-zoom-out')),
 
     onTogglePin: () => {
-      if (selectedSnippet) {
-        onTogglePin(selectedSnippet.id)
-      }
+        // Determine target id: prefer selectedSnippet, fallback to single selection id
+        const targetId = selectedSnippet?.id || (selectedIds && selectedIds.length === 1 ? selectedIds[0] : null)
+        if (!targetId) return
+
+        try {
+          const active = document.activeElement
+          let rect = null
+          if (active && active.getBoundingClientRect) rect = active.getBoundingClientRect()
+          const x = rect ? rect.right + 8 : window.innerWidth / 2 - 80
+          const y = rect ? rect.top : window.innerHeight / 2 - 24
+          if (onOpenPinPopover) onOpenPinPopover(targetId, { x, y })
+          else onTogglePin(targetId)
+        } catch (err) {
+          // Fallback: direct toggle
+          onTogglePin(targetId)
+        }
     },
     onToggleFlow: () => {
       window.dispatchEvent(new CustomEvent('app:toggle-flow'))

@@ -8,6 +8,7 @@ import {
   FolderPlus,
   Calendar,
   Pin,
+  Star,
   ChevronsUp,
   RefreshCw
 } from 'lucide-react'
@@ -38,6 +39,7 @@ const SnippetSidebar = ({
   onDeleteSnippet,
   onDeleteBulk,
   onTogglePin,
+  onToggleFavorite,
   selectedIds = [],
   onSelectionChange,
   isOpen,
@@ -236,6 +238,12 @@ const SnippetSidebar = ({
           icon: Pin,
           onClick: () => onTogglePin(itemData.id)
         })
+        // Favorite toggle
+        menuItems.unshift({
+          label: itemData.is_favorite ? 'Unfavorite' : 'Make Favorite',
+          icon: Star,
+          onClick: () => onToggleFavorite && onToggleFavorite(itemData.id)
+        })
         menuItems.unshift({
           label: 'Rename',
           icon: Edit2,
@@ -404,13 +412,11 @@ const SnippetSidebar = ({
         onClick={(e) => {
           // Force background selection on any click in this container
           // that hasn't been stopped by a child.
-          // This replaces/augments handleBackgroundClick to be more robust.
+          try {
+            console.debug('[SnippetSidebar] container click', { target: e.target, currentTarget: e.currentTarget })
+          } catch (err) {}
+
           if (e.target !== e.currentTarget && e.target.closest('[draggable]')) {
-            // It's a row click that bubbled? Usually rows stop propagation.
-            // If rows bubble, we shouldn't deselect.
-            // But SnippetSidebarRow onClick doesn't stop prop?
-            // Logic check: SnippetSidebarRow onClick DOES NOT stop prop.
-            // So we must check if we clicked a row.
             return
           }
 
@@ -418,7 +424,7 @@ const SnippetSidebar = ({
           onSelectionChange([])
           onSelect(null)
           onSelectFolder(null)
-          if (inputRef.current) inputRef.current.blur() // Defocus search info
+          if (inputRef.current) inputRef.current.blur()
         }}
         onContextMenu={(e) => {
           handleContextMenu(e, 'background', null)
@@ -529,6 +535,7 @@ SnippetSidebar.propTypes = {
   onDeleteSnippet: PropTypes.func,
   onDeleteBulk: PropTypes.func,
   onTogglePin: PropTypes.func,
+  onToggleFavorite: PropTypes.func,
   selectedIds: PropTypes.array,
   onSelectionChange: PropTypes.func,
   isOpen: PropTypes.bool,

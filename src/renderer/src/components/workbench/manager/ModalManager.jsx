@@ -1,6 +1,6 @@
 import React, { useContext, useState, useCallback, Suspense, lazy } from 'react'
 import PropTypes from 'prop-types'
-import { useSettings } from '../../../hook/useSettingsContext'
+// NOTE: `useSettings` is intentionally not imported here to avoid accessing context outside provider
 
 // Lazy load modals
 const Prompt = lazy(() => import('../../modal/Prompt'))
@@ -18,7 +18,6 @@ const ModalLoader = () => (
   </div>
 )
 
-// Removed useSettings to prevent Context usage outside of Provider
 export const ModalProvider = ({
   children,
   snippets,
@@ -29,9 +28,7 @@ export const ModalProvider = ({
   onLoadTrash,
   onSelectSnippet
 }) => {
-  // const { settings, updateSettings } = useSettings() // REMOVED to fix crash
-  // If settings are needed for specific modals, they should be passed as props or retrieved within the modal itself.
-
+  // useSettings intentionally not used here; modals should request their own settings if needed
   // Input State for Prompts
   const [promptInputValue, setPromptInputValue] = useState('')
 

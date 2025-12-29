@@ -19,19 +19,33 @@ const buildHeader = (title, theme, isDark, fontFamily, forPrint = false) => `
     <meta charset="utf-8">
     <title>${title}</title>
     <style>
-      ${variableStyles}
-      ${markdownStyles}
-      ${mermaidStyles}
+      ${forPrint ? '' : variableStyles}
+      ${forPrint ? '' : markdownStyles}
+      ${forPrint ? '' : mermaidStyles}
+      ${forPrint ? `
+        /* Override any remaining CSS variables for clean PDF export */
+        :root, * {
+          --color-bg-primary: white !important;
+          --color-bg-secondary: white !important;
+          --color-bg-tertiary: #f9fafb !important;
+          --color-text-primary: black !important;
+          --color-text-secondary: #374151 !important;
+          --color-text-tertiary: #6b7280 !important;
+          --color-accent-primary: #0366d6 !important;
+          --color-border: #d1d5db !important;
+        }
+      ` : ''}
+    </style>
       
       html, body { 
         margin: 0; padding: 0; 
         overflow-x: hidden !important; 
-        background-color: var(--color-bg-primary, ${isDark ? '#0d1117' : '#ffffff'}) !important;
-        color: var(--color-text-primary, ${isDark ? '#e6edf3' : '#1f2328'}) !important;
+        background-color: ${forPrint ? 'white' : `var(--color-bg-primary, ${isDark ? '#0d1117' : '#ffffff'})`} !important;
+        color: ${forPrint ? 'black' : `var(--color-text-primary, ${isDark ? '#e6edf3' : '#1f2328'})`} !important;
       }
       .preview-container { 
-        width: 100%; max-width: 1200px;
-        padding: 5px; margin: 0 auto !important;
+        width: 100%; max-width: ${forPrint ? '800px' : '1200px'};
+        padding: ${forPrint ? '20px' : '5px'}; margin: 0 auto !important;
         box-sizing: border-box; 
         background: transparent !important;
       }
@@ -136,19 +150,156 @@ const buildHeader = (title, theme, isDark, fontFamily, forPrint = false) => `
       ${
         forPrint
           ? `
-        /* Force zero-transparency for PDF generation window */
+        /* Basic HTML styling for clean PDF export */
+        @page {
+          margin: 1.2in !important;
+          size: letter;
+        }
+        
         html, body, .preview-container, .markdown-body, #content { 
           background: white !important; 
           background-color: white !important;
           color: #000000 !important; 
+          font-family: ${fontFamily}, 'Inter', sans-serif !important;
+          font-size: 14px !important;
+          line-height: 1.6 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          width: 100% !important;
         }
+        
+        .preview-container {
+          max-width: 6.5in !important; /* Letter width minus margins */
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 {
+          color: #000000 !important;
+          font-weight: 600 !important;
+          margin-top: 1.5em !important;
+          margin-bottom: 0.5em !important;
+          line-height: 1.2 !important;
+        }
+        h1 { font-size: 2em !important; }
+        h2 { font-size: 1.5em !important; }
+        h3 { font-size: 1.25em !important; }
+        h4, h5, h6 { font-size: 1em !important; }
+        
+        /* Text elements */
+        p { margin: 1em 0 !important; }
+        strong, b { font-weight: 600 !important; }
+        em, i { font-style: italic !important; }
+        
+        /* Links */
+        a { color: #0366d6 !important; text-decoration: none !important; }
+        a:hover { text-decoration: underline !important; }
+        
+        /* Lists */
+        ul, ol { margin: 1em 0 !important; padding-left: 2em !important; }
+        li { margin: 0.25em 0 !important; }
+        
+        /* Blockquotes */
+        blockquote {
+          border-left: 4px solid #d1d5db !important;
+          padding-left: 1em !important;
+          margin: 1em 0 !important;
+          color: #6b7280 !important;
+          font-style: italic !important;
+        }
+        
+        /* Tables */
+        table { border-collapse: collapse !important; margin: 1em 0 !important; }
+        th, td { border: 1px solid #d1d5db !important; padding: 0.5em !important; }
+        th { background-color: #f9fafb !important; font-weight: 600 !important; }
+        
+        /* Hide UI elements */
         .code-block-header, .copy-code-btn { display: none !important; }
+        
+        /* Code block styling */
         .code-block-wrapper { 
           box-shadow: none !important; 
           transform: none !important; 
           background-color: #fafafa !important;
+          border: 1px solid #d1d5db !important;
+          border-radius: 6px !important;
+          margin: 1.5em 0 !important;
+          overflow: hidden !important;
         }
-        .markdown-body blockquote, .markdown-alert {
+        
+        .code-block-wrapper pre {
+          margin: 0 !important;
+          padding: 1em !important;
+          background-color: #fafafa !important;
+          font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Consolas', 'Courier New', monospace !important;
+          font-size: 13px !important;
+          line-height: 1.4 !important;
+          white-space: pre-wrap !important;
+          word-wrap: break-word !important;
+          overflow-wrap: break-word !important;
+        }
+        
+        .code-block-wrapper code {
+          background: transparent !important;
+          padding: 0 !important;
+          font-family: inherit !important;
+          font-size: inherit !important;
+          line-height: inherit !important;
+        }
+        
+        /* Syntax highlighting for print */
+        .code-block-wrapper .hljs {
+          background: transparent !important;
+          color: #24292f !important;
+        }
+        
+        .code-block-wrapper .hljs-keyword { color: #d73a49 !important; }
+        .code-block-wrapper .hljs-string { color: #032f62 !important; }
+        .code-block-wrapper .hljs-comment { color: #6a737d !important; }
+        .code-block-wrapper .hljs-number { color: #005cc5 !important; }
+        .code-block-wrapper .hljs-function { color: #6f42c1 !important; }        
+        /* Additional code formatting for inline code and general elements */
+        pre {
+          background-color: #f8f8f8 !important;
+          border: 1px solid #e1e5e9 !important;
+          border-radius: 6px !important;
+          padding: 1em !important;
+          margin: 1em 0 !important;
+          overflow-x: auto !important;
+          font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Consolas', 'Courier New', monospace !important;
+          font-size: 13px !important;
+          line-height: 1.4 !important;
+          white-space: pre-wrap !important;
+          word-wrap: break-word !important;
+        }
+        
+        code {
+          font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Consolas', 'Courier New', monospace !important;
+          background-color: #f8f8f8 !important;
+          padding: 0.2em 0.4em !important;
+          border-radius: 3px !important;
+          font-size: 0.9em !important;
+        }
+        
+        pre code {
+          background: transparent !important;
+          padding: 0 !important;
+          border-radius: 0 !important;
+        }
+        
+        /* Icons and special content */
+        .mermaid svg {
+          max-width: 100% !important;
+          height: auto !important;
+          background: white !important;
+        }
+        
+        /* Ensure images and icons are properly sized */
+        img {
+          max-width: 100% !important;
+          height: auto !important;
+        }        .markdown-body blockquote, .markdown-alert {
           background-color: #f5f5f5 !important;
         }
         /* Specific Fixes for Tags/Mentions/Links in Print */
@@ -175,11 +326,9 @@ const buildHeader = (title, theme, isDark, fontFamily, forPrint = false) => `
           : ''
       }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/${
-      isDark ? 'github-dark' : 'github'
-    }.min.css">
-    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+    ${forPrint ? '' : '<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>'}
+    ${forPrint ? '' : `<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/${isDark ? 'github-dark' : 'github'}.min.css">`}
+    ${forPrint ? '' : '<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>'}
   </head>
 `
 

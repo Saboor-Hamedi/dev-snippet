@@ -35,6 +35,12 @@ export const runMigrations = (db) => {
       'is_pinned',
       'ALTER TABLE snippets ADD COLUMN is_pinned INTEGER DEFAULT 0'
     )
+    // Add is_favorite column to persist favorites
+    ensureCol(
+      'snippets',
+      'is_favorite',
+      'ALTER TABLE snippets ADD COLUMN is_favorite INTEGER DEFAULT 0'
+    )
 
     // Folders table migrations
     ensureCol(

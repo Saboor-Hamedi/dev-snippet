@@ -84,25 +84,8 @@ const getFileIcon = (lang, title = '') => {
 
 import { Calendar } from 'lucide-react'
 
-const PinnedHeaderRow = ({ style, label }) => {
-  return (
-    <div
-      style={{ ...style, marginTop: '12px', marginBottom: '4px' }}
-      className="flex items-center px-4 select-none group/pinned-header"
-    >
-      <div className="flex items-center gap-2 w-full">
-        <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-[var(--color-accent-primary)]/40 to-transparent" />
-        <div className="flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[var(--color-accent-primary)]/5 border border-[var(--color-accent-primary)]/20 shadow-sm">
-          <Star size={10} className="text-[var(--color-accent-primary)] fill-current" />
-          <span className="text-[9px] font-black uppercase tracking-[0.15em] text-[var(--color-accent-primary)] opacity-90">
-            {label}
-          </span>
-        </div>
-        <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-[var(--color-accent-primary)]/40 to-transparent" />
-      </div>
-    </div>
-  )
-}
+// Pinned header removed per UX request — render nothing
+const PinnedHeaderRow = () => null
 
 const CreationInputRow = ({ style, depth, itemData, onConfirm, onCancel, isCompact }) => {
   const isFolder = itemData.type === 'folder'
@@ -431,6 +414,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
       <IndentGuides depth={depth} />
       <button
         id={`sidebar-item-${index}`}
+        data-snippet-id={itemData.id}
         draggable
         onClick={handleItemClick}
         onKeyDown={(e) => handleItemKeyDown(e, index)}
@@ -467,7 +451,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
             </span>
           )}
         </span>
-        {itemData.is_pinned === 1 && (
+  {itemData.is_pinned === 1 ? (
           <div className="flex-shrink-0 text-[var(--color-accent-primary)] opacity-80">
             {type === 'pinned_snippet' ? (
               <Star size={10} className="fill-current" />
@@ -475,7 +459,11 @@ const SnippetSidebarRow = ({ index, style, data }) => {
               <Pin size={10} className="fill-current rotate-45" />
             )}
           </div>
-        )}
+        ) : itemData.is_favorite === 1 ? (
+          <div className="flex-shrink-0 text-[var(--color-accent-primary)] opacity-90" style={{ marginLeft: 6 }}>
+            <Star size={12} className="fill-current" />
+          </div>
+        ) : null}
       </button>
     </div>
   )

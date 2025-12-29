@@ -37,11 +37,25 @@ export const registerExportHandlers = () => {
         }
       })
 
-      // Load content directly (it already contains full HTML/CSS from previewGenerator)
-      await printWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`)
-
-      // Wait for Mermaid/Highlight.js to settle (Capturing premium aesthetics)
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      // Load content - use file URL for large content to avoid data URL size limits
+      let contentUrl
+      if (htmlContent.length > 100000) { // If HTML is very large (>100KB)
+        const tempPath = path.join(app.getPath('temp'), `dev-snippet-export-${Date.now()}.html`)
+        await fs.writeFile(tempPath, htmlContent, 'utf-8')
+        contentUrl = `file://${tempPath}`
+        
+        // Load and wait
+        await printWindow.loadURL(contentUrl)
+        await new Promise((resolve) => setTimeout(resolve, 3000))
+        
+        // Clean up temp file after PDF generation
+        setTimeout(() => fs.unlink(tempPath).catch(() => {}), 5000)
+      } else {
+        // Use data URL for smaller content
+        contentUrl = `data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`
+        await printWindow.loadURL(contentUrl)
+        await new Promise((resolve) => setTimeout(resolve, 3000))
+      }
 
       // 3. Generate PDF buffer with professional margins (0.5 inch is standard and clean)
       const pdfBuffer = await printWindow.webContents.printToPDF({

@@ -11,3 +11,9 @@ localStorage.getItem('disableComplexCM')
 "scm.diffDecorations": "none"
 
 npm install electron-updater
+
+
+node -e "require('dotenv').config(); console.log(process.env.GH_TOKEN)"
+rm -rf node_modules package-lock.json && npm install
+
+npm run dist:publish

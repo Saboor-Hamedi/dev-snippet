@@ -13,8 +13,7 @@ import {
   Save,
   File,
   FilePlus,
-  BookOpen, // New: Read mode / Preview toggle
-  Columns // New: Split toggle
+  Star
 } from 'lucide-react'
 import iconUrl from '../../../assets/icon.png'
 import AutosaveIndicator from './AutosaveIndicator'
@@ -25,6 +24,7 @@ const useHeader = ({
   onToggleCompact,
   title,
   snippetTitle,
+  isFavorited,
   autosaveStatus,
   isSidebarOpen,
   onToggleSidebar,
@@ -44,7 +44,13 @@ const useHeader = ({
   const sidebarAreaWidth =
     isSidebarOpen && !isMobile ? activityBarWidth + sidebarWidth : activityBarWidth
 
-  const displayTitle = snippetTitle ? `${snippetTitle} - ${title}` : title
+  const displayTitle = (() => {
+    if (snippetTitle && title) {
+      if (snippetTitle === title) return snippetTitle
+      return `${snippetTitle} - ${title}`
+    }
+    return title || snippetTitle || 'Untitled'
+  })()
 
   return (
     <header
@@ -105,7 +111,7 @@ const useHeader = ({
                 }}
                 onDoubleClick={() => onRename && onRename()}
               >
-                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
                   <File
                     size={14}
                     className="flex-none opacity-60 group-hover:opacity-100 transition-opacity"
@@ -119,7 +125,12 @@ const useHeader = ({
                       ? displayTitle.replace(/\.[^/.]+$/, '')
                       : 'Untitled'}
                   </span>
+                  {/* Favorite star next to tab title if present */}
+                  {typeof isFavorited !== 'undefined' && isFavorited && (
+                    <Star size={12} className="ml-2 text-[var(--color-accent-primary)] fill-current" />
+                  )}
                 </div>
+                        : displayTitle || 'Untitled'}
 
                 {/* Preview/Read Mode Toggle removed as per user request */}
 
