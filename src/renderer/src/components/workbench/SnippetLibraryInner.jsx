@@ -8,6 +8,8 @@ import useFontSettings from '../../hook/settings/useFontSettings'
 import { useView } from '../../context/ViewContext'
 import { useModal } from './manager/ModalContext'
 import KeyboardHandler from './manager/KeyboardHandler'
+import AltPHandler from './AltPHandler'
+import PinPopover from './sidebar/PinPopover'
 import { useThemeManager } from '../../hook/useThemeManager'
 import { themeProps } from '../preference/theme/themeProps'
 import { usePagination } from '../../hook/pagination/usePagination'
@@ -67,6 +69,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
   const [editorZoom, setEditorZoom] = useEditorZoomLevel()
   const [selectedFolderId, setSelectedFolderId] = useState(null)
   const [selectedIds, setSelectedIds] = useState([])
+  const [pinPopover, setPinPopover] = useState({ visible: false, x: 0, y: 0, snippetId: null })
   const { overlayMode, setOverlayMode } = useAdvancedSplitPane()
 
   // Clipboard state for cut/copy/paste operations
@@ -219,6 +222,9 @@ const SnippetLibraryInner = ({ snippetData }) => {
   }
 
   const createDraftSnippet = (initialTitle = '', folderId = null, options = {}) => {
+    try {
+      console.debug('[createDraftSnippet] called', { initialTitle, folderId, options, stack: new Error().stack.split('\n').slice(1,6) })
+    } catch (e) {}
     if (!initialTitle && !folderId) {
       const existingBlank = snippets.find(
         (s) =>
@@ -255,6 +261,25 @@ const SnippetLibraryInner = ({ snippetData }) => {
       navigateTo('editor')
     }
     return draft
+  }
+
+  // Toggle favorite helper used by popover and sidebar menu
+  const toggleFavoriteSnippet = async (id) => {
+    try {
+      console.debug('[SnippetLibraryInner] toggleFavoriteSnippet', id)
+    } catch (e) {}
+    try {
+      const s = snippets.find((t) => t.id === id)
+      if (!s) return
+      const updated = { ...s, is_favorite: s.is_favorite === 1 ? 0 : 1 }
+      await saveSnippet(updated)
+      console.debug('[SnippetLibraryInner] saveSnippet returned for favorite', id)
+      setSnippets((prev) => prev.map((it) => (it.id === id ? updated : it)))
+      if (selectedSnippet?.id === id) setSelectedSnippet(updated)
+    } catch (err) {
+      console.error('Failed toggle favorite from sidebar/menu', err)
+      showToast('Failed to toggle favorite', 'error')
+    }
   }
 
   const handleRenameRequest = () => {
@@ -475,6 +500,9 @@ const SnippetLibraryInner = ({ snippetData }) => {
   }
 
   const handleSelectSnippet = (s) => {
+    try {
+      console.debug('[handleSelectSnippet] called with:', s && { id: s.id, title: s.title, is_draft: s.is_draft })
+    } catch (e) {}
     if (!s) {
       setSelectedSnippet(null)
       setSelectedFolderId(null)
@@ -767,10 +795,69 @@ const SnippetLibraryInner = ({ snippetData }) => {
         handleRename={handleRenameRequest}
         onToggleSidebar={handleToggleSidebar}
         onTogglePin={togglePinnedSnippet}
+        onOpenPinPopover={(id, rect, origin = 'mouse') => {
+          const x = rect?.x ?? rect?.left ?? rect?.clientX ?? (window.innerWidth / 2 - 80)
+          const y = rect?.y ?? rect?.top ?? rect?.clientY ?? (window.innerHeight / 2 - 24)
+          try {
+            console.debug('[SnippetLibraryInner] onOpenPinPopover', { id, origin, x, y })
+          } catch (e) {}
+          // Ensure idempotent open: do not close immediately if called twice quickly
+          if (pinPopover.visible && pinPopover.snippetId === id) {
+            try {
+              console.debug('[SnippetLibraryInner] PinPopover already open for', id)
+            } catch (e) {}
+            // Toggle behavior: close then reopen to refresh position when requested rapidly
+            setPinPopover((prev) => ({ ...prev, visible: false }))
+            setTimeout(() => {
+              if (origin === 'keyboard') {
+                try {
+                  window.__suppressNextMousedownClose = true
+                  setTimeout(() => (window.__suppressNextMousedownClose = false), 250)
+                } catch (e) {}
+              }
+              setPinPopover((prev) => ({ ...prev, visible: true, x, y, snippetId: id, origin }))
+            }, 80)
+            return
+          }
+          if (origin === 'keyboard') {
+            try {
+              // Try to position the popover near the corresponding sidebar row (left side)
+              const el = document.querySelector(`[data-snippet-id="${id}"]`)
+              if (el && el.getBoundingClientRect) {
+                const r = el.getBoundingClientRect()
+                // Place popover inside the sidebar area (slightly right of the row)
+                x = Math.max(8, r.left + 8)
+                y = r.top
+              }
+              window.__suppressNextMousedownClose = true
+              setTimeout(() => (window.__suppressNextMousedownClose = false), 250)
+            } catch (e) {}
+          }
+          setPinPopover((prev) => ({ ...prev, visible: true, x, y, snippetId: id, origin }))
+        }}
         selectedIds={selectedIds}
         setSelectedIds={setSelectedIds}
         selectedFolderId={selectedFolderId}
         setSelectedFolderId={setSelectedFolderId}
+      />
+
+      {/* Global Alt+P handler as a fallback so popover opens regardless of focus */}
+      <AltPHandler
+        snippets={snippets}
+        selectedSnippet={selectedSnippet}
+        selectedIds={selectedIds}
+        onOpen={(id, rect) => {
+          if (!id) return
+          const x = rect?.x ?? rect?.left ?? rect?.clientX ?? (window.innerWidth / 2 - 80)
+          const y = rect?.y ?? rect?.top ?? rect?.clientY ?? (window.innerHeight / 2 - 24)
+          // Idempotent open
+          if (pinPopover.visible && pinPopover.snippetId === id) return
+          try {
+            window.__suppressNextMousedownClose = true
+            setTimeout(() => (window.__suppressNextMousedownClose = false), 250)
+          } catch (e) {}
+          setPinPopover({ visible: true, x, y, snippetId: id })
+        }}
       />
 
       <div className="flex-1 flex flex-col items-stretch min-h-0 overflow-hidden bg-slate-50 dark:bg-slate-900 transition-colors duration-200">
@@ -868,6 +955,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
           onMoveSnippet={moveSnippet}
           onMoveFolder={moveFolder}
           onTogglePin={togglePinnedSnippet}
+          onToggleFavorite={toggleFavoriteSnippet}
           onSelectSnippet={handleSelectSnippet}
           onSearchSnippets={handleSearchSnippetsWrapped}
           searchQuery={searchQuery}
@@ -882,6 +970,53 @@ const SnippetLibraryInner = ({ snippetData }) => {
           onSelectAll={handleSelectAll}
         />
       </div>
+      {pinPopover.visible && (
+        <PinPopover
+          x={pinPopover.x}
+          y={pinPopover.y}
+          snippet={snippets.find((s) => s.id === pinPopover.snippetId)}
+          onClose={() => {
+            setPinPopover((prev) => ({ ...prev, visible: false, x: 0, y: 0, snippetId: null }))
+            try {
+              console.debug('[SnippetLibraryInner] PinPopover closed')
+            } catch (e) {}
+            focusEditor()
+          }}
+          onPing={(id) => {
+            try {
+              console.debug('[SnippetLibraryInner] Ping handler', id)
+            } catch (e) {}
+            const s = snippets.find((t) => t.id === id)
+            if (s) {
+              // Select and open in editor
+              setSelectedSnippet(s)
+              navigateTo('editor')
+              // Move snippet to top of UI list temporarily (non-persistent)
+              setSnippets((prev) => [s, ...prev.filter((it) => it.id !== s.id)])
+              showToast('Pinged snippet', 'info')
+            }
+          }}
+          onFavorite={async (id) => {
+            try {
+              console.debug('[SnippetLibraryInner] Favorite handler start', id)
+              const s = snippets.find((t) => t.id === id)
+              if (!s) return
+              const updated = { ...s, is_favorite: s.is_favorite === 1 ? 0 : 1 }
+              await saveSnippet(updated)
+              console.debug('[SnippetLibraryInner] saveSnippet returned for', id)
+              // Update local list to reflect favorite flag without reordering
+              setSnippets((prev) => prev.map((it) => (it.id === id ? updated : it)))
+              // If this is the currently selected snippet, sync selection
+              if (selectedSnippet?.id === id) setSelectedSnippet(updated)
+              showToast('Toggled favorite', 'success')
+            } catch (err) {
+              console.error('Failed to toggle favorite', err)
+              showToast('Failed to toggle favorite', 'error')
+            }
+          }}
+        />
+      )}
+      
     </div>
   )
 }

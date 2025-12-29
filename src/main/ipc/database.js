@@ -13,7 +13,8 @@ const transformRow = (row) => {
   return {
     ...row,
     tags: row.tags ? row.tags.split(',').filter(Boolean) : [],
-    is_draft: !!row.is_draft
+    is_draft: !!row.is_draft,
+    is_favorite: row.is_favorite ? 1 : 0
   }
 }
 
@@ -115,6 +116,7 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
         type: snippet.type || 'snippet',
         tags: Array.isArray(snippet.tags) ? snippet.tags.join(',') : snippet.tags || '',
         is_draft: snippet.is_draft ? 1 : 0,
+        is_favorite: snippet.is_favorite ? 1 : 0,
         is_pinned: snippet.is_pinned ? 1 : 0,
         sort_index: snippet.sort_index ?? null,
         folder_id: snippet.folder_id ?? null

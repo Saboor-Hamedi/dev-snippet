@@ -22,7 +22,8 @@ import {
   Layout,
   FileDown,
   Cloud,
-  CloudDownload
+  CloudDownload,
+  FileText
 } from 'lucide-react'
 
 /**
@@ -202,6 +203,13 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
         icon: FileDown,
         description: 'Generate a professional PDF of the snippet',
         action: () => window.dispatchEvent(new CustomEvent('app:export-pdf'))
+      },
+      {
+        id: 'cmd-export-word',
+        title: 'Export to Word',
+        icon: FileText,
+        description: 'Generate a professional Word document of the current snippet',
+        action: () => window.dispatchEvent(new CustomEvent('app:trigger-export-word'))
       },
       {
         id: 'cmd-toggle-activity-bar',
@@ -471,8 +479,8 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
                       onMouseMove={() => {
                         if (selectedIndex !== index) setSelectedIndex(index)
                       }}
-                      onClick={() => {
-                        item.action()
+                      onClick={async () => {
+                        await item.action()
                         onClose()
                       }}
                       className={`group relative px-4 py-3 rounded-lg flex items-center gap-3 cursor-pointer transition-colors duration-100 outline-none ${

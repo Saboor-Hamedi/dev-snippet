@@ -10,7 +10,8 @@ import { createSettingsHandlers } from './settings'
 import { registerBackupHandlers } from './backup'
 import { registerDialogHandlers } from './dialog'
 import { registerUpdatesHandlers } from './updates'
-import { registerExportHandlers } from './export'
+import { registerExportHandlers } from '../export/export'
+import { registerWordExportHandler } from '../export/exportWord'
 import { registerSyncHandlers } from './sync'
 
 export const registerAllHandlers = (app, mainWindow, db, preparedStatements, getDB) => {
@@ -24,6 +25,9 @@ export const registerAllHandlers = (app, mainWindow, db, preparedStatements, get
   registerUpdatesHandlers(mainWindow)
   console.log('✅ Registering Export Handlers...')
   registerExportHandlers()
+
+  // Register Word export handler
+  registerWordExportHandler(app)
 
   console.log('✅ Registering Sync Handlers...')
   registerSyncHandlers(db)

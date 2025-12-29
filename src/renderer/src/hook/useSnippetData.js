@@ -90,18 +90,35 @@ export const useSnippetData = () => {
   // Save or update a snippet
   const saveSnippet = async (snippet, options = {}) => {
     try {
+      // If the incoming snippet lacks `code` (metadata-only), fetch existing full snippet
+      // to avoid accidentally overwriting the stored `code` with an empty value.
+      let snippetToNormalize = { ...snippet }
+      if (snippetToNormalize && snippetToNormalize.id && typeof snippetToNormalize.code === 'undefined') {
+        try {
+          if (window.api?.getSnippetById) {
+            const existing = await window.api.getSnippetById(snippetToNormalize.id)
+            if (existing && typeof existing.code !== 'undefined') {
+              snippetToNormalize.code = existing.code
+            }
+          }
+        } catch (err) {
+          // Ignore fetch errors and proceed; normalization will handle defaults
+        }
+      }
+
       // 1. Normalize payload using centralized utility (DRY)
-      const payload = normalizeSnippet(snippet)
+      const payload = normalizeSnippet(snippetToNormalize)
       const fullText = payload.code
 
       // 2. Save to database
       console.log(
-        `[useSnippetData] Saving snippet. Title: ${payload.title}, Folder: ${payload.folder_id}`
+        `[useSnippetData] Saving snippet. Title: ${payload.title}, Folder: ${payload.folder_id}, is_favorite=${payload.is_favorite}`
       )
       if (payload.folder_id) {
         console.log(`[DB] Saving snippet "${payload.title}" in folder: ${payload.folder_id}`)
       }
       await window.api.saveSnippet(payload)
+      console.debug('[useSnippetData] window.api.saveSnippet returned for id=', payload.id)
 
       // 3. Update local list in-place to avoid flicker
       setSnippets((prev) => {

@@ -54,6 +54,7 @@ export const normalizeSnippet = (snippet) => {
     timestamp: snippet.timestamp || Date.now(),
     is_draft: false, // Always mark as not draft when normalizing/saving
     is_pinned: snippet.is_pinned || 0,
+    is_favorite: snippet.is_favorite || 0,
     folder_id: snippet.folder_id || null
   }
 }

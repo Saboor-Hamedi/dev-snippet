@@ -282,6 +282,340 @@ const SnippetEditor = ({
     scheduleSave()
   }, [code, title, isDirty, autoSaveEnabled, scheduleSave])
 
+  // Helper to generate the complete HTML for external/mini previews
+  const generateFullHtml = useCallback(
+    (forPrint = false) => {
+      const ext = title?.includes('.') ? title.split('.').pop()?.toLowerCase() : null
+      const isMarkdown = !ext || ext === 'markdown' || ext === 'md'
+      const existingTitles = snippets.map((s) => (s.title || '').trim()).filter(Boolean)
+
+      return generatePreviewHtml({
+        code,
+        title: title || 'Untitled Snippet',
+        theme: currentTheme,
+        existingTitles,
+        isMarkdown,
+        fontFamily: settings?.editor?.fontFamily,
+        forPrint
+      })
+    },
+    [code, title, snippets, currentTheme, settings?.editor?.fontFamily]
+  )
+
+  const handleOpenExternalPreview = useCallback(async () => {
+    const fullHtml = await generateFullHtml()
+    if (window.api?.invoke) {
+      await window.api.invoke('shell:previewInBrowser', fullHtml)
+    }
+  }, [generateFullHtml])
+
+  const handleOpenMiniPreview = useCallback(async () => {
+    const fullHtml = await generateFullHtml()
+    if (window.api?.invoke) {
+      // Assuming there's a mini preview API, fallback to external if not
+      await window.api.invoke('shell:previewInMiniBrowser', fullHtml).catch(() => {
+        // Fallback to external preview
+        return window.api.invoke('shell:previewInBrowser', fullHtml)
+      })
+    }
+  }, [generateFullHtml])
+
+  // Helper function to pre-render Mermaid diagrams for Word export
+  const preRenderMermaidDiagrams = useCallback(async (html) => {
+    // Defensive mermaid rendering pipeline.
+    const tempDiv = document.createElement('div')
+    tempDiv.innerHTML = html || ''
+
+    // Remove any embedded scripts/styles to avoid executing app code here
+    tempDiv.querySelectorAll('script, style, link').forEach((n) => n.remove())
+
+    // Find mermaid containers produced by markdown or direct mermaid blocks
+    const mermaidDivs = tempDiv.querySelectorAll('div.mermaid, div.mermaid-diagram')
+    if (!mermaidDivs || mermaidDivs.length === 0) return tempDiv.innerHTML
+
+    // Lazy-init mermaid instance and cache it on window to avoid re-init
+    let mermaidInstance = window.__mermaidExportInstance || window.mermaid
+    if (!mermaidInstance) {
+      try {
+        mermaidInstance = (await import('mermaid')).default
+        mermaidInstance.initialize({
+          startOnLoad: false,
+          theme: 'default',
+          securityLevel: 'loose',
+          fontFamily: settings?.editor?.fontFamily || 'Inter, sans-serif',
+          themeVariables: { fontFamily: settings?.editor?.fontFamily || 'Inter, sans-serif', fontSize: '14px' }
+        })
+        window.__mermaidExportInstance = mermaidInstance
+      } catch (err) {
+        console.warn('Mermaid import failed:', err)
+        return tempDiv.innerHTML
+      }
+    }
+
+    // Helper to decode HTML entities produced by escaped content
+    const decodeEntities = (str) => {
+      const txt = document.createElement('textarea')
+      txt.innerHTML = str
+      return txt.value
+    }
+
+    for (const div of Array.from(mermaidDivs)) {
+      try {
+        // Prefer innerHTML decoding, fall back to textContent
+        const raw = div.innerHTML && div.innerHTML.trim() ? div.innerHTML : div.textContent || ''
+        const mermaidCode = decodeEntities(raw).trim()
+        if (!mermaidCode) continue
+
+        const id = `mermaid-export-${Math.random().toString(36).slice(2, 9)}`
+        // mermaid.render sometimes returns svg string or object depending on version
+        const renderResult = await mermaidInstance.render(id, mermaidCode)
+        const svg = (renderResult && renderResult.svg) || renderResult || ''
+        if (!svg || svg.length < 20) throw new Error('empty svg')
+
+        const svgContainer = document.createElement('div')
+        svgContainer.innerHTML = svg
+        const svgElement = svgContainer.querySelector('svg')
+        if (!svgElement) throw new Error('no svg element')
+
+        // Apply safe inline sizing and color resets
+        svgElement.setAttribute('role', 'img')
+        svgElement.style.maxWidth = '100%'
+        svgElement.style.height = 'auto'
+        svgElement.style.display = 'block'
+        svgElement.style.margin = '1.2em auto'
+        svgElement.style.background = 'white'
+        svgElement.querySelectorAll('text').forEach((t) => (t.style.fill = '#000'))
+
+        div.replaceWith(svgElement)
+      } catch (err) {
+        console.warn('Mermaid render failed for a diagram, leaving source as code block', err)
+        // Replace with a safe code block to preserve readability
+        const pre = document.createElement('pre')
+        pre.textContent = div.textContent || div.innerText || ''
+        div.replaceWith(pre)
+      }
+    }
+
+    return tempDiv.innerHTML
+  }, [settings?.editor?.fontFamily])
+
+  // Sanitize and rebuild a minimal, print-ready HTML wrapper to avoid app CSS leakage
+  const sanitizeExportHtml = useCallback((html) => {
+    try {
+      const temp = document.createElement('div')
+      temp.innerHTML = html || ''
+
+      // Remove scripts/styles and external links
+      temp.querySelectorAll('script, style, link').forEach((n) => n.remove())
+
+      // Remove UI artifacts from preview
+      temp.querySelectorAll('.preview-intel, .code-actions, .copy-code-btn, .ui-element, .preview-engine-toolbar').forEach((n) => n.remove())
+
+      // Extract main content element
+      const contentElement = temp.querySelector('#content') || temp.querySelector('body') || temp
+      if (!contentElement) return html
+
+      // Strip classes/ids/styles to avoid accidental styling inheritance
+      Array.from(contentElement.querySelectorAll('*')).forEach((el) => {
+        if (el === contentElement) return
+        el.removeAttribute('class')
+        el.removeAttribute('id')
+        el.removeAttribute('style')
+      })
+
+      const contentHtml = contentElement.innerHTML || ''
+
+      const printCss = `
+        @page { margin: 1.2in; size: letter; }
+        html, body { background: white; color: #000; font-family: ${settings?.editor?.fontFamily || "Inter, sans-serif"}; margin: 0; padding: 0; }
+        .preview-container { max-width: 6.5in; margin: 0 auto; padding: 20px; box-sizing: border-box; }
+        img, svg { max-width: 100%; height: auto; }
+        pre { background: #fafafa; border: 1px solid #e1e5e9; padding: 12px; overflow-x: auto; font-family: monospace; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #d1d5db; padding: 8px; }
+      `
+
+      const titleSafe = (title || 'snippet').replace(/[^a-z0-9]/gi, '_').toLowerCase()
+      return `<!doctype html><html><head><meta charset="utf-8"><title>${titleSafe}</title><style>${printCss}</style></head><body><div id="content" class="preview-container">${contentHtml}</div></body></html>`
+    } catch (err) {
+      console.warn('Sanitize export HTML failed, falling back to original HTML', err)
+      return html
+    }
+  }, [settings?.editor?.fontFamily, title])
+
+  const handleCopyToClipboard = useCallback(async () => {
+    try {
+      // Generate HTML and pre-render diagrams first
+      let fullHtml = await generateFullHtml(false)
+      if (fullHtml && (fullHtml.includes('class="mermaid"') || fullHtml.includes('class="mermaid-diagram"'))) {
+        fullHtml = await preRenderMermaidDiagrams(fullHtml)
+      }
+
+      // Sanitize to remove scripts/styles/UI chrome
+      fullHtml = sanitizeExportHtml(fullHtml)
+
+      const tempDiv = document.createElement('div')
+      tempDiv.innerHTML = fullHtml
+      const contentDiv = tempDiv.querySelector('#content') || tempDiv
+      if (!contentDiv) throw new Error('No content to copy')
+
+      // Remove remaining interactive elements
+      contentDiv.querySelectorAll('.copy-code-btn, .ui-element, .code-actions').forEach((n) => n.remove())
+
+      // Remove specific headings we don't want copied
+      contentDiv.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach((el) => {
+        const t = (el.textContent || '').trim().toLowerCase()
+        if (t.includes('start frontend') || t.includes('untitled')) el.remove()
+      })
+
+      const htmlContent = contentDiv.innerHTML
+      let textContent = (contentDiv.textContent || contentDiv.innerText || '').trim()
+
+      // Clean markdown-like artifacts from plaintext
+      textContent = textContent
+        .replace(/\*\*(.*?)\*\*/g, '$1')
+        .replace(/\*(.*?)\*/g, '$1')
+        .replace(/__(.*?)__/g, '$1')
+        .replace(/_(.*?)_/g, '$1')
+        .replace(/`(.*?)`/g, '$1')
+        .replace(/~~(.*?)~~/g, '$1')
+        .replace(/^\s*[-*+]\s+/gm, '')
+        .replace(/^\s*\d+\.\s+/gm, '')
+        .replace(/^\s*#{1,6}\s+/gm, '')
+        .trim()
+
+      // Try rich clipboard API first, fallback to plain text
+      try {
+        if (navigator.clipboard && window.ClipboardItem) {
+          await navigator.clipboard.write([
+            new ClipboardItem({
+              'text/html': new Blob([htmlContent], { type: 'text/html' }),
+              'text/plain': new Blob([textContent], { type: 'text/plain' })
+            })
+          ])
+        } else {
+          // Older fallback: write plain text only
+          await navigator.clipboard.writeText(textContent || code)
+        }
+        showToast?.('Rendered content copied to clipboard!', 'success')
+      } catch (err) {
+        // Best-effort fallback
+        await navigator.clipboard.writeText(textContent || code)
+        showToast?.('Rendered content copied to clipboard (plaintext)', 'info')
+      }
+    } catch (err) {
+      console.error('Copy to clipboard failed:', err)
+      try {
+        await navigator.clipboard.writeText(code)
+        showToast?.('Code copied to clipboard!', 'info')
+      } catch (fallbackErr) {
+        showToast?.('Failed to copy to clipboard', 'error')
+      }
+    }
+  }, [generateFullHtml, preRenderMermaidDiagrams, sanitizeExportHtml, code, showToast])
+
+  const handleExportPDF = useCallback(async () => {
+    try {
+      // Generate HTML specifically optimized for PDF (rendered markdown)
+      let fullHtml = await generateFullHtml(true) // true for print
+      
+      // Pre-render Mermaid diagrams to SVG for PDF export
+      if (fullHtml.includes('class="mermaid"')) {
+        fullHtml = await preRenderMermaidDiagrams(fullHtml)
+      }
+      
+      if (window.api?.invoke) {
+        const sanitizedTitle = (title || 'snippet').replace(/[^a-z0-9]/gi, '_').toLowerCase()
+        const success = await window.api.invoke('export:pdf', fullHtml, sanitizedTitle)
+        if (success) {
+          showToast?.('Snippet exported to PDF successfully!', 'success')
+        } else {
+          console.log('PDF Export was cancelled or failed internally.')
+        }
+      }
+    } catch (err) {
+      console.error('PDF Export Error:', err)
+      showToast?.('Failed to export PDF. Please check the logs.', 'error')
+    }
+  }, [generateFullHtml, title, showToast, preRenderMermaidDiagrams])
+
+  const handleExportWord = useCallback(async () => {
+    try {
+      // Generate HTML optimized for Word (rendered markdown)
+      // Use print-optimized HTML for Word export to avoid including app CSS
+      let fullHtml = await generateFullHtml(true) // true for print/export
+      
+      // For Word export, handle Mermaid diagrams differently
+      if (fullHtml.includes('class="mermaid"')) {
+        // For Word, we'll keep Mermaid as code blocks since html-to-docx may not handle SVG well
+        const tempDiv = document.createElement('div')
+        tempDiv.innerHTML = fullHtml
+        
+        const mermaidDivs = tempDiv.querySelectorAll('div.mermaid, div.mermaid-diagram')
+        mermaidDivs.forEach(div => {
+          // Try to extract Mermaid code from the original source
+          const extractMermaidCode = (code) => {
+            const mermaidRegex = /```mermaid\s*\n([\s\S]*?)\n```/g
+            const matches = []
+            let match
+            while ((match = mermaidRegex.exec(code)) !== null) {
+              matches.push(match[1].trim())
+            }
+            return matches
+          }
+          
+          const mermaidBlocks = extractMermaidCode(code)
+          let mermaidIndex = 0
+          
+          const mermaidCode = div.textContent.trim()
+          if (mermaidCode) {
+            // Replace with a formatted code block that preserves Mermaid formatting
+            const codeBlock = document.createElement('pre')
+            codeBlock.style.cssText = `
+              background: #f6f8fa;
+              border: 1px solid #d1d5db;
+              border-radius: 6px;
+              padding: 1em;
+              margin: 1em 0;
+              font-family: 'Courier New', monospace;
+              font-size: 12px;
+              line-height: 1.4;
+              white-space: pre-wrap;
+              word-wrap: break-word;
+              color: #24292f;
+              overflow-x: auto;
+            `
+            
+            // Format the Mermaid code properly
+            const formattedCode = mermaidCode
+              .split('\n')
+              .map(line => line.trimEnd()) // Remove trailing spaces but keep indentation
+              .join('\n')
+              .trim()
+            
+            codeBlock.textContent = `mermaid\n${formattedCode}`
+            div.parentNode.replaceChild(codeBlock, div)
+          }
+        })
+        
+        fullHtml = tempDiv.innerHTML
+      }
+      
+      if (window.api?.invoke) {
+        const sanitizedTitle = (title || 'snippet').replace(/[^a-z0-9]/gi, '_').toLowerCase()
+        const success = await window.api.invoke('export:word', fullHtml, sanitizedTitle)
+        if (success) {
+          showToast?.('Snippet exported to Word successfully!', 'success')
+        } else {
+          showToast?.('Word export was cancelled or failed.', 'error')
+        }
+      }
+    } catch (err) {
+      console.error('Word Export Error:', err)
+      showToast?.('Failed to export Word. Please check the logs.', 'error')
+    }
+  }, [generateFullHtml, code, title, showToast])
+
   useKeyboardShortcuts({
     onSave: () => {
       if (!title || title.toLowerCase() === 'untitled') {
@@ -296,7 +630,8 @@ const SnippetEditor = ({
     },
     onCloseEditor: () => {
       if (onCancel) onCancel()
-    }
+    },
+    onCopyToClipboard: handleCopyToClipboard
   })
 
   const handleSave = async (forceSave = false, customTitle = null) => {
@@ -363,70 +698,21 @@ const SnippetEditor = ({
     }
   }, [justRenamed, namePrompt.isOpen])
 
-  // Helper to generate the complete HTML for external/mini previews
-  const generateFullHtml = useCallback(
-    (forPrint = false) => {
-      const ext = title?.includes('.') ? title.split('.').pop()?.toLowerCase() : null
-      const isMarkdown = !ext || ext === 'markdown' || ext === 'md'
-      const existingTitles = snippets.map((s) => (s.title || '').trim()).filter(Boolean)
 
-      return generatePreviewHtml({
-        code,
-        title: title || 'Untitled Snippet',
-        theme: currentTheme,
-        existingTitles,
-        isMarkdown,
-        fontFamily: settings?.editor?.fontFamily,
-        forPrint
-      })
-    },
-    [code, title, snippets, currentTheme, settings?.editor?.fontFamily]
-  )
-
-  const handleOpenExternalPreview = useCallback(async () => {
-    const fullHtml = await generateFullHtml()
-    if (window.api?.invoke) {
-      await window.api.invoke('shell:previewInBrowser', fullHtml)
-    }
-  }, [generateFullHtml])
-
-  const handleOpenMiniPreview = useCallback(async () => {
-    const fullHtml = await generateFullHtml()
-    if (window.api?.openMiniBrowser) {
-      await window.api.openMiniBrowser(fullHtml)
-    }
-  }, [generateFullHtml])
-
-  const handleExportPDF = useCallback(async () => {
-    try {
-      // Generate HTML specifically optimized for PDF (White theme, no UI toolbars)
-      const fullHtml = await generateFullHtml(true)
-      if (window.api?.invoke) {
-        const sanitizedTitle = (title || 'snippet').replace(/[^a-z0-9]/gi, '_').toLowerCase()
-        const success = await window.api.invoke('export:pdf', fullHtml, sanitizedTitle)
-        if (success) {
-          showToast?.('Snippet exported to PDF successfully!', 'success')
-        } else {
-          // Could be cancelled by user or internal error
-          console.log('PDF Export was cancelled or failed internally.')
-        }
-      }
-    } catch (err) {
-      console.error('PDF Export Error:', err)
-      showToast?.('Failed to export PDF. Please check the logs.', 'error')
-    }
-  }, [generateFullHtml, title, showToast])
 
   useEffect(() => {
     const fn = () => handleSave(true) // Force save on manual trigger
     const pdfFn = () => handleExportPDF()
+    const wordFn = () => handleExportWord()
     window.addEventListener('force-save', fn)
     window.addEventListener('app:trigger-export-pdf', pdfFn)
+    window.addEventListener('app:trigger-export-word', wordFn)
     return () => {
       window.removeEventListener('force-save', fn)
       window.removeEventListener('app:trigger-export-pdf', pdfFn)
+      window.removeEventListener('app:trigger-export-word', wordFn)
     }
-  }, [code, title, initialSnippet, handleExportPDF])
+  }, [code, title, initialSnippet, handleExportPDF, handleExportWord, handleCopyToClipboard])
 
   return (
     <>
@@ -517,6 +803,7 @@ const SnippetEditor = ({
 
           <StatusBar
             title={title}
+            isFavorited={initialSnippet?.is_favorite === 1}
             isLargeFile={code.length > 50000}
             snippets={snippets}
             stats={stats}

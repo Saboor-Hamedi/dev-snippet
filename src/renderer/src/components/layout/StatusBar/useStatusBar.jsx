@@ -5,9 +5,11 @@ import { useZoomLevel, useEditorZoomLevel, useSettings } from '../../../hook/use
 import { Check } from 'lucide-react'
 
 import './StatusBar.css'
+import ContextMenu from '../../common/ContextMenu'
 
 const useStatusBar = ({
   title,
+  isFavorited = false,
   isLargeFile = false,
   snippets = [],
   stats,
@@ -95,6 +97,7 @@ const useStatusBar = ({
         onContextMenu={handleContextMenu}
         style={{ color: 'var(--color-text-secondary)' }}
       >
+        {/* Favorite indicator intentionally removed from status bar; star shown in tab */}
         {/* LEFT: System Info - HIDDEN in minimal mode */}
         <div className="status-bar-left">
           {!minimal && showFlowMode && (
@@ -207,7 +210,7 @@ const useStatusBar = ({
         </div>
       </div>
 
-      {/* Context Menu using Portal */}
+      {/* Context Menu using shared ContextMenu component */}
       {contextMenu.visible &&
         createPortal(
           <div
@@ -218,26 +221,17 @@ const useStatusBar = ({
               setContextMenu({ ...contextMenu, visible: false })
             }}
           >
-            <div
-              className="status-bar-context-menu"
-              style={{
-                left: Math.min(contextMenu.x, window.innerWidth - 200),
-                bottom: window.innerHeight - contextMenu.y + 10 // Anchor 10px above mouse/click
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {menuItems.map((item) => (
-                <div
-                  key={item.key}
-                  className="context-menu-item"
-                  onClick={() => updateSetting(item.key, !item.checked)}
-                >
-                  <div className="context-menu-check">
-                    {item.checked && <Check size={14} strokeWidth={3} />}
-                  </div>
-                  <span>{item.label}</span>
-                </div>
-              ))}
+            <div onClick={(e) => e.stopPropagation()}>
+              <ContextMenu
+                x={Math.min(contextMenu.x, window.innerWidth - 200)}
+                y={Math.min(contextMenu.y, window.innerHeight - 300)}
+                items={menuItems.map((item) => ({
+                  label: item.label,
+                  checked: item.checked,
+                  onClick: () => updateSetting(item.key, !item.checked)
+                }))}
+                onClose={() => setContextMenu({ ...contextMenu, visible: false })}
+              />
             </div>
           </div>,
           document.body
