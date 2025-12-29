@@ -128,10 +128,16 @@ const SnippetEditor = ({
                 finalCode = '```' + lang + '\n' + newCode.trim() + '\n```'
               }
 
+              // Suppress any immediate re-opening of the source modal that
+              // could be triggered by the editor re-render or focus handlers
+              // after applying changes.
+              window.__suppressNextSourceModal = true
+
               view.dispatch({
                 changes: { from, to, insert: finalCode },
                 userEvent: 'input.source.modal'
               })
+
               closeUni()
             }}
           >
@@ -852,66 +858,6 @@ const SnippetEditor = ({
       setJustRenamed(false)
     }
   }, [justRenamed, namePrompt.isOpen])
-
-  // Helper to generate the complete HTML for external/mini previews
-  const generateFullHtml = useCallback(
-    (forPrint = false) => {
-      const safeTitle = typeof title === 'string' ? title : ''
-      const ext = safeTitle.includes('.') ? safeTitle.split('.').pop()?.toLowerCase() : null
-      const isMarkdown = !ext || ext === 'markdown' || ext === 'md'
-      const existingTitles = snippets.map((s) => (s.title || '').trim()).filter(Boolean)
-
-      return generatePreviewHtml({
-        code,
-        title: title || 'Untitled Snippet',
-        theme: currentTheme,
-        existingTitles,
-        isMarkdown,
-        fontFamily: settings?.editor?.fontFamily,
-        forPrint
-      })
-    },
-    [code, title, snippets, currentTheme, settings?.editor?.fontFamily]
-  )
-
-  const handleOpenExternalPreview = useCallback(async () => {
-    const fullHtml = await generateFullHtml()
-    if (window.api?.invoke) {
-      await window.api.invoke('shell:previewInBrowser', fullHtml)
-    }
-  }, [generateFullHtml])
-
-  const handleOpenMiniPreview = useCallback(async () => {
-    const fullHtml = await generateFullHtml()
-    if (window.api?.openMiniBrowser) {
-      await window.api.openMiniBrowser(fullHtml)
-    }
-  }, [generateFullHtml])
-
-  const handleExportPDF = useCallback(async () => {
-    try {
-      // Generate HTML specifically optimized for PDF (White theme, no UI toolbars)
-      const fullHtml = await generateFullHtml(true)
-      if (window.api?.invoke) {
-        const safeTitle = typeof title === 'string' ? title : 'snippet'
-        const sanitizedTitle = (safeTitle || 'snippet').replace(/[^a-z0-9]/gi, '_').toLowerCase()
-        const success = await window.api.invoke('export:pdf', fullHtml, sanitizedTitle)
-        if (success) {
-          showToast?.('Snippet exported to PDF successfully!', 'success')
-        } else {
-          // Could be cancelled by user or internal error
-          console.log('PDF Export was cancelled or failed internally.')
-        }
-      }
-    } catch (err) {
-      console.error('PDF Export Error:', err)
-      showToast?.('Failed to export PDF. Please check the logs.', 'error')
-    }
-  }, [generateFullHtml, title, showToast])
-=======
-
->>>>>>> marmaid
-
   useEffect(() => {
     const fn = () => handleSave(true) // Force save on manual trigger
     const pdfFn = () => handleExportPDF()

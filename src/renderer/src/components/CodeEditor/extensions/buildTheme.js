@@ -1,3 +1,8 @@
+  // ...existing code...
+// ...existing code...
+// Prevent caret from stretching to table width
+// This must be inside the theme object, not at the top level
+// (move this block below, inside the EditorView.theme style object)
 const buildTheme = (EditorView, options = {}) => {
   const {
     isDark = false,
@@ -20,21 +25,42 @@ const buildTheme = (EditorView, options = {}) => {
       '.cm-scroller': {
         display: 'flex !important',
         height: '100% !important',
-        overflow: 'auto !important'
+        overflow: 'auto !important',
+        backgroundColor: 'transparent !important',
+        fontFamily: 'inherit',
+        minWidth: '100%',
+        boxSizing: 'border-box',
+        position: 'relative',
+        scrollbarGutter: 'stable !important'
       },
       '.cm-content': {
-        width: '100%',
-        maxWidth: '900px !important', // Centered readable column
+        width: '700px ',
+        maxWidth: '700px !important',
         margin: '0 auto !important', // Center in strict flex/block context
+        marginRight: 'auto',
         flex: '0 0 auto !important',
+        // centered content with auto margins
+
         minHeight: '100%',
         backgroundColor: 'transparent',
-        padding: '24px 48px !important', // Internal breathing room
-        paddingBottom: '30vh !important',
+        padding: '0',
+        paddingBottom: '0',
+        position: 'relative',
         fontFamily: 'inherit',
         lineHeight: '1.6',
+        fontSize: '0.75rem !important',
         boxSizing: 'border-box',
         caretColor: caretColor
+      },
+      '.cm-content::before': {
+        content: "''",
+        position: 'absolute',
+        left: '0',
+        top: '0',
+        bottom: '0',
+        width: '24px',
+        pointerEvents: 'none',
+        background: 'transparent'
       },
       '.cm-gutters': {
         flex: '0 0 auto !important',
@@ -68,9 +94,15 @@ const buildTheme = (EditorView, options = {}) => {
       },
 
       // Table Row (Obsidian-like)
+      // Extend the background left into the editor padding so the
+      // highlight appears flush (avoids a visible "tab" gap).
       '.cm-md-table-row': {
-        backgroundColor: 'rgba(88, 166, 255, 0.08) !important', // Slightly more visible
-        borderLeft: '3px solid var(--color-accent-primary)'
+        backgroundColor: 'rgba(88, 166, 255, 0.08) !important',
+        borderLeft: '3px solid var(--color-accent-primary)',
+        marginLeft: '0',
+        paddingLeft: '24px',
+        paddingRight: '48px',
+        width: '100%'
       },
 
       '.cm-mermaid-block': {
@@ -117,32 +149,37 @@ const buildTheme = (EditorView, options = {}) => {
 
       // --- Rich Markdown (Obsidian-style) Styles ---
       // These must NEVER have transitions as they cause layout jitters during typing
+      // Heading sizes mapped to Tailwind tokens:
+      // H1 -> lg (1.125rem) bold
       '.cm-md-h1': {
-        fontSize: '2.25em !important',
-        fontWeight: '800',
+        fontSize: '1.125rem !important',
+        fontWeight: '700',
         color: 'var(--color-text-primary) !important',
         lineHeight: '1.25 !important',
         marginTop: '0.6em !important',
         marginBottom: '0.2em !important'
       },
+      // H2 -> base (1rem) bold
       '.cm-md-h2': {
-        fontSize: '1.75em !important',
+        fontSize: '1rem !important',
         fontWeight: '700',
         color: 'var(--color-text-primary) !important',
         lineHeight: '1.3 !important',
         marginTop: '0.5em !important',
         marginBottom: '0.1em !important'
       },
+      // H3 -> sm (0.875rem) bold
       '.cm-md-h3': {
-        fontSize: '1.5em !important',
-        fontWeight: '600',
+        fontSize: '0.875rem !important',
+        fontWeight: '700',
         color: 'var(--color-text-primary) !important',
         lineHeight: '1.4 !important',
         marginTop: '0.4em !important'
       },
+      // H4 -> xs (0.75rem) bold
       '.cm-md-h4': {
-        fontSize: 'var(--font-size-xl) !important',
-        fontWeight: '600',
+        fontSize: '0.75rem !important',
+        fontWeight: '700',
         paddingTop: '0.2em'
       },
       '.cm-md-h5': {
@@ -343,12 +380,31 @@ const buildTheme = (EditorView, options = {}) => {
         borderRadius: '4px',
         color: 'var(--color-text-secondary)',
         cursor: 'pointer',
-        transition: 'none !important'
+        transition: 'none !important',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '22px',
+        lineHeight: '20px',
+        minWidth: '44px',
+        boxSizing: 'border-box'
+      },
+      '.cm-md-table-toolbar, .cm-md-table-toolbar *': {
+        pointerEvents: 'auto'
       },
       '.cm-md-table-btn:hover': {
         background: 'var(--color-accent-primary)',
         color: '#fff',
         borderColor: 'var(--color-accent-primary)'
+      },
+      // Prevent caret from stretching to table width
+      '.cm-md-rendered-table .cm-cursor': {
+        maxWidth: '2px',
+        minWidth: '2px',
+        width: '2px',
+        borderLeftWidth: '2px !important',
+        boxSizing: 'border-box',
+        display: 'inline-block'
       },
       '.cm-md-table-create-btn': {
         display: 'inline-flex',
@@ -454,16 +510,7 @@ const buildTheme = (EditorView, options = {}) => {
         borderRightColor: 'var(--gutter-border-color, #30363d) !important'
       },
 
-      '.cm-scroller': {
-        backgroundColor: 'transparent !important',
-        fontFamily: 'inherit',
-        overflow: 'auto !important',
-        minWidth: '100%',
-        height: '100%',
-        boxSizing: 'border-box',
-        position: 'relative',
-        scrollbarGutter: 'stable !important'
-      },
+      // (Merged into previous '.cm-scroller' definition)
 
       // --- Image Rendering Polish ---
       '.cm-md-image-container': {
@@ -533,13 +580,11 @@ const buildTheme = (EditorView, options = {}) => {
         transition: 'none !important'
       },
 
+      // Remove aggressive active-line background to avoid whole-paragraph
+      // highlighting on single click. Keep only a subtle caret indicator.
       '.cm-activeLine': {
-        boxShadow: disableComplexCM
-          ? 'none !important'
-          : 'inset var(--active-line-border-width, 0px) 0 0 0 var(--caret-color, #ffffff) !important',
-        backgroundColor: disableComplexCM
-          ? 'transparent !important'
-          : 'var(--active-line-bg) !important',
+        boxShadow: 'none !important',
+        backgroundColor: 'transparent !important',
         transition: 'none !important'
       },
 
@@ -553,12 +598,45 @@ const buildTheme = (EditorView, options = {}) => {
       '&.cm-reading-mode': {
         cursor: 'text !important'
       },
+      // Disable the active-line highlight in non-editing modes to avoid
+      // a full-paragraph background showing on single click (Obsidian-like)
+      '&.cm-reading-mode .cm-activeLine, &.cm-live-preview-mode .cm-activeLine': {
+        // boxShadow: 'none !important',
+        // backgroundColor: 'transparent !important',
+        borderLeft:
+          'var(--active-line-border-width, 0px) solid var(--caret-color, #ffffff) !important',
+        boxShadow: 'inset var(--active-line-border-width, 0px) 0'
+      },
       '&.cm-reading-mode .cm-cursor': {
         display: 'none !important'
       },
       '&.cm-reading-mode .cm-content': {
-        userSelect: 'text !important'
+        userSelect: 'text !important',
+        WebkitUserSelect: 'text !important'
       },
+      '&.cm-live-preview-mode .cm-content': {
+        // Allow native selection in Live Preview (Obsidian-like behavior)
+        userSelect: 'text !important',
+        WebkitUserSelect: 'text !important'
+      },
+      // Ensure all children are selectable (widgets may inject elements)
+      '.cm-content *': {
+        userSelect: 'text !important'
+        // WebkitUserSelect: 'text !important'
+      },
+      // Pleasant selection color for both modes (no transitions)
+      '.cm-content ::selection': {
+        background: 'rgba(88,166,255,0.28) !important',
+        color: 'var(--selection-text, #ffffff) !important'
+      },
+      // Prevent full-block background selection on large headings and some
+      // rendered block widgets. Clicking wrapped lines inside these elements
+      // should place caret / select text without painting the whole block.
+      '.cm-md-h1 ::selection, .cm-md-h2 ::selection, .cm-md-h3 ::selection, .cm-md-h4 ::selection, .cm-md-h5 ::selection, .cm-md-h6 ::selection, .cm-md-table-row ::selection, .cm-md-rendered-table ::selection':
+        {
+          background: 'transparent !important',
+          color: 'inherit !important'
+        },
       '&.cm-source-mode .cm-content': {
         // Shared font engine
       }

@@ -102,7 +102,9 @@ const buildExtensions = async (options, handlers = {}) => {
     // Basic UI Extensions
     exts.push(dropCursor())
     exts.push(drawSelection({ cursorBlinkRate: 0 })) // We use custom blinking
-    exts.push(highlightActiveLine())
+    // Intentionally DO NOT add highlightActiveLine() to avoid aggressive
+    // full-line background highlighting on single click. Background
+    // indicator is managed via theme CSS instead.
     exts.push(indentOnInput())
     exts.push(closeBrackets())
     exts.push(bracketMatching())

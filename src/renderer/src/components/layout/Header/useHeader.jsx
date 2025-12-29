@@ -13,6 +13,7 @@ import {
   Save,
   File,
   FilePlus,
+  
   Star
 } from 'lucide-react'
 import iconUrl from '../../../assets/icon.png'
@@ -130,7 +131,6 @@ const useHeader = ({
                     <Star size={12} className="ml-2 text-[var(--color-accent-primary)] fill-current" />
                   )}
                 </div>
-                        : displayTitle || 'Untitled'}
 
                 {/* Preview/Read Mode Toggle removed as per user request */}
 

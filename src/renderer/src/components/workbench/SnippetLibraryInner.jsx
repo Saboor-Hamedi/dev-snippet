@@ -796,8 +796,8 @@ const SnippetLibraryInner = ({ snippetData }) => {
         onToggleSidebar={handleToggleSidebar}
         onTogglePin={togglePinnedSnippet}
         onOpenPinPopover={(id, rect, origin = 'mouse') => {
-          const x = rect?.x ?? rect?.left ?? rect?.clientX ?? (window.innerWidth / 2 - 80)
-          const y = rect?.y ?? rect?.top ?? rect?.clientY ?? (window.innerHeight / 2 - 24)
+          let x = rect?.x ?? rect?.left ?? rect?.clientX ?? (window.innerWidth / 2 - 80)
+          let y = rect?.y ?? rect?.top ?? rect?.clientY ?? (window.innerHeight / 2 - 24)
           try {
             console.debug('[SnippetLibraryInner] onOpenPinPopover', { id, origin, x, y })
           } catch (e) {}
@@ -842,14 +842,14 @@ const SnippetLibraryInner = ({ snippetData }) => {
       />
 
       {/* Global Alt+P handler as a fallback so popover opens regardless of focus */}
-      <AltPHandler
+          <AltPHandler
         snippets={snippets}
         selectedSnippet={selectedSnippet}
         selectedIds={selectedIds}
         onOpen={(id, rect) => {
           if (!id) return
-          const x = rect?.x ?? rect?.left ?? rect?.clientX ?? (window.innerWidth / 2 - 80)
-          const y = rect?.y ?? rect?.top ?? rect?.clientY ?? (window.innerHeight / 2 - 24)
+          let x = rect?.x ?? rect?.left ?? rect?.clientX ?? (window.innerWidth / 2 - 80)
+          let y = rect?.y ?? rect?.top ?? rect?.clientY ?? (window.innerHeight / 2 - 24)
           // Idempotent open
           if (pinPopover.visible && pinPopover.snippetId === id) return
           try {

@@ -58,7 +58,11 @@
 /* VS CODE STYLE: Active Line Background (Base) */
 /* VS CODE STYLE: Active Line Background (Base) */
 .cm-editor .cm-activeLine {
-  background-color: var(--active-line-bg) !important;
+  /* background-color: var(--active-line-bg) !important; */
+    background-color: transparent !important;
+  border-left: var(--active-line-border-width, 0px) solid var(--caret-color, #ffffff) !important;
+  box-shadow: inset var(--active-line-border-width, 0px) 0
+
 }
 
 /* VS CODE BEHAVIOR: Hide active line background and indicator when text is selected */

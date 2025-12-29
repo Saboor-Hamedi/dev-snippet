@@ -99,8 +99,7 @@ class ImageWidget extends WidgetType {
   toDOM() {
     const wrap = document.createElement('div')
     wrap.className = 'cm-md-image-container'
-    // Prevent editor selection hijacking on click
-    wrap.onmousedown = (e) => e.stopPropagation()
+    // allow native selection behavior
     const img = document.createElement('img')
     img.src = this.src
     img.alt = this.alt
@@ -252,7 +251,12 @@ class TableWidget extends WidgetType {
   }
   toDOM(view) {
     if (!this.raw) return document.createElement('div')
-    const lines = this.raw.trim().split('\n')
+    // Always use the current document text for this table range to avoid
+    // divergence between the rendered widget and the underlying source.
+    const currentRaw = (view && view.state && view.state.doc)
+      ? view.state.doc.sliceString(this.from, this.to)
+      : this.raw || ''
+    const lines = (currentRaw || '').trim().split('\n')
     if (lines.length < 2) return document.createElement('div')
 
     const table = document.createElement('table')
@@ -277,8 +281,14 @@ class TableWidget extends WidgetType {
       )
     }
 
-    const matrix = lines.filter((_, idx) => idx !== sepLineIdx).map((l) => getCells(l))
-    const headerColCount = matrix[0]?.length || 0
+    // Only use header and row lines for matrix and col count
+    const matrix = lines
+      .filter((_, idx) => idx !== sepLineIdx && idx !== -1)
+      .map((l) => getCells(l))
+    // Use header line for col count
+    const headerColCount = (lines.length > 0 && sepLineIdx > 0)
+      ? getCells(lines[0]).length
+      : matrix[0]?.length || 0
 
     let syncTimeout = null
     const dispatchUpdate = () => {
@@ -344,8 +354,7 @@ class TableWidget extends WidgetType {
 
     const wrap = document.createElement('div')
     wrap.className = 'cm-md-table-rendered-wrapper'
-    // Prevent block selection when clicking table padding
-    wrap.onmousedown = (e) => e.stopPropagation()
+    // allow native selection behavior
     wrap.appendChild(table)
 
     // Mode Awareness
@@ -356,7 +365,9 @@ class TableWidget extends WidgetType {
 
       e.preventDefault()
       e.stopPropagation()
-      showSourceModal(view, this.from, this.to, this.raw.trim())
+      // Provide the current document snapshot for the source modal
+      const fresh = view.state.doc.sliceString(this.from, this.to)
+      showSourceModal(view, this.from, this.to, fresh)
     }
 
     if (mode === EditorMode.READING) {
@@ -370,7 +381,9 @@ class TableWidget extends WidgetType {
     plusRight.onclick = (e) => {
       e.preventDefault()
       e.stopPropagation()
-      const updatedLines = lines.map((l, idx) => {
+      const freshRaw = view.state.doc.sliceString(this.from, this.to)
+      const freshLines = (freshRaw || '').trim().split('\n')
+      const updatedLines = freshLines.map((l, idx) => {
         const cells = getCells(l)
         cells.push(idx === sepLineIdx ? '---' : ' ')
         return '| ' + cells.join(' | ') + ' |'
@@ -388,9 +401,11 @@ class TableWidget extends WidgetType {
     plusBottom.onclick = (e) => {
       e.preventDefault()
       e.stopPropagation()
-      const currentCols = getCells(lines[0]).length
+      const freshRaw = view.state.doc.sliceString(this.from, this.to)
+      const freshLines = (freshRaw || '').trim().split('\n')
+      const currentCols = getCells(freshLines[0] || '').length || headerColCount || 1
       const newRow = '| ' + Array(currentCols).fill(' ').join(' | ') + ' |'
-      const updatedTable = [...lines, newRow].join('\n')
+      const updatedTable = [...freshLines, newRow].join('\n')
       view.dispatch({
         changes: { from: this.from, to: this.to, insert: updatedTable },
         userEvent: 'input.table.struct',
@@ -407,9 +422,142 @@ class TableWidget extends WidgetType {
     btnSource.title = 'View Source'
     btnSource.onclick = (e) => {
       e.stopPropagation()
-      showSourceModal(view, this.from, this.to, this.raw.trim())
+      const fresh = view.state.doc.sliceString(this.from, this.to)
+      showSourceModal(view, this.from, this.to, fresh)
     }
     toolbar.appendChild(btnSource)
+
+    // Delete button to remove the whole table block
+    const btnDelete = document.createElement('button')
+    btnDelete.className = 'cm-md-table-btn cm-md-table-delete-btn'
+    btnDelete.title = 'Delete Table'
+    btnDelete.innerHTML = 'Delete'
+    btnDelete.onclick = (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      view.dispatch({ changes: { from: this.from, to: this.to, insert: '' }, userEvent: 'input.table.delete' })
+    }
+    toolbar.appendChild(btnDelete)
+
+    // Delete Column button
+    const btnDelCol = document.createElement('button')
+    btnDelCol.className = 'cm-md-table-btn cm-md-table-delcol-btn'
+    btnDelCol.title = 'Delete Column'
+    btnDelCol.innerHTML = 'Del Col'
+    btnDelCol.onclick = (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      try {
+        const freshRaw = view.state.doc.sliceString(this.from, this.to)
+        const freshLines = (freshRaw || '').trim().split('\n')
+        // Identify sep line index in freshLines
+        const freshSepIdx = freshLines.findIndex((l) => l.includes('---'))
+        // Build row line indices (lines excluding separator)
+        const rowLineIndices = []
+        freshLines.forEach((l, idx) => { if (idx !== freshSepIdx) rowLineIndices.push(idx) })
+        // Determine target column: prefer activeTableFocus, fall back to cursor position
+        let targetCol = (activeTableFocus && activeTableFocus.from === this.from) ? activeTableFocus.col : null
+        if (targetCol === null) {
+          const selPos = view.state.selection.main.head
+          if (selPos >= this.from && selPos <= this.to) {
+            // Map selection position to a line and column index
+            let acc = this.from
+            for (let li = 0; li < freshLines.length; li++) {
+              const line = freshLines[li] + '\n'
+              const lineStart = acc
+              const lineEnd = acc + line.length
+              if (selPos >= lineStart && selPos <= lineEnd) {
+                const cellIndex = (() => {
+                  const rawLine = freshLines[li]
+                  const cells = getCells(rawLine)
+                  if (!cells || cells.length === 0) return 0
+                  const offsetInLine = selPos - lineStart
+                  let cursor = 0
+                  for (let ci = 0; ci < cells.length; ci++) {
+                    const before = rawLine.indexOf(cells[ci], cursor)
+                    if (before === -1) continue
+                    const start = before
+                    const end = before + cells[ci].length
+                    if (offsetInLine >= start && offsetInLine <= end) return ci
+                    cursor = end
+                  }
+                  return 0
+                })()
+                targetCol = cellIndex
+                break
+              }
+              acc += line.length
+            }
+          }
+        }
+        if (targetCol === null) return
+        const newLines = freshLines.map((l, idx) => {
+          const cells = getCells(l)
+          if (cells.length === 0) return l
+          // Remove target column if present
+          if (targetCol < 0 || targetCol >= cells.length) return l
+          cells.splice(targetCol, 1)
+          return '| ' + cells.join(' | ') + ' |'
+        })
+        // If header now has zero columns, remove whole table
+        const headerCells = getCells(newLines[rowLineIndices[0]] || newLines[0] || '')
+        if (!headerCells || headerCells.length === 0) {
+          view.dispatch({ changes: { from: this.from, to: this.to, insert: '' }, userEvent: 'input.table.delete' })
+          return
+        }
+        view.dispatch({ changes: { from: this.from, to: this.to, insert: newLines.join('\n') }, userEvent: 'input.table.struct' })
+      } catch (err) {}
+    }
+    toolbar.appendChild(btnDelCol)
+
+    // Delete Row button
+    const btnDelRow = document.createElement('button')
+    btnDelRow.className = 'cm-md-table-btn cm-md-table-delrow-btn'
+    btnDelRow.title = 'Delete Row'
+    btnDelRow.innerHTML = 'Del Row'
+    btnDelRow.onclick = (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      try {
+        const freshRaw = view.state.doc.sliceString(this.from, this.to)
+        const freshLines = (freshRaw || '').trim().split('\n')
+        const freshSepIdx = freshLines.findIndex((l) => l.includes('---'))
+        // Map matrix row index to freshLines index
+        const rowLineIndices = []
+        freshLines.forEach((l, idx) => { if (idx !== freshSepIdx) rowLineIndices.push(idx) })
+        // Determine target row: prefer activeTableFocus, fall back to cursor position
+        let targetRow = (activeTableFocus && activeTableFocus.from === this.from) ? activeTableFocus.row : null
+        if (targetRow === null) {
+          const selPos = view.state.selection.main.head
+          if (selPos >= this.from && selPos <= this.to) {
+            let acc = this.from
+            for (let li = 0; li < freshLines.length; li++) {
+              const line = freshLines[li] + '\n'
+              const lineStart = acc
+              const lineEnd = acc + line.length
+              if (selPos >= lineStart && selPos <= lineEnd) {
+                const matrixRow = rowLineIndices.indexOf(li)
+                if (matrixRow >= 0) targetRow = matrixRow
+                break
+              }
+              acc += line.length
+            }
+          }
+        }
+        if (targetRow === null) return
+        // Prevent deleting header row (index 0) via this action
+        if (targetRow === 0) {
+          // If user wants to delete header, remove whole table instead
+          view.dispatch({ changes: { from: this.from, to: this.to, insert: '' }, userEvent: 'input.table.delete' })
+          return
+        }
+        const removeIdx = rowLineIndices[targetRow]
+        if (removeIdx === undefined) return
+        const newLines = freshLines.filter((_, idx) => idx !== removeIdx)
+        view.dispatch({ changes: { from: this.from, to: this.to, insert: newLines.join('\n') }, userEvent: 'input.table.struct' })
+      } catch (err) {}
+    }
+    toolbar.appendChild(btnDelRow)
 
     wrap.appendChild(plusRight)
     wrap.appendChild(plusBottom)
@@ -449,8 +597,7 @@ class AdmonitionWidget extends WidgetType {
   toDOM() {
     const wrap = document.createElement('div')
     wrap.className = `cm-admonition cm-admonition-${this.type.toLowerCase()}`
-    // Prevent editor from hijacking clicks inside the admonition (fixes cursor jumping)
-    wrap.onmousedown = (e) => e.stopPropagation()
+    // allow native selection behavior
 
     const header = document.createElement('div')
     header.className = 'cm-admonition-header'
@@ -1027,6 +1174,71 @@ const richMarkdownField = StateField.define({
       console.warn('[RichMarkdown] Iteration failed:', e)
     }
 
+    // Fallback: detect GFM/pipe-style tables by simple line scanning when the
+    // parser didn't produce a table node (covers plain Markdown table text).
+    // This keeps Live Preview working for editors that don't include GFM.
+    try {
+      if (mode !== EditorMode.SOURCE) {
+        let lineNum = 1
+        while (lineNum <= doc.lines) {
+          const line = safeLine(doc, lineNum)
+          const next = safeLine(doc, lineNum + 1)
+          const text = line.text || ''
+          const nextText = next.text || ''
+
+          // Candidate header: contains '|' and at least one non-leading/trailing pipe
+          if (text.includes('|') && /\S/.test(text)) {
+            // Separator detection: a line with pipes and --- (or :---:) cells
+            if (/^\s*\|?[\s:\-|]+-{3,}[\s:\-|]*$/.test(nextText) || nextText.includes('---')) {
+              // Gather contiguous table rows starting from header
+              let endLine = lineNum + 2
+              while (endLine <= doc.lines && safeLine(doc, endLine).text.includes('|')) endLine++
+              const from = line.from
+              const to = safeLine(doc, endLine - 1).to
+              // Avoid duplicating if a table decoration already covers this range
+              const already = collected.some((c) => c.from <= from && c.to >= to)
+              if (!already && from < to) {
+                collected.push({
+                  from: from,
+                  to: to,
+                  deco: Decoration.replace({ widget: new TableWidget(doc.sliceString(from, to), from, to, mode), block: true })
+                })
+              }
+              lineNum = endLine
+              continue
+            }
+          }
+          lineNum++
+        }
+      }
+    } catch (e) {
+      // Fallback scan must not throw
+    }
+
+    // Fallback: detect pipe-style GFM tables via regex in case the parser
+    // didn't produce a table node (ensures Live/Read preview still shows tables).
+    try {
+      const fullText = doc.sliceString(0, doc.length)
+      const tableRegex = /(^\|.*\|\s*$\n(?:^\|.*\|\s*$\n)*)/gm
+      let m
+      while ((m = tableRegex.exec(fullText)) !== null) {
+        const block = m[1]
+        const lines = block.split('\n').filter(Boolean)
+        if (lines.length >= 2 && lines[1].includes('---')) {
+          const start = m.index
+          const end = m.index + block.length
+          // Only add if not already covered
+          collected.push({
+            from: start,
+            to: end,
+            deco: Decoration.replace({ widget: new TableWidget(block.trim(), start, end, mode), block: true })
+          })
+        }
+      }
+    } catch (err) {
+      // Non-fatal - fallback scanning failed
+    }
+
     const builder = new RangeSetBuilder()
     const docLen = doc.length
     // Sanitize decorations for the current document length
@@ -1047,6 +1259,14 @@ const richMarkdownField = StateField.define({
 // --- 5. Floating Source Modal Helper ---
 // Now Decoupled: Dispatches to React Universal Modal system
 const showSourceModal = (view, from, to, initialCode) => {
+  // If a caller recently set this flag we should ignore the next open
+  // to prevent immediate reopen after applying changes (caused by
+  // the editor re-render/focus cycle). Clear the flag and bail out.
+  if (window.__suppressNextSourceModal) {
+    window.__suppressNextSourceModal = false
+    return
+  }
+
   window.dispatchEvent(
     new CustomEvent('app:open-source-modal', {
       detail: { view, from, to, initialCode }

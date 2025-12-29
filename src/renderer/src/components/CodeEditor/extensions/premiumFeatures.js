@@ -24,6 +24,10 @@ export const cursorStyles = EditorView.theme({
   /* Block Style - full width block */
   '.cm-editor-container[data-caret-shape="block"] & .cm-cursor': {
     width: '1ch !important',
+    height: '1em !important',
+    lineHeight: '1em !important',
+    display: 'inline-block !important',
+    verticalAlign: 'text-bottom !important',
     backgroundColor: 'var(--caret-color) !important',
     opacity: '0.6 !important',
     borderLeft: 'none !important'
@@ -51,15 +55,9 @@ export const beautySelection = EditorView.theme({
     backgroundColor: 'var(--selection-background, rgba(88, 166, 255, 0.2)) !important',
     borderRadius: '2px'
   },
-  '.cm-activeLine': {
-    borderLeft: 'var(--active-line-border-width, 2px) solid var(--caret-color) !important',
-    boxShadow: 'inset 10px 0 20px -15px var(--shadow-box-bg)',
-    position: 'relative'
-  },
-  '.cm-activeLineGutter': {
-    borderLeft: 'var(--active-line-gutter-border-width, 0px) solid var(--caret-color) !important',
-    backgroundColor: 'transparent !important'
-  }
+  // Active-line visuals are intentionally omitted here to avoid conflicts
+  // with centralized editor theming and the selection watcher rules in
+  // `CodeEditor.css` and `buildTheme.js`. Keep only selection styling.
 })
 
 /**
