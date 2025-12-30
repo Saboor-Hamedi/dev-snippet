@@ -451,19 +451,19 @@ const SnippetSidebarRow = ({ index, style, data }) => {
             </span>
           )}
         </span>
-  {itemData.is_pinned === 1 ? (
-          <div className="flex-shrink-0 text-[var(--color-accent-primary)] opacity-80">
-            {type === 'pinned_snippet' ? (
-              <Star size={10} className="fill-current" />
-            ) : (
-              <Pin size={10} className="fill-current rotate-45" />
-            )}
-          </div>
-        ) : itemData.is_favorite === 1 ? (
-          <div className="flex-shrink-0 text-[var(--color-accent-primary)] opacity-90" style={{ marginLeft: 6 }}>
-            <Star size={12} className="fill-current" />
-          </div>
-        ) : null}
+
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {itemData.is_pinned === 1 && (
+            <div className="text-[var(--color-accent-primary)] opacity-80" title="Pinned">
+              <Pin size={12} className="fill-current" />
+            </div>
+          )}
+          {itemData.is_favorite === 1 && (
+            <div className="text-[var(--color-accent-primary)] opacity-90" title="Favorite">
+              <Star size={13} className="fill-current" />
+            </div>
+          )}
+        </div>
       </button>
     </div>
   )

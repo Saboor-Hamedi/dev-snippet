@@ -117,24 +117,7 @@ const buildTheme = (EditorView, options = {}) => {
       },
 
       // Header Sizing (Obsidian-like Live Decorative)
-      '.cm-header-1': {
-        fontSize: 'var(--font-size-4xl) !important',
-        fontWeight: 'bold',
-        color: 'var(--color-text-primary) !important'
-      },
-      '.cm-header-2': {
-        fontSize: 'var(--font-size-3xl) !important',
-        fontWeight: 'bold',
-        color: 'var(--color-text-primary) !important'
-      },
-      '.cm-header-3': {
-        fontSize: 'var(--font-size-2xl) !important',
-        fontWeight: 'bold',
-        color: 'var(--color-text-primary) !important'
-      },
-      '.cm-header-4': { fontSize: 'var(--font-size-xl) !important', fontWeight: 'bold' },
-      '.cm-header-5': { fontSize: 'var(--font-size-lg) !important', fontWeight: 'bold' },
-      '.cm-header-6': { fontSize: 'var(--font-size-base) !important', fontWeight: 'bold' },
+      /* Headings consolidated below */
 
       // Custom Markdown Elements (Inline decorations)
       '.cm-wikilink': {
@@ -148,46 +131,59 @@ const buildTheme = (EditorView, options = {}) => {
         borderRadius: '3px'
       },
 
-      // --- Rich Markdown (Obsidian-style) Styles ---
-      // Heading sizes mapped to tailwind-like proportional scale:
-      // Base is 12px (1em)
-      '.cm-md-h1': {
-        fontSize: '1.333em !important', // 16px
+      // Header Lines (Layout/Spacing) - Fixes cursor interactions by spacing the line wrapper
+      '.cm-line-h1': {
+        marginTop: '1.2em !important',
+        marginBottom: '0.4em !important',
+        lineHeight: '1.3 !important'
+      },
+      '.cm-line-h2': {
+        marginTop: '1em !important',
+        marginBottom: '0.3em !important',
+        lineHeight: '1.35 !important'
+      },
+      '.cm-line-h3': {
+        marginTop: '0.8em !important',
+        marginBottom: '0.2em !important',
+        lineHeight: '1.4 !important'
+      },
+      '.cm-line-h4': { marginTop: '0.6em !important', lineHeight: '1.5 !important' },
+      '.cm-line-h5': { marginTop: '0.4em !important' },
+      '.cm-line-h6': { marginTop: '0.4em !important' },
+
+      // Header Text (Font/Color) - Inline decorations only
+      '.cm-header-1, .cm-md-h1': {
+        fontSize: '1.8em !important',
         fontWeight: '700',
-        color: 'var(--color-text-primary) !important',
-        lineHeight: '1.25 !important',
-        marginTop: '0.6em !important',
-        marginBottom: '0.2em !important'
+        color: 'var(--color-text-primary) !important'
       },
-      // H2 -> 14px
-      '.cm-md-h2': {
-        fontSize: '1.166em !important', // 14px
+      // H2 -> ~20px (1.4em)
+      '.cm-header-2, .cm-md-h2': {
+        fontSize: '1.4em !important',
         fontWeight: '700',
-        color: 'var(--color-text-primary) !important',
-        lineHeight: '1.3 !important',
-        marginTop: '0.5em !important',
-        marginBottom: '0.1em !important'
+        color: 'var(--color-text-primary) !important'
       },
-      // H3 -> 13px
-      '.cm-md-h3': {
-        fontSize: '1.083em !important', // 13px
+      // H3 -> ~17px (1.2em)
+      '.cm-header-3, .cm-md-h3': {
+        fontSize: '1.2em !important',
         fontWeight: '700',
-        color: 'var(--color-text-primary) !important',
-        lineHeight: '1.4 !important',
-        marginTop: '0.4em !important'
+        color: 'var(--color-text-primary) !important'
       },
-      // H4 -> 12px (matches base)
-      '.cm-md-h4': {
-        fontSize: '1em !important', // 12px
-        fontWeight: '700',
-        paddingTop: '0.2em'
+      // H4 -> ~15px (1.1em)
+      '.cm-header-4, .cm-md-h4': {
+        fontSize: '1.1em !important',
+        fontWeight: '700'
       },
-      '.cm-md-h5': {
-        fontSize: 'var(--font-size-lg) !important',
-        fontWeight: '600',
-        paddingTop: '0.1em'
+      // H5
+      '.cm-header-5, .cm-md-h5': {
+        fontSize: '1em !important',
+        fontWeight: '600'
       },
-      '.cm-md-h6': { fontSize: 'var(--font-size-base) !important', fontWeight: '600' },
+      // H6
+      '.cm-header-6, .cm-md-h6': {
+        fontSize: '0.9em !important',
+        fontWeight: '600'
+      },
 
       '.cm-md-checkbox': {
         display: 'inline-flex',
@@ -632,11 +628,7 @@ const buildTheme = (EditorView, options = {}) => {
       // Prevent full-block background selection on large headings and some
       // rendered block widgets. Clicking wrapped lines inside these elements
       // should place caret / select text without painting the whole block.
-      '.cm-md-h1 ::selection, .cm-md-h2 ::selection, .cm-md-h3 ::selection, .cm-md-h4 ::selection, .cm-md-h5 ::selection, .cm-md-h6 ::selection, .cm-md-table-row ::selection, .cm-md-rendered-table ::selection':
-        {
-          background: 'transparent !important',
-          color: 'inherit !important'
-        },
+      // (Selection visibility restored to fix cursor UI issues)
       '&.cm-source-mode .cm-content': {
         // Shared font engine
       }

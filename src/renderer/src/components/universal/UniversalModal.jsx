@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom'
 import { GripHorizontal } from 'lucide-react'
 import { makeDraggable } from '../../utils/draggable'
 import { useSettings } from '../../hook/useSettingsContext'
+import { getPersistentPosition, savePersistentPosition } from '../../utils/persistentPosition'
 import './universalStyle.css'
 
 const UniversalModal = ({
@@ -27,19 +28,29 @@ const UniversalModal = ({
       if (settings?.ui?.universalLock?.modal) {
         requestAnimationFrame(() => {
           modal.style.left = `calc(50% - ${parseInt(width) / 2}px)`
-          modal.style.top = `20%`
+          modal.style.top = `35%`
           modal.style.transform = 'none'
           modal.style.position = 'absolute'
         })
       } else {
-        // First open centering
+        // Restore last position or center on first open
         if (!modal.style.left) {
-          modal.style.left = `calc(50% - ${parseInt(width) / 2}px)`
-          modal.style.top = `20%`
+          const defaults = {
+            left: `calc(50% - ${parseInt(width) / 2}px)`,
+            top: `35%`
+          }
+          const saved = getPersistentPosition('universal_modal', defaults)
+          modal.style.left = saved.left
+          modal.style.top = saved.top
         }
 
-        // Enable Dragging
-        const cleanup = makeDraggable(modal, headerRef.current)
+        // Enable Dragging with persistence
+        const cleanup = makeDraggable(modal, headerRef.current, (pos) => {
+          savePersistentPosition('universal_modal', {
+            left: `${pos.x}px`,
+            top: `${pos.y}px`
+          })
+        })
         return cleanup
       }
     }

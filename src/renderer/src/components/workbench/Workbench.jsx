@@ -73,7 +73,11 @@ const Workbench = ({
   onCut,
   onPaste,
   onSelectAll,
-  onDailyNote
+  onDailyNote,
+  pinPopover,
+  setPinPopover,
+  onPing,
+  onFavorite
 }) => {
   const { currentTheme } = useTheme()
   const handleSave = (snippet) => {
@@ -155,6 +159,10 @@ const Workbench = ({
           onAutosave={onAutosave}
           showToast={showToast}
           showPreview={showPreview}
+          pinPopover={pinPopover}
+          setPinPopover={setPinPopover}
+          onPing={onPing}
+          onFavorite={onFavorite}
         />
       )
     }
@@ -174,6 +182,10 @@ const Workbench = ({
           onAutosave={onAutosave}
           showToast={showToast}
           showPreview={showPreview}
+          pinPopover={pinPopover}
+          setPinPopover={setPinPopover}
+          onPing={onPing}
+          onFavorite={onFavorite}
         />
       )
     }
@@ -284,7 +296,7 @@ const Workbench = ({
         >
           <div className="h-full min-w-[250px] w-[250px] flex flex-col overflow-hidden">
             {activeSidebarTab === 'explorer' && (
-                <SnippetSidebar
+              <SnippetSidebar
                 isOpen={isSidebarOpen}
                 snippets={snippets}
                 folders={folders}
@@ -307,16 +319,16 @@ const Workbench = ({
                 onTogglePin={onTogglePin}
                 onToggleFavorite={onToggleFavorite}
                 selectedIds={selectedIds}
-                  onSelectionChange={onSelectionChange}
-                  onSelect={(s) => {
-                    // Prevent deselecting the editor view by clicking sidebar background
-                    if (s === null && activeView === 'editor') {
-                      // keep editor open and selection as-is
-                      return
-                    }
-                    if (onSelectSnippet) onSelectSnippet(s)
-                    if (window.innerWidth <= 768) setIsSidebarOpen(false)
-                  }}
+                onSelectionChange={onSelectionChange}
+                onSelect={(s) => {
+                  // Prevent deselecting the editor view by clicking sidebar background
+                  if (s === null && activeView === 'editor') {
+                    // keep editor open and selection as-is
+                    return
+                  }
+                  if (onSelectSnippet) onSelectSnippet(s)
+                  if (window.innerWidth <= 768) setIsSidebarOpen(false)
+                }}
                 onToggle={() => setIsSidebarOpen(false)}
                 isCompact={isCompact}
                 showToast={showToast}

@@ -223,7 +223,12 @@ const SnippetLibraryInner = ({ snippetData }) => {
 
   const createDraftSnippet = (initialTitle = '', folderId = null, options = {}) => {
     try {
-      console.debug('[createDraftSnippet] called', { initialTitle, folderId, options, stack: new Error().stack.split('\n').slice(1,6) })
+      console.debug('[createDraftSnippet] called', {
+        initialTitle,
+        folderId,
+        options,
+        stack: new Error().stack.split('\n').slice(1, 6)
+      })
     } catch (e) {}
     if (!initialTitle && !folderId) {
       const existingBlank = snippets.find(
@@ -281,6 +286,35 @@ const SnippetLibraryInner = ({ snippetData }) => {
       showToast('Failed to toggle favorite', 'error')
     }
   }
+
+  const handlePing = useCallback(
+    async (id) => {
+      try {
+        console.debug('[SnippetLibraryInner] Ping handler', id)
+      } catch (e) {}
+      const s = snippets.find((t) => t.id === id)
+      if (s) {
+        // 1. Toggle pinned state and update timestamp
+        const isCurrentlyPinned = s.is_pinned === 1
+        const updated = {
+          ...s,
+          is_pinned: isCurrentlyPinned ? 0 : 1,
+          timestamp: Date.now()
+        }
+
+        // 2. Persist the update
+        await saveSnippet(updated)
+
+        // 3. Update local state
+        setSnippets((prev) => prev.map((it) => (it.id === id ? updated : it)))
+
+        // 4. Select and navigate
+        setSelectedSnippet(updated)
+        navigateTo('editor')
+      }
+    },
+    [snippets, setSelectedSnippet, navigateTo, setSnippets, saveSnippet]
+  )
 
   const handleRenameRequest = () => {
     openRenameModal(selectedSnippet, (newName) => {
@@ -501,7 +535,10 @@ const SnippetLibraryInner = ({ snippetData }) => {
 
   const handleSelectSnippet = (s) => {
     try {
-      console.debug('[handleSelectSnippet] called with:', s && { id: s.id, title: s.title, is_draft: s.is_draft })
+      console.debug(
+        '[handleSelectSnippet] called with:',
+        s && { id: s.id, title: s.title, is_draft: s.is_draft }
+      )
     } catch (e) {}
     if (!s) {
       setSelectedSnippet(null)
@@ -796,8 +833,8 @@ const SnippetLibraryInner = ({ snippetData }) => {
         onToggleSidebar={handleToggleSidebar}
         onTogglePin={togglePinnedSnippet}
         onOpenPinPopover={(id, rect, origin = 'mouse') => {
-          let x = rect?.x ?? rect?.left ?? rect?.clientX ?? (window.innerWidth / 2 - 80)
-          let y = rect?.y ?? rect?.top ?? rect?.clientY ?? (window.innerHeight / 2 - 24)
+          let x = rect?.x ?? rect?.left ?? rect?.clientX ?? window.innerWidth / 2 - 80
+          let y = rect?.y ?? rect?.top ?? rect?.clientY ?? window.innerHeight / 2 - 24
           try {
             console.debug('[SnippetLibraryInner] onOpenPinPopover', { id, origin, x, y })
           } catch (e) {}
@@ -842,14 +879,14 @@ const SnippetLibraryInner = ({ snippetData }) => {
       />
 
       {/* Global Alt+P handler as a fallback so popover opens regardless of focus */}
-          <AltPHandler
+      <AltPHandler
         snippets={snippets}
         selectedSnippet={selectedSnippet}
         selectedIds={selectedIds}
         onOpen={(id, rect) => {
           if (!id) return
-          let x = rect?.x ?? rect?.left ?? rect?.clientX ?? (window.innerWidth / 2 - 80)
-          let y = rect?.y ?? rect?.top ?? rect?.clientY ?? (window.innerHeight / 2 - 24)
+          let x = rect?.x ?? rect?.left ?? rect?.clientX ?? window.innerWidth / 2 - 80
+          let y = rect?.y ?? rect?.top ?? rect?.clientY ?? window.innerHeight / 2 - 24
           // Idempotent open
           if (pinPopover.visible && pinPopover.snippetId === id) return
           try {
@@ -866,6 +903,10 @@ const SnippetLibraryInner = ({ snippetData }) => {
           isSidebarOpen={isSidebarOpen}
           setIsSidebarOpen={(val) => updateSetting('ui.showSidebar', val)}
           activeView={isCreatingSnippet ? 'editor' : activeView}
+          pinPopover={pinPopover}
+          setPinPopover={setPinPopover}
+          onPing={handlePing}
+          onFavorite={toggleFavoriteSnippet}
           currentContext={activeView}
           selectedSnippet={selectedSnippet}
           snippets={paginatedSnippets}
@@ -987,7 +1028,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
           onSelectAll={handleSelectAll}
         />
       </div>
-      {pinPopover.visible && (
+      {pinPopover.visible && activeView !== 'editor' && !isCreatingSnippet && (
         <PinPopover
           x={pinPopover.x}
           y={pinPopover.y}
@@ -999,41 +1040,10 @@ const SnippetLibraryInner = ({ snippetData }) => {
             } catch (e) {}
             focusEditor()
           }}
-          onPing={(id) => {
-            try {
-              console.debug('[SnippetLibraryInner] Ping handler', id)
-            } catch (e) {}
-            const s = snippets.find((t) => t.id === id)
-            if (s) {
-              // Select and open in editor
-              setSelectedSnippet(s)
-              navigateTo('editor')
-              // Move snippet to top of UI list temporarily (non-persistent)
-              setSnippets((prev) => [s, ...prev.filter((it) => it.id !== s.id)])
-              showToast('Pinged snippet', 'info')
-            }
-          }}
-          onFavorite={async (id) => {
-            try {
-              console.debug('[SnippetLibraryInner] Favorite handler start', id)
-              const s = snippets.find((t) => t.id === id)
-              if (!s) return
-              const updated = { ...s, is_favorite: s.is_favorite === 1 ? 0 : 1 }
-              await saveSnippet(updated)
-              console.debug('[SnippetLibraryInner] saveSnippet returned for', id)
-              // Update local list to reflect favorite flag without reordering
-              setSnippets((prev) => prev.map((it) => (it.id === id ? updated : it)))
-              // If this is the currently selected snippet, sync selection
-              if (selectedSnippet?.id === id) setSelectedSnippet(updated)
-              showToast('Toggled favorite', 'success')
-            } catch (err) {
-              console.error('Failed to toggle favorite', err)
-              showToast('Failed to toggle favorite', 'error')
-            }
-          }}
+          onPing={handlePing}
+          onFavorite={toggleFavoriteSnippet}
         />
       )}
-      
     </div>
   )
 }

@@ -4,7 +4,7 @@
  * when rendering 10,000+ line documents.
  */
 
-export const fastMarkdownToHtml = (text, existingTitles = []) => {
+export const fastMarkdownToHtml = (text, existingTitles = [], renderIntel = true) => {
   if (!text) return ''
 
   // 0. Extract & Render Metadata (YAML Frontmatter style)
@@ -427,18 +427,18 @@ export const fastMarkdownToHtml = (text, existingTitles = []) => {
   processed = processed.replace(/\+\+([^\+]+)\+\+/g, '<kbd class="preview-kbd">$1</kbd>')
 
   processed = processed
-    .replace(
-      /^# (.*$)/gm,
-      (match, title) => `<h1 id="${title.toLowerCase().replace(/\s+/g, '-')}">${title}</h1>`
-    )
-    .replace(
-      /^## (.*$)/gm,
-      (match, title) => `<h2 id="${title.toLowerCase().replace(/\s+/g, '-')}">${title}</h2>`
-    )
-    .replace(
-      /^### (.*$)/gm,
-      (match, title) => `<h3 id="${title.toLowerCase().replace(/\s+/g, '-')}">${title}</h3>`
-    )
+    .replace(/^# (.*$)/gm, (match, title) => {
+      const clean = title.replace(/\*{1,3}|_{1,3}/g, '')
+      return `<h1 id="${clean.toLowerCase().trim().replace(/\s+/g, '-')}">${clean.trim()} <span style="display:none">${title}</span></h1>`
+    })
+    .replace(/^## (.*$)/gm, (match, title) => {
+      const clean = title.replace(/\*{1,3}|_{1,3}/g, '')
+      return `<h2 id="${clean.toLowerCase().trim().replace(/\s+/g, '-')}">${clean.trim()} <span style="display:none">${title}</span></h2>`
+    })
+    .replace(/^### (.*$)/gm, (match, title) => {
+      const clean = title.replace(/\*{1,3}|_{1,3}/g, '')
+      return `<h3 id="${clean.toLowerCase().trim().replace(/\s+/g, '-')}">${clean.trim()} <span style="display:none">${title}</span></h3>`
+    })
     .replace(/\*\*\*(.*)\*\*\*/g, '<strong><em>$1</em></strong>')
     .replace(/\*\*(.*)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*)\*/g, '<em>$1</em>')
@@ -452,7 +452,8 @@ export const fastMarkdownToHtml = (text, existingTitles = []) => {
     .replace(/\[\[(.*?)\]\]/g, (match, title) => {
       const exists = existingTitles.map((t) => t.toLowerCase()).includes(title.toLowerCase().trim())
       const ghostClass = exists ? '' : 'is-ghost'
-      return `<span class="preview-quicklink ${ghostClass}" data-title="${title}">${title}</span>`
+      // Use data-title for the event listener in the preview iframe
+      return `<span class="preview-quicklink ${ghostClass}" data-title="${title.trim()}">${title}</span>`
     })
     // Auto-links (https://...)
     .replace(
@@ -629,7 +630,8 @@ export const fastMarkdownToHtml = (text, existingTitles = []) => {
 
   // 5. Restore Placeholders
   placeholders.forEach((p) => {
-    processed = processed.replace(p.id, p.content)
+    // Use split/join to avoid $ replacement issues in String.replace
+    processed = processed.split(p.id).join(p.content)
   })
 
   // 6. Snippet Intel (Word Count / Read Time / Tasks)
@@ -655,21 +657,10 @@ export const fastMarkdownToHtml = (text, existingTitles = []) => {
       `</ol></div>`
   }
 
-  // 8. Tabs Helper (Global Injection)
-  const tabScript = `<script>
-    window.switchTab = (id, index) => {
-      const container = document.querySelector(\`[data-id="\${id}"]\`);
-      if (!container) return;
-      container.querySelectorAll('.tab-btn').forEach((btn, i) => {
-        btn.classList.toggle('active', i === index);
-      });
-      container.querySelectorAll('.tab-pane').forEach((pane, i) => {
-        pane.classList.toggle('active', i === index);
-      });
-    };
-  </script>`
+  const intelHeader = renderIntel
+    ? `<div class="preview-intel"><span>${words} words</span> • <span>${readTime} min read</span>${taskText}</div>`
+    : ''
+  const metaHeader = renderIntel ? metadataHtml : ''
 
-  const intelHeader = `<div class="preview-intel"><span>${words} words</span> • <span>${readTime} min read</span>${taskText}</div>`
-
-  return `<div class="${directionClass}">${intelHeader}${tabScript}${metadataHtml}${processed}</div>`
+  return `<div class="${directionClass}">${intelHeader}${metaHeader}${processed}</div>`
 }

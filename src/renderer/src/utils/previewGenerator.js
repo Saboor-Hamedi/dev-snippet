@@ -11,18 +11,23 @@ import { getMermaidConfig } from '../components/mermaid/mermaidConfig'
 import { getMermaidEngine } from '../components/mermaid/mermaidEngine'
 import { fastMarkdownToHtml } from './fastMarkdown'
 
+import { themes } from '../components/preference/theme/themes'
+
 /**
  * Builds the <head> section with all necessary styles and external dependencies.
  */
-const buildHeader = (title, theme, isDark, fontFamily, forPrint = false) => `
+const buildHeader = (title, theme, isDark, fontFamily, themeVars, forPrint = false) => `
   <head>
     <meta charset="utf-8">
     <title>${title}</title>
     <style>
       ${forPrint ? '' : variableStyles}
-      ${forPrint ? '' : markdownStyles}
+      ${forPrint ? '' : themeVars}
+      ${forPrint ? '' : markdownStyles.replace(/@import\s+['"][^'"]+['"];/g, '')}
       ${forPrint ? '' : mermaidStyles}
-      ${forPrint ? `
+      ${
+        forPrint
+          ? `
         /* Override any remaining CSS variables for clean PDF export */
         :root, * {
           --color-bg-primary: white !important;
@@ -34,23 +39,45 @@ const buildHeader = (title, theme, isDark, fontFamily, forPrint = false) => `
           --color-accent-primary: #0366d6 !important;
           --color-border: #d1d5db !important;
         }
-      ` : ''}
-    </style>
+      `
+          : ''
+      }
       
       html, body { 
-        margin: 0; padding: 0; 
+        margin: 0 !important; padding: 0 !important; 
         overflow-x: hidden !important; 
+        overflow-y: auto !important;
+        width: 100% !important;
+        height: 100% !important;
         background-color: ${forPrint ? 'white' : `var(--color-bg-primary, ${isDark ? '#0d1117' : '#ffffff'})`} !important;
         color: ${forPrint ? 'black' : `var(--color-text-primary, ${isDark ? '#e6edf3' : '#1f2328'})`} !important;
+        min-height: 100vh !important;
+        display: flex;
+        flex-direction: column;
+        color-scheme: ${isDark ? 'dark' : 'light'};
+        align-items: center !important; 
       }
       .preview-container { 
-        width: 100%; max-width: ${forPrint ? '800px' : '1200px'};
-        padding: ${forPrint ? '20px' : '5px'}; margin: 0 auto !important;
+        width: 100% !important; max-width: ${forPrint ? '800px' : '900px'};
+        padding: ${forPrint ? '20px' : '40px'}; 
+        margin: 0 !important;
         box-sizing: border-box; 
         background: transparent !important;
+        min-height: 100vh !important;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        text-align: left;
+      }
+      .markdown-body {
+        flex: 1;
+        width: 100% !important;
+        min-height: 100vh !important;
+        padding-bottom: 2rem !important;
       }
       .markdown-body, .mermaid-wrapper, .mermaid-diagram, .actor, .node label { 
-        font-family: ${fontFamily}, 'Inter', sans-serif !important; 
+        font-family: ${fontFamily}, 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important; 
+        color: inherit !important;
       }
       pre code { font-family: 'JetBrains Mono', monospace !important; }
 
@@ -390,16 +417,30 @@ export const generatePreviewHtml = ({
   fontFamily = "'Outfit', 'Inter', sans-serif",
   forPrint = false
 }) => {
-  const isDark = forPrint ? false : theme !== 'solar-dawn'
+  const isDark = forPrint ? false : !['polaris', 'minimal-gray', 'solar-dawn'].includes(theme)
   const currentTheme = forPrint ? 'solar-dawn' : theme
 
+  // Generate CSS Variables for the Theme
+  const currentThemeObj = themes.find((t) => t.id === theme) || themes[0]
+  const cssVars = Object.entries(currentThemeObj.colors || {})
+    .filter(([key]) => key.startsWith('--'))
+    .map(([key, value]) => `${key}: ${value};`)
+    .join('\n')
+
+  const themeVars = `
+    :root {
+      ${cssVars}
+    }
+  `
+
   if (!code || !code.trim()) {
-    return `<!DOCTYPE html><html class="${isDark ? 'dark' : ''}"><head><meta charset="utf-8"><style>${variableStyles} html,body{background:transparent !important;}</style></head><body></body></html>`
+    return `<!DOCTYPE html><html class="${isDark ? 'dark' : ''}"><head><meta charset="utf-8"><style>${variableStyles} ${themeVars} html,body{background:transparent !important;}</style></head><body></body></html>`
   }
 
   let contentHtml = ''
   if (isMarkdown) {
-    contentHtml = fastMarkdownToHtml(code, existingTitles)
+    // Hide intel (word count/read time) for print/export views
+    contentHtml = fastMarkdownToHtml(code, existingTitles, !forPrint)
   } else {
     // Escaped content for general snippets (Code or Text)
     const escaped = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -421,11 +462,11 @@ export const generatePreviewHtml = ({
 
   return `
 <!DOCTYPE html>
-<html data-theme="${currentTheme}" class="${currentTheme} ${isDark ? 'dark' : ''}">
-  ${buildHeader(title, currentTheme, isDark, fontFamily, forPrint)}
+<html data-theme="${currentTheme}" class="${currentTheme} ${isDark ? 'dark' : ''}" style="height: 100%;">
+  ${buildHeader(title, currentTheme, isDark, fontFamily, themeVars, forPrint)}
   <body class="markdown-body" style="${forPrint ? 'background: white !important;' : ''}">
     <div class="preview-container" style="${forPrint ? 'background: white !important;' : ''}">
-      <div id="content">${contentHtml}</div>
+      <div id="content" style="width: 100%;">${contentHtml}</div>
     </div>
     ${buildScript(isDark, mermaidConfig)}
   </body>

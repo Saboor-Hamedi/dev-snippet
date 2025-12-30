@@ -59,13 +59,17 @@ const useStatusBar = ({
 
   // Context Menu State
   const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0 })
+  const [zoomMenu, setZoomMenu] = useState({ visible: false, x: 0, y: 0 })
+
+  const [, setZoomInternal] = useZoomLevel()
+  const [, setEditorZoomInternal] = useEditorZoomLevel()
 
   const handleContextMenu = (e) => {
     e.preventDefault()
     setContextMenu({
       visible: true,
       x: e.clientX,
-      y: e.clientY
+      y: e.currentTarget.getBoundingClientRect().top
     })
   }
 
@@ -73,10 +77,11 @@ const useStatusBar = ({
   useEffect(() => {
     const handleClick = () => {
       if (contextMenu.visible) setContextMenu({ ...contextMenu, visible: false })
+      if (zoomMenu.visible) setZoomMenu({ ...zoomMenu, visible: false })
     }
     window.addEventListener('click', handleClick)
     return () => window.removeEventListener('click', handleClick)
-  }, [contextMenu])
+  }, [contextMenu, zoomMenu])
 
   const menuItems = [
     { label: 'System Status', key: 'statusBar.showSystemStatus', checked: showSystemStatus },
@@ -198,13 +203,36 @@ const useStatusBar = ({
 
           {/* 6. Zoom Level - HIDDEN in minimal mode */}
           {!minimal && showZoom && displayEditorZoom && (
-            <div
-              className="status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer"
-              title="Zoom Level"
-            >
-              <span className="font-mono tabular-nums text-xtiny">
-                {Math.round((displayEditorZoom || 1) * 100)}%
-              </span>
+            <div className="relative group/zoom">
+              <div
+                className="status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer"
+                title="Zoom Level (Click for options)"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  const rect = e.currentTarget.getBoundingClientRect()
+                  setZoomMenu({
+                    visible: true,
+                    x: rect.left,
+                    y: rect.top
+                  })
+                }}
+              >
+                <span className="font-mono tabular-nums text-xtiny">
+                  {Math.round((displayEditorZoom || 1) * 100)}%
+                </span>
+                <div className="ml-1 opacity-40 group-hover/zoom:opacity-100 transition-opacity">
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="10"
+                    height="10"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                  >
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </div>
+              </div>
             </div>
           )}
 
@@ -233,14 +261,43 @@ const useStatusBar = ({
           >
             <div onClick={(e) => e.stopPropagation()}>
               <ContextMenu
-                x={Math.min(contextMenu.x, window.innerWidth - 200)}
-                y={Math.min(contextMenu.y, window.innerHeight - 300)}
+                x={contextMenu.x}
+                y={contextMenu.y}
                 items={menuItems.map((item) => ({
                   label: item.label,
                   checked: item.checked,
                   onClick: () => updateSetting(item.key, !item.checked)
                 }))}
                 onClose={() => setContextMenu({ ...contextMenu, visible: false })}
+              />
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* Zoom Menu */}
+      {zoomMenu.visible &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[10001]"
+            onClick={() => setZoomMenu({ ...zoomMenu, visible: false })}
+          >
+            <div onClick={(e) => e.stopPropagation()}>
+              <ContextMenu
+                x={zoomMenu.x}
+                y={zoomMenu.y} // Flush with top edge
+                items={[
+                  { label: '50%', onClick: () => setEditorZoomInternal(0.5) },
+                  { label: '70%', onClick: () => setEditorZoomInternal(0.7) },
+                  { label: '80%', onClick: () => setEditorZoomInternal(0.8) },
+                  { label: '90%', onClick: () => setEditorZoomInternal(0.9) },
+                  { label: '100% (Normal)', onClick: () => setEditorZoomInternal(1.0) },
+                  { label: '110%', onClick: () => setEditorZoomInternal(1.1) },
+                  { label: '120%', onClick: () => setEditorZoomInternal(1.2) },
+                  { label: '150%', onClick: () => setEditorZoomInternal(1.5) },
+                  { label: '200%', onClick: () => setEditorZoomInternal(2.0) }
+                ]}
+                onClose={() => setZoomMenu({ ...zoomMenu, visible: false })}
               />
             </div>
           </div>,

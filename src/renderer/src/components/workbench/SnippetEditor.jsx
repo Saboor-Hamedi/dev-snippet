@@ -18,6 +18,7 @@ import { generatePreviewHtml } from '../../utils/previewGenerator'
 import { makeDraggable } from '../../utils/draggable.js'
 import UniversalModal from '../universal/UniversalModal'
 import { useUniversalModal } from '../universal/useUniversalModal'
+import PinPopover from './sidebar/PinPopover'
 import '../universal/universalStyle.css'
 
 const SnippetEditor = ({
@@ -34,7 +35,11 @@ const SnippetEditor = ({
   isCompact,
   onToggleCompact,
   showPreview,
-  snippets = []
+  snippets = [],
+  pinPopover,
+  setPinPopover,
+  onPing,
+  onFavorite
 }) => {
   const [code, setCode] = useState(initialSnippet?.code || '')
   const [isDirty, setIsDirty] = useState(false)
@@ -487,11 +492,13 @@ const SnippetEditor = ({
   const handleOpenMiniPreview = useCallback(async () => {
     const fullHtml = await generateFullHtml()
     if (window.api?.invoke) {
-      // Assuming there's a mini preview API, fallback to external if not
-      await window.api.invoke('shell:previewInMiniBrowser', fullHtml).catch(() => {
-        // Fallback to external preview
-        return window.api.invoke('shell:previewInBrowser', fullHtml)
-      })
+      if (window.api?.invoke) {
+        // Use the internal window IPC handler for the mini browser
+        await window.api.invoke('window:openMiniBrowser', fullHtml).catch(() => {
+          // Fallback to external preview
+          return window.api.invoke('shell:previewInBrowser', fullHtml)
+        })
+      }
     }
   }, [generateFullHtml])
 
@@ -794,6 +801,12 @@ const SnippetEditor = ({
         fullHtml = tempDiv.innerHTML
       }
 
+      // Robust cleanup using DOMParser to ensure no scripts/styles leak to Word
+      const parser = new DOMParser()
+      const doc = parser.parseFromString(fullHtml, 'text/html')
+      doc.querySelectorAll('script, style, link').forEach((el) => el.remove())
+      fullHtml = doc.body.innerHTML || doc.documentElement.innerHTML
+
       if (window.api?.invoke) {
         const sanitizedTitle = (title || 'snippet').replace(/[^a-z0-9]/gi, '_').toLowerCase()
         const success = await window.api.invoke('export:word', fullHtml, sanitizedTitle)
@@ -959,27 +972,21 @@ const SnippetEditor = ({
               }
               right={
                 <div
-                  className="h-full w-full p-0 flex justify-center bg-[var(--color-bg-primary)] cursor-text overflow-y-auto text-left items-start"
+                  className="h-full w-full p-0 flex justify-center bg-[var(--color-bg-primary)] cursor-text overflow-hidden text-left items-stretch"
                   onDoubleClick={() => {
-                    // Disable "Double click to edit" in strictly Reading Mode
                     if (activeMode === 'reading') return
-
-                    // "Double click to edit" behavior for Live Preview
-                    // Dispatching the toggle event to revert/switch state.
                     window.dispatchEvent(new CustomEvent('app:toggle-preview'))
                   }}
                 >
-                  <div className="w-full max-w-[850px] min-h-full shadow-sm py-8 px-8">
+                  <div className="w-full max-w-[850px] h-full shadow-sm flex flex-col pt-8 px-8">
                     {useMemo(() => {
                       const safeTitle = typeof title === 'string' ? title : ''
                       const ext = safeTitle.includes('.')
                         ? safeTitle.split('.').pop()?.toLowerCase()
                         : null
 
-                      // Default detection from extension
                       let detectedLang = ext || 'plaintext'
 
-                      // Heuristic: If untitled/no-extension, check content for Markdown indicators
                       if (!ext && debouncedCode) {
                         const trimmed = debouncedCode.trim()
                         if (
@@ -996,16 +1003,18 @@ const SnippetEditor = ({
                       }
 
                       return (
-                        <LivePreview
-                          code={debouncedCode}
-                          language={detectedLang}
-                          snippets={snippets}
-                          theme={currentTheme}
-                          fontFamily={settings?.editor?.fontFamily}
-                          onOpenExternal={handleOpenExternalPreview}
-                          onOpenMiniPreview={handleOpenMiniPreview}
-                          onExportPDF={handleExportPDF}
-                        />
+                        <div className="flex-1 w-full min-h-0">
+                          <LivePreview
+                            code={debouncedCode}
+                            language={detectedLang}
+                            snippets={snippets}
+                            theme={currentTheme}
+                            fontFamily={settings?.editor?.fontFamily}
+                            onOpenExternal={handleOpenExternalPreview}
+                            onOpenMiniPreview={handleOpenMiniPreview}
+                            onExportPDF={handleExportPDF}
+                          />
+                        </div>
                       )
                     }, [
                       debouncedCode,
@@ -1211,6 +1220,17 @@ const SnippetEditor = ({
           >
             {uniContent}
           </UniversalModal>
+
+          {/* Pin Popover rendered inside the editor when triggered */}
+          {pinPopover?.visible && initialSnippet && (
+            <PinPopover
+              isCentered={true}
+              snippet={initialSnippet}
+              onClose={() => setPinPopover?.({ ...pinPopover, visible: false })}
+              onPing={onPing}
+              onFavorite={onFavorite}
+            />
+          )}
         </div>
       )}
     </>

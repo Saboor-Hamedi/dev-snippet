@@ -12,6 +12,8 @@
         padding: 0;
         overflow-x: hidden !important;
         background-color: transparent !important;
+        height: 100vh !important;
+        min-height: 100vh !important;
         font-family:
           system-ui,
           -apple-system,
@@ -101,6 +103,18 @@
             // Apply highlighting
             hljs.highlightElement(block)
           }
+        })
+      }
+
+      // Tab Switching Logic (Global)
+      window.switchTab = (id, index) => {
+        const container = document.querySelector(`[data-id="${id}"]`)
+        if (!container) return
+        container.querySelectorAll('.tab-btn').forEach((btn, i) => {
+          btn.classList.toggle('active', i === index)
+        })
+        container.querySelectorAll('.tab-pane').forEach((pane, i) => {
+          pane.classList.toggle('active', i === index)
         })
       }
 

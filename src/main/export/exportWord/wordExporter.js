@@ -15,16 +15,15 @@ export async function exportSnippetsToWord(snippets, outputPath) {
   try {
     const md = new MarkdownIt()
 
-    let html = `<html>
-<head>
-<style>
-body { font-family: Arial, sans-serif; margin: 20px; }
-h1 { color: #333; }
-pre { background: #f4f4f4; padding: 10px; border-radius: 4px; }
-code { font-family: 'Courier New', monospace; }
-</style>
-</head>
-<body>`
+    let html = `
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="UTF-8" />
+          <title>Export</title>
+        </head>
+        <body>
+    `
 
     for (const snippet of snippets) {
       html += `<h1>${snippet.title || 'Untitled'}</h1>`

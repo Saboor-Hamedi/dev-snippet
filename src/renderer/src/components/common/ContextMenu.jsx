@@ -6,6 +6,32 @@ import PropTypes from 'prop-types'
  */
 const ContextMenu = ({ x, y, items, onClose }) => {
   const menuRef = useRef(null)
+  const [style, setStyle] = React.useState({ opacity: 0, visibility: 'hidden' })
+
+  React.useLayoutEffect(() => {
+    if (menuRef.current) {
+      const height = menuRef.current.offsetHeight
+      const width = menuRef.current.offsetWidth || 200
+
+      const spaceAbove = y
+      const spaceBelow = window.innerHeight - y
+
+      let finalY = y
+      let finalX = Math.min(x, window.innerWidth - width - 10)
+
+      // If not enough space below, and more space above, flip it
+      if (spaceBelow < height && spaceAbove > spaceBelow) {
+        finalY = y - height
+      }
+
+      setStyle({
+        left: `${finalX}px`,
+        top: `${finalY}px`,
+        opacity: 1,
+        visibility: 'visible'
+      })
+    }
+  }, [x, y, items])
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -29,20 +55,15 @@ const ContextMenu = ({ x, y, items, onClose }) => {
     }
   }, [onClose])
 
-  // Simple boundary detection (prevent menu from going off-screen)
-  const menuX = Math.min(x, window.innerWidth - 200)
-  const menuY = Math.min(y, window.innerHeight - 300)
-
   return (
     <div
       ref={menuRef}
-      className="fixed z-[9999] min-w-[200px] rounded-md border shadow-2xl backdrop-blur-xl py-1 animate-in fade-in zoom-in-95 duration-75 ease-out select-none"
+      className="fixed z-[9999] min-w-[200px] rounded-[5px] border py-1 animate-in fade-in zoom-in-95 duration-75 ease-out select-none"
       style={{
-        left: `${menuX}px`,
-        top: `${menuY}px`,
-        backgroundColor: 'var(--color-bg-tertiary)',
+        ...style,
+        backgroundColor: 'var(--color-bg-tertiary, #1e1e1e)',
         borderColor: 'var(--color-border)',
-        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)'
+        boxShadow: '0 12px 32px rgba(0, 0, 0, 0.6)' // Matching UniversalModal shadow
       }}
     >
       <div className="flex flex-col">

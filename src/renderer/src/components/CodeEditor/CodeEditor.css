@@ -59,10 +59,9 @@
 /* VS CODE STYLE: Active Line Background (Base) */
 .cm-editor .cm-activeLine {
   /* background-color: var(--active-line-bg) !important; */
-    background-color: transparent !important;
+  background-color: transparent !important;
   border-left: var(--active-line-border-width, 0px) solid var(--caret-color, #ffffff) !important;
-  box-shadow: inset var(--active-line-border-width, 0px) 0
-
+  box-shadow: inset var(--active-line-border-width, 0px) 0;
 }
 
 /* VS CODE BEHAVIOR: Hide active line background and indicator when text is selected */
@@ -122,9 +121,9 @@
 /* Layout Reset: Ensure no global CSS affects the editor internals */
 .cm-content {
   margin: 0 !important;
-  /* padding: 0 !important;  <-- REMOVED: This breaks internal CM measurements if it overrides theme padding */
   line-height: 1.6 !important;
   box-sizing: border-box !important;
+  padding-bottom: 120px !important; /* Added space at bottom of editor */
 }
 
 /* Removed destructive display:block !important on .cm-content pre/code/cm-codeBlock - this breaks CM layout engine */

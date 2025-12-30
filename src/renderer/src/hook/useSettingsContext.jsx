@@ -75,14 +75,14 @@ export const SettingsProvider = ({ children }) => {
   const setZoom = (value) => {
     setZoomInternal((prev) => {
       const next = typeof value === 'function' ? value(prev) : value
-      return clamp(roundTo(next, 1), MIN_ZOOM, MAX_ZOOM)
+      return clamp(roundTo(next, 2), MIN_ZOOM, MAX_ZOOM)
     })
   }
 
   const setEditorZoom = (value) => {
     setEditorZoomInternal((prev) => {
       const next = typeof value === 'function' ? value(prev) : value
-      return clamp(roundTo(next, 1), MIN_ZOOM, MAX_ZOOM)
+      return clamp(roundTo(next, 2), MIN_ZOOM, MAX_ZOOM)
     })
   }
 

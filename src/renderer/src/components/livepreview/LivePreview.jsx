@@ -99,6 +99,7 @@ const LivePreview = ({
   useEffect(() => {
     const iframe = iframeRef.current
     if (!iframe) return
+
     const syncContent = () => {
       // Find current theme definition
       const currentThemeObj = themes.find((t) => t.id === theme) || themes[0]
@@ -116,11 +117,35 @@ const LivePreview = ({
       const fontOverride = `
     html, body {
       background-color: transparent !important;
+      min-height: 100vh !important;
+      height: 100% !important;
+      width: 100% !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      display: flex;
+      flex-direction: column;
+    }
+    .preview-container {
+      flex: 1;
+      width: 100% !important;
+      min-height: 100vh !important;
+      display: flex;
+      flex-direction: column;
+    }
+    .markdown-body {
+      flex: 1;
+      width: 100% !important;
+      min-height: 100vh !important;
+      padding-bottom: 2rem !important;
     }
     .markdown-body, .mermaid-wrapper, .mermaid-diagram, .actor, .node label { 
       font-family: ${fontFamily}, sans-serif !important; 
-      color: var(--color-text-primary);
+      color: var(--color-text-primary, ${isDark ? '#e6edf3' : '#1f2328'}) !important;
       transition: color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      z-index: 10;
     }
         .preview-container {
           transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -762,10 +787,9 @@ const LivePreview = ({
       iframe.removeEventListener('load', syncContent)
       window.removeEventListener('message', handleReady)
     }
-  }, [html, theme, isDark, fontFamily])
+  }, [html, theme, isDark, fontFamily, editorZoom])
 
   useEffect(() => {
-    // ... (Lines 181-200 unchanged)
     const handleMessage = (event) => {
       if (event.data?.type === 'app:open-external' && event.data.url) {
         if (window.api && window.api.openExternal) window.api.openExternal(event.data.url)
@@ -910,13 +934,13 @@ const LivePreview = ({
         </div>
       )}
       <div
-        className="flex-1 overflow-hidden"
+        className="flex-1 w-full h-full min-h-0 relative"
         style={{ backgroundColor: isDark ? 'transparent' : '#ffffff' }}
       >
         <iframe
           ref={iframeRef}
           title="Live Preview"
-          className="w-full h-full border-none"
+          className="w-full h-full border-none absolute inset-0"
           sandbox="allow-scripts allow-modals allow-popups"
           src="preview.html"
         />
@@ -935,7 +959,8 @@ LivePreview.propTypes = {
   onOpenExternal: PropTypes.func,
   onOpenMiniPreview: PropTypes.func,
   onExportPDF: PropTypes.func,
-  enableScrollSync: PropTypes.bool
+  enableScrollSync: PropTypes.bool,
+  showHeader: PropTypes.bool
 }
 
 export default React.memo(LivePreview)

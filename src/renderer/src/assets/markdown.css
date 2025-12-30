@@ -92,7 +92,7 @@
   margin: 0 auto;
   padding: 45px;
   background-color: transparent !important;
-  font-size: 12px !important;
+  font-size: var(--editor-font-size, 14px) !important;
 }
 
 /* Force pure black scrollbar for Minimal Gray */
@@ -107,7 +107,7 @@ html[data-theme='minimal-gray'] ::-webkit-scrollbar-track {
 }
 
 .markdown-body ::selection {
-  background-color: rgba(var(--color-accent-primary-rgb), 0.2) !important;
+  background-color: rgba(var(--color-accent-primary-rgb, 88, 166, 255), 0.3) !important;
   color: inherit !important;
 }
 
@@ -218,29 +218,28 @@ html[data-theme='minimal-gray'] ::-webkit-scrollbar-track {
 }
 
 .markdown-body h1 {
-  font-size: 16px !important;
+  font-size: 1.8em !important;
   padding-bottom: 0.3em !important;
   border-bottom: 1px solid var(--color-border, #30363d) !important;
   margin-top: 0 !important; /* Top header should be flush */
 }
 
 .markdown-body h2 {
-  font-size: 14px !important;
+  font-size: 1.4em !important;
   padding-bottom: 0.3em !important;
   border-bottom: 1px solid var(--color-border, #30363d) !important;
 }
-
 .markdown-body h3 {
-  font-size: 13px !important;
+  font-size: 1.2em !important;
 }
 .markdown-body h4 {
-  font-size: 12px !important;
+  font-size: 1.1em !important;
 }
 .markdown-body h5 {
-  font-size: 11px !important;
+  font-size: 1em !important;
 }
 .markdown-body h6 {
-  font-size: 10px !important;
+  font-size: 0.9em !important;
   color: var(--color-text-secondary, #8b949e) !important;
 }
 
@@ -248,9 +247,14 @@ html[data-theme='minimal-gray'] ::-webkit-scrollbar-track {
 .markdown-body p {
   margin: 0.5rem 0 !important; /* Reduced from 1.25rem for tighter spacing */
   color: var(--color-text-primary, #e6edf3) !important;
-  line-height: 1.6 !important; /* Slightly tighter line height */
+  line-height: 1.8 !important; /* Slightly tighter line height */
 }
 
+.markdown-body p,
+.markdown-body li {
+  line-height: 1.8 !important;
+  margin-bottom: 1.25em !important;
+}
 .markdown-body ul,
 .markdown-body ol {
   padding-left: 2em !important;
@@ -273,6 +277,29 @@ html[data-theme='minimal-gray'] ::-webkit-scrollbar-track {
 }
 .markdown-body ol {
   list-style-type: decimal !important;
+}
+
+.preview-quicklink {
+  color: var(--color-accent-primary, #58a6ff) !important;
+  cursor: pointer !important;
+  font-weight: 600 !important;
+  padding: 1px 4px !important;
+  margin: 0 1px !important;
+  border-radius: 4px !important;
+  background-color: rgba(var(--color-accent-primary-rgb, 88, 166, 255), 0.1) !important;
+  transition: all 0.2s ease !important;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.preview-quicklink:hover {
+  background-color: rgba(var(--color-accent-primary-rgb, 88, 166, 255), 0.2) !important;
+  text-decoration: underline !important;
+}
+
+.preview-quicklink.is-ghost {
+  color: var(--color-text-tertiary, #8b949e) !important;
+  font-style: italic !important;
 }
 
 /* Horizontal Rules - Subtle & Elegant */
@@ -363,6 +390,33 @@ html[data-theme='minimal-gray'] ::-webkit-scrollbar-track {
 .hljs-doctag {
   color: var(--color-syntax-keyword, #c678dd) !important;
   font-weight: 600 !important;
+}
+
+.preview-tag,
+.preview-mention {
+  color: var(--color-accent-secondary, #a371f7) !important;
+  background-color: rgba(163, 113, 247, 0.1) !important;
+  padding: 1px 5px !important;
+  margin: 0 2px !important;
+  border-radius: 6px !important;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.9em;
+  font-weight: 600 !important;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.preview-tag:hover,
+.preview-mention:hover {
+  background-color: rgba(163, 113, 247, 0.2) !important;
+  transform: translateY(-1px);
+}
+
+.preview-mention {
+  color: var(--color-accent-primary, #58a6ff) !important;
+  background-color: rgba(88, 166, 255, 0.1) !important;
 }
 
 .hljs-string,

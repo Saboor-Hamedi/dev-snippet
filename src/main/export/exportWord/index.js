@@ -23,7 +23,19 @@ export function registerWordExportHandler(app) {
         // Convert HTML to DOCX
         const HTMLToDOCX = (await import('html-to-docx')).default
         console.log('📝 [Word Export] Converting HTML to DOCX...')
-        const buffer = await HTMLToDOCX(htmlOrSnippets, null, {
+
+        // Strip <style> and <script> tags and their content from the HTML to prevent them appearing as text
+        let cleanHtml = htmlOrSnippets
+          .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+          .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+
+        // Also try to extract just the body content if possible, to be safe
+        const bodyMatch = cleanHtml.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
+        if (bodyMatch && bodyMatch[1]) {
+          cleanHtml = bodyMatch[1]
+        }
+
+        const buffer = await HTMLToDOCX(cleanHtml, null, {
           title: defaultName,
           description: 'Exported snippet',
           styles: `
@@ -35,7 +47,6 @@ export function registerWordExportHandler(app) {
         })
         console.log('💾 [Word Export] Writing file to:', filePath)
         await fs.writeFile(filePath, buffer)
-        console.log('✅ [Word Export] File written successfully')
       } else {
         // All snippets export
         const { filePath: fp, canceled } = await dialog.showSaveDialog({

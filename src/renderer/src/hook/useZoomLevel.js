@@ -4,4 +4,4 @@
  */
 export const MIN_ZOOM = 0.5
 export const MAX_ZOOM = 3.0
-export const ZOOM_STEP = 0.1 // Smooth VS Code-like increments
+export const ZOOM_STEP = 0.05 // Smoother increments (5%)

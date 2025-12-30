@@ -96,6 +96,12 @@ const buildExtensions = async (options, handlers = {}) => {
         color: 'var(--color-syntax-punctuation, #8b949e)'
       },
       { tag: t.heading, color: 'var(--color-accent-primary, #58a6ff)', fontWeight: 'bold' },
+      { tag: t.heading1, fontSize: '1.8em' },
+      { tag: t.heading2, fontSize: '1.4em' },
+      { tag: t.heading3, fontSize: '1.2em' },
+      { tag: t.heading4, fontSize: '1.1em' },
+      { tag: t.heading5, fontSize: '1em' },
+      { tag: t.heading6, fontSize: '0.9em' },
       { tag: t.link, color: 'var(--color-accent-secondary, #58a6ff)', textDecoration: 'underline' }
     ])
 
