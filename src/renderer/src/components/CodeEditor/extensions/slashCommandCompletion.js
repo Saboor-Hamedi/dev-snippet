@@ -1,160 +1,215 @@
 /**
- * Notion-style Slash Command Autocompletion for CodeMirror 6.
- * Triggers when typing "/" and suggests markdown templates and components.
+ * SlashCommandCompletion - A premium autocomplete provider for CodeMirror 6.
+ *
+ * This module allows users to type "/" to trigger a command menu, similar to Notion or Obsidian.
+ * It supports both static snippets (like headers) and dynamic triggers that open interactive
+ * modals (like the Mermaid or Table editors).
  */
 
+/**
+ * COMMANDS - The library of available slash triggers.
+ * Each entry includes its UI representation (label, display, icon)
+ * and its functional template or modal trigger logic.
+ */
 const COMMANDS = [
+  // --- Basic Markdown Blocks ---
   {
-    label: 'Heading 1',
+    label: '/h1 Heading 1',
+    display: 'Heading 1',
     detail: 'Large section heading',
     section: 'Basic Blocks',
     template: '# ',
     icon: 'H1'
   },
   {
-    label: 'Heading 2',
+    label: '/h2 Heading 2',
+    display: 'Heading 2',
     detail: 'Medium section heading',
     section: 'Basic Blocks',
     template: '## ',
     icon: 'H2'
   },
   {
-    label: 'Heading 3',
+    label: '/h3 Heading 3',
+    display: 'Heading 3',
     detail: 'Small section heading',
     section: 'Basic Blocks',
     template: '### ',
     icon: 'H3'
   },
   {
-    label: 'Checklist',
+    label: '/todo Checklist',
+    display: 'Checklist',
     detail: 'Task list with checkboxes',
     section: 'Basic Blocks',
     template: '- [ ] ',
     icon: '☑️'
   },
   {
-    label: 'Bulleted List',
+    label: '/list Bulleted List',
+    display: 'Bulleted List',
     detail: 'Simple bullet list',
     section: 'Basic Blocks',
     template: '- ',
     icon: '•'
   },
   {
-    label: 'Numbered List',
+    label: '/num Numbered List',
+    display: 'Numbered List',
     detail: 'Ordered list',
     section: 'Basic Blocks',
     template: '1. ',
     icon: '1.'
   },
   {
-    label: 'Quote',
+    label: '/quote Quote',
+    display: 'Quote',
     detail: 'Blockquote for emphasis',
     section: 'Basic Blocks',
     template: '> ',
     icon: '"'
   },
   {
-    label: 'Code Block',
-    detail: 'Syntax highlighted code',
+    label: '/code Code Block',
+    display: 'Generic Code',
+    detail: 'Simple code block',
     section: 'Basic Blocks',
-    template: '\n```js\n\n```\n',
+    template: '\n```\n\n```\n',
     icon: '</>'
   },
   {
-    label: 'Table',
-    detail: 'Professional GFM table',
+    label: '/js Javascript',
+    display: 'Javascript',
+    detail: 'Highlighted JS block',
     section: 'Basic Blocks',
-    template:
-      '\n| Column 1 | Column 2 | Column 3 |\n| -------- | -------- | -------- |\n|          |          |          |\n|          |          |          |\n',
+    template: '\n```js\n\n```\n',
+    icon: 'JS'
+  },
+  {
+    label: '/py Python',
+    display: 'Python',
+    detail: 'Highlighted Python block',
+    section: 'Basic Blocks',
+    template: '\n```py\n\n```\n',
+    icon: 'PY'
+  },
+  {
+    label: '/sql SQL Query',
+    display: 'SQL Query',
+    detail: 'Database syntax block',
+    section: 'Basic Blocks',
+    template: '\n```sql\n\n```\n',
+    icon: 'SQL'
+  },
+
+  // --- Advanced Components & Modals ---
+  {
+    label: '/table Table Editor',
+    display: 'Table Editor',
+    detail: 'Visual data management',
+    section: 'Basic Blocks',
+    template: '| Col | Col |\n| --- | --- |\n| | |',
     icon: '田'
   },
   {
-    label: 'Kanban Board',
-    detail: 'Visual project board',
+    label: '/mermaid Mermaid Diagram',
+    display: 'Mermaid Diagram',
+    detail: 'Flowcharts & smart charts',
     section: 'Advanced Layouts',
-    template:
-      '\n[kanban]\n## To Do\n- [ ] Task 1\n## In Progress\n- [ ] Task 2\n## Done\n- [x] Task 3\n[/kanban]\n',
-    icon: '📋'
-  },
-  {
-    label: 'Tabbed View',
-    detail: 'Switchable content tabs',
-    section: 'Advanced Layouts',
-    template: '\n[tabs]\n[tab: Tab 1]\nContent One\n[tab: Tab 2]\nContent Two\n[/tabs]\n',
-    icon: '📑'
-  },
-  {
-    label: 'Grid Layout',
-    detail: 'Multi-column container',
-    section: 'Advanced Layouts',
-    template: '\n[grid: 2]\nColumn One Content\n\nColumn Two Content\n[/grid]\n',
-    icon: '⊞'
-  },
-  {
-    label: 'Timeline',
-    detail: 'Vertical roadmap',
-    section: 'Advanced Layouts',
-    template: '\n[timeline]\n2024: Project Kickoff\n2025: Global Launch\n[/timeline]\n',
-    icon: '⏳'
-  },
-  {
-    label: 'Mermaid Chart',
-    detail: 'Smart diagrams & logic',
-    section: 'Advanced Layouts',
-    template: '\n```mermaid\ngraph TD\n  A[Start] --> B(Decision)\n  B --> C{End}\n```\n',
+    template: '\n```mermaid\ngraph TD\n  A[Start] --> B(Decision)\n```\n',
     icon: '📊'
   },
   {
-    label: 'File Tree',
+    label: '/kanban Kanban Board',
+    display: 'Kanban Board',
+    detail: 'Visual project board',
+    section: 'Advanced Layouts',
+    template: '\n[kanban]\n## To Do\n- [ ] Task 1\n[/kanban]\n',
+    icon: '📋'
+  },
+  {
+    label: '/tabs Tabbed View',
+    display: 'Tabbed View',
+    detail: 'Switchable content tabs',
+    section: 'Advanced Layouts',
+    template: '\n[tabs]\n[tab: Tab 1]\nContent One\n[/tabs]\n',
+    icon: '📑'
+  },
+  {
+    label: '/grid Grid Layout',
+    display: 'Grid Layout',
+    detail: 'Multi-column container',
+    section: 'Advanced Layouts',
+    template: '\n[grid: 2]\nCol 1\n\nCol 2\n[/grid]\n',
+    icon: '⊞'
+  },
+  {
+    label: '/timeline Timeline',
+    display: 'Timeline',
+    detail: 'Vertical roadmap',
+    section: 'Advanced Layouts',
+    template: '\n[timeline]\n2024: Start\n[/timeline]\n',
+    icon: '⏳'
+  },
+  {
+    label: '/tree File Tree',
+    display: 'File Tree',
     detail: 'Document directory structure',
     section: 'Advanced Layouts',
-    template: '\n[tree]\nsrc/\n  components/\n    Editor.jsx\n  main.js\n[/tree]\n',
+    template: '\n[tree]\nsrc/\n  main.js\n[/tree]\n',
     icon: '📁'
   },
   {
-    label: 'Callout',
+    label: '/info Callout',
+    display: 'Callout',
     detail: 'Styled info/warning box',
     section: 'Components',
     template: '\n::: info\nYour message here\n:::\n',
     icon: '💡'
   },
   {
-    label: 'Badge',
+    label: '/badge Badge',
+    display: 'Badge',
     detail: 'Metadata label',
     section: 'Components',
     template: '[badge: Label | Value | #0366d6]',
     icon: '🏷️'
   },
   {
-    label: 'QR Code',
+    label: '/qr QR Code',
+    display: 'QR Code',
     detail: 'Scannable link',
     section: 'Components',
     template: '[qr: https://]',
     icon: '📱'
   },
   {
-    label: 'Star Rating',
+    label: '/rating Star Rating',
+    display: 'Star Rating',
     detail: '0-5 scale visual',
     section: 'Components',
     template: '[rating: 4.5]',
     icon: '⭐'
   },
   {
-    label: 'Progress Bar',
+    label: '/progress Progress Bar',
+    display: 'Progress Bar',
     detail: 'Completion visualization',
     section: 'Components',
     template: '[progress: 75%]',
     icon: '▓'
   },
   {
-    label: 'Sparkline',
+    label: '/spark Sparkline',
+    display: 'Sparkline',
     detail: 'Mini trendline chart',
     section: 'Components',
     template: '[spark: 10,20,50,30,90]',
     icon: '📈'
   },
   {
-    label: 'Table of Contents',
+    label: '/toc Table of Contents',
+    display: 'TOC',
     detail: 'Automatic [TOC]',
     section: 'Components',
     template: '[TOC]\n',
@@ -162,77 +217,115 @@ const COMMANDS = [
   }
 ]
 
+/**
+ * slashCommandCompletionSource - The entry point for the CodeMirror completion engine.
+ */
 export const slashCommandCompletionSource = (context) => {
-  // 1. Strict Slash Trigger: Only match / if it's at start of line or after space
-  // and NOT followed by another slash (to avoid URLs)
-  const match = context.matchBefore(/(?:^|\s)\/\w*$/)
+  // We trigger as soon as the user types "/" and follow it with word characters
+  const match = context.matchBefore(/\/\w*$/)
   if (!match) return null
 
-  // Adjusted from to skip the leading space if present
-  const hasSpace = /^\s/.test(match.text)
-  const from = match.from + (hasSpace ? 1 : 0)
-  const typed = match.text.slice(hasSpace ? 2 : 1).toLowerCase()
-
-  // Prevent double slashes triggering the menu (e.g. https://)
-  if (typed.startsWith('/')) return null
-
-  const filtered = COMMANDS.filter(
-    (cmd) =>
-      !typed || cmd.label.toLowerCase().includes(typed) || cmd.section.toLowerCase().includes(typed)
-  )
-
-  if (filtered.length === 0) return null
-
+  /**
+   * Return the completion object.
+   * from: The position where the "/" starts (so we can replace it).
+   * options: The list of commands transformed for CodeMirror's UI.
+   */
   return {
-    from,
-    options: filtered.map((cmd) => ({
+    from: match.from,
+    options: COMMANDS.map((cmd) => ({
       label: cmd.label,
-      displayLabel: cmd.label,
+      displayLabel: cmd.display,
       detail: cmd.detail,
-      section: { name: cmd.section },
+      section: cmd.section,
       type: 'function',
-      boost: 100,
-      render: (completion, state) => {
+      boost: 99, // High priority to show above standard word completions
+
+      /**
+       * render - Custom UI builder for the completion list.
+       * We create a rich, two-line layout with an icon.
+       */
+      render: (completion) => {
         const container = document.createElement('div')
         container.className = 'cm-slash-option'
-        container.style.display = 'flex'
-        container.style.alignItems = 'center'
-        container.style.width = '100%'
+        container.style.cssText =
+          'display: flex; align-items: center; gap: 10px; padding: 4px 8px; width: 100%; min-width: 280px;'
 
-        const icon = document.createElement('div')
-        icon.className = 'cm-completionIcon'
-        icon.textContent = cmd.icon
+        const iconCol = document.createElement('div')
+        iconCol.style.cssText = 'width: 20px; display: flex; justify-content: center; opacity: 0.8;'
+        iconCol.textContent = cmd.icon
 
-        const labelText = document.createElement('div')
-        labelText.className = 'cm-completionLabel'
-        labelText.textContent = cmd.label
+        const textCol = document.createElement('div')
+        textCol.style.cssText = 'flex: 1; display: flex; flex-direction: column;'
 
-        const detailText = document.createElement('div')
-        detailText.className = 'cm-completionDetail'
-        detailText.textContent = cmd.detail
+        const label = document.createElement('div')
+        label.style.cssText = 'font-weight: 600; font-size: 13px;'
+        label.textContent = cmd.display
 
-        container.appendChild(icon)
-        container.appendChild(labelText)
-        container.appendChild(detailText)
+        const detail = document.createElement('div')
+        detail.style.cssText = 'font-size: 11px; opacity: 0.5;'
+        detail.textContent = cmd.detail
+
+        textCol.appendChild(label)
+        textCol.appendChild(detail)
+        container.appendChild(iconCol)
+        container.appendChild(textCol)
         return container
       },
+
+      /**
+       * apply - Executes the command when selected from the list.
+       */
       apply: (view, completion, from, to) => {
+        /**
+         * SPECIAL CASE: Interactive Modals
+         * If the user selects Mermaid or Table, we open a specialized modal
+         * instead of just inserting a text string.
+         */
+        if (cmd.label.includes('Mermaid') || cmd.label.includes('Table Editor')) {
+          // Clear the "/" trigger text first
+          view.dispatch({ changes: { from, to, insert: '' } })
+
+          // Fire a global event that the Workbench/SnippetEditor listens for
+          window.dispatchEvent(
+            new CustomEvent('app:open-source-modal', {
+              detail: {
+                view,
+                from,
+                to: from,
+                initialCode: cmd.label.includes('Mermaid')
+                  ? '```mermaid\ngraph TD\n  Start --> End\n```'
+                  : '| Header 1 | Header 2 |\n| --- | --- |\n| Cell 1 | Cell 2 |'
+              }
+            })
+          )
+          return
+        }
+
+        // STANDARD CASE: Insert the markdown template
         view.dispatch({
           changes: { from, to, insert: cmd.template },
           selection: { anchor: from + cmd.template.length },
           userEvent: 'input.complete'
         })
 
+        /**
+         * AUTO-CURSORY POSITIONING:
+         * We intelligently move the cursor inside code blocks or callouts
+         * after insertion so the user can start typing immediately.
+         */
         if (cmd.template.includes('```')) {
           const lines = cmd.template.split('\n')
-          const offset = lines[0].length + 1 + lines[1].length
+          // Skip the first ``` line and place cursor at start of second line
+          const offset = lines[0].length + 1 + (lines[1] ? lines[1].length : 0)
           view.dispatch({ selection: { anchor: from + offset } })
         } else if (cmd.template.includes(':::')) {
+          // Place cursor inside the admonition block
           view.dispatch({ selection: { anchor: from + cmd.template.indexOf('\n') + 1 } })
         }
       }
     })),
-    filter: false,
+    // Use CodeMirror's built-in fuzzy filtering
+    filter: true,
     validFor: /^\/\w*$/
   }
 }

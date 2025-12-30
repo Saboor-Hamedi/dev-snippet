@@ -9,7 +9,7 @@ import WelcomePage from '../WelcomePage.jsx'
 import { useStatusBar as StatusBar } from '../layout/StatusBar/useStatusBar'
 import CodeEditor from '../CodeEditor/CodeEditor.jsx'
 import LivePreview from '../livepreview/LivePreview.jsx'
-import Prompt from '../modal/Prompt.jsx'
+import Prompt from '../mermaid/modal/Prompt.jsx'
 import { useSettings, useAutoSave } from '../../hook/useSettingsContext'
 import { useTheme } from '../../hook/useTheme'
 import AdvancedSplitPane from '../splitPanels/AdvancedSplitPane'
@@ -19,6 +19,8 @@ import { makeDraggable } from '../../utils/draggable.js'
 import UniversalModal from '../universal/UniversalModal'
 import { useUniversalModal } from '../universal/useUniversalModal'
 import PinPopover from './sidebar/PinPopover'
+import DiagramEditorModal from '../mermaid/modal/DiagramEditorModal'
+import TableEditorModal from '../table/TableEditorModal'
 import '../universal/universalStyle.css'
 
 const SnippetEditor = ({
@@ -63,6 +65,9 @@ const SnippetEditor = ({
     title: uniTitle,
     content: uniContent,
     footer: uniFooter,
+    width: uniWidth,
+    height: uniHeight,
+    resetPosition: uniResetPosition,
     closeModal: closeUni,
     openModal
   } = useUniversalModal()
@@ -91,8 +96,96 @@ const SnippetEditor = ({
   useEffect(() => {
     const handleSourceModal = (e) => {
       const { view, from, to, initialCode } = e.detail
-      let currentInput = initialCode
+      const oldSlice = view.state.doc.sliceString(from, to).trim()
 
+      const previousSelection = view.state.selection
+      const handleClose = () => {
+        closeUni()
+        // Restore focus and selection to main editor
+        requestAnimationFrame(() => {
+          view.focus()
+          if (previousSelection) {
+            view.dispatch({ selection: previousSelection })
+          }
+        })
+      }
+
+      const onApplyChanges = (newCode) => {
+        let finalCode = newCode.trim()
+
+        // Persistent detection: Check if we are editing a fenced block
+        const hasMermaidFences =
+          oldSlice.startsWith('```mermaid') || initialCode.startsWith('```mermaid')
+        const hasStandardFences = oldSlice.startsWith('```') || initialCode.startsWith('```')
+
+        if (hasMermaidFences) {
+          // If the modal already returned it wrapped, don't double wrap
+          if (!finalCode.startsWith('```mermaid')) {
+            finalCode = '```mermaid\n' + finalCode + '\n```'
+          }
+        } else if (hasStandardFences) {
+          if (!finalCode.startsWith('```')) {
+            const match = (oldSlice || initialCode).match(/^```(\w*)/)
+            const lang = match ? match[1] : ''
+            finalCode = '```' + lang + '\n' + finalCode + '\n```'
+          }
+        }
+
+        window.__suppressNextSourceModal = true
+        view.dispatch({
+          changes: { from, to, insert: finalCode },
+          userEvent: 'input.source.modal'
+        })
+        handleClose()
+      }
+
+      // 1. Detect Mermaid Block
+      const isMermaid = oldSlice.startsWith('```mermaid') || initialCode.startsWith('```mermaid')
+      if (isMermaid) {
+        const innerCode = initialCode.replace(/^```mermaid\n?/, '').replace(/\n?```$/, '')
+        openModal({
+          title: 'Edit Mermaid Diagram',
+          width: '90vw',
+          height: '80vh',
+          resetPosition: true,
+          className: 'no-padding',
+          content: (
+            <DiagramEditorModal
+              initialCode={innerCode}
+              onSave={onApplyChanges}
+              onCancel={handleClose}
+            />
+          ),
+          footer: null
+        })
+        return
+      }
+
+      // 2. Detect Table Block
+      const isTable =
+        (oldSlice.includes('|') && oldSlice.includes('---')) ||
+        (initialCode.includes('|') && initialCode.includes('---'))
+      if (isTable) {
+        openModal({
+          title: 'Visual Table Editor',
+          width: '90vw',
+          height: '80vh',
+          resetPosition: true,
+          className: 'no-padding',
+          content: (
+            <TableEditorModal
+              initialCode={initialCode}
+              onSave={onApplyChanges}
+              onCancel={handleClose}
+            />
+          ),
+          footer: null
+        })
+        return
+      }
+
+      // 3. Fallback: Standard Text/Code Block Modal
+      let currentInput = initialCode
       openModal({
         title: 'Edit Raw Source',
         content: (
@@ -115,41 +208,25 @@ const SnippetEditor = ({
               onChange={(evt) => {
                 currentInput = evt.target.value
               }}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') handleClose()
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                  onApplyChanges(currentInput)
+                }
+              }}
               autoFocus
             />
           </div>
         ),
         footer: (
-          <button
-            className="cm-md-modal-save"
-            onClick={() => {
-              const newCode = currentInput
-              let finalCode = newCode
-              const oldSlice = view.state.doc.sliceString(from, to)
-
-              if (oldSlice.startsWith('```mermaid')) {
-                finalCode = '```mermaid\n' + newCode.trim() + '\n```'
-              } else if (oldSlice.startsWith('```')) {
-                const match = oldSlice.match(/^```(\w*)/)
-                const lang = match ? match[1] : ''
-                finalCode = '```' + lang + '\n' + newCode.trim() + '\n```'
-              }
-
-              // Suppress any immediate re-opening of the source modal that
-              // could be triggered by the editor re-render or focus handlers
-              // after applying changes.
-              window.__suppressNextSourceModal = true
-
-              view.dispatch({
-                changes: { from, to, insert: finalCode },
-                userEvent: 'input.source.modal'
-              })
-
-              closeUni()
-            }}
-          >
-            Apply Changes
-          </button>
+          <div className="flex gap-2">
+            <button className="cm-md-modal-cancel" onClick={handleClose}>
+              Cancel
+            </button>
+            <button className="cm-md-modal-save" onClick={() => onApplyChanges(currentInput)}>
+              Apply Changes
+            </button>
+          </div>
         )
       })
     }
@@ -943,6 +1020,9 @@ const SnippetEditor = ({
                       language={detectedLang}
                       wordWrap={wordWrap}
                       theme={currentTheme}
+                      centered={true}
+                      autoFocus={true}
+                      snippetId={initialSnippet?.id}
                       onChange={(val) => {
                         if (val !== code) {
                           setCode(val || '')
@@ -978,7 +1058,7 @@ const SnippetEditor = ({
                     window.dispatchEvent(new CustomEvent('app:toggle-preview'))
                   }}
                 >
-                  <div className="w-full max-w-[850px] h-full shadow-sm flex flex-col pt-8 px-8">
+                  <div className="w-full max-w-[850px] h-full shadow-sm flex flex-col">
                     {useMemo(() => {
                       const safeTitle = typeof title === 'string' ? title : ''
                       const ext = safeTitle.includes('.')
@@ -1217,6 +1297,9 @@ const SnippetEditor = ({
             onClose={closeUni}
             title={uniTitle}
             footer={uniFooter}
+            width={uniWidth}
+            height={uniHeight}
+            resetPosition={uniResetPosition}
           >
             {uniContent}
           </UniversalModal>

@@ -19,7 +19,7 @@ mermaid.initialize({
   }
 })
 
-const MermaidDiagram = ({ chart }) => {
+const MermaidDiagram = ({ chart, maxHeight }) => {
   const containerRef = useRef(null)
   const [svgContent, setSvgContent] = useState('')
   const [error, setError] = useState(null)
@@ -103,7 +103,8 @@ const MermaidDiagram = ({ chart }) => {
   // The 'setSvgContent' inside the effect will instantly swap the HTML string when ready.
   return (
     <div
-      className="mermaid-container flex justify-center p-4 bg-transparent overflow-x-auto transition-opacity duration-200"
+      className="mermaid-container flex justify-center p-4 bg-transparent overflow-x-auto overflow-y-auto transition-opacity duration-200"
+      style={maxHeight ? { maxHeight } : {}}
       ref={containerRef}
       dangerouslySetInnerHTML={{ __html: svgContent }}
     />

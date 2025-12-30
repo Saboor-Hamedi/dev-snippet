@@ -1,7 +1,7 @@
 import { EditorView, keymap } from '@codemirror/view'
 import { Prec } from '@codemirror/state'
 
-import { EditorMode, editorModeField, setEditorMode } from './state'
+import { EditorMode, editorModeField, setEditorMode, activeLinesField } from './state'
 import { richMarkdownStateField } from './structure'
 import { richMarkdownViewPlugin } from './inline'
 import { inlineRegexPlugin } from './links'
@@ -13,6 +13,7 @@ export { EditorMode, setEditorMode }
 export const richMarkdownExtension = [
   inlineRegexPlugin,
   editorModeField,
+  activeLinesField,
   richMarkdownStateField,
   richMarkdownViewPlugin,
   readingModeLayoutPlugin,

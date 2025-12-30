@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
+import * as React from 'react'
 import useCursorProp from '../../hook/settings/useCursorProp.js'
 import useGutterProp from '../../hook/settings/useGutterProp.js'
 import { useSettings } from '../../hook/useSettingsContext'
@@ -22,6 +23,8 @@ const debounce = (func, wait) => {
   }
 }
 
+import { saveCursorPosition, getCursorPosition } from '../../utils/persistentPosition'
+
 const CodeEditor = ({
   value,
   onChange,
@@ -35,7 +38,11 @@ const CodeEditor = ({
   snippets = [],
   language = 'markdown',
   theme = 'midnight-pro',
-  onCursorChange
+  onCursorChange,
+  isDark: forcedIsDark = undefined,
+  autoFocus = false,
+  centered = false, // Default to false for modals/smaller views
+  snippetId = null
 }) => {
   // Zoom level is now managed globally by useZoomLevel at the root/SettingsProvider level.
   // Individual components consume the result via CSS variables.
@@ -65,7 +72,7 @@ const CodeEditor = ({
     getSetting('editor.fontFamily') || "'JetBrains Mono', 'Fira Code', Consolas, monospace"
 
   const viewRef = useRef(null)
-  const [isDark, setIsDark] = useState(false)
+  const [isDark, setIsDark] = useState(forcedIsDark ?? false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [lastSearchQuery, setLastSearchQuery] = useState('')
 
@@ -74,6 +81,11 @@ const CodeEditor = ({
 
   // Detect dark mode
   useEffect(() => {
+    if (forcedIsDark !== undefined) {
+      setIsDark(forcedIsDark)
+      return
+    }
+
     if (typeof document === 'undefined') return
 
     const updateTheme = () => {
@@ -96,7 +108,7 @@ const CodeEditor = ({
     })
 
     return () => observer.disconnect()
-  }, [])
+  }, [forcedIsDark])
 
   // Listen for focus-editor event (from backup, etc.)
   useEffect(() => {
@@ -165,6 +177,11 @@ const CodeEditor = ({
               const line = state.doc.lineAt(pos)
               const col = pos - line.from + 1
               if (onCursorChange) onCursorChange({ line: line.number, col })
+
+              // Persist cursor position
+              if (snippetId) {
+                saveCursorPosition(snippetId, state.selection.main)
+              }
             }
           }
         }
@@ -363,7 +380,7 @@ const CodeEditor = ({
 
   return (
     <div
-      className="cm-editor-container h-full relative"
+      className={`cm-editor-container h-full relative ${centered ? 'is-centered' : 'is-full-width'}`}
       data-cursor-blinking={cursorBlinking.toString()}
       data-caret-shape={cursorShape}
       style={{
@@ -391,6 +408,26 @@ const CodeEditor = ({
         onCreateEditor={(view) => {
           viewRef.current = view
 
+          // Restore cursor position for this snippet
+          if (snippetId) {
+            try {
+              const saved = getCursorPosition(snippetId)
+              if (
+                saved &&
+                typeof saved.anchor === 'number' &&
+                saved.anchor <= view.state.doc.length &&
+                saved.head <= view.state.doc.length
+              ) {
+                view.dispatch({
+                  selection: { anchor: saved.anchor, head: saved.head },
+                  scrollIntoView: true
+                })
+              }
+            } catch (e) {
+              console.warn('[CodeEditor] Failed to restore cursor:', e)
+            }
+          }
+
           // SCROLL SYNC: Dispatch scroll events to LivePreview
           if (view?.scrollDOM) {
             view.scrollDOM.addEventListener('scroll', () => {
@@ -406,6 +443,7 @@ const CodeEditor = ({
             onEditorReady(view)
           }
         }}
+        autoFocus={autoFocus}
         editable={!readOnly}
       />
 

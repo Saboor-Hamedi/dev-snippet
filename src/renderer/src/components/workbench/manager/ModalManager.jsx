@@ -3,11 +3,11 @@ import PropTypes from 'prop-types'
 // NOTE: `useSettings` is intentionally not imported here to avoid accessing context outside provider
 
 // Lazy load modals
-const Prompt = lazy(() => import('../../modal/Prompt'))
+const Prompt = lazy(() => import('../../mermaid/modal/Prompt'))
 const CommandPalette = lazy(() => import('../../CommandPalette'))
 const ImageExportModal = lazy(() => import('../../CodeEditor/ImageExport/ImageExportModal'))
 const SettingsModal = lazy(() => import('../../SettingsModal'))
-const TrashModal = lazy(() => import('../../modal/TrashModal'))
+const TrashModal = lazy(() => import('../../mermaid/modal/TrashModal'))
 
 import { ModalContext } from './ModalContext'
 

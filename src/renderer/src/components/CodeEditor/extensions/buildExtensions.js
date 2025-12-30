@@ -102,7 +102,17 @@ const buildExtensions = async (options, handlers = {}) => {
       { tag: t.heading4, fontSize: '1.1em' },
       { tag: t.heading5, fontSize: '1em' },
       { tag: t.heading6, fontSize: '0.9em' },
-      { tag: t.link, color: 'var(--color-accent-secondary, #58a6ff)', textDecoration: 'underline' }
+      { tag: t.link, color: 'var(--color-accent-secondary, #58a6ff)', textDecoration: 'underline' },
+      { tag: t.strong, fontWeight: 'bold' },
+      { tag: t.emphasis, fontStyle: 'italic' },
+      { tag: t.strikethrough, textDecoration: 'line-through' },
+      {
+        tag: t.monospace,
+        color: 'var(--color-accent-primary, #58a6ff)',
+        backgroundColor: 'rgba(88, 166, 255, 0.1)',
+        padding: '1px 4px',
+        borderRadius: '4px'
+      }
     ])
 
     // Basic UI Extensions
@@ -112,7 +122,8 @@ const buildExtensions = async (options, handlers = {}) => {
     // full-line background highlighting on single click. Background
     // indicator is managed via theme CSS instead.
     exts.push(indentOnInput())
-    exts.push(closeBrackets())
+    // Exclude backticks from auto-closing as per user request
+    exts.push(closeBrackets({ brackets: ['(', '[', '{', "'", '"'] }))
     exts.push(bracketMatching())
     exts.push(syntaxHighlighting(premiumHighlightStyle, { fallback: true }))
     exts.push(history())

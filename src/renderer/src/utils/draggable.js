@@ -19,6 +19,18 @@ export const makeDraggable = (el, handle, onDragEnd) => {
     if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return
 
     e.preventDefault()
+
+    // Pin current position and clear margin to prevent jumping
+    const rect = el.getBoundingClientRect()
+    const parentRect = el.offsetParent
+      ? el.offsetParent.getBoundingClientRect()
+      : { left: 0, top: 0 }
+
+    el.style.left = `${rect.left - parentRect.left}px`
+    el.style.top = `${rect.top - parentRect.top}px`
+    el.style.margin = '0'
+    el.style.position = 'absolute'
+
     pos3 = e.clientX
     pos4 = e.clientY
 
@@ -62,10 +74,8 @@ export const makeDraggable = (el, handle, onDragEnd) => {
     }
   }
 
-  handle.style.cursor = 'move'
   handle.addEventListener('mousedown', mouseDownHandler)
 
-  // Cleanup function
   return () => {
     handle.removeEventListener('mousedown', mouseDownHandler)
     document.removeEventListener('mouseup', mouseUpHandler)

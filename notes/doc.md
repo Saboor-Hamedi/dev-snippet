@@ -12,9 +12,9 @@
 
 It is built on a **Local-First** architecture:
 
-*   **No Cloud Dependency**: All data resides in `app.getPath('userData')`.
-*   **Instant Search**: Full-Text Search (FTS) queries complete in sub-10ms.
-*   **Interoperability**: Data can be exported to standard formats (PDF, DOCX, JSON).
+* **No Cloud Dependency**: All data resides in `app.getPath('userData')`.
+* **Instant Search**: Full-Text Search (FTS) queries complete in sub-10ms.
+* **Interoperability**: Data can be exported to standard formats (PDF, DOCX, JSON).
 
 ---
 
@@ -98,10 +98,10 @@ erDiagram
 
 We use SQLite's **FTS5** extension.
 
-*   **Triggers**: Automatically update the `snippets_fts` shadow table on INSERT/UPDATE/DELETE.
-*   **Query**: Uses `NOT`, `AND`, `OR` operators and `BM25` ranking.
-*   **Tokenizer**: Standard unicode tokenizer.
-*   **Optimization**: Search excludes "Stop Words" (the, a, is) to improve relevance.
+* **Triggers**: Automatically update the `snippets_fts` shadow table on INSERT/UPDATE/DELETE.
+* **Query**: Uses `NOT`, `AND`, `OR` operators and `BM25` ranking.
+* **Tokenizer**: Standard unicode tokenizer.
+* **Optimization**: Search excludes "Stop Words" (the, a, is) to improve relevance.
 
 ---
 
@@ -145,16 +145,16 @@ When you leave a header line, we hide the `#` characters. To prevent the text fr
 
 | State | Visual | Internal |
 | :--- | :--- | :--- |
-| **Editing** | `# Title` | Hash Visible + 0px Padding |
-| **Reading** | `  Title` | Hash Hidden + 2ch Padding |
+| **Editing** | `Title` | Hash Visible + 0px Padding |
+| **Reading** | `Title` | Hash Hidden + 2ch Padding |
 
 ### 4.3 Block Widgets
 
 Complex blocks are rendered as interactive widgets that replace the raw markdown source.
 
-*   **Mermaid**: Async rendered SVG.
-*   **Tables**: Editable Grid.
-*   **Admonitions**: Styled `div` blocks.
+* **Mermaid**: Async rendered SVG.
+* **Tables**: Editable Grid.
+* **Admonitions**: Styled `div` blocks.
 
 ---
 
@@ -208,22 +208,22 @@ sequenceDiagram
 
 If you see `TypeError: Failed to fetch dynamically imported module`:
 
-1.  This indicates the internal Vite graph is desynchronized.
-2.  **Action**: Close the app terminal. Delete the `node_modules/.vite` folder. Restart the app.
+1. This indicates the internal Vite graph is desynchronized.
+2. **Action**: Close the app terminal. Delete the `node_modules/.vite` folder. Restart the app.
 
 ### 6.2 Search Not Returning Results
 
 If FTS fails:
 
-1.  Check if `tags` are empty.
-2.  Ensure words are longer than 2 characters (default SQLite limit).
+1. Check if `tags` are empty.
+2. Ensure words are longer than 2 characters (default SQLite limit).
 
 ### 6.3 Performance on Large Files
 
 The editor handles files up to 50,000 lines comfortably due to:
 
-*   **Viewport Virtualization**: Only the visible 50-100 lines are rendered.
-*   **Incremental Parsing**: `syntaxTree` only re-parses changed regions.
+* **Viewport Virtualization**: Only the visible 50-100 lines are rendered.
+* **Incremental Parsing**: `syntaxTree` only re-parses changed regions.
 
 ---
 

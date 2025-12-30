@@ -14,7 +14,8 @@ const UniversalModal = ({
   footer,
   width = '550px',
   height = 'auto',
-  className = ''
+  className = '',
+  resetPosition = false
 }) => {
   const modalRef = useRef(null)
   const headerRef = useRef(null)
@@ -23,38 +24,45 @@ const UniversalModal = ({
   useEffect(() => {
     if (isOpen && modalRef.current && headerRef.current) {
       const modal = modalRef.current
+      const header = headerRef.current
+      const isLocked = settings?.ui?.universalLock?.modal
 
-      // FORCE RESET if locked (Universal Lock)
-      if (settings?.ui?.universalLock?.modal) {
-        requestAnimationFrame(() => {
-          modal.style.left = `calc(50% - ${parseInt(width) / 2}px)`
-          modal.style.top = `35%`
-          modal.style.transform = 'none'
-          modal.style.position = 'absolute'
-        })
+      // 1. Position Setup
+      if (isLocked || resetPosition) {
+        // Clear styles to let flexbox/CSS center it
+        modal.style.left = ''
+        modal.style.top = ''
+        modal.style.margin = 'auto' // Center in flex
+        modal.style.position = isLocked ? 'relative' : 'absolute'
       } else {
-        // Restore last position or center on first open
-        if (!modal.style.left) {
-          const defaults = {
-            left: `calc(50% - ${parseInt(width) / 2}px)`,
-            top: `35%`
-          }
-          const saved = getPersistentPosition('universal_modal', defaults)
+        const saved = getPersistentPosition('universal_modal', null)
+        if (saved) {
           modal.style.left = saved.left
           modal.style.top = saved.top
+          modal.style.margin = '0'
+          modal.style.position = 'absolute'
+        } else {
+          modal.style.left = ''
+          modal.style.top = ''
+          modal.style.margin = 'auto'
+          modal.style.position = 'absolute'
         }
+      }
 
-        // Enable Dragging with persistence
-        const cleanup = makeDraggable(modal, headerRef.current, (pos) => {
+      // 2. Enable Dragging (unless locked)
+      let cleanup
+      if (!isLocked) {
+        cleanup = makeDraggable(modal, header, (pos) => {
           savePersistentPosition('universal_modal', {
             left: `${pos.x}px`,
             top: `${pos.y}px`
           })
         })
-        return cleanup
       }
+
+      return cleanup
     }
-  }, [isOpen, width, settings?.ui?.universalLock?.modal])
+  }, [isOpen, width, settings?.ui?.universalLock?.modal, resetPosition])
 
   if (!isOpen) return null
 
@@ -77,14 +85,15 @@ const UniversalModal = ({
           style={{ cursor: isDragDisabled ? 'default' : 'move' }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {!isDragDisabled && <GripHorizontal size={16} style={{ opacity: 0.5 }} />}
+            {!isDragDisabled && <GripHorizontal size={14} style={{ opacity: 0.3 }} />}
             <span className="universal-modal-title">{title}</span>
           </div>
-          <button className="universal-modal-close" onClick={onClose}>
-            &times;
-          </button>
         </div>
-        <div className="universal-modal-content">{children}</div>
+        <div
+          className={`universal-modal-content ${className.includes('no-padding') ? 'no-padding' : ''}`}
+        >
+          {children}
+        </div>
         {footer && <div className="universal-modal-footer">{footer}</div>}
       </div>
     </div>,

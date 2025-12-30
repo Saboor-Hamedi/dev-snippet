@@ -1,7 +1,7 @@
 import { ViewPlugin, Decoration, EditorView } from '@codemirror/view'
 import { RangeSetBuilder } from '@codemirror/state'
 import { syntaxTree } from '@codemirror/language'
-import { EditorMode, editorModeField } from './state'
+import { EditorMode, editorModeField, activeLinesField } from './state'
 import { safeLineAt, sortDecorations, hideDeco, headerMarks } from './utils'
 import { CheckboxWidget } from './widgets/CheckboxWidget'
 
@@ -25,19 +25,13 @@ export const richMarkdownViewPlugin = ViewPlugin.fromClass(
     buildDecorations(view) {
       const { state } = view
       const doc = state.doc
-      const selection = state.selection
+      const activeLines = state.field(activeLinesField)
       const mode = state.field(editorModeField)
 
-      if (mode === EditorMode.SOURCE) return Decoration.none
-      if (!doc || doc.length === 0) return Decoration.none
+      //   Read mode
 
-      // Active Lines for Inline Hiding (Standard Obsidian: Click line -> Reveal)
-      const activeLines = new Set()
-      for (const range of selection.ranges) {
-        const lineStart = safeLineAt(doc, range.from).number
-        const lineEnd = safeLineAt(doc, range.to).number
-        for (let i = lineStart; i <= lineEnd; i++) activeLines.add(i)
-      }
+      // Reading Mode & Live Preview: Hide Markdown markers for immersive experience
+      if (!doc || doc.length === 0) return Decoration.none
 
       const collected = []
 
@@ -58,7 +52,10 @@ export const richMarkdownViewPlugin = ViewPlugin.fromClass(
 
               let contentStart = nodeFrom
               // Logic: Hide if NOT Active Line (Obsidian style)
-              if (mode === EditorMode.READING || !activeLines.has(stLine.number)) {
+              if (
+                mode === EditorMode.READING ||
+                (mode === EditorMode.LIVE_PREVIEW && !activeLines.has(stLine.number))
+              ) {
                 const text = doc.sliceString(nodeFrom, nodeTo)
                 const hashMatch = text.match(/^(#{1,6}\s?)/)
                 if (hashMatch) {
@@ -71,56 +68,64 @@ export const richMarkdownViewPlugin = ViewPlugin.fromClass(
                     deco: hideDeco
                   })
 
-                  // Add Padding to content to prevent "Jump"
-                  // Hash is roughly (level + 1) chars (including space).
-                  // Use a class that adds padding-left equal to those chars.
-                  // We define classes .cm-pad-1, .cm-pad-2...
-                  // Or we can use inline style decoration? No, classes are safer.
-                  // Let's assume utils exports padding decos or we assume specific classes exist.
-                  // We will define them in buildTheme.
-
-                  const padDeco = Decoration.mark({ class: `cm-pad-h${level}` })
-                  collected.push({
-                    from: nodeFrom + hashLen,
-                    to: nodeTo,
-                    deco: padDeco
-                  })
+                  // Only add padding in Live Preview to prevent jump when focusing.
+                  // In Reading Mode, we don't need it as there's no editing.
+                  if (mode === EditorMode.LIVE_PREVIEW) {
+                    const padDeco = Decoration.mark({ class: `cm-pad-h${level}` })
+                    collected.push({
+                      from: nodeFrom + hashLen,
+                      to: nodeTo,
+                      deco: padDeco
+                    })
+                  }
 
                   contentStart += hashLen
                 }
               }
 
-              if (contentStart < nodeTo) {
+              if (nodeFrom < nodeTo) {
                 collected.push({
-                  from: contentStart,
+                  from: nodeFrom,
                   to: nodeTo,
                   deco: headerMarks[`h${level}`]
                 })
               }
             }
 
-            // 2. Marks (Bold, Italic, Link, Code)
-            if (
-              ['EmphasisMark', 'StrongMark', 'StrikethroughMark', 'LinkMark', 'CodeMark'].includes(
-                node.name
-              )
-            ) {
-              // Standard Active Line Reveal
-              if (mode === EditorMode.READING || !activeLines.has(stLine.number)) {
-                collected.push({ from: nodeFrom, to: nodeTo, deco: hideDeco })
-              }
+            // 2. Inline Code Styling
+            if (node.name === 'InlineCode') {
+              collected.push({
+                from: nodeFrom,
+                to: nodeTo,
+                deco: Decoration.mark({ class: 'cm-inline-code' })
+              })
             }
 
-            // 3. Fenced Code Marks (Backticks)
-            if (node.name === 'CodeMark') {
-              if (mode === EditorMode.READING || !activeLines.has(stLine.number)) {
+            // 3. Mark Hiding (Reading Mode / Live Preview)
+            const isMark = [
+              'EmphasisMark',
+              'StrongMark',
+              'StrikethroughMark',
+              'LinkMark',
+              'CodeMark',
+              'ListMark'
+            ].includes(node.name)
+
+            if (isMark) {
+              if (
+                mode === EditorMode.READING ||
+                (mode === EditorMode.LIVE_PREVIEW && !activeLines.has(stLine.number))
+              ) {
                 collected.push({ from: nodeFrom, to: nodeTo, deco: hideDeco })
               }
             }
 
             // 4. Checkboxes
             if (node.name === 'TaskMarker') {
-              if (mode === EditorMode.READING || !activeLines.has(stLine.number)) {
+              if (
+                mode === EditorMode.READING ||
+                (mode === EditorMode.LIVE_PREVIEW && !activeLines.has(stLine.number))
+              ) {
                 const isChecked = doc.sliceString(nodeFrom, nodeTo).toLowerCase().includes('x')
                 collected.push({
                   from: nodeFrom,

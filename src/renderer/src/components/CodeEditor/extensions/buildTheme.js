@@ -34,6 +34,7 @@ const buildTheme = (EditorView, options = {}) => {
         position: 'relative',
         scrollbarGutter: 'stable !important'
       },
+      // Height of the content should be 100% of the scroller
       '.cm-content': {
         width: 'var(--editor-max-width, 700px)',
         maxWidth: 'var(--editor-max-width, 700px) !important',
@@ -113,7 +114,20 @@ const buildTheme = (EditorView, options = {}) => {
 
       // Syntax Hiding (Live Preview)
       '.cm-hide-syntax': {
-        display: 'none'
+        display: 'none !important'
+      },
+
+      // Inline Code (Premium Highlight)
+      '.inline-code, .cm-inline-code': {
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        color: 'var(--color-accent-primary, #58a6ff)',
+        padding: '0 4px',
+        borderRadius: '4px',
+        fontFamily: 'var(--editor-font-mono, monospace)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        display: 'inline-block',
+        lineHeight: '1.4',
+        verticalAlign: 'middle'
       },
 
       // Header Sizing (Obsidian-like Live Decorative)
@@ -152,35 +166,30 @@ const buildTheme = (EditorView, options = {}) => {
       '.cm-line-h6': { paddingTop: '0.4em !important' },
 
       // Header Text (Font/Color) - Inline decorations only
-      '.cm-header-1, .cm-md-h1': {
+      '.cm-h1': {
         fontSize: '1.8em !important',
         fontWeight: '700',
         color: 'var(--color-text-primary) !important'
       },
-      // H2 -> ~20px (1.4em)
-      '.cm-header-2, .cm-md-h2': {
+      '.cm-h2': {
         fontSize: '1.4em !important',
         fontWeight: '700',
         color: 'var(--color-text-primary) !important'
       },
-      // H3 -> ~17px (1.2em)
-      '.cm-header-3, .cm-md-h3': {
+      '.cm-h3': {
         fontSize: '1.2em !important',
         fontWeight: '700',
         color: 'var(--color-text-primary) !important'
       },
-      // H4 -> ~15px (1.1em)
-      '.cm-header-4, .cm-md-h4': {
+      '.cm-h4': {
         fontSize: '1.1em !important',
         fontWeight: '700'
       },
-      // H5
-      '.cm-header-5, .cm-md-h5': {
+      '.cm-h5': {
         fontSize: '1em !important',
         fontWeight: '600'
       },
-      // H6
-      '.cm-header-6, .cm-md-h6': {
+      '.cm-h6': {
         fontSize: '0.9em !important',
         fontWeight: '600'
       },

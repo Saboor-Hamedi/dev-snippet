@@ -42,15 +42,16 @@ const LivePreview = ({
 
   const html = useMemo(() => {
     if (disabled || !code || !code.trim()) return ''
-    const isTooLarge = code.length > 200000
-    if (isTooLarge) {
-      const escaped = code.slice(0, 100000).replace(/&/g, '&amp;').replace(/</g, '&lt;')
-      return `<div class="p-8 opacity-70"><p class="mb-4 text-xs font-bold uppercase tracking-widest text-blue-500">Performance Mode (Preview Truncated)</p><pre class="text-xs font-mono leading-relaxed" style="white-space: pre-wrap;">${escaped}...</pre></div>`
-    }
-
     const normalizedLang = (language || 'markdown').toLowerCase()
     if (normalizedLang === 'markdown' || normalizedLang === 'md') {
-      return fastMarkdownToHtml(code, existingTitles)
+      const isTooLarge = code.length > 500000
+      const visibleCode = isTooLarge ? code.slice(0, 500000) : code
+      let rendered = fastMarkdownToHtml(visibleCode, existingTitles)
+      if (isTooLarge) {
+        rendered +=
+          '<div class="preview-performance-notice">Preview truncated for performance.</div>'
+      }
+      return rendered
     }
 
     if (normalizedLang === 'mermaid') {
@@ -113,6 +114,7 @@ const LivePreview = ({
           ${cssVars}
         }
       `
+      const fontSize = `${16 * editorZoom}px`
 
       const fontOverride = `
     html, body {
@@ -137,8 +139,15 @@ const LivePreview = ({
     .markdown-body {
       flex: 1;
       width: 100% !important;
+      max-width: var(--editor-max-width, 700px) !important;
+      margin: 0 auto !important;
       min-height: 100vh !important;
       padding-bottom: 2rem !important;
+      box-sizing: border-box;
+      padding-left: 10px !important;
+      padding-right: 10px !important;
+      padding-top: 10px !important;
+      font-size: ${fontSize} !important;
     }
     .markdown-body, .mermaid-wrapper, .mermaid-diagram, .actor, .node label { 
       font-family: ${fontFamily}, sans-serif !important; 
@@ -149,6 +158,7 @@ const LivePreview = ({
     }
         .preview-container {
           transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          padding: 0 !important;
         }
         pre code { 
           font-family: 'JetBrains Mono', 'Cascadia Code', monospace !important; 
@@ -634,15 +644,30 @@ const LivePreview = ({
           color: var(--color-accent-primary) !important;
         }
 
-        /* TABLE ENHANCEMENT */
-        table {
+        .inline-code {
+          background-color: rgba(255, 255, 255, 0.08);
+          color: var(--color-accent-primary, #58a6ff);
+          padding: 2px 5px;
+          border-radius: 4px;
+          font-family: var(--font-mono, monospace);
+          font-size: 0.9em;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .table-wrapper {
           width: 100%;
-          border-collapse: separate;
-          border-spacing: 0;
+          overflow-x: auto;
           margin: 24px 0;
           border-radius: 12px;
-          overflow: hidden;
           border: 1px solid var(--color-border);
+        }
+
+        /* TABLE ENHANCEMENT */
+        table {
+          width: 100% !important;
+          border-collapse: collapse !important;
+          margin: 0 !important;
+          border: none !important;
         }
         th {
           background: var(--color-bg-tertiary);
@@ -673,6 +698,10 @@ const LivePreview = ({
           border: 1px solid var(--color-border);
           box-shadow: inset 0 0 40px rgba(0,0,0,0.1);
         }
+        /* Header Padding Compensation (Set to 0 to fix 'more to the right' issue) */
+        .cm-pad-h1, .cm-pad-h2, .cm-pad-h3, .cm-pad-h4, .cm-pad-h5, .cm-pad-h6 {
+          padding-left: 0 !important;
+        }
         .mermaid {
           display: flex;
           justify-content: center;
@@ -685,7 +714,9 @@ const LivePreview = ({
           transition: transform 0.3s ease;
           white-space: pre;
           max-width: 100%;
+          max-height: 200px;
           overflow-x: auto;
+          overflow-y: auto !important;
           color: #333;
         }
         .mermaid:hover {
@@ -755,6 +786,10 @@ const LivePreview = ({
         .copy-image-btn:hover {
           color: var(--color-accent-primary);
           background: var(--color-bg-tertiary);
+        }
+        .markdown-body {
+          max-width: 700px;
+          margin: 0 auto;
         }
       `
 

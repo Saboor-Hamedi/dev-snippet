@@ -1,24 +1,36 @@
 /**
  * Database Migrations
- * Handles adding optional columns to existing tables
+ *
+ * In a local desktop app, we can't easily run SQL scripts for every update.
+ * This module implements a "Defensive Column Injection" strategy.
+ * On every boot, it checks the current schema and patches it with any
+ * newly required columns, ensuring the database evolves gracefully
+ * without losing user data.
  */
 
 export const runMigrations = (db) => {
   try {
-    // Drop old projects table if it exists
+    // Legacy Cleanup: Remove tables that are no longer part of the architecture.
     db.exec('DROP TABLE IF EXISTS projects')
   } catch {}
 
-  // Ensure optional columns exist
+  /**
+   * ensureCol - A robust helper to add a column only if it's missing.
+   * This prevents "duplicate column" errors if the app restarts multiple times.
+   */
   try {
     const ensureCol = (table, name, ddl) => {
+      // Query SQLite's internal schema metadata
       const info = db.prepare(`PRAGMA table_info(${table})`).all()
-      if (!info.some((c) => c.name === name)) {
+      const exists = info.some((c) => c.name === name)
+
+      if (!exists) {
+        console.log(`🔧 Migrating: Adding [${name}] to [${table}]`)
         db.exec(ddl)
       }
     }
 
-    // Snippets table migrations
+    // --- SNIPPET TABLE EVOLUTION ---
     ensureCol('snippets', 'tags', 'ALTER TABLE snippets ADD COLUMN tags TEXT')
     ensureCol('snippets', 'code_draft', 'ALTER TABLE snippets ADD COLUMN code_draft TEXT')
     ensureCol('snippets', 'is_draft', 'ALTER TABLE snippets ADD COLUMN is_draft INTEGER')
@@ -35,14 +47,15 @@ export const runMigrations = (db) => {
       'is_pinned',
       'ALTER TABLE snippets ADD COLUMN is_pinned INTEGER DEFAULT 0'
     )
-    // Add is_favorite column to persist favorites
+
+    // Feature: Favorites support
     ensureCol(
       'snippets',
       'is_favorite',
       'ALTER TABLE snippets ADD COLUMN is_favorite INTEGER DEFAULT 0'
     )
 
-    // Folders table migrations
+    // --- FOLDER TABLE EVOLUTION ---
     ensureCol(
       'folders',
       'is_deleted',
@@ -50,6 +63,6 @@ export const runMigrations = (db) => {
     )
     ensureCol('folders', 'deleted_at', 'ALTER TABLE folders ADD COLUMN deleted_at INTEGER')
   } catch (e) {
-    console.warn('Migration warning:', e.message)
+    console.warn('⚠️ Migration warning (non-critical):', e.message)
   }
 }

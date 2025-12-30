@@ -1,8 +1,8 @@
 import React, { useMemo, useState, useRef, useLayoutEffect, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { File, Trash2, RotateCcw, Search, Folder, X, Trash } from 'lucide-react'
-import VirtualList from '../common/VirtualList'
-import ContextMenu from '../common/ContextMenu'
+import VirtualList from '../../common/VirtualList'
+import ContextMenu from '../../common/ContextMenu'
 
 const getFileIcon = (type) => {
   if (type === 'folder') return { icon: Folder, color: '#facc15' }

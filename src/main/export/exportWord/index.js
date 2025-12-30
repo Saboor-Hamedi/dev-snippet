@@ -47,6 +47,7 @@ export function registerWordExportHandler(app) {
         })
         console.log('💾 [Word Export] Writing file to:', filePath)
         await fs.writeFile(filePath, buffer)
+        // console.log('✅ [Word Export] File written successfully')
       } else {
         // All snippets export
         const { filePath: fp, canceled } = await dialog.showSaveDialog({

@@ -33,3 +33,32 @@ export const savePersistentPosition = (key, pos) => {
     console.warn(`[PersistentPosition] Failed to save ${key}:`, e)
   }
 }
+
+/**
+ * Saves cursor selection for a specific snippet.
+ */
+export const saveCursorPosition = (snippetId, selection) => {
+  if (!snippetId || !selection) return
+  try {
+    localStorage.setItem(
+      `cursor_${snippetId}`,
+      JSON.stringify({
+        anchor: selection.anchor,
+        head: selection.head
+      })
+    )
+  } catch (e) {}
+}
+
+/**
+ * Retrieves cursor selection for a specific snippet.
+ */
+export const getCursorPosition = (snippetId) => {
+  if (!snippetId) return null
+  try {
+    const saved = localStorage.getItem(`cursor_${snippetId}`)
+    return saved ? JSON.parse(saved) : null
+  } catch (e) {
+    return null
+  }
+}

@@ -10,6 +10,9 @@ export const useUniversalModal = () => {
     title: '',
     content: null,
     footer: null,
+    resetPosition: false,
+    width: '550px',
+    height: 'auto',
     data: null // For passing raw source or other state
   })
 
@@ -19,6 +22,9 @@ export const useUniversalModal = () => {
       title: config.title || 'Modal',
       content: config.content || null,
       footer: config.footer || null,
+      resetPosition: !!config.resetPosition,
+      width: config.width || '550px',
+      height: config.height || 'auto',
       data: config.data || null
     })
   }, [])

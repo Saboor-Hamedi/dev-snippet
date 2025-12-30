@@ -1,11 +1,24 @@
 import { WidgetType, EditorView } from '@codemirror/view'
+import { syntaxTree } from '@codemirror/language'
 import { EditorMode, editorModeField } from '../state'
 import { getComputedColor, showSourceModal } from '../utils'
 
-// Global flag to track initialization to prevent duplicate calls if strict
+/**
+ * MermaidWidget - A high-performance CodeMirror 6 widget for rendering Mermaid diagrams.
+ *
+ * Unlike standard text decorations, this widget replaces a fenced mermaid block with
+ * a dynamic, interactive SVG diagram. It handles its own rendering, panning, and
+ * zooming logic while maintaining a link back to the original source text.
+ */
 let mermaidInitialized = false
 
 export class MermaidWidget extends WidgetType {
+  /**
+   * @param {string} code - The raw mermaid syntax to render
+   * @param {string} mode - Current editor mode (Live Preview vs Reading)
+   * @param {number} from - Document position where the block starts
+   * @param {number} to - Document position where the block ends
+   */
   constructor(code, mode, from, to) {
     super()
     this.code = code
@@ -16,14 +29,26 @@ export class MermaidWidget extends WidgetType {
     this.panX = 0
     this.panY = 0
   }
+
+  /**
+   * Equality check used by CodeMirror to determine if the widget needs a full re-render.
+   * We include 'from' and 'to' to ensure that if the block shifts (e.g., text added above),
+   * the widget re-syncs its event handlers with the fresh document positions.
+   */
   eq(other) {
     if (other.mode !== this.mode) return false
-    // Do not include from/to in eq for Mermaid to avoid expensive re-renders on every scroll/shift
-    return other.code === this.code
+    return other.code === this.code && other.from === this.from && other.to === this.to
   }
+
+  /**
+   * toDOM is the heart of the widget. It builds the interactive UI inside the editor.
+   */
   toDOM(view) {
+    // 1. Setup Container Layout
     const wrap = document.createElement('div')
     wrap.className = 'cm-mermaid-widget'
+
+    // Generate a unique ID for mermaid.render() to target
     const uniqueId = 'mermaid-' + Math.random().toString(36).substr(2, 9)
     wrap.id = uniqueId
     wrap.innerHTML = '<div class="cm-mermaid-loading">Generating schematic...</div>'
@@ -32,20 +57,35 @@ export class MermaidWidget extends WidgetType {
     svgContainer.className = 'cm-mermaid-svg-container'
     wrap.appendChild(svgContainer)
 
-    // Update local from/to from current doc position if shifted while widget was alive
-    // This prevents "show source" opening the wrong range if text was added above it.
+    /**
+     * getFreshPos - Resolves the widget's current position in the live document.
+     * We don't trust 'this.from' because the document might have changed.
+     * Instead, we use the syntax tree to find the EXACT boundaries of the current FencedCode block.
+     * This prevents the "duplicate insertion" bug when editing.
+     */
     const getFreshPos = () => {
       try {
         const pos = view.posAtDOM(wrap)
-        if (pos !== null) {
+        if (pos !== null && pos >= 0) {
+          const node = syntaxTree(view.state).resolveInner(pos, 1)
+          let fn = node
+          // Crawl up to find the parent code block node
+          while (fn && fn.name !== 'FencedCode') fn = fn.parent
+          if (fn) {
+            return { from: fn.from, to: fn.to }
+          }
+          // Fallback if the tree is being recalculated
           const delta = this.to - this.from
           return { from: pos, to: pos + delta }
         }
-      } catch (e) {}
+      } catch (e) {
+        console.warn('[MermaidWidget] Failed to resolve fresh position', e)
+      }
       return { from: this.from, to: this.to }
     }
 
-    // Panning Logic
+    // 2. Interaction Logic: Panning & Zooming
+    // We only enable panning when zoomed in or in specific fullscreen-like views
     let isDragging = false
     let startX, startY
 
@@ -65,6 +105,7 @@ export class MermaidWidget extends WidgetType {
       this.panY = e.clientY - startY
       const svg = svgContainer.querySelector('svg')
       if (svg) {
+        // High-performance transform move
         svg.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`
       }
     })
@@ -74,15 +115,16 @@ export class MermaidWidget extends WidgetType {
       svgContainer.style.cursor = this.zoom > 1 ? 'grab' : 'default'
     })
 
-    // Toolbar (Always visible for Zoom/Reset, but partially hidden in Reading)
+    // 3. Toolbar Construction
     const toolbar = document.createElement('div')
     toolbar.className = 'cm-mermaid-toolbar'
 
+    // "View Source" Button - Triggers the interactive DiagramEditorModal
     const btnSource = document.createElement('button')
     btnSource.className = 'cm-mermaid-tool-btn'
     btnSource.innerHTML =
       '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>'
-    btnSource.title = 'View Source'
+    btnSource.title = 'Edit Diagram'
     btnSource.onclick = (e) => {
       e.stopPropagation()
       const { from, to } = getFreshPos()
@@ -91,7 +133,7 @@ export class MermaidWidget extends WidgetType {
 
     const zoomIn = document.createElement('button')
     zoomIn.className = 'cm-mermaid-tool-btn'
-    zoomIn.innerHTML = '+'
+    zoomIn.textContent = '+'
     zoomIn.onclick = (e) => {
       e.stopPropagation()
       this.zoom += 0.2
@@ -104,7 +146,7 @@ export class MermaidWidget extends WidgetType {
 
     const reset = document.createElement('button')
     reset.className = 'cm-mermaid-tool-btn'
-    reset.innerHTML = 'Reset'
+    reset.textContent = 'Reset'
     reset.onclick = (e) => {
       e.stopPropagation()
       this.zoom = 1
@@ -115,43 +157,31 @@ export class MermaidWidget extends WidgetType {
       svgContainer.style.cursor = 'default'
     }
 
-    // Only add Source button in non-Reading modes
-    const mode = view.state.field(editorModeField)
-    if (mode !== EditorMode.READING) {
+    // Modal editing is hidden in Reading mode for a cleaner look
+    const curMode = view.state.field(editorModeField)
+    if (curMode !== EditorMode.READING) {
       toolbar.appendChild(btnSource)
     }
 
-    // Always add Zoom/Reset tools
     toolbar.appendChild(zoomIn)
     toolbar.appendChild(reset)
     wrap.appendChild(toolbar)
 
-    // Capture state synchronously before entering async timeout
-    // Defensive check for facet and EditorView.dark to prevent CM6 internals crash
-    let isDark = true
-    try {
-      if (view && view.state && view.state.facet && EditorView.dark) {
-        isDark = view.state.facet(EditorView.dark)
-      } else {
-        isDark = document.documentElement.classList.contains('dark')
-      }
-    } catch (e) {
-      isDark = document.documentElement.classList.contains('dark')
-    }
-
+    /**
+     * runRender - Handles the async Mermaid generation.
+     * It waits for the element to be attached to the DOM so that CSS variables
+     * (for colors/fonts) are correctly resolved before rendering.
+     */
     const runRender = async () => {
       try {
-        // Use the closure 'wrap' directly instead of getElementById
         const container = wrap
         if (!container) return
 
-        // Wait for attachment to DOM to ensure styles/variables work
         if (!container.isConnected) {
           setTimeout(runRender, 50)
           return
         }
 
-        // Dynamically import mermaid to handle load errors gracefully
         const mermaidModule = await import('mermaid')
         const mermaid = mermaidModule.default || mermaidModule
 
@@ -179,10 +209,6 @@ export class MermaidWidget extends WidgetType {
               labelBackgroundColor: '#ffffff',
               fontSize: '16px'
             },
-            er: {
-              fill: '#ffffff',
-              stroke: '#333333'
-            },
             flowchart: {
               useMaxWidth: true,
               htmlLabels: true,
@@ -192,6 +218,7 @@ export class MermaidWidget extends WidgetType {
           mermaidInitialized = true
         }
 
+        // Perform the actual render
         const { svg } = await mermaid.render(uniqueId + '-svg', this.code)
 
         const loading = container.querySelector('.cm-mermaid-loading')
@@ -201,24 +228,21 @@ export class MermaidWidget extends WidgetType {
         if (target) {
           target.innerHTML = svg
         }
+
+        // Notify CodeMirror that the widget height might have changed
         if (view && typeof view.requestMeasure === 'function') {
           view.requestMeasure()
         }
       } catch (err) {
-        // Use wrap from closure
         const loading = wrap.querySelector('.cm-mermaid-loading')
         if (loading) {
           loading.textContent = 'Mermaid Error: ' + err.message
           loading.style.color = 'var(--color-error)'
-          // If fetch failed
-          if (err.message && err.message.includes('fetch')) {
-            loading.textContent = 'Mermaid failed to load. Please restart the app.'
-          }
         }
       }
     }
 
-    // Defer render
+    // Defer the heavy rendering work to the next tick to keep the UI snappy
     setTimeout(runRender, 0)
 
     return wrap

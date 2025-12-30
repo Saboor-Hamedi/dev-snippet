@@ -1,38 +1,71 @@
 import { StateField, RangeSetBuilder } from '@codemirror/state'
 import { Decoration, EditorView } from '@codemirror/view'
 import { syntaxTree } from '@codemirror/language'
-import { EditorMode, editorModeField } from './state'
+import { EditorMode, editorModeField, activeLinesField } from './state'
 import { safeLineAt, safeLine, sortDecorations } from './utils'
 
-// Widgets
-import { TableWidget } from './widgets/TableWidget'
+// Specialized UI Widgets
+import { TableWidget } from '../../table/TableWidget'
 import { ImageWidget } from './widgets/ImageWidget'
 import { HRWidget } from './widgets/HRWidget'
 import { MermaidWidget } from './widgets/MermaidWidget'
 import { AdmonitionWidget } from './widgets/AdmonitionWidget'
 import { CodeBlockHeaderWidget } from './widgets/HeaderWidget'
 
+/**
+ * richMarkdownStateField - The "Brain" of the Rich Markdown engine.
+ *
+ * This StateField monitors the document and the syntax tree in real-time.
+ * It identifies Markdown structures (like headings, images, and tables) and
+ * replaces them with visual "Widgets" when the cursor is not active on that line.
+ *
+ * This creates the "what you see is what you get" experience while still
+ * allowing raw text editing when you click into a specific line.
+ */
 export const richMarkdownStateField = StateField.define({
   create() {
     return Decoration.none
   },
   update(value, tr) {
-    const { doc, selection } = tr.state
+    const { doc } = tr.state
     const mode = tr.state.field(editorModeField)
+    const activeLines = tr.state.field(activeLinesField)
 
-    // Source Mode: No block widgets
-    if (mode === EditorMode.SOURCE) return Decoration.none
+    // Defensive check: don't process empty docs
     if (!doc || doc.length === 0) return Decoration.none
 
     const collected = []
 
-    // Iteration (Full Document - Required for Block State)
+    /**
+     * isRangeActive - Determines if a document range is currently being "edited".
+     * If the cursor is inside this range, we hide the widget and show the raw text.
+     */
+    const isRangeActive = (from, to) => {
+      if (mode === EditorMode.READING) return false
+      // Source mode always shows raw text, hence "always active"
+      if (mode === EditorMode.SOURCE) return true
+
+      const startLine = safeLineAt(doc, from).number
+      const endLine = safeLineAt(doc, to).number
+
+      // Check if any line within the structure's physical range has a cursor
+      for (let i = startLine; i <= endLine; i++) {
+        if (activeLines.has(i)) return true
+      }
+      return false
+    }
+
+    /**
+     * Tree Iteration: We walk through the syntax tree provided by @codemirror/language.
+     * For every node Type, we decide if we want to add a visual decoration.
+     */
     syntaxTree(tr.state).iterate({
       enter: (node) => {
         const from = node.from
         const to = node.to
 
-        // 1. Heading LINES (Structure)
+        // 1. Heading Styling (Line-level)
+        // We apply a CSS class to the entire line for rhythmic scaling (H1 is bigger than H6).
         if (node.name.includes('Heading')) {
           const levelMatch = node.name.match(/(\d)$/)
           const level = levelMatch ? levelMatch[1] : '1'
@@ -42,21 +75,16 @@ export const richMarkdownStateField = StateField.define({
             to: stLine.from,
             deco: Decoration.line({ class: `cm-line-h${level}` })
           })
-          return
+          return // We don't need to check children for headings
         }
 
-        // 2. Images (Block)
+        // 2. Images (Replaceable Block)
         if (node.name === 'Image') {
           const text = doc.sliceString(from, to)
           const match = text.match(/!\[(.*?)\]\((.*?)\)/)
-          const stLine = safeLineAt(doc, from)
-          // Active line check
-          const isActiveLine = selection.ranges.some((r) => {
-            const l = safeLineAt(doc, r.from)
-            return l.number === stLine.number
-          })
 
-          if (match && (mode === EditorMode.READING || !isActiveLine)) {
+          // Only render the image if the user isn't actively editing the alt text/URL
+          if (match && !isRangeActive(from, to)) {
             collected.push({
               from: from,
               to: to,
@@ -65,19 +93,15 @@ export const richMarkdownStateField = StateField.define({
                 block: true
               })
             })
-            return false // Skip children
+            return false // Skip children to avoid rendering alt-text again
           }
         }
 
-        // 3. Tables (Block)
+        // 3. Tables (Interactive Block)
         const nodeName = node.name.toLowerCase()
         if (nodeName === 'table' || nodeName === 'gfmtable') {
-          // Revert: Only reveal if fully selected (Standard Obsidian-like behavior to prevent jumps)
-          const isFullySelected =
-            mode !== EditorMode.READING &&
-            selection.ranges.some((r) => r.from <= from && r.to >= to)
-
-          if (!isFullySelected) {
+          if (!isRangeActive(from, to)) {
+            // Render the full visual table widget
             collected.push({
               from: from,
               to: to,
@@ -88,7 +112,7 @@ export const richMarkdownStateField = StateField.define({
             })
             return false
           } else {
-            // Row Styling
+            // Subtle indicator that you are editing inside a table
             const rowDeco = Decoration.line({ class: 'cm-md-table-row' })
             const startN = safeLineAt(doc, from).number
             const endN = safeLineAt(doc, to).number
@@ -99,7 +123,7 @@ export const richMarkdownStateField = StateField.define({
           }
         }
 
-        // 4. Horizontal Rule (Block)
+        // 4. Horizontal Rule (Visual Separator)
         if (node.name === 'HorizontalRule') {
           collected.push({
             from: from,
@@ -108,7 +132,7 @@ export const richMarkdownStateField = StateField.define({
           })
         }
 
-        // 5. Blockquote (Line)
+        // 5. Blockquote (Line-level Styling)
         if (node.name === 'Blockquote') {
           const bg = Decoration.line({ class: 'cm-blockquote-line' })
           const startN = safeLineAt(doc, from).number
@@ -119,18 +143,13 @@ export const richMarkdownStateField = StateField.define({
           }
         }
 
-        // 6. Mermaid / Fenced Code (Block)
+        // 6. Mermaid & Fenced Code Blocks
         if (node.name === 'FencedCode') {
-          // Revert: Only reveal if fully selected or explicitly targeted.
-          // Overlap cause jumps. Use Engulfing logic.
-          const isSelected =
-            mode !== EditorMode.READING &&
-            selection.ranges.some((r) => r.from <= from && r.to >= to)
-
           const info = node.node.getChild('CodeInfo')
           const lang = info ? doc.sliceString(info.from, info.to).toLowerCase() : ''
 
-          if (lang.includes('mermaid') && !isSelected) {
+          // SPECIAL HANDLING: Mermaid Diagrams
+          if (lang.includes('mermaid') && !isRangeActive(from, to)) {
             const code = doc
               .sliceString(from, to)
               .replace(/^```mermaid\s*/, '')
@@ -148,22 +167,24 @@ export const richMarkdownStateField = StateField.define({
               return false
             }
           } else {
-            // Code Block Styling (Header + Background)
+            // STANDARD CODE BLOCKS: Add background and language header
             const startLine = safeLineAt(doc, from)
             const endLine = safeLineAt(doc, to)
 
-            // Header
-            collected.push({
-              from: startLine.from,
-              to: startLine.from,
-              deco: Decoration.widget({
-                widget: new CodeBlockHeaderWidget(lang),
-                side: -1,
-                block: true
+            // Inject the floating language header (js, py, etc.)
+            if (mode !== EditorMode.READING) {
+              collected.push({
+                from: startLine.from,
+                to: startLine.from,
+                deco: Decoration.widget({
+                  widget: new CodeBlockHeaderWidget(lang),
+                  side: -1, // Ensure it stays above the code content
+                  block: true
+                })
               })
-            })
+            }
 
-            // Background
+            // Apply block background styling to every line in the block
             const bg = Decoration.line({ class: 'cm-code-block' })
             for (let i = startLine.number; i <= endLine.number; i++) {
               const l = safeLine(doc, i)
@@ -172,15 +193,11 @@ export const richMarkdownStateField = StateField.define({
           }
         }
 
-        // 7. Admonitions (Paragraph check)
+        // 7. Paragraph-based structures like Admonitions (::: info)
         if (node.name === 'Paragraph') {
           if (doc.sliceString(from, from + 3) === ':::') {
-            const isSelected =
-              mode !== EditorMode.READING &&
-              selection.ranges.some((r) => r.from <= from && r.to >= to)
-
             const text = doc.sliceString(from, to)
-            if (text.startsWith(':::') && !isSelected) {
+            if (text.startsWith(':::') && !isRangeActive(from, to)) {
               const lines = text.split('\n')
               const firstLine = lines[0].replace(/^:::\s*/, '')
               const [type, ...titleParts] = firstLine.split(' ')
@@ -200,6 +217,8 @@ export const richMarkdownStateField = StateField.define({
       }
     })
 
+    // Batch all decorations together and sort them by position
+    // to satisfy CodeMirror's strict RangeSet ordering requirements.
     const builder = new RangeSetBuilder()
     sortDecorations(collected).forEach((d) => builder.add(d.from, d.to, d.deco))
     return builder.finish()
