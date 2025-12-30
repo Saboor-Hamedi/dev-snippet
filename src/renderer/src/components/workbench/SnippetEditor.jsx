@@ -90,7 +90,7 @@ const SnippetEditor = ({
     const handleModeChange = (e) => setActiveMode(e.detail.mode)
     window.addEventListener('app:mode-changed', handleModeChange)
     return () => window.removeEventListener('app:mode-changed', handleModeChange)
-  }, [activeMode])
+  }, [])
 
   // Listen for Source Modal requests from richMarkdown extension
   useEffect(() => {
@@ -413,7 +413,6 @@ const SnippetEditor = ({
           lastSavedTitle.current = title
         } catch (err) {
           window.dispatchEvent(new CustomEvent('autosave-status', { detail: { status: 'error' } }))
-          console.error('Autosave failed', err)
         }
       },
       getSetting('behavior.autoSaveDelay') || 2000
@@ -569,13 +568,11 @@ const SnippetEditor = ({
   const handleOpenMiniPreview = useCallback(async () => {
     const fullHtml = await generateFullHtml()
     if (window.api?.invoke) {
-      if (window.api?.invoke) {
-        // Use the internal window IPC handler for the mini browser
-        await window.api.invoke('window:openMiniBrowser', fullHtml).catch(() => {
-          // Fallback to external preview
-          return window.api.invoke('shell:previewInBrowser', fullHtml)
-        })
-      }
+      // Use the internal window IPC handler for the mini browser
+      await window.api.invoke('window:openMiniBrowser', fullHtml).catch(() => {
+        // Fallback to external preview
+        return window.api.invoke('shell:previewInBrowser', fullHtml)
+      })
     }
   }, [generateFullHtml])
 
@@ -610,7 +607,6 @@ const SnippetEditor = ({
           })
           window.__mermaidExportInstance = mermaidInstance
         } catch (err) {
-          console.warn('Mermaid import failed:', err)
           return tempDiv.innerHTML
         }
       }
@@ -651,7 +647,6 @@ const SnippetEditor = ({
 
           div.replaceWith(svgElement)
         } catch (err) {
-          console.warn('Mermaid render failed for a diagram, leaving source as code block', err)
           // Replace with a safe code block to preserve readability
           const pre = document.createElement('pre')
           pre.textContent = div.textContent || div.innerText || ''
@@ -708,7 +703,6 @@ const SnippetEditor = ({
         const titleSafe = (title || 'snippet').replace(/[^a-z0-9]/gi, '_').toLowerCase()
         return `<!doctype html><html><head><meta charset="utf-8"><title>${titleSafe}</title><style>${printCss}</style></head><body><div id="content" class="preview-container">${contentHtml}</div></body></html>`
       } catch (err) {
-        console.warn('Sanitize export HTML failed, falling back to original HTML', err)
         return html
       }
     },
@@ -781,7 +775,6 @@ const SnippetEditor = ({
         showToast?.('Rendered content copied to clipboard (plaintext)', 'info')
       }
     } catch (err) {
-      console.error('Copy to clipboard failed:', err)
       try {
         await navigator.clipboard.writeText(code)
         showToast?.('Code copied to clipboard!', 'info')

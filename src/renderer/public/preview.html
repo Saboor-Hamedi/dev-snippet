@@ -3,6 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <title>Preview Sandbox</title>
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: asset: https: http:;"
+    />
     <!-- We will inject styles via message to keep them dynamic, or use standard assets -->
     <style id="base-styles">
       html,

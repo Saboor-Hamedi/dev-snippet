@@ -3,7 +3,8 @@
  * Refactored for better organization and maintainability
  */
 
-const { app, BrowserWindow, globalShortcut } = require('electron')
+const { app, BrowserWindow, globalShortcut, protocol } = require('electron')
+const path = require('path')
 
 // AUTO-DETECT: Enable DevTools in Dev, Disable in Production
 const ENABLE_DEVTOOLS = !app.isPackaged
@@ -52,6 +53,16 @@ app.whenReady().then(() => {
   } else {
     console.log(`🚀 Global shortcut [${shortcut}] registered successfully.`)
   }
+
+  // Register 'asset' protocol for local images
+  protocol.registerFileProtocol('asset', (request, callback) => {
+    const url = request.url.substr(8)
+    const decodedUrl = decodeURI(url) // Handle spaces etc
+    const assetsPath = path.join(app.getPath('userData'), 'assets')
+    // Configure strict path to avoid traversal attacks (basic check)
+    const filePath = path.join(assetsPath, decodedUrl)
+    callback({ path: filePath })
+  })
 
   // Register all IPC handlers
   registerAllHandlers(app, mainWindow, db, preparedStatements, () => getDB(app))

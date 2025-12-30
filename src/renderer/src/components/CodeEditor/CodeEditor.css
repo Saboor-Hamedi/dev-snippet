@@ -352,3 +352,19 @@
 .cm-blockquote-line:hover {
   background-color: rgba(88, 166, 255, 0.06) !important;
 }
+
+/* Inline Images in Editor (Widget) */
+.cm-md-image-container {
+  display: flex;
+  justify-content: center;
+  margin: 1rem 0;
+  width: 100%;
+}
+
+.cm-md-rendered-image {
+  max-width: 60%;
+  max-height: 350px;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}

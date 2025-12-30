@@ -60,7 +60,7 @@ Obsidian feels powerful because it "knows" your files.
 
 1. [x] **Cursor-Aware Decoration Extension**: Implement a new CodeMirror ViewPlugin that manages the "Reveal on Focus" logic. This is the #1 step to robustness.
 2. [x] **Shared Parsing Engine**: Standardize on `unified.js` (`remark` + `rehype`) for every mode to ensure what you see in Live Preview is *exactly* what gets exported to PDF.
-3. [ ] **Local Asset Management**: A system to handle local images/files (attachments) within the snippet library using dedicated folder structure.
+3. [x] **Local Asset Management**: A system to handle local images/files (attachments) within the snippet library using dedicated folder structure.
 
 `npm install unified remark-parse remark-rehype rehype-stringify remark-emoji remark-external-links`
 `npm install rehype-highlight`

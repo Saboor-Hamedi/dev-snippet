@@ -50,4 +50,42 @@ export const registerFilesystemHandlers = () => {
     })
     return result.canceled ? null : result.filePaths[0]
   })
+
+  // Save asset (Local Asset Management)
+  ipcMain.handle('fs:saveAsset', async (event, { fileName, buffer }) => {
+    try {
+      const userDataPath = app.getPath('userData')
+      const assetsPath = path.join(userDataPath, 'assets')
+
+      // Ensure assets directory exists
+      try {
+        await fs.access(assetsPath)
+      } catch {
+        await fs.mkdir(assetsPath, { recursive: true })
+      }
+
+      let finalFileName = fileName
+      let filePath = path.join(assetsPath, finalFileName)
+
+      // Prevent Overwrite: Check if file exists, if so, rename
+      try {
+        await fs.access(filePath)
+        // File exists, generate unique name
+        const namePart = path.parse(fileName).name
+        const extPart = path.parse(fileName).ext
+        finalFileName = `${namePart}-${Date.now()}${extPart}`
+        filePath = path.join(assetsPath, finalFileName)
+      } catch {
+        // File does not exist, use original name
+      }
+
+      await fs.writeFile(filePath, Buffer.from(buffer))
+
+      // Return the custom protocol URL
+      return `asset://${finalFileName}`
+    } catch (err) {
+      console.error('Failed to save asset:', err)
+      return null
+    }
+  })
 }

@@ -11,6 +11,8 @@ const api = {
   readFile: (path) => electronAPI.ipcRenderer.invoke('fs:readFile', path),
   writeFile: (path, content) => electronAPI.ipcRenderer.invoke('fs:writeFile', path, content),
   readDirectory: (path) => electronAPI.ipcRenderer.invoke('fs:readDirectory', path),
+  saveAsset: (fileName, buffer) =>
+    electronAPI.ipcRenderer.invoke('fs:saveAsset', { fileName, buffer }),
 
   // Settings JSON file
   //  This take are of life watch setttings.json file changes from outside the app

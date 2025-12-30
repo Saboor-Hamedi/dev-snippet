@@ -36,7 +36,8 @@ const LivePreview = ({
   const splitContext = React.useContext(SplitPaneContext)
   const { overlayMode: isOverlay, setOverlayMode: setOverlay } = useAdvancedSplitPane()
   const { settings } = useSettings()
-  const [editorZoom] = useEditorZoomLevel()
+  // Detached zoom: LivePreview should not scale with editor zoom
+  const editorZoom = 1
 
   const [renderedHtml, setRenderedHtml] = useState('')
   const [isParsing, setIsParsing] = useState(false)
@@ -139,7 +140,7 @@ const LivePreview = ({
       const themeVars = `
         :root {
           ${cssVars}
-          --editor-font-size: ${((settings.editor?.fontSize || 14) * editorZoom) / 16}rem;
+          --editor-font-size: ${((settings.editor?.fontSize || 14) * 1) / 16}rem;
           --font-sans: ${fontFamily}, sans-serif;
         }
       `
@@ -155,7 +156,7 @@ const LivePreview = ({
           mermaidConfig: getMermaidConfig(false, fontFamily),
           mermaidEngine: getMermaidEngine(),
           initialScrollPercentage: lastScrollPercentage.current,
-          editorZoom: editorZoom,
+          editorZoom: 1,
           baseFontSize: settings.editor?.fontSize || 14
         },
         '*'
@@ -175,7 +176,7 @@ const LivePreview = ({
       iframe.removeEventListener('load', syncContent)
       window.removeEventListener('message', handleReady)
     }
-  }, [renderedHtml, theme, isDark, fontFamily, editorZoom])
+  }, [renderedHtml, theme, isDark, fontFamily, settings.editor?.fontSize])
 
   useEffect(() => {
     const handleMessage = (event) => {

@@ -318,12 +318,14 @@ html[data-theme='minimal-gray'] ::-webkit-scrollbar-track {
 
 /* Images - Premium framing */
 .markdown-body img {
-  max-width: 100% !important;
+  max-width: 60% !important;
+  max-height: 350px !important;
+  object-fit: contain;
   box-sizing: content-box;
   background-color: transparent;
   border-radius: 10px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  margin: 1.5rem auto;
+  margin: 1.5rem auto !important;
   display: block;
 }
 
@@ -695,13 +697,7 @@ html[data-theme='minimal-gray'] ::-webkit-scrollbar-track {
   text-decoration: underline !important;
 }
 
-/* Images - Responsive */
-.markdown-body img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 4px;
-  margin: 16px 0;
-}
+/* Images - Responsive (Removed: Handled by premium framing above) */
 
 /* Task lists - Custom styled checkboxes */
 .markdown-body .task-list-item {

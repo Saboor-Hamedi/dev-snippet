@@ -7,12 +7,10 @@ import { richMarkdownStateField } from './structure'
 import { inlineRegexPlugin } from './links'
 import { readingModeLayoutPlugin } from './layout'
 import { smartKeymap } from './keymap'
+import { assetExtensions } from './assets'
 
 export { EditorMode, setEditorMode }
 
-/**
- * linkClickHandler - Enables interactive behavior for links.
- */
 /**
  * linkClickHandler - Enables interactive behavior for links.
  */
@@ -78,6 +76,7 @@ export const richMarkdownExtension = [
   richMarkdownStateField,
   readingModeLayoutPlugin,
   linkClickHandler,
+  assetExtensions, // Asset Manager (Paste/Drop)
   EditorView.editable.compute(
     [editorModeField],
     (state) => state.field(editorModeField) !== EditorMode.READING
