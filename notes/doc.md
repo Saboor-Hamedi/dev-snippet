@@ -49,7 +49,19 @@ flowchart TD
     IPC_Main -- Response --> IPC_Bridge
 ```
 
-### 2.2 IPC Channels
+### 2.2 Advanced Intelligence Features
+
+DevSnippet includes a suite of "Knowledge Management" features triggered by specific keystrokes:
+
+| Trigger | Feature | Description |
+| :--- | :--- | :--- |
+| **`#`** | **Tags** | Instant auto-completion of existing tags. |
+| **`@`** | **Mentions** | Contextual mentions (future extension points). |
+| **`[[`** | **WikiLinks** | Connect snippets together. Hovering over a `[[Link]]` shows a fully rendered **Live Preview** of the destination note, complete with syntax highlighting and dynamic scrolling (sub-10ms lookup). |
+| **`/`** | **Slash Command** | A powerful "Notion-style" menu to insert blocks, tables, and diagrams. |
+| **Ghost** | **Ghost Footprint** | Technical architecture to hide markdown syntax (like `**bold**` stars) without breaking layout stability. |
+
+### 2.3 IPC Channels
 
 The application uses a request-response pattern via `ipcRenderer.invoke()` (Promise-based).
 
@@ -179,6 +191,15 @@ To ensure 100% rendering consistency between the **Live Preview**, **Reading Mod
   * **Directives**: Native handling of `::: info` callouts via `remark-directive`.
   * **Mermaid Detection**: Automatic detection and wrapping of mermaid diagrams.
   * **Specialty Blocks**: Robust handling of `[kanban]`, `[tabs]`, and `[grid]` components.
+
+### 4.6 Local Asset Management
+
+The editor includes a robust local asset system designed for offline-first usage.
+
+*   **Storage**: Images dropped or pasted into the editor are saved to `app.getPath('userData')/assets`.
+*   **Protocol**: A custom `asset://` protocol serves these files securely, bypassing local file restrictions.
+*   **Safety**: If a file with the same name exists, the system automatically appends a timestamp to prevent overwrites.
+*   **Visual Constraints**: To keep the editor clean, all inline images are restricted to a **maximum height of 350px** and center-aligned.
 
 By using a single source of truth for parsing, "visual drift" (where the preview looks different from the export) is mathematically eliminated.
 

@@ -1,0 +1,179 @@
+/* Link Preview Tooltip - Premium Aesthetic */
+.cm-link-preview-tooltip {
+  /* Box Framework */
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0;
+  width: 300px; /* Slightly tighter width */
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  z-index: 1500;
+
+  /* Floating Effect */
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+
+  /* Smooth Entry with DELAY to prevent jump */
+  /* backwards fill-mode ensures opacity is 0 during the delay */
+  animation: tooltipFadeIn 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.05s backwards;
+  transform-origin: bottom center;
+
+  /* Ensure mouse interaction */
+  pointer-events: auto;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Loading State */
+.cm-link-preview-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 120px;
+  color: var(--color-text-tertiary);
+  font-size: 10px; /* Requested Size */
+  font-family: var(--font-sans, sans-serif);
+  font-style: italic;
+}
+
+/* 1. Header Row */
+.cm-link-preview-tooltip .preview-header {
+  padding: 8px 12px;
+  /* Removed heavy border-bottom for cleaner look, or keep it very subtle */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background-color: var(--color-bg-tertiary);
+}
+
+.cm-link-preview-tooltip .preview-title-text {
+  font-weight: 600;
+  font-size: 12px; /* Title slightly larger */
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Pill (Language Tag) */
+.cm-link-preview-tooltip .preview-lang-pill {
+  font-size: 9px;
+  background-color: var(--color-accent-primary); /* Blue Pill */
+  color: white;
+  padding: 1px 6px;
+  border-radius: 10px; /* Fully rounded pill */
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+}
+
+/* 2. Body Preview */
+.cm-link-preview-tooltip .preview-body {
+  padding: 10px 12px;
+  font-size: 10px; /* REQUESTED SIZE */
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+  font-family: var(--editor-font-mono, 'JetBrains Mono', monospace);
+  white-space: pre-wrap;
+  word-break: break-word;
+  background-color: var(--color-bg-primary);
+
+  /* Enable Scrolling */
+  flex-grow: 1;
+  max-height: 200px; /* Increased slightly */
+  overflow-y: auto; /* Allow scrolling */
+  overscroll-behavior: contain; /* Prevent parent scroll */
+
+  /* Remove mask to allow reading clear text */
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+
+/* Minimal Scrollbar for the tooltip */
+.cm-link-preview-tooltip .preview-body::-webkit-scrollbar {
+  width: 6px;
+}
+.cm-link-preview-tooltip .preview-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+.cm-link-preview-tooltip .preview-body::-webkit-scrollbar-thumb {
+  background-color: rgba(155, 155, 155, 0.3);
+  border-radius: 3px;
+  border: 1px solid transparent;
+  background-clip: content-box;
+}
+.cm-link-preview-tooltip .preview-body::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(155, 155, 155, 0.5);
+}
+
+/* 3. Footer */
+.cm-link-preview-tooltip .preview-footer {
+  padding: 4px 12px;
+  font-size: 9px;
+  color: var(--color-text-tertiary);
+  background-color: var(--color-bg-tertiary);
+  border-top: 1px solid rgba(255, 255, 255, 0.03);
+  text-align: right;
+  opacity: 0.7;
+}
+
+/* Rendered Markdown Constraints within Tooltip */
+.cm-link-preview-tooltip .preview-body h1,
+.cm-link-preview-tooltip .preview-body h2,
+.cm-link-preview-tooltip .preview-body h3,
+.cm-link-preview-tooltip .preview-body h4 {
+  margin: 0.5em 0 0.2em 0;
+  font-size: 1.1em;
+  font-weight: 600;
+  line-height: 1.2;
+  border: none;
+  padding: 0;
+}
+
+.cm-link-preview-tooltip .preview-body h1 {
+  font-size: 1.2em;
+  color: var(--color-accent-primary);
+}
+.cm-link-preview-tooltip .preview-body p {
+  margin: 0.4em 0;
+}
+.cm-link-preview-tooltip .preview-body ul,
+.cm-link-preview-tooltip .preview-body ol {
+  margin: 0.4em 0;
+  padding-left: 1.2em;
+}
+.cm-link-preview-tooltip .preview-body li {
+  margin: 0.1em 0;
+}
+.cm-link-preview-tooltip .preview-body blockquote {
+  margin: 0.4em 0;
+  padding-left: 8px;
+  border-left: 2px solid var(--color-accent-secondary);
+  font-style: italic;
+  opacity: 0.8;
+}
+.cm-link-preview-tooltip .preview-body code {
+  font-size: 0.9em;
+  background: rgba(127, 127, 127, 0.1);
+  padding: 0 3px;
+  border-radius: 3px;
+}
+.cm-link-preview-tooltip .preview-body pre {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 6px;
+  border-radius: 4px;
+  overflow-x: auto;
+}

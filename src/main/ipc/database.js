@@ -42,6 +42,15 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
     return transformRow(preparedStatements.getById.get(id))
   })
 
+  // Get single snippet by Title (for WikiLinks)
+  ipcMain.handle('db:getSnippetByTitle', (event, title) => {
+    if (!title) return null
+    const row = db
+      .prepare('SELECT * FROM snippets WHERE title = ? COLLATE NOCASE AND is_deleted = 0')
+      .get(title.trim())
+    return transformRow(row)
+  })
+
   // Full-text search using FTS5
   ipcMain.handle('db:searchSnippets', (event, query) => {
     if (!query || query.trim().length === 0) {

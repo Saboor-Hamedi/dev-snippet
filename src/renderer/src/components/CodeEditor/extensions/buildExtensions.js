@@ -1,5 +1,7 @@
 import buildTheme from './buildTheme'
 import { premiumTypingBundle } from './premiumFeatures'
+import { linkPreviewTooltip } from './linkPreview'
+import './linkPreview.css'
 import { tags as t } from '@lezer/highlight'
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import { richMarkdownExtension } from '../engine'
@@ -59,10 +61,12 @@ const buildExtensions = async (options, handlers = {}) => {
       // Add Slash Command completions for markdown
       const { slashCommandCompletionSource } = await import('./slashCommandCompletion.js')
       completionSources.push(slashCommandCompletionSource)
-    } catch (e) {
-      console.warn('[Completion] Failed to load sources', e)
-    }
+    } catch (e) {}
   }
+
+  // 2.5 LINK PREVIEW (WikiLinks) - Premium Feature
+  // We enable this for all file sizes as it is on-demand (hover)
+  exts.push(linkPreviewTooltip)
 
   // 3. CORE EDITOR FUNCTIONALITY (Try-Catch to prevent complete engine failure)
   try {
