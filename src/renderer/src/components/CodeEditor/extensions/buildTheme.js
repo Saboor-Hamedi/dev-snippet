@@ -131,25 +131,25 @@ const buildTheme = (EditorView, options = {}) => {
         borderRadius: '3px'
       },
 
-      // Header Lines (Layout/Spacing) - Fixes cursor interactions by spacing the line wrapper
+      // Header Lines (Layout/Spacing) - Use PADDING instead of MARGIN to ensure correct line height measurement
       '.cm-line-h1': {
-        marginTop: '1.2em !important',
-        marginBottom: '0.4em !important',
+        paddingTop: '1.2em !important',
+        paddingBottom: '0.4em !important',
         lineHeight: '1.3 !important'
       },
       '.cm-line-h2': {
-        marginTop: '1em !important',
-        marginBottom: '0.3em !important',
+        paddingTop: '1em !important',
+        paddingBottom: '0.3em !important',
         lineHeight: '1.35 !important'
       },
       '.cm-line-h3': {
-        marginTop: '0.8em !important',
-        marginBottom: '0.2em !important',
+        paddingTop: '0.8em !important',
+        paddingBottom: '0.2em !important',
         lineHeight: '1.4 !important'
       },
-      '.cm-line-h4': { marginTop: '0.6em !important', lineHeight: '1.5 !important' },
-      '.cm-line-h5': { marginTop: '0.4em !important' },
-      '.cm-line-h6': { marginTop: '0.4em !important' },
+      '.cm-line-h4': { paddingTop: '0.6em !important', lineHeight: '1.5 !important' },
+      '.cm-line-h5': { paddingTop: '0.4em !important' },
+      '.cm-line-h6': { paddingTop: '0.4em !important' },
 
       // Header Text (Font/Color) - Inline decorations only
       '.cm-header-1, .cm-md-h1': {
@@ -184,6 +184,15 @@ const buildTheme = (EditorView, options = {}) => {
         fontSize: '0.9em !important',
         fontWeight: '600'
       },
+
+      // Header Padding Compensation (For Stable Live Preview)
+      // When hashes are hidden, we add padding-left to the text to prevent jumping.
+      '.cm-pad-h1': { paddingLeft: '2ch' },
+      '.cm-pad-h2': { paddingLeft: '3ch' },
+      '.cm-pad-h3': { paddingLeft: '4ch' },
+      '.cm-pad-h4': { paddingLeft: '5ch' },
+      '.cm-pad-h5': { paddingLeft: '6ch' },
+      '.cm-pad-h6': { paddingLeft: '7ch' },
 
       '.cm-md-checkbox': {
         display: 'inline-flex',
@@ -429,16 +438,17 @@ const buildTheme = (EditorView, options = {}) => {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        padding: '30px 20px 20px 20px',
-        paddingTop: '30px',
-        paddingBottom: '30px',
-        backgroundColor: 'var(--color-bg-secondary, rgba(0, 0, 0, 0.2))',
-        borderRadius: '12px',
-        border: '1px solid var(--color-border)',
-        minHeight: '120px',
-        overflow: 'hidden',
+        padding: '20px',
+        backgroundColor: '#ffffff',
+        borderRadius: '8px',
+        border: 'none',
+        width: '100%',
+        minHeight: '220px',
+        maxHeight: '100%',
+        overflow: 'auto',
         position: 'relative',
-        transition: 'none !important'
+        transition: 'none !important',
+        color: '#333'
       },
       '.cm-mermaid-toolbar': {
         position: 'absolute',
@@ -471,9 +481,10 @@ const buildTheme = (EditorView, options = {}) => {
         color: '#fff',
         borderColor: 'var(--color-accent-primary)'
       },
+      // mermaid svg size
       '.cm-mermaid-widget svg': {
-        maxWidth: '100%',
-        height: 'auto',
+        maxWidth: '100% !important',
+        height: 'auto !important',
         transition: 'transform 0.2s ease'
       },
       '.cm-mermaid-loading': {
@@ -482,17 +493,7 @@ const buildTheme = (EditorView, options = {}) => {
         fontStyle: 'italic',
         letterSpacing: '0.05em'
       },
-      /* Fix Mermaid text legibility in dark mode */
-      /* Fix Mermaid text legibility in dark mode */
-      '.cm-mermaid-widget .node label, .cm-mermaid-widget .edgeLabel, .cm-mermaid-widget text': {
-        fill: 'var(--color-text-primary, #fff) !important',
-        color: 'var(--color-text-primary, #fff) !important'
-      },
-      '.cm-mermaid-widget .node rect, .cm-mermaid-widget .node circle, .cm-mermaid-widget .node ellipse, .cm-mermaid-widget .node polygon, .cm-mermaid-widget .node path':
-        {
-          fill: 'var(--color-bg-primary, #1e1e1e) !important',
-          stroke: 'var(--color-accent-primary, #58a6ff) !important'
-        },
+      /* Removed manual overrides for node/label colors to allow Mermaid 'default' theme to work strictly */
 
       // Dark mode overrides for safety
       '&.cm-editor.dark': {

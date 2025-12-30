@@ -7,44 +7,39 @@ export const getMermaidConfig = (
   isDark,
   fontFamily = "'Outfit', 'Inter', -apple-system, sans-serif"
 ) => ({
-  startOnLoad: false,
-  theme: isDark ? 'dark' : 'default',
+  // User Polish: Use 'neutral' theme for clean, standard "Paper" look without bluish tints.
+  theme: 'neutral',
   securityLevel: 'loose',
   fontFamily: fontFamily,
   themeVariables: {
-    // Primary Vibrant Colors (Vibrant but Professional)
-    primaryColor: isDark ? '#dee1e4ff' : '#dee1e4ff',
-    primaryTextColor: isDark ? '#f0f6fc' : '#1f2328',
-    primaryBorderColor: isDark ? '#dee1e4ff' : '#dee1e4ff',
+    // Force clean B&W / Grayscale style for "Independent" feel
+    primaryColor: '#ffffff',
+    primaryTextColor: '#000000',
+    primaryBorderColor: '#333333',
+    lineColor: '#333333',
+    secondaryColor: '#f4f4f4',
+    tertiaryColor: '#fff',
 
-    // Backgrounds & Layers
-    lineColor: isDark ? '#8b949e' : '#656d76',
-    secondaryColor: 'transparent',
-    tertiaryColor: 'transparent',
-    mainBkg: 'transparent',
-    background: 'transparent',
+    // Explicit Node styling to remove "thick border" or "bluish cell"
+    nodeBorder: '#333333',
+    clusterBkg: '#ffffff',
+    clusterBorder: '#333333',
 
-    // Node & Cluster Specifics
-    nodeBorder: isDark ? '#dee1e4ff' : '#dee1e4ff',
-    nodeTextColor: isDark ? '#f0f6fc' : '#1f2328',
-    clusterBkg: 'transparent',
-    clusterBorder: isDark ? '#dee1e4ff' : '#dee1e4ff',
-
-    // Sequence Diagrams - High Contrast
-    actorBkg: 'transparent',
-    actorTextColor: isDark ? '#f0f6fc' : '#1f2328',
-    actorBorder: isDark ? '#dee1e4ff' : '#dee1e4ff',
-    actorLineColor: isDark ? '#8b949e' : '#656d76',
+    // Sequence
+    actorBkg: '#ffffff',
+    actorTextColor: '#000000',
+    actorBorder: '#333333',
+    actorLineColor: '#333333',
 
     // Labels
-    edgeLabelBackground: 'transparent',
-    labelBackgroundColor: 'transparent',
-    titleColor: isDark ? '#f0f6fc' : '#1f2328'
+    edgeLabelBackground: '#ffffff', // Opaque label background to read over lines
+    labelBackgroundColor: '#ffffff',
+    fontSize: '16px'
   },
   flowchart: {
     useMaxWidth: true,
     htmlLabels: true,
-    curve: 'basis' // Smoother, more premium lines
+    curve: 'basis'
   },
   sequence: {
     showSequenceNumbers: true,
@@ -54,5 +49,10 @@ export const getMermaidConfig = (
   gantt: {
     fontSize: 12,
     barHeight: 25
+  },
+  er: {
+    // Specific fix for ER Diagram "bluish selected cell"
+    fill: '#ffffff',
+    stroke: '#333333'
   }
 })

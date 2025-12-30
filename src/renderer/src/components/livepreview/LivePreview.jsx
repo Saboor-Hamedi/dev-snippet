@@ -677,15 +677,16 @@ const LivePreview = ({
           display: flex;
           justify-content: center;
           margin: 24px 0;
-          background: var(--color-bg-secondary);
-          padding: 30px;
-          border-radius: 16px;
-          border: 1px solid var(--color-border);
-          box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+          background: #ffffff;
+          padding: 20px;
+          border-radius: 8px;
+          border: none;
+          box-shadow: none;
           transition: transform 0.3s ease;
           white-space: pre;
           max-width: 100%;
           overflow-x: auto;
+          color: #333;
         }
         .mermaid:hover {
           transform: translateY(-4px);

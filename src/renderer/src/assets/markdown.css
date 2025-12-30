@@ -521,7 +521,8 @@ html[data-theme='minimal-gray'] ::-webkit-scrollbar-track {
   color: #34d399 !important; /* emerald-400 */
 }
 
-/* Mermaid Diagrams - Explicit theme overrides */
+/* Mermaid Diagrams - Explicit theme overrides (DISABLED by user request for independent styling) */
+/*
 .mermaid {
   background: transparent !important;
   display: flex;
@@ -555,6 +556,7 @@ html[data-theme='minimal-gray'] ::-webkit-scrollbar-track {
   color: var(--text-main) !important;
   fill: var(--text-main) !important;
 }
+*/
 
 /* Tables - Refined GFM design */
 .markdown-body table {

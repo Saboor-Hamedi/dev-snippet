@@ -2,7 +2,7 @@ import buildTheme from './buildTheme'
 import { premiumTypingBundle } from './premiumFeatures'
 import { tags as t } from '@lezer/highlight'
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
-import { richMarkdownExtension } from './richMarkdown'
+import { richMarkdownExtension } from '../engine'
 
 /**
  * Lazy-load language names to keep the main bundle light.

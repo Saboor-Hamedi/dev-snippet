@@ -1,36 +1,60 @@
-# Roadmap: Transforming Dev-Snippet into "Obsidian for Developers" 🚀💎✨
+# DevSnippet Roadmap: The Path to Obsidian-Grade Robustness
 
-To evolve this project into a powerhouse like Obsidian, but tailored specifically for developers, here are the top 20 suggested features and improvements:
-
-## 1. Networked Thought (The Core)
-1.  **Backlinks & Out-links Panel**: A dedicated sidebar tab showing which snippets link TO the current one and which ones it links TO.
-2.  **Interactive 2D Graph View**: A force-directed graph to visualize your entire knowledge base and the connections created via `[[WikiLinks]]`.
-3.  **Block-Level References**: The ability to link to a specific line of code or a specific header within a long snippet (e.g., `[[MySnippet#^block-id]]`).
-4.  **Transclusion/Embedding**: Dynamically display the content of one snippet inside another using `![[SnippetName]]`.
-
-## 2. Professional Metadata & Organization
-5.  **YAML Properties Editor**: A clean UI at the top of the editor to manage front-matter (tags, status, priority, author) without manually typing YAML.
-6.  **Vibrant Tag Explorer**: A hierarchical tag view (e.g., `#dev/react/hooks`) with usage counts and filtering capabilities.
-7.  **Workspace Profiles**: The ability to switch between sets of snippets (e.g., "Work", "Personal", "Thesis") with different sidebar layouts and pins.
-8.  **File System Watcher**: Option to sync a local folder of `.md` files directly into the app, allowing you to use external editors like VS Code alongside Dev-Snippet.
-
-## 3. Advanced Editor Features
-9.  **Canvas Mode**: An infinite whiteboarding canvas where you can drag snippet cards, connect them with arrows, and group them visually.
-10. **Callout Support**: Support for Obsidian-style admonitions like `> [!INFO]` or `> [!WARNING]` with custom icons and colors.
-11. **Code Block Templates**: A library of "Slash Commands" (`/`) to quickly insert boilerplate structures for different languages.
-12. **Split Panes & Tab Groups**: A robust window management system to view multiple snippets side-by-side or stacked in vertical/horizontal groups.
-
-## 4. Power User Workflow
-13. **Extensible Plugin System**: A small API that allows users to write custom JavaScript "Plugins" to add new UI elements or processing logic.
-14. **Daily Notes & Calendar**: A dedicated workflow for timestamped developer logs, integrated with a visual calendar heatmap.
-15. **Version History (Gitty)**: Local version snapshotting or direct Git integration to view diffs and revert snippets to previous states.
-16. **Global Search Operators**: Powerful search filters like `tag:#bug`, `path:src`, or `created:2024-12`.
-
-## 5. Intelligence & Export
-17. **AI Semantic Search**: Use local embeddings to search by "meaning" so finding "how to sort an array" works even if the snippet doesn't contain those exact words.
-18. **Documentation Publishing**: A one-click export to turn a folder of snippets into a clean, searchable static documentation site (HTML/JS).
-19. **Mini-Browser Detach**: Enhance the Mini Browser to allow "Always on Top" code reference windows that float over your main IDE.
-20. **Mobile Bridge**: A lightweight mobile app or web-relay for viewing and quick-capturing snippets from your phone.
+This document outlines the architectural and technological strategy to evolve **DevSnippet** from a snippet manager into a robust, high-performance MD editor comparable to Obsidian.
 
 ---
-**Vision**: *A tool that understands your code relationships as deeply as a compiler, with the visual elegance of a premium design system.* 🥂✨💎🛡️🚀
+
+## 1. Architectural Pivot: "Selective Hiding" vs. "Hard Replacement"
+
+### Current State
+We currently use **Widget Replacement**. When the editor sees a table or mermaid block, it removes the text and injects a DOM element.
+*   **Pros**: Easy to implement.
+*   **Cons**: Breaks cursor movement, causes "jumping" when loading, and makes text selection across blocks nearly impossible.
+
+### The Strategy
+Shift to **Inline Markup Hiding** (Decoration-based).
+*   **Mechanism**: CodeMirror should treat Markdown symbols (`**`, `##`, `|`, `[[`) as "collapsible decorations."
+*   **The "Focus Rule"**: Only the line where your cursor is currently located shows the Raw Markdown. Every other line remains rendered. 
+*   **Result**: The document height stays 100% constant, eliminating the "scrolling jump" bug forever.
+
+---
+
+## 2. Advanced Technology gaps
+
+### 🛠️ Background Indexing (The "Knowledge Graph")
+Obsidian feels powerful because it "knows" your files. 
+*   **Missing**: A background search and link indexer.
+*   **Technology**: **SQLite + FTS5** (already partially in place) but we need a **Relational Link Table**.
+*   **Goal**: Every time you type `[[`, the app should instantly suggest headers and blocks from other snippets based on a pre-computed index, not a new search.
+
+### 💨 Web Worker Parsing
+*   **Missing**: Currently, we parse Markdown on the UI thread. This causes "lag" on files with 10k+ lines.
+*   **Plan**: Offload the heavy Mermaid rendering and Markdown-to-HTML conversion to a **Web Worker**. The UI should never "freeze" while a diagram is generating.
+
+### 🧩 Unified Plugin System
+*   **Missing**: We have separate logic for `LivePreview.jsx` and the `CodeEditor` engine.
+*   **Plan**: Build a **Unified Plugin Registry**. If a new feature (like a Kanban board) is added, it should be a single plugin that provides both the CodeMirror widget and the Reading Mode component.
+
+---
+
+## 3. The 3 Modes: Robustness Matrix
+
+| Feature | Source Mode (Text) | Live Preview (Hybrid) | Reading Mode (View) |
+| :--- | :--- | :--- | :--- |
+| **Philosophy** | "Data is King" | "Visual Simplicity" | "Presentation Quality" |
+| **Editing** | Pure Text + LSP | In-place Inline Editing | No Editing (Clean UI) |
+| **Technology** | Language Servers (LSP) | React Portals | Static React Components |
+| **Missing** | Vim/Emacs Keymaps | Context-aware Toolbars | Interactive Data Views |
+
+---
+
+## 4. Immediate Roadmap (The "Big Three")
+
+1.  **Cursor-Aware Decoration Extension**: Implement a new CodeMirror ViewPlugin that manages the "Reveal on Focus" logic. This is the #1 step to robustness.
+2.  **Shared Parsing Engine**: Standardize on `unified.js` (`remark` + `rehype`) for every mode to ensure what you see in Live Preview is *exactly* what gets exported to PDF.
+3.  **Local Asset Management**: A system to handle local images/files (attachments) within the snippet library using dedicated folder structure.
+
+---
+
+## 5. Vision Summary
+DevSnippet should not just be a place to store code; it should be an **Integrated Intelligence Environment**. The goal is to make the "Source" feel powerful, the "Live" feel magic, and the "Reading" feel like a professional document.
