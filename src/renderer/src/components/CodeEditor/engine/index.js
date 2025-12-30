@@ -11,26 +11,43 @@ import { smartKeymap } from './keymap'
 export { EditorMode, setEditorMode }
 
 /**
- * linkClickHandler - Enables Cmd/Ctrl + Click behavior for links.
- * Even when the URL is hidden by the visual engine, clicking the text
- * with the modifier key will open the destination.
+ * linkClickHandler - Enables interactive behavior for links.
+ */
+/**
+ * linkClickHandler - Enables interactive behavior for links.
  */
 const linkClickHandler = EditorView.domEventHandlers({
   click(event, view) {
-    if (!event.ctrlKey && !event.metaKey) return false
+    const isReading = view.state.field(editorModeField) === EditorMode.READING
+    // In edit mode, require Ctrl/Cmd to prevent accidental navigation while typing
+    if (!isReading && !event.ctrlKey && !event.metaKey) return false
 
     const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
     if (pos === null) return false
 
-    // Traverse the syntax tree at the click position to find a Link
+    // 1. Check for WikiLinks (custom class-based detection)
+    const target = event.target
+    // Traverse up slightly in case we clicked an inner span (though unlikely with CM)
+    const linkNode = target.closest('.cm-wikilink')
+
+    if (linkNode) {
+      const text = linkNode.textContent.replace(/^\[\[/, '').replace(/\]\]$/, '').trim()
+      if (text) {
+        // Prevent default cursor/selection change if we are navigating
+        event.preventDefault()
+        window.parent.postMessage({ type: 'app:open-snippet', title: text }, '*')
+        return true
+      }
+    }
+
+    // 2. Check for standard GFM Links
     let url = null
     syntaxTree(view.state).iterate({
       from: pos,
       to: pos,
       enter: (node) => {
-        if (node.name === 'URL' || node.name === 'LinkTitle') {
-          // If we clicked the Title or the URL part, find the sibling URL
-          const parent = node.node.parent
+        if (node.name === 'URL' || node.name === 'LinkTitle' || node.name === 'Link') {
+          const parent = node.name === 'Link' ? node.node : node.node.parent
           if (parent && parent.name === 'Link') {
             const urlNode = parent.getChild('URL')
             if (urlNode) {
@@ -42,9 +59,15 @@ const linkClickHandler = EditorView.domEventHandlers({
     })
 
     if (url) {
-      window.open(url, '_blank')
+      if (url.startsWith('http')) {
+        window.parent.postMessage({ type: 'app:open-external', url }, '*')
+      } else {
+        window.open(url, '_blank')
+      }
       return true
     }
+
+    return false
   }
 })
 

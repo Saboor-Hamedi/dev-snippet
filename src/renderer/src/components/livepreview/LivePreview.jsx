@@ -1,9 +1,10 @@
 import React, { useMemo, useRef, useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
-import { useEditorZoomLevel } from '../../hook/useSettingsContext'
+import { useEditorZoomLevel, useSettings } from '../../hook/useSettingsContext'
 import { Smartphone, Tablet, Monitor, Layers } from 'lucide-react'
 import { SplitPaneContext } from '../splitPanels/SplitPaneContext'
-import { fastMarkdownToHtml } from '../../utils/fastMarkdown'
+import { markdownToHtml } from '../../utils/markdownParser'
+import previewStyles from '../../assets/preview.css?raw'
 import markdownStyles from '../../assets/markdown.css?raw'
 import variableStyles from '../../assets/variables.css?raw'
 import mermaidStyles from '../mermaid/mermaid.css?raw'
@@ -34,63 +35,89 @@ const LivePreview = ({
   const iframeRef = useRef(null)
   const splitContext = React.useContext(SplitPaneContext)
   const { overlayMode: isOverlay, setOverlayMode: setOverlay } = useAdvancedSplitPane()
+  const { settings } = useSettings()
   const [editorZoom] = useEditorZoomLevel()
+
+  const [renderedHtml, setRenderedHtml] = useState('')
+  const [isParsing, setIsParsing] = useState(false)
 
   const existingTitles = useMemo(() => {
     return (snippets || []).map((s) => (s.title || '').trim()).filter(Boolean)
   }, [snippets])
 
-  const html = useMemo(() => {
-    if (disabled || !code || !code.trim()) return ''
-    const normalizedLang = (language || 'markdown').toLowerCase()
-    if (normalizedLang === 'markdown' || normalizedLang === 'md') {
-      const isTooLarge = code.length > 500000
-      const visibleCode = isTooLarge ? code.slice(0, 500000) : code
-      let rendered = fastMarkdownToHtml(visibleCode, existingTitles)
-      if (isTooLarge) {
-        rendered +=
-          '<div class="preview-performance-notice">Preview truncated for performance.</div>'
+  useEffect(() => {
+    let active = true
+    const parse = async () => {
+      if (disabled || code === undefined || code === null) {
+        setRenderedHtml('')
+        return
       }
-      return rendered
-    }
 
-    if (normalizedLang === 'mermaid') {
-      const escaped = code
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-      return `
-        <div class="code-block-header mb-4" style="border: none; background: transparent;">
-          <span class="code-language font-bold" style="color: var(--color-accent-primary); opacity: 0.6;">Diagram Preview</span>
-          <button class="copy-code-btn" data-code="${escaped}" title="Copy Mermaid Source">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-          </button>
-        </div>
-        <div class="mermaid-diagram">${escaped}</div>`
-    }
+      setIsParsing(true)
+      try {
+        const normalizedLang = (language || 'markdown').toLowerCase()
+        let result = ''
 
-    const escaped = code
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-    return `
-      <div class="code-block-wrapper ${normalizedLang === 'plaintext' || normalizedLang === 'text' || normalizedLang === 'txt' ? 'is-plaintext' : ''}">
-        <div class="code-block-header">
-          <span class="code-language font-bold">${normalizedLang}</span>
-          <div class="code-actions">
-            <button class="copy-image-btn" data-code="${escaped}" data-lang="${normalizedLang}" title="Copy as Image">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-image"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-            </button>
-            <button class="copy-code-btn" data-code="${escaped}" title="Copy code">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-            </button>
-          </div>
-        </div>
-        <pre><code class="language-${normalizedLang}">${escaped}</code></pre>
-      </div>`
-  }, [code, language, existingTitles, disabled])
+        if (normalizedLang === 'markdown' || normalizedLang === 'md') {
+          const isTooLarge = code.length > 500000
+          const visibleCode = isTooLarge ? code.slice(0, 500000) : code
+          result = await markdownToHtml(visibleCode, {
+            renderMetadata: showHeader,
+            titles: existingTitles
+          })
+          if (isTooLarge) {
+            result +=
+              '<div class="preview-performance-notice">Preview truncated for performance.</div>'
+          }
+        } else if (normalizedLang === 'mermaid') {
+          const escaped = code
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+          result = `
+            <div class="code-block-header mb-4" style="border: none; background: transparent;">
+              <span class="code-language font-bold" style="color: var(--color-accent-primary); opacity: 0.6;">Diagram Preview</span>
+              <button class="copy-code-btn" data-code="${escaped}" title="Copy Mermaid Source">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+              </button>
+            </div>
+            <div class="mermaid-diagram-wrapper"><div class="mermaid">${escaped}</div></div>`
+        } else {
+          const escaped = code
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+          result = `
+            <div class="code-block-wrapper ${normalizedLang === 'plaintext' || normalizedLang === 'text' || normalizedLang === 'txt' ? 'is-plaintext' : ''}">
+              <div class="code-block-header">
+                <span class="code-language font-bold">${normalizedLang}</span>
+                <div class="code-actions">
+                  <button class="copy-image-btn" data-code="${escaped}" data-lang="${normalizedLang}" title="Copy as Image">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-image"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                  </button>
+                  <button class="copy-code-btn" data-code="${escaped}" title="Copy code">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                  </button>
+                </div>
+              </div>
+              <pre><code class="language-${normalizedLang}">${escaped}</code></pre>
+            </div>`
+        }
+
+        if (active) setRenderedHtml(result)
+      } catch (err) {
+        console.error('Markdown parsing error:', err)
+      } finally {
+        if (active) setIsParsing(false)
+      }
+    }
+    parse()
+    return () => {
+      active = false
+    }
+  }, [code, language, showHeader, existingTitles, disabled])
 
   const isDark = useMemo(() => {
     return !['polaris', 'minimal-gray'].includes(theme)
@@ -112,699 +139,24 @@ const LivePreview = ({
       const themeVars = `
         :root {
           ${cssVars}
-        }
-      `
-      const fontSize = `${16 * editorZoom}px`
-
-      const fontOverride = `
-    html, body {
-      background-color: transparent !important;
-      min-height: 100vh !important;
-      height: 100% !important;
-      width: 100% !important;
-      overflow-y: auto !important;
-      overflow-x: hidden !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      display: flex;
-      flex-direction: column;
-    }
-    .preview-container {
-      flex: 1;
-      width: 100% !important;
-      min-height: 100vh !important;
-      display: flex;
-      flex-direction: column;
-    }
-    .markdown-body {
-      flex: 1;
-      width: 100% !important;
-      max-width: var(--editor-max-width, 700px) !important;
-      margin: 0 auto !important;
-      min-height: 100vh !important;
-      padding-bottom: 2rem !important;
-      box-sizing: border-box;
-      padding-left: 10px !important;
-      padding-right: 10px !important;
-      padding-top: 10px !important;
-      font-size: ${fontSize} !important;
-    }
-    .markdown-body, .mermaid-wrapper, .mermaid-diagram, .actor, .node label { 
-      font-family: ${fontFamily}, sans-serif !important; 
-      color: var(--color-text-primary, ${isDark ? '#e6edf3' : '#1f2328'}) !important;
-      transition: color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      position: relative;
-      z-index: 10;
-    }
-        .preview-container {
-          transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-          padding: 0 !important;
-        }
-        pre code { 
-          font-family: 'JetBrains Mono', 'Cascadia Code', monospace !important; 
-          color: inherit;
-        }
-        hr {
-          height: 1px;
-          padding: 0;
-          margin: 24px 0;
-          background-color: var(--color-border);
-          border: 0;
-          opacity: 0.3;
-        }
-        .preview-intel {
-          display: flex;
-          gap: 12px;
-          font-size: 10px;
-          color: var(--color-text-tertiary);
-          margin-bottom: 20px;
-          border-bottom: 1px solid var(--color-border);
-          padding-bottom: 8px;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          opacity: 0.7;
-        }
-        .is-rtl {
-          direction: rtl;
-          text-align: right;
-        }
-        .preview-diff-add {
-          background-color: rgba(46, 160, 67, 0.15);
-          color: #3fb950;
-          text-decoration: none;
-          padding: 0 2px;
-          border-radius: 2px;
-        }
-        .preview-diff-del {
-          background-color: rgba(248, 81, 73, 0.15);
-          color: #f85149;
-          text-decoration: line-through;
-          padding: 0 2px;
-          border-radius: 2px;
-        }
-        .preview-progress-wrapper {
-          width: 100%;
-          height: 8px;
-          background: var(--color-bg-tertiary);
-          border-radius: 4px;
-          margin: 16px 0;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          overflow: hidden;
-        }
-        .preview-progress-bar {
-          height: 100%;
-          background: var(--color-accent-primary);
-          border-radius: 4px;
-          transition: width 0.3s ease;
-        }
-        .preview-progress-label {
-          font-size: 10px;
-          color: var(--color-text-secondary);
-          min-width: 30px;
-        }
-        .preview-file-tree {
-          background-color: var(--color-bg-tertiary);
-          border: 1px solid var(--color-border);
-          border-radius: 8px;
-          padding: 12px;
-          margin: 16px 0;
-          font-family: 'JetBrains Mono', monospace;
-          font-size: 12px;
-          color: var(--color-text-secondary);
-        }
-        .tree-line {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          height: 22px;
-          white-space: nowrap;
-        }
-        .preview-sparkline {
-          display: inline-block;
-          vertical-align: middle;
-          margin: 0 4px;
-          color: var(--color-accent-primary);
-          overflow: visible;
-        }
-        .preview-metadata-card {
-          padding: 30px;
-          background: var(--color-bg-tertiary);
-          border-radius: 12px;
-          margin-bottom: 30px;
-          border: 1px solid var(--color-border);
-          text-align: center;
-          animation: slideInDown 0.5s ease-out;
-        }
-        .meta-title {
-          font-size: 2.5rem !important;
-          margin: 0 0 10px 0 !important;
-          font-weight: 800 !important;
-          letter-spacing: -0.025em;
-          border: none !important;
-          padding: 0 !important;
-        }
-        .meta-details {
-          display: flex;
-          justify-content: center;
-          gap: 20px;
-          color: var(--color-text-secondary);
-          font-size: 0.9rem;
-          margin-bottom: 15px;
-        }
-        .meta-theme-pill {
-          display: inline-block;
-          padding: 4px 12px;
-          background: var(--color-accent-primary);
-          color: #fff;
-          border-radius: 20px;
-          font-size: 11px;
-          font-weight: 600;
-          text-transform: uppercase;
-        }
-        @keyframes slideInDown {
-          from { transform: translateY(-20px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-        .preview-timeline {
-          position: relative;
-          padding-left: 24px;
-          margin: 24px 0;
-          border-left: 2px solid var(--color-border);
-        }
-        .timeline-item {
-          position: relative;
-          margin-bottom: 24px;
-        }
-        .timeline-item::before {
-          content: "";
-          position: absolute;
-          left: -31px;
-          top: 4px;
-          width: 12px;
-          height: 12px;
-          border-radius: 50%;
-          background: var(--color-accent-primary);
-          border: 3px solid var(--color-bg-primary);
-        }
-        .timeline-date {
-          font-weight: 700;
-          font-size: 12px;
-          color: var(--color-accent-primary);
-          margin-bottom: 4px;
-        }
-        .timeline-content {
-          font-size: 14px;
-          color: var(--color-text-secondary);
-        }
-        .preview-badge {
-          display: inline-flex;
-          align-items: center;
-          font-size: 10px;
-          font-weight: 700;
-          height: 20px;
-          border-radius: 4px;
-          overflow: hidden;
-          margin: 0 4px;
-          vertical-align: middle;
-        }
-        .badge-label {
-          background: #555;
-          color: #fff;
-          padding: 0 8px;
-          height: 100%;
-          display: flex;
-          align-items: center;
-        }
-        .badge-value {
-          background: var(--badge-color, #0366d6);
-          color: #fff;
-          padding: 0 8px;
-          height: 100%;
-          display: flex;
-          align-items: center;
-        }
-        .preview-bar-chart {
-          display: flex;
-          align-items: flex-end;
-          gap: 4px;
-          height: 60px;
-          margin: 16px 0;
-          padding: 8px;
-          background: var(--color-bg-tertiary);
-          border-radius: 8px;
-        }
-        .bar-container {
-          flex: 1;
-          height: 100%;
-          background: rgba(255,255,255,0.05);
-          border-radius: 2px;
-          position: relative;
-        }
-        .bar-fill {
-          position: absolute;
-          bottom: 0;
-          width: 100%;
-          background: var(--color-accent-primary);
-          border-radius: 2px;
-          transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .preview-tooltip-trigger {
-          border-bottom: 1px dashed var(--color-accent-primary);
-          cursor: help;
-          position: relative;
-        }
-        .preview-tooltip-trigger::after {
-          content: attr(data-tip);
-          position: absolute;
-          bottom: 125%;
-          left: 50%;
-          transform: translateX(-50%) scale(0.8);
-          background: #000;
-          color: #fff;
-          padding: 6px 10px;
-          border-radius: 6px;
-          font-size: 11px;
-          white-space: nowrap;
-          opacity: 0;
-          visibility: hidden;
-          transition: all 0.2s ease;
-          z-index: 100;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-        }
-        .preview-tooltip-trigger:hover::after {
-          opacity: 1;
-          visibility: visible;
-          transform: translateX(-50%) scale(1);
-        }
-        .preview-grid {
-          display: grid;
-          grid-template-columns: repeat(var(--grid-cols, 1), 1fr);
-          gap: 16px;
-          margin: 16px 0;
-        }
-        .grid-col {
-          min-width: 0;
-        }
-        .preview-rating {
-          color: #ffb100;
-          font-family: serif;
-          font-size: 1.2em;
-          letter-spacing: 2px;
-          cursor: help;
-        }
-        .preview-img-sized {
-          object-fit: contain;
-          border-radius: 8px;
-        }
-        .preview-tabs {
-          border: 1px solid var(--color-border);
-          border-radius: 8px;
-          overflow: hidden;
-          margin: 20px 0;
-          background: var(--color-bg-secondary);
-        }
-        .tabs-header {
-          display: flex;
-          background: var(--color-bg-tertiary);
-          border-bottom: 1px solid var(--color-border);
-          padding: 0 8px;
-        }
-        .tab-btn {
-          padding: 10px 16px;
-          font-size: 13px;
-          font-weight: 500;
-          color: var(--color-text-secondary);
-          background: transparent;
-          border: none;
-          cursor: pointer;
-          position: relative;
-          transition: all 0.2s ease;
-        }
-        .tab-btn.active {
-          color: var(--color-accent-primary);
-        }
-        .tab-btn.active::after {
-          content: "";
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          height: 2px;
-          background: var(--color-accent-primary);
-        }
-        .tabs-body {
-          padding: 16px;
-        }
-        .tab-pane {
-          display: none;
-        }
-        .tab-pane.active {
-          display: block;
-          animation: fadeIn 0.3s ease;
-        }
-        .status-pulse {
-          display: inline-block;
-          width: 10px;
-          height: 10px;
-          background-color: var(--pulse-color, #238636);
-          border-radius: 50%;
-          margin-right: 8px;
-          position: relative;
-          vertical-align: middle;
-        }
-        .status-pulse::after {
-          content: "";
-          position: absolute;
-          width: 100%;
-          height: 100%;
-          border-radius: 50%;
-          background-color: inherit;
-          animation: pulse 2s infinite;
-          opacity: 0.5;
-        }
-        @keyframes pulse {
-          0% { transform: scale(1); opacity: 0.5; }
-          100% { transform: scale(3); opacity: 0; }
-        }
-        .status-dot {
-          display: inline-block;
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          margin-right: 8px;
-          vertical-align: middle;
-        }
-        .preview-footnotes {
-          margin-top: 50px;
-          font-size: 0.85em;
-          color: var(--color-text-tertiary);
-        }
-        /* ADMONITIONS (CALLOUTS) */
-        .preview-admonition {
-          padding: 16px 20px;
-          margin: 24px 0;
-          border-radius: 12px;
-          border: 1px solid var(--color-border);
-          background: var(--color-bg-tertiary);
-          position: relative;
-          overflow: hidden;
-        }
-        .preview-admonition::before {
-          content: "";
-          position: absolute;
-          left: 0;
-          top: 0;
-          bottom: 0;
-          width: 4px;
-          background: var(--admo-color, var(--color-accent-primary));
-        }
-        .admonition-title {
-          font-weight: 800;
-          font-size: 13px;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          margin-bottom: 8px;
-          color: var(--admo-color, var(--color-accent-primary));
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-        .admo-info { --admo-color: #58a6ff; }
-        .admo-warning { --admo-color: #d29922; }
-        .admo-danger { --admo-color: #f85149; }
-        .admo-success { --admo-color: #3fb950; }
-        .admo-note { --admo-color: #a371f7; }
-
-        /* KANBAN ENHANCEMENT */
-        .preview-kanban {
-          display: flex;
-          gap: 16px;
-          margin: 24px 0;
-          overflow-x: auto;
-          padding-bottom: 12px;
-          scroll-behavior: smooth;
-        }
-        .kanban-col {
-          flex: 1;
-          min-width: 260px;
-          background: var(--color-bg-secondary);
-          border-radius: 14px;
-          padding: 16px;
-          border: 1px solid var(--color-border);
-          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        .kanban-header {
-          font-weight: 800;
-          font-size: 11px;
-          text-transform: uppercase;
-          letter-spacing: 0.1em;
-          color: var(--color-accent-primary);
-          margin-bottom: 16px;
-          padding-bottom: 10px;
-          border-bottom: 2px solid var(--color-border);
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-        .kanban-tasks ul, .kanban-tasks li {
-          list-style: none !important;
-          padding: 0 !important;
-          margin: 0 !important;
-        }
-        .kanban-tasks li {
-          background: var(--color-bg-tertiary);
-          padding: 12px;
-          border-radius: 8px;
-          margin-bottom: 10px;
-          border: 1px solid var(--color-border);
-          font-size: 13px;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-          transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .kanban-tasks li:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-          border-color: var(--color-accent-primary);
-        }
-
-        /* QR CODE PREMIUM minimalist */
-        .preview-qr-wrapper {
-          display: inline-flex;
-          padding: 12px;
-          background: var(--color-bg-tertiary);
-          border: 1px solid var(--color-border);
-          border-radius: 14px;
-          margin: 16px 0;
-          box-shadow: 0 8px 30px rgba(0,0,0,0.25);
-          position: relative;
-          overflow: hidden;
-        }
-        .qr-container {
-          background: #fff;
-          padding: 8px;
-          border-radius: 10px;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-          flex-shrink: 0;
-        }
-        .preview-qr {
-          width: 86px;
-          height: 86px;
-          display: block;
-        }
-        .qr-footer {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-          overflow: hidden;
-        }
-        .qr-caption {
-          margin: 0 !important;
-          font-size: 9px !important;
-          font-weight: 800 !important;
-          text-transform: uppercase !important;
-          letter-spacing: 0.12em !important;
-          color: var(--color-accent-primary) !important;
-          opacity: 0.8;
-        }
-        .qr-link {
-          font-size: 12px !important;
-          font-weight: 700 !important;
-          color: var(--color-text-primary) !important;
-          text-decoration: none !important;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          max-width: 200px;
-          display: block;
-          transition: color 0.2s;
-        }
-        .qr-link:hover {
-          color: var(--color-accent-primary) !important;
-        }
-
-        .inline-code {
-          background-color: rgba(255, 255, 255, 0.08);
-          color: var(--color-accent-primary, #58a6ff);
-          padding: 2px 5px;
-          border-radius: 4px;
-          font-family: var(--font-mono, monospace);
-          font-size: 0.9em;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .table-wrapper {
-          width: 100%;
-          overflow-x: auto;
-          margin: 24px 0;
-          border-radius: 12px;
-          border: 1px solid var(--color-border);
-        }
-
-        /* TABLE ENHANCEMENT */
-        table {
-          width: 100% !important;
-          border-collapse: collapse !important;
-          margin: 0 !important;
-          border: none !important;
-        }
-        th {
-          background: var(--color-bg-tertiary);
-          font-size: 12px;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          padding: 14px 16px;
-          border-bottom: 2px solid var(--color-border);
-          text-align: left;
-          color: var(--color-accent-primary);
-        }
-        td {
-          padding: 12px 16px;
-          border-bottom: 1px solid var(--color-border);
-          font-size: 13px;
-        }
-        tr:last-child td { border-bottom: none; }
-        tr:hover td { background: var(--color-bg-secondary); }
-
-        .preview-math-block {
-          background: var(--color-bg-tertiary);
-          padding: 24px;
-          border-radius: 16px;
-          margin: 24px 0;
-          text-align: center;
-          font-family: 'Cambria Math', 'serif';
-          font-size: 1.4em;
-          border: 1px solid var(--color-border);
-          box-shadow: inset 0 0 40px rgba(0,0,0,0.1);
-        }
-        /* Header Padding Compensation (Set to 0 to fix 'more to the right' issue) */
-        .cm-pad-h1, .cm-pad-h2, .cm-pad-h3, .cm-pad-h4, .cm-pad-h5, .cm-pad-h6 {
-          padding-left: 0 !important;
-        }
-        .mermaid {
-          display: flex;
-          justify-content: center;
-          margin: 24px 0;
-          background: #ffffff;
-          padding: 20px;
-          border-radius: 8px;
-          border: none;
-          box-shadow: none;
-          transition: transform 0.3s ease;
-          white-space: pre;
-          max-width: 100%;
-          max-height: 200px;
-          overflow-x: auto;
-          overflow-y: auto !important;
-          color: #333;
-        }
-        .mermaid:hover {
-          transform: translateY(-4px);
-          border-color: var(--color-accent-primary);
-        }
-        .mermaid svg {
-          max-width: 100% !important;
-          height: auto !important;
-        }
-        /* MOBILE RESPONSIVITY */
-        @media (max-width: 768px) {
-          .preview-kanban {
-            flex-direction: column;
-          }
-          .kanban-col {
-            min-width: 100%;
-          }
-          .preview-grid {
-            grid-template-columns: 1fr !important;
-          }
-          .meta-title {
-            font-size: 1.5rem !important;
-          }
-          .meta-details {
-            flex-direction: column;
-            gap: 8px;
-          }
-          .preview-qr-wrapper {
-             max-width: 100%;
-             width: 100%;
-             justify-content: flex-start;
-          }
-          .qr-link {
-            max-width: 120px;
-          }
-          table {
-            display: block;
-            overflow-x: auto;
-          }
-          .preview-tabs .tabs-header {
-            flex-wrap: wrap;
-          }
-          .tab-btn {
-            padding: 8px 12px;
-            font-size: 12px;
-          }
-        }
-
-        .code-actions {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-        .copy-image-btn {
-          background: transparent;
-          border: none;
-          color: var(--color-text-tertiary);
-          cursor: pointer;
-          padding: 6px;
-          border-radius: 6px;
-          transition: all 0.2s;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .copy-image-btn:hover {
-          color: var(--color-accent-primary);
-          background: var(--color-bg-tertiary);
-        }
-        .markdown-body {
-          max-width: 700px;
-          margin: 0 auto;
+          --editor-font-size: ${((settings.editor?.fontSize || 14) * editorZoom) / 16}rem;
+          --font-sans: ${fontFamily}, sans-serif;
         }
       `
 
       iframe.contentWindow.postMessage(
         {
           type: 'render',
-          html,
+          html: renderedHtml,
           theme,
           isDark,
           isLive: true,
-          styles: `${variableStyles}\n${themeVars}\n${markdownStyles}\n${mermaidStyles}\n${fontOverride}`,
+          styles: `${variableStyles}\n${themeVars}\n${previewStyles}\n${mermaidStyles}`,
           mermaidConfig: getMermaidConfig(false, fontFamily),
           mermaidEngine: getMermaidEngine(),
           initialScrollPercentage: lastScrollPercentage.current,
-          editorZoom: editorZoom
+          editorZoom: editorZoom,
+          baseFontSize: settings.editor?.fontSize || 14
         },
         '*'
       )
@@ -823,7 +175,7 @@ const LivePreview = ({
       iframe.removeEventListener('load', syncContent)
       window.removeEventListener('message', handleReady)
     }
-  }, [html, theme, isDark, fontFamily, editorZoom])
+  }, [renderedHtml, theme, isDark, fontFamily, editorZoom])
 
   useEffect(() => {
     const handleMessage = (event) => {
@@ -970,15 +322,16 @@ const LivePreview = ({
         </div>
       )}
       <div
-        className="flex-1 w-full h-full min-h-0 relative"
+        className="flex-1 w-full min-h-0 relative live-preview-scroller-container"
         style={{ backgroundColor: isDark ? 'transparent' : '#ffffff' }}
       >
         <iframe
           ref={iframeRef}
           title="Live Preview"
-          className="w-full h-full border-none absolute inset-0"
+          className="w-full h-full border-none absolute inset-0 bg-transparent"
           sandbox="allow-scripts allow-modals allow-popups"
           src="preview.html"
+          style={{ height: '100%', width: '100%' }}
         />
       </div>
     </div>

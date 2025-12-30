@@ -9,7 +9,7 @@ import variableStyles from '../assets/variables.css?raw'
 import mermaidStyles from '../components/mermaid/mermaid.css?raw'
 import { getMermaidConfig } from '../components/mermaid/mermaidConfig'
 import { getMermaidEngine } from '../components/mermaid/mermaidEngine'
-import { fastMarkdownToHtml } from './fastMarkdown'
+import { markdownToHtml } from './markdownParser'
 
 import { themes } from '../components/preference/theme/themes'
 
@@ -408,7 +408,7 @@ const buildScript = (isDark, config) => `
 /**
  * Main Generation Entry Point
  */
-export const generatePreviewHtml = ({
+export const generatePreviewHtml = async ({
   code = '',
   title = 'Untitled Snippet',
   theme = 'midnight-syntax',
@@ -440,7 +440,7 @@ export const generatePreviewHtml = ({
   let contentHtml = ''
   if (isMarkdown) {
     // Hide intel (word count/read time) for print/export views
-    contentHtml = fastMarkdownToHtml(code, existingTitles, !forPrint)
+    contentHtml = await markdownToHtml(code, { renderMetadata: !forPrint })
   } else {
     // Escaped content for general snippets (Code or Text)
     const escaped = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')

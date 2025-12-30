@@ -632,15 +632,23 @@ html[data-theme='minimal-gray'] ::-webkit-scrollbar-track {
 
 /* WikiLinks [[link]] */
 .markdown-body .wikilink,
-.markdown-body a[href*='[['] {
-  color: #a5d6ff !important;
-  background-color: rgba(88, 166, 255, 0.1) !important;
+.markdown-body a[href*='[['],
+.markdown-body .preview-quicklink {
+  color: var(--color-accent-primary, #58a6ff) !important;
+  background-color: transparent !important;
   padding: 2px 6px !important;
-  border-radius: 4px !important;
+  border-radius: 6px !important;
   text-decoration: none !important;
   font-weight: 500 !important;
   border: none !important;
-  box-shadow: none !important;
+  transition: all 0.2s ease !important;
+  font-size: inherit !important;
+}
+
+.markdown-body .preview-quicklink:hover {
+  background-color: rgba(88, 166, 255, 0.15) !important;
+  text-decoration: none !important;
+  transform: translateY(-1px);
 }
 
 /* @mentions */
@@ -727,14 +735,15 @@ html[data-theme='minimal-gray'] ::-webkit-scrollbar-track {
 }
 
 .markdown-body .task-list-item input[type='checkbox']:checked::after {
-  content: '✓';
+  content: '';
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: white;
-  font-size: 10px;
-  font-weight: bold;
+  top: 1.5px;
+  left: 4.5px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2.5px 2.5px 0;
+  transform: rotate(45deg);
 }
 
 /* ===== CODE BLOCK HEADER ===== */

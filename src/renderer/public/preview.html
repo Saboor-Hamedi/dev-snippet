@@ -69,15 +69,6 @@
 
     <!-- Dependencies (Allowed by CSP) -->
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
-    <link
-      id="hljs-theme"
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css"
-    />
-    <script
-      src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"
-      onload="window.hljsReady = true"
-    ></script>
   </head>
   <body class="markdown-body">
     <div class="preview-container">
@@ -91,20 +82,6 @@
        */
 
       let currentConfig = {}
-
-      const highlight = () => {
-        if (!window.hljs) {
-          // If NOT ready yet, wait and try again
-          setTimeout(highlight, 200)
-          return
-        }
-        document.querySelectorAll('pre code').forEach((block) => {
-          if (!block.classList.contains('hljs')) {
-            // Apply highlighting
-            hljs.highlightElement(block)
-          }
-        })
-      }
 
       // Tab Switching Logic (Global)
       window.switchTab = (id, index) => {
@@ -132,21 +109,14 @@
             mermaidConfig,
             mermaidEngine,
             initialScrollPercentage,
-            editorZoom = 1.0
+            editorZoom = 1.0,
+            baseFontSize
           } = event.data
 
           // Update zoom-aware font size
-          const baseSize = 12 // Matches our default
+          const baseSize = baseFontSize || 14
           document.documentElement.style.fontSize = `${baseSize * editorZoom}px`
-          // 1. Update Appearance
-          const hljsLink = document.getElementById('hljs-theme')
-          if (hljsLink) {
-            const newTheme = isDark ? 'github-dark.min.css' : 'github.min.css'
-            if (!hljsLink.href.includes(newTheme)) {
-              hljsLink.href = `https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/${newTheme}`
-            }
-          }
-
+          document.body.style.fontSize = `${baseSize * editorZoom}px`
           document.documentElement.setAttribute('data-theme', theme)
           document.documentElement.className = theme + (isDark ? ' dark' : '')
 
@@ -202,8 +172,6 @@
 
           // 4. Process Logic
           const runLogic = async () => {
-            if (window.hljs) highlight()
-
             if (window.mermaid) {
               try {
                 const theme = isDark ? 'dark' : 'neutral'

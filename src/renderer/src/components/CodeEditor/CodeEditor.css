@@ -158,6 +158,10 @@
   cursor: pointer !important;
 }
 
+.cm-tooltip-autocomplete ul li:hover {
+  background-color: var(--color-hover-bg, rgba(255, 255, 255, 0.05)) !important;
+}
+
 .cm-tooltip-autocomplete ul li[aria-selected] {
   background-color: var(--color-accent-primary) !important;
   color: white !important;
@@ -242,6 +246,17 @@
   text-align: right !important;
 }
 
+/* Wiki Link Stying in Editor */
+.cm-wikilink {
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.cm-wikilink:hover {
+  background-color: rgba(88, 166, 255, 0.15);
+}
+
 /* Interactive Checkboxes (Task Lists) */
 .cm-md-checkbox {
   display: inline-flex;
@@ -250,18 +265,21 @@
   vertical-align: middle;
   margin-right: 6px;
   transform: translateY(-1px);
+  position: relative;
+  width: 16px;
+  height: 16px;
 }
 
 .cm-md-checkbox input[type='checkbox'] {
   appearance: none;
   -webkit-appearance: none;
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
   border: 1.5px solid var(--color-text-secondary, #8b949e);
   border-radius: 4px;
   background-color: transparent;
   cursor: pointer;
-  position: relative;
+  margin: 0;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   outline: none;
 }
@@ -271,16 +289,17 @@
   border-color: var(--color-accent-primary, #58a6ff);
 }
 
-.cm-md-checkbox input[type='checkbox']:checked::after {
-  content: '';
+.cm-checkbox-check {
   position: absolute;
-  left: 4px;
-  top: 1px;
-  width: 4px;
-  height: 8px;
-  border: solid white;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
 }
 
 .cm-md-checkbox input[type='checkbox']:hover {
@@ -300,6 +319,16 @@
 }
 
 /* Marker Stability (Ghost Footprint) */
+.cm-marker-hidden,
+.cm-taskMarker,
+.cm-listMark,
+.cm-delimiter,
+.cm-marker {
+  text-decoration: none !important;
+  border-bottom: none !important;
+  font-style: normal !important;
+}
+
 .cm-marker-hidden {
   opacity: 0 !important;
   color: transparent !important;

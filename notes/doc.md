@@ -167,6 +167,21 @@ To maintain a clean aesthetic without losing functionality, links are "Ghosted":
 2. The remaining title text remains interactive.
 3. **Ghost Interaction**: Holding `Cmd/Ctrl + Click` on the title will open the destination browser, even when the URL is invisible.
 
+### 4.5 Standardized Parsing Engine (Unified)
+
+To ensure 100% rendering consistency between the **Live Preview**, **Reading Mode**, and **PDF Export**, the application utilizes the **Unified.js** ecosystem (`markdownParser.js`).
+
+* **Parser**: `remark-parse` + `remark-gfm` + `remark-breaks`.
+* **Transpiler**: `remark-rehype` (converting Markdown AST to HTML AST).
+* **Compiler**: `rehype-stringify`.
+* **Standard Features**: GFM Tables, Footnotes, Task Lists, Emojis, Auto-links.
+* **Custom Logic**:
+  * **Directives**: Native handling of `::: info` callouts via `remark-directive`.
+  * **Mermaid Detection**: Automatic detection and wrapping of mermaid diagrams.
+  * **Specialty Blocks**: Robust handling of `[kanban]`, `[tabs]`, and `[grid]` components.
+
+By using a single source of truth for parsing, "visual drift" (where the preview looks different from the export) is mathematically eliminated.
+
 ---
 
 ## 5. User Reference
