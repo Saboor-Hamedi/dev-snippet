@@ -1,8 +1,8 @@
 # DevSnippet Technical Reference Manual
 
-**Version**: 1.2.1
+**Version**: 1.2.2
 **Date**: December 30, 2025
-**Status**: Stable
+**Status**: Stable (Unified Engine Update)
 
 ---
 
@@ -109,52 +109,63 @@ We use SQLite's **FTS5** extension.
 
 The editor is the most complex component of the Frontend. It transforms CodeMirror 6 (a code editor) into a "Live Preview" Markdown document.
 
-### 4.1 Engine Architecture
+### 4.1 Unified Engine Architecture
 
-The engine is split into three layers to ensure performance:
+The engine has been consolidated into a single, high-performance pass that is fully viewport-aware.
 
 ```mermaid
 classDiagram
-    note "Only processes Visible Viewport"
-    class StructurePlugin {
-        +update(view)
-        +buildDecorations()
+    note "Unified pass handles Blocks + Inline"
+    class RichMarkdownState {
+        +update(transaction)
+        +isRangeActive(pos)
+        +processViewport()
     }
     
-    class InlinePlugin {
-        +activeLines Set
-        +smartHiding()
-    }
-
     class WidgetFactory {
         +createMermaid()
         +createTable()
+        +createCheckbox()
     }
 
-    CodeMirror_View --> StructurePlugin : 1. Block Pass
-    CodeMirror_View --> InlinePlugin : 2. Inline Pass
-    StructurePlugin --> WidgetFactory : Requests Widgets
+    class StyleEngine {
+        +applyLineStyles()
+        +hideMarkers()
+    }
+
+    CodeMirror_View --> RichMarkdownState : Viewport Ranges
+    RichMarkdownState --> WidgetFactory : Requests Visual Units
+    RichMarkdownState --> StyleEngine : Atomic Marker Hiding
 ```
 
 ### 4.2 Handling "Jumps" (Layout Stability)
 
 A major challenge in rich text editing is layout shifting when switching between "Source" (Markdown) and "Preview" (Styled).
 
-**Solution: The Phantom Padding**
-When you leave a header line, we hide the `#` characters. To prevent the text from shifting left (jumping), we inject a CSS `padding-left` exactly matching the width of the hidden characters.
+**Solution: The Ghost Footprint**
+Instead of physically removing characters with `display: none`, we use `color: transparent`. This ensures that hidden markers (like `###`) maintain their exact width in the line, preventing horizontal "jitters" when focus moves.
 
-| State | Visual | Internal |
+| State | Visual | Internal Strategy |
 | :--- | :--- | :--- |
-| **Editing** | `Title` | Hash Visible + 0px Padding |
-| **Reading** | `Title` | Hash Hidden + 2ch Padding |
+| **Active Line** | `### Title` | Markers Visible (Editing Mode) |
+| **Inactive Line** | `Title` | Markers Transparent + `user-select: none` |
+| **Stability** | No Shift | Characters still occupy space |
 
 ### 4.3 Block Widgets
 
 Complex blocks are rendered as interactive widgets that replace the raw markdown source.
 
 * **Mermaid**: Async rendered SVG.
-* **Tables**: Editable Grid.
-* **Admonitions**: Styled `div` blocks.
+* **Tables**: Editable Grid widget.
+* **Admonitions**: Styled card blocks (:::).
+* **Task Lists**: Interactive checkboxes replacing `[ ]` and `[x]`.
+
+### 4.4 Immersive Ghost Links
+
+To maintain a clean aesthetic without losing functionality, links are "Ghosted":
+1. The `[URL]` part is hidden using the Ghost Footprint.
+2. The remaining title text remains interactive.
+3. **Ghost Interaction**: Holding `Cmd/Ctrl + Click` on the title will open the destination browser, even when the URL is invisible.
 
 ---
 

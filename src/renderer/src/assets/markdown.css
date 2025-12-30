@@ -66,16 +66,21 @@
 .markdown-body {
   background-color: transparent !important;
   color: var(--color-text-primary) !important;
-  font-family:
-    'Outfit',
-    'Inter',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    Helvetica,
-    Arial,
-    sans-serif !important;
+  font-family: var(
+    --preview-font-family,
+    var(
+      --editor-font-family,
+      'Outfit',
+      'Inter',
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      Roboto,
+      Helvetica,
+      Arial,
+      sans-serif
+    )
+  ) !important;
   line-height: 1.6 !important;
   letter-spacing: -0.01em;
   max-width: 100%;

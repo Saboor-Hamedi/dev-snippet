@@ -90,6 +90,7 @@
 }
 
 .cm-editor {
+  font-family: var(--editor-font-family, 'JetBrains Mono', monospace) !important;
   font-size: calc(var(--editor-font-size) * var(--zoom-level));
   background-color: var(--color-bg-primary, transparent) !important;
   min-width: 100% !important;
@@ -98,6 +99,7 @@
 }
 
 .cm-content {
+  font-family: var(--editor-font-family, 'JetBrains Mono', monospace) !important;
   font-size: calc(var(--editor-font-size) * var(--zoom-level)) !important;
   line-height: 1.6 !important;
   min-height: 150vh !important;
@@ -195,4 +197,129 @@
 .cm-scroller {
   scroll-behavior: auto !important; /* Disable browser 'smooth scroll' which lags parser sync */
   will-change: scroll-position !important;
+}
+
+/* --- RICH MARKDOWN EDITOR STYLING --- */
+
+/* Heading Vertical Rhythm (Balanced Stability) */
+.cm-line-h1,
+.cm-line-h2,
+.cm-line-h3,
+.cm-line-h4,
+.cm-line-h5,
+.cm-line-h6 {
+  line-height: 1.6 !important;
+  vertical-align: baseline !important;
+}
+
+.cm-line-h1 {
+  font-size: 1.8em;
+  padding: 0.8em 0 0.15em 0 !important;
+}
+.cm-line-h2 {
+  font-size: 1.5em;
+  padding: 0.7em 0 0.12em 0 !important;
+}
+.cm-line-h3 {
+  font-size: 1.25em;
+  padding: 0.6em 0 0.1em 0 !important;
+}
+.cm-line-h4,
+.cm-line-h5,
+.cm-line-h6 {
+  font-size: 1.1em;
+  padding: 0.4em 0 0.1em 0 !important;
+}
+
+/* Active line background */
+.cm-activeLine {
+  background-color: var(--color-active-line, rgba(88, 166, 255, 0.05)) !important;
+}
+
+/* Force standard gutter width to prevent horizontal "jump" on mode switch */
+.cm-gutters {
+  min-width: 48px !important;
+  text-align: right !important;
+}
+
+/* Interactive Checkboxes (Task Lists) */
+.cm-md-checkbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  margin-right: 6px;
+  transform: translateY(-1px);
+}
+
+.cm-md-checkbox input[type='checkbox'] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 15px;
+  height: 15px;
+  border: 1.5px solid var(--color-text-secondary, #8b949e);
+  border-radius: 4px;
+  background-color: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+.cm-md-checkbox input[type='checkbox']:checked {
+  background-color: var(--color-accent-primary, #58a6ff);
+  border-color: var(--color-accent-primary, #58a6ff);
+}
+
+.cm-md-checkbox input[type='checkbox']:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.cm-md-checkbox input[type='checkbox']:hover {
+  border-color: var(--color-accent-primary, #58a6ff);
+  box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.1);
+}
+
+/* Horizontal Rule (HR) Styling in Editor */
+.cm-hr-wrapper {
+  padding: 12px 0;
+}
+.cm-hr-line {
+  height: 2px;
+  background-color: var(--color-border);
+  opacity: 0.3;
+  width: 100%;
+}
+
+/* Marker Stability (Ghost Footprint) */
+.cm-marker-hidden {
+  opacity: 0 !important;
+  color: transparent !important;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* For Reading Mode where we don't care about cursor jumps, we can be more aggressive */
+.cm-editor-container[data-mode='READING'] .cm-marker-hidden {
+  display: none !important;
+}
+
+/* Premium Blockquote Accent Bar */
+.cm-blockquote-line {
+  border-left: 3px solid var(--color-accent-primary, #58a6ff) !important;
+  background-color: rgba(88, 166, 255, 0.03) !important;
+  padding-left: 12px !important;
+  transition: background-color 0.2s ease;
+}
+
+.cm-blockquote-line:hover {
+  background-color: rgba(88, 166, 255, 0.06) !important;
 }
