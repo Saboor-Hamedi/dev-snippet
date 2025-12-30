@@ -1,5 +1,6 @@
-import React, { useMemo, useRef, useEffect } from 'react'
+import React, { useMemo, useRef, useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
+import { useEditorZoomLevel } from '../../hook/useSettingsContext'
 import { Smartphone, Tablet, Monitor, Layers } from 'lucide-react'
 import { SplitPaneContext } from '../splitPanels/SplitPaneContext'
 import { fastMarkdownToHtml } from '../../utils/fastMarkdown'
@@ -33,6 +34,7 @@ const LivePreview = ({
   const iframeRef = useRef(null)
   const splitContext = React.useContext(SplitPaneContext)
   const { overlayMode: isOverlay, setOverlayMode: setOverlay } = useAdvancedSplitPane()
+  const [editorZoom] = useEditorZoomLevel()
 
   const existingTitles = useMemo(() => {
     return (snippets || []).map((s) => (s.title || '').trim()).filter(Boolean)
@@ -740,7 +742,8 @@ const LivePreview = ({
           styles: `${variableStyles}\n${themeVars}\n${markdownStyles}\n${mermaidStyles}\n${fontOverride}`,
           mermaidConfig: getMermaidConfig(false, fontFamily),
           mermaidEngine: getMermaidEngine(),
-          initialScrollPercentage: lastScrollPercentage.current
+          initialScrollPercentage: lastScrollPercentage.current,
+          editorZoom: editorZoom
         },
         '*'
       )

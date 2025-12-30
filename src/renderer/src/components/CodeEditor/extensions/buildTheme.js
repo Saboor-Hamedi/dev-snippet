@@ -1,4 +1,4 @@
-  // ...existing code...
+// ...existing code...
 // ...existing code...
 // Prevent caret from stretching to table width
 // This must be inside the theme object, not at the top level
@@ -6,7 +6,8 @@
 const buildTheme = (EditorView, options = {}) => {
   const {
     isDark = false,
-    fontSize = 'var(--editor-font-size, 14px)',
+    fontSize = 'var(--editor-font-size, 12px)',
+    fontFamily = 'var(--editor-font-family, "Outfit", "Inter", sans-serif)',
     caretColor = 'var(--caret-color, #ffffff)',
     disableComplexCM = false
   } = options
@@ -16,8 +17,8 @@ const buildTheme = (EditorView, options = {}) => {
       '&': {
         backgroundColor: 'transparent !important', // Removed hard background
         color: 'var(--color-text-primary, #0f172a)',
-        fontFamily: 'var(--editor-font-family, "JetBrains Mono")',
-        fontSize: fontSize,
+        fontFamily: fontFamily,
+        fontSize: 'inherit',
         lineHeight: '1.6',
         height: '100%',
         paddingLeft: '0'
@@ -34,11 +35,11 @@ const buildTheme = (EditorView, options = {}) => {
         scrollbarGutter: 'stable !important'
       },
       '.cm-content': {
-        width: '700px ',
-        maxWidth: '700px !important',
+        width: 'var(--editor-max-width, 700px)',
+        maxWidth: 'var(--editor-max-width, 700px) !important',
         margin: '0 auto !important', // Center in strict flex/block context
         marginRight: 'auto',
-        flex: '0 0 auto !important',
+        flex: '0 1 auto !important',
         // centered content with auto margins
 
         minHeight: '100%',
@@ -48,7 +49,7 @@ const buildTheme = (EditorView, options = {}) => {
         position: 'relative',
         fontFamily: 'inherit',
         lineHeight: '1.6',
-        fontSize: '0.75rem !important',
+        fontSize: fontSize, // Use the dynamic font size option
         boxSizing: 'border-box',
         caretColor: caretColor
       },
@@ -148,37 +149,36 @@ const buildTheme = (EditorView, options = {}) => {
       },
 
       // --- Rich Markdown (Obsidian-style) Styles ---
-      // These must NEVER have transitions as they cause layout jitters during typing
-      // Heading sizes mapped to Tailwind tokens:
-      // H1 -> lg (1.125rem) bold
+      // Heading sizes mapped to tailwind-like proportional scale:
+      // Base is 12px (1em)
       '.cm-md-h1': {
-        fontSize: '1.125rem !important',
+        fontSize: '1.333em !important', // 16px
         fontWeight: '700',
         color: 'var(--color-text-primary) !important',
         lineHeight: '1.25 !important',
         marginTop: '0.6em !important',
         marginBottom: '0.2em !important'
       },
-      // H2 -> base (1rem) bold
+      // H2 -> 14px
       '.cm-md-h2': {
-        fontSize: '1rem !important',
+        fontSize: '1.166em !important', // 14px
         fontWeight: '700',
         color: 'var(--color-text-primary) !important',
         lineHeight: '1.3 !important',
         marginTop: '0.5em !important',
         marginBottom: '0.1em !important'
       },
-      // H3 -> sm (0.875rem) bold
+      // H3 -> 13px
       '.cm-md-h3': {
-        fontSize: '0.875rem !important',
+        fontSize: '1.083em !important', // 13px
         fontWeight: '700',
         color: 'var(--color-text-primary) !important',
         lineHeight: '1.4 !important',
         marginTop: '0.4em !important'
       },
-      // H4 -> xs (0.75rem) bold
+      // H4 -> 12px (matches base)
       '.cm-md-h4': {
-        fontSize: '0.75rem !important',
+        fontSize: '1em !important', // 12px
         fontWeight: '700',
         paddingTop: '0.2em'
       },

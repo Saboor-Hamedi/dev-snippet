@@ -106,10 +106,24 @@
 
       // Handle content updates from parent
       window.addEventListener('message', (event) => {
-        const { type, html, styles, theme, isDark, isLive, mermaidConfig, mermaidEngine, initialScrollPercentage } =
-          event.data
+        const { type } = event.data
 
         if (type === 'render') {
+          const {
+            html,
+            styles,
+            theme,
+            isDark,
+            isLive,
+            mermaidConfig,
+            mermaidEngine,
+            initialScrollPercentage,
+            editorZoom = 1.0
+          } = event.data
+
+          // Update zoom-aware font size
+          const baseSize = 12 // Matches our default
+          document.documentElement.style.fontSize = `${baseSize * editorZoom}px`
           // 1. Update Appearance
           const hljsLink = document.getElementById('hljs-theme')
           if (hljsLink) {
@@ -316,6 +330,25 @@
           '*'
         )
       })
+      // Forward wheel events to parent for zoom
+      document.addEventListener(
+        'wheel',
+        (e) => {
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault()
+            window.parent.postMessage(
+              {
+                type: 'app:wheel',
+                deltaY: e.deltaY,
+                ctrlKey: e.ctrlKey,
+                metaKey: e.metaKey
+              },
+              '*'
+            )
+          }
+        },
+        { passive: false }
+      )
       // Notify parent that we are ready
       window.parent.postMessage({ type: 'app:ready' }, '*')
     </script>

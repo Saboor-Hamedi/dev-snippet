@@ -8,8 +8,8 @@ export const DEFAULT_SETTINGS = {
   editor: {
     editorBgColor: '#232731',
     zoomLevel: 1.0,
-    fontSize: 16,
-    fontFamily: 'JetBrains Mono',
+    fontSize: 12,
+    fontFamily: "'Outfit', 'Inter', sans-serif",
     fontLigatures: true,
     lineNumbers: true,
     wordWrap: 'off',
@@ -60,7 +60,7 @@ export const DEFAULT_SETTINGS = {
     sidebarIconColor: '#c9d1d9',
     sidebarWidth: 250,
     previewPosition: 'right',
-    previewFontSize: 14,
+    previewFontSize: 12,
     theme: 'system',
     modeSwitcher: {
       isFloating: false, // UI State: Is the switcher currently floating?

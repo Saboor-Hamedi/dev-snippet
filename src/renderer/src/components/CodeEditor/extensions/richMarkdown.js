@@ -239,11 +239,7 @@ class TableWidget extends WidgetType {
   eq(other) {
     // If mode changed, we MUST regenerate to update handlers/locking
     if (other.mode !== this.mode) return false
-
-    if (activeTableFocus && activeTableFocus.from === this.from) {
-      this.raw = other.raw
-      return true
-    }
+    // Fix: Include positions in eq to ensure refresh on shift to avoid duplication bug
     return other.raw === this.raw && other.from === this.from && other.to === this.to
   }
   ignoreEvent() {
@@ -253,9 +249,10 @@ class TableWidget extends WidgetType {
     if (!this.raw) return document.createElement('div')
     // Always use the current document text for this table range to avoid
     // divergence between the rendered widget and the underlying source.
-    const currentRaw = (view && view.state && view.state.doc)
-      ? view.state.doc.sliceString(this.from, this.to)
-      : this.raw || ''
+    const currentRaw =
+      view && view.state && view.state.doc
+        ? view.state.doc.sliceString(this.from, this.to)
+        : this.raw || ''
     const lines = (currentRaw || '').trim().split('\n')
     if (lines.length < 2) return document.createElement('div')
 
@@ -286,9 +283,8 @@ class TableWidget extends WidgetType {
       .filter((_, idx) => idx !== sepLineIdx && idx !== -1)
       .map((l) => getCells(l))
     // Use header line for col count
-    const headerColCount = (lines.length > 0 && sepLineIdx > 0)
-      ? getCells(lines[0]).length
-      : matrix[0]?.length || 0
+    const headerColCount =
+      lines.length > 0 && sepLineIdx > 0 ? getCells(lines[0]).length : matrix[0]?.length || 0
 
     let syncTimeout = null
     const dispatchUpdate = () => {
@@ -302,7 +298,7 @@ class TableWidget extends WidgetType {
         })
         if (sepLineIdx !== -1) {
           const sepCells = getCells(sepLine)
-          while (sepCells.length < headerColCount) sepCells.push('---')
+          while (sepCells.length < headerColCount) sepCells.push('----------')
           sepCells.length = headerColCount
           newLines.splice(sepLineIdx, 0, '| ' + sepCells.join(' | ') + ' |')
         }
@@ -311,7 +307,7 @@ class TableWidget extends WidgetType {
           userEvent: 'input.table.edit',
           scrollIntoView: false
         })
-      }, 600)
+      }, 300)
     }
 
     matrix.forEach((rowCells, rIdx) => {
@@ -377,7 +373,8 @@ class TableWidget extends WidgetType {
 
     const plusRight = document.createElement('div')
     plusRight.className = 'cm-md-table-edge-plus cm-md-table-plus-right'
-    plusRight.innerHTML = '+'
+    plusRight.innerHTML =
+      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>'
     plusRight.onclick = (e) => {
       e.preventDefault()
       e.stopPropagation()
@@ -385,7 +382,7 @@ class TableWidget extends WidgetType {
       const freshLines = (freshRaw || '').trim().split('\n')
       const updatedLines = freshLines.map((l, idx) => {
         const cells = getCells(l)
-        cells.push(idx === sepLineIdx ? '---' : ' ')
+        cells.push(idx === sepLineIdx ? '----------' : '          ')
         return '| ' + cells.join(' | ') + ' |'
       })
       view.dispatch({
@@ -397,14 +394,15 @@ class TableWidget extends WidgetType {
 
     const plusBottom = document.createElement('div')
     plusBottom.className = 'cm-md-table-edge-plus cm-md-table-plus-bottom'
-    plusBottom.innerHTML = '+'
+    plusBottom.innerHTML =
+      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>'
     plusBottom.onclick = (e) => {
       e.preventDefault()
       e.stopPropagation()
       const freshRaw = view.state.doc.sliceString(this.from, this.to)
       const freshLines = (freshRaw || '').trim().split('\n')
       const currentCols = getCells(freshLines[0] || '').length || headerColCount || 1
-      const newRow = '| ' + Array(currentCols).fill(' ').join(' | ') + ' |'
+      const newRow = '| ' + Array(currentCols).fill('          ').join(' | ') + ' |'
       const updatedTable = [...freshLines, newRow].join('\n')
       view.dispatch({
         changes: { from: this.from, to: this.to, insert: updatedTable },
@@ -435,7 +433,10 @@ class TableWidget extends WidgetType {
     btnDelete.onclick = (e) => {
       e.preventDefault()
       e.stopPropagation()
-      view.dispatch({ changes: { from: this.from, to: this.to, insert: '' }, userEvent: 'input.table.delete' })
+      view.dispatch({
+        changes: { from: this.from, to: this.to, insert: '' },
+        userEvent: 'input.table.delete'
+      })
     }
     toolbar.appendChild(btnDelete)
 
@@ -454,9 +455,12 @@ class TableWidget extends WidgetType {
         const freshSepIdx = freshLines.findIndex((l) => l.includes('---'))
         // Build row line indices (lines excluding separator)
         const rowLineIndices = []
-        freshLines.forEach((l, idx) => { if (idx !== freshSepIdx) rowLineIndices.push(idx) })
+        freshLines.forEach((l, idx) => {
+          if (idx !== freshSepIdx) rowLineIndices.push(idx)
+        })
         // Determine target column: prefer activeTableFocus, fall back to cursor position
-        let targetCol = (activeTableFocus && activeTableFocus.from === this.from) ? activeTableFocus.col : null
+        let targetCol =
+          activeTableFocus && activeTableFocus.from === this.from ? activeTableFocus.col : null
         if (targetCol === null) {
           const selPos = view.state.selection.main.head
           if (selPos >= this.from && selPos <= this.to) {
@@ -502,10 +506,16 @@ class TableWidget extends WidgetType {
         // If header now has zero columns, remove whole table
         const headerCells = getCells(newLines[rowLineIndices[0]] || newLines[0] || '')
         if (!headerCells || headerCells.length === 0) {
-          view.dispatch({ changes: { from: this.from, to: this.to, insert: '' }, userEvent: 'input.table.delete' })
+          view.dispatch({
+            changes: { from: this.from, to: this.to, insert: '' },
+            userEvent: 'input.table.delete'
+          })
           return
         }
-        view.dispatch({ changes: { from: this.from, to: this.to, insert: newLines.join('\n') }, userEvent: 'input.table.struct' })
+        view.dispatch({
+          changes: { from: this.from, to: this.to, insert: newLines.join('\n') },
+          userEvent: 'input.table.struct'
+        })
       } catch (err) {}
     }
     toolbar.appendChild(btnDelCol)
@@ -524,9 +534,12 @@ class TableWidget extends WidgetType {
         const freshSepIdx = freshLines.findIndex((l) => l.includes('---'))
         // Map matrix row index to freshLines index
         const rowLineIndices = []
-        freshLines.forEach((l, idx) => { if (idx !== freshSepIdx) rowLineIndices.push(idx) })
+        freshLines.forEach((l, idx) => {
+          if (idx !== freshSepIdx) rowLineIndices.push(idx)
+        })
         // Determine target row: prefer activeTableFocus, fall back to cursor position
-        let targetRow = (activeTableFocus && activeTableFocus.from === this.from) ? activeTableFocus.row : null
+        let targetRow =
+          activeTableFocus && activeTableFocus.from === this.from ? activeTableFocus.row : null
         if (targetRow === null) {
           const selPos = view.state.selection.main.head
           if (selPos >= this.from && selPos <= this.to) {
@@ -548,13 +561,19 @@ class TableWidget extends WidgetType {
         // Prevent deleting header row (index 0) via this action
         if (targetRow === 0) {
           // If user wants to delete header, remove whole table instead
-          view.dispatch({ changes: { from: this.from, to: this.to, insert: '' }, userEvent: 'input.table.delete' })
+          view.dispatch({
+            changes: { from: this.from, to: this.to, insert: '' },
+            userEvent: 'input.table.delete'
+          })
           return
         }
         const removeIdx = rowLineIndices[targetRow]
         if (removeIdx === undefined) return
         const newLines = freshLines.filter((_, idx) => idx !== removeIdx)
-        view.dispatch({ changes: { from: this.from, to: this.to, insert: newLines.join('\n') }, userEvent: 'input.table.struct' })
+        view.dispatch({
+          changes: { from: this.from, to: this.to, insert: newLines.join('\n') },
+          userEvent: 'input.table.struct'
+        })
       } catch (err) {}
     }
     toolbar.appendChild(btnDelRow)
@@ -633,8 +652,12 @@ class TableCreateWidget extends WidgetType {
     btn.onclick = (e) => {
       // Find where we are in the document
       const pos = view.posAtDOM(btn)
-      // Insert a basic 2x2 table structure
-      const tableText = '| Header 1 | Header 2 |\n| --- | --- |\n| Cell 1 | Cell 2 |'
+      // Insert a basic 3x3 table structure with better visual organization
+      const tableText =
+        '| Column 1 | Column 2 | Column 3 |\n' +
+        '| -------- | -------- | -------- |\n' +
+        '|          |          |          |\n' +
+        '|          |          |          |'
       view.dispatch({
         changes: { from: pos, to: pos, insert: tableText },
         selection: { anchor: pos + 2 } // Intelligently place cursor in the first cell
@@ -684,16 +707,19 @@ class CodeBlockHeaderWidget extends WidgetType {
 }
 
 class MermaidWidget extends WidgetType {
-  constructor(code, mode) {
+  constructor(code, mode, from, to) {
     super()
     this.code = code
     this.mode = mode
+    this.from = from
+    this.to = to
     this.zoom = 1
     this.panX = 0
     this.panY = 0
   }
   eq(other) {
     if (other.mode !== this.mode) return false
+    // Do not include from/to in eq for Mermaid to avoid expensive re-renders on every scroll/shift
     return other.code === this.code
   }
   toDOM(view) {
@@ -706,6 +732,19 @@ class MermaidWidget extends WidgetType {
     const svgContainer = document.createElement('div')
     svgContainer.className = 'cm-mermaid-svg-container'
     wrap.appendChild(svgContainer)
+
+    // Update local from/to from current doc position if shifted while widget was alive
+    // This prevents "show source" opening the wrong range if text was added above it.
+    const getFreshPos = () => {
+      try {
+        const pos = view.posAtDOM(wrap)
+        if (pos !== null) {
+          const delta = this.to - this.from
+          return { from: pos, to: pos + delta }
+        }
+      } catch (e) {}
+      return { from: this.from, to: this.to }
+    }
 
     // Panning Logic
     let isDragging = false
@@ -747,7 +786,8 @@ class MermaidWidget extends WidgetType {
     btnSource.title = 'View Source'
     btnSource.onclick = (e) => {
       e.stopPropagation()
-      showSourceModal(view, this.from, this.to, this.code)
+      const { from, to } = getFreshPos()
+      showSourceModal(view, from, to, this.code)
     }
 
     const zoomIn = document.createElement('button')
@@ -922,21 +962,30 @@ const richMarkdownField = StateField.define({
     const { doc, selection } = tr.state
     // Check the current Editor Mode (Source, Live Preview, Reading)
     const mode = tr.state.field(editorModeField)
-
+    // Source Code Mode: Return early to avoid jumping and unwanted decorations
+    if (mode === EditorMode.SOURCE) return Decoration.none
     if (!doc || doc.length === 0) return Decoration.none
 
-    // Determine the 'Active Line' (where the cursor is).
-    // In Live Preview, we usually want to reveal the raw source of the active line
-    // so the user can edit it, while keeping other lines rendered as rich preview.
+    // Determine the 'Active Lines' to reveal source for all selected lines.
     let head = selection.main.head
     if (head > doc.length) head = doc.length
     if (head < 0) head = 0
-    const activeLineNumber = safeLineAt(doc, head).number
+    const activeLines = new Set()
+    for (let i = 0; i < selection.ranges.length; i++) {
+      const range = selection.ranges[i]
+      const start = safeLineAt(doc, range.from).number
+      const end = safeLineAt(doc, range.to).number
+      for (let ln = start; ln <= end; ln++) activeLines.add(ln)
+    }
 
     const collected = []
 
-    // Helper: Add Table Creator to empty lines at the end of selection or on empty file
-    if (mode !== EditorMode.READING && doc.lineAt(head).text.trim() === '') {
+    // Helper: Add Table Creator to empty lines only in Live Preview and only if not selecting multiple lines
+    if (
+      mode === EditorMode.LIVE_PREVIEW &&
+      selection.main.empty &&
+      doc.lineAt(head).text.trim() === ''
+    ) {
       collected.push({
         from: head,
         to: head,
@@ -967,7 +1016,7 @@ const richMarkdownField = StateField.define({
             // Hide hashes in Reading/Live(inactive)
             if (
               mode !== EditorMode.SOURCE &&
-              (mode === EditorMode.READING || safeLineAt(doc, from).number !== activeLineNumber)
+              (mode === EditorMode.READING || !activeLines.has(safeLineAt(doc, from).number))
             ) {
               const text = doc.sliceString(from, to)
               const hashMatch = text.match(/^(#{1,6}\s?)/)
@@ -996,7 +1045,7 @@ const richMarkdownField = StateField.define({
             const match = text.match(/!\[(.*?)\]\((.*?)\)/)
             if (
               match &&
-              (mode === EditorMode.READING || safeLineAt(doc, from).number !== activeLineNumber)
+              (mode === EditorMode.READING || !activeLines.has(safeLineAt(doc, from).number))
             ) {
               collected.push({
                 from: from,
@@ -1018,7 +1067,7 @@ const richMarkdownField = StateField.define({
             // ONLY hide marks in Live/Read modes
             if (
               mode !== EditorMode.SOURCE &&
-              (mode === EditorMode.READING || safeLineAt(doc, from).number !== activeLineNumber)
+              (mode === EditorMode.READING || !activeLines.has(safeLineAt(doc, from).number))
             ) {
               collected.push({ from: from, to: to, deco: hideDeco })
             }
@@ -1027,8 +1076,7 @@ const richMarkdownField = StateField.define({
           if (node.name === 'TaskMarker') {
             const isReadingOrPreview =
               mode === EditorMode.READING ||
-              (mode === EditorMode.LIVE_PREVIEW &&
-                safeLineAt(doc, from).number !== activeLineNumber)
+              (mode === EditorMode.LIVE_PREVIEW && !activeLines.has(safeLineAt(doc, from).number))
             if (isReadingOrPreview) {
               const isChecked = doc.sliceString(from, to).toLowerCase().includes('x')
               collected.push({
@@ -1139,7 +1187,10 @@ const richMarkdownField = StateField.define({
                 collected.push({
                   from: from,
                   to: to,
-                  deco: Decoration.replace({ widget: new MermaidWidget(code, mode), block: true })
+                  deco: Decoration.replace({
+                    widget: new MermaidWidget(code, mode, from, to),
+                    block: true
+                  })
                 })
                 return false
               }
@@ -1201,7 +1252,10 @@ const richMarkdownField = StateField.define({
                 collected.push({
                   from: from,
                   to: to,
-                  deco: Decoration.replace({ widget: new TableWidget(doc.sliceString(from, to), from, to, mode), block: true })
+                  deco: Decoration.replace({
+                    widget: new TableWidget(doc.sliceString(from, to), from, to, mode),
+                    block: true
+                  })
                 })
               }
               lineNum = endLine
@@ -1231,7 +1285,10 @@ const richMarkdownField = StateField.define({
           collected.push({
             from: start,
             to: end,
-            deco: Decoration.replace({ widget: new TableWidget(block.trim(), start, end, mode), block: true })
+            deco: Decoration.replace({
+              widget: new TableWidget(block.trim(), start, end, mode),
+              block: true
+            })
           })
         }
       }

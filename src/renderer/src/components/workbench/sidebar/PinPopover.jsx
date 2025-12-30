@@ -36,12 +36,13 @@ const PinPopover = ({ x = 0, y = 0, snippet, onClose, onPing, onFavorite }) => {
     left: x,
     top: y + 10,
     zIndex: 2147483647,
+    outline: 'none',
     background: 'var(--popover-bg, white)',
     color: 'var(--popover-text, var(--color-text))',
     border: '1px solid rgba(0,0,0,0.08)',
     boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
     borderRadius: 4,
-    padding: '6px',
+    padding: '1px',
     minWidth: 160
   }
 
@@ -74,10 +75,12 @@ const PinPopover = ({ x = 0, y = 0, snippet, onClose, onPing, onFavorite }) => {
             onPing(snippet.id)
             onClose()
           }}
-          onKeyDown={(e) => handleKeyDown(e, () => {
-            onPing(snippet.id)
-            onClose()
-          })}
+          onKeyDown={(e) =>
+            handleKeyDown(e, () => {
+              onPing(snippet.id)
+              onClose()
+            })
+          }
           className="px-3 py-1 rounded-sm text-sm theme-exempt bg-transparent hover:bg-[var(--color-bg-tertiary)]"
         >
           Ping
@@ -91,10 +94,12 @@ const PinPopover = ({ x = 0, y = 0, snippet, onClose, onPing, onFavorite }) => {
             onFavorite(snippet.id)
             onClose()
           }}
-          onKeyDown={(e) => handleKeyDown(e, () => {
-            onFavorite(snippet.id)
-            onClose()
-          })}
+          onKeyDown={(e) =>
+            handleKeyDown(e, () => {
+              onFavorite(snippet.id)
+              onClose()
+            })
+          }
           className="px-3 py-1 rounded-sm text-sm theme-exempt bg-transparent hover:bg-[var(--color-bg-tertiary)]"
         >
           {favorited ? '★ Favorite' : '☆ Favorite'}

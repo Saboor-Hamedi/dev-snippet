@@ -3,7 +3,8 @@ import PropTypes from 'prop-types'
 import { GripVertical } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../hook/useKeyboardShortcuts.js'
 import { useEditorFocus } from '../../hook/useEditorFocus.js'
-import { useZoomLevel } from '../../hook/useSettingsContext' // Fixed import source
+import { useZoomLevel, useEditorZoomLevel } from '../../hook/useSettingsContext'
+import { ZOOM_STEP } from '../../hook/useZoomLevel.js'
 import WelcomePage from '../WelcomePage.jsx'
 import { useStatusBar as StatusBar } from '../layout/StatusBar/useStatusBar'
 import CodeEditor from '../CodeEditor/CodeEditor.jsx'
@@ -37,7 +38,8 @@ const SnippetEditor = ({
 }) => {
   const [code, setCode] = useState(initialSnippet?.code || '')
   const [isDirty, setIsDirty] = useState(false)
-  const [zoomLevel] = useZoomLevel()
+  const [zoomLevel, setZoom] = useZoomLevel()
+  const [editorZoom, setEditorZoom] = useEditorZoomLevel()
   const { settings, getSetting, updateSetting } = useSettings()
   const { currentTheme } = useTheme()
 
@@ -378,6 +380,19 @@ const SnippetEditor = ({
         })
         window.dispatchEvent(syntheticEvent)
       }
+
+      // Re-dispatch wheel events from iframe for zoom support
+      if (event.data?.type === 'app:wheel') {
+        const { deltaY, ctrlKey, metaKey } = event.data
+        const syntheticEvent = new WheelEvent('wheel', {
+          deltaY,
+          ctrlKey,
+          metaKey,
+          bubbles: true,
+          cancelable: true
+        })
+        window.dispatchEvent(syntheticEvent)
+      }
     }
 
     window.addEventListener('message', handleMessage)
@@ -481,113 +496,124 @@ const SnippetEditor = ({
   }, [generateFullHtml])
 
   // Helper function to pre-render Mermaid diagrams for Word export
-  const preRenderMermaidDiagrams = useCallback(async (html) => {
-    // Defensive mermaid rendering pipeline.
-    const tempDiv = document.createElement('div')
-    tempDiv.innerHTML = html || ''
+  const preRenderMermaidDiagrams = useCallback(
+    async (html) => {
+      // Defensive mermaid rendering pipeline.
+      const tempDiv = document.createElement('div')
+      tempDiv.innerHTML = html || ''
 
-    // Remove any embedded scripts/styles to avoid executing app code here
-    tempDiv.querySelectorAll('script, style, link').forEach((n) => n.remove())
+      // Remove any embedded scripts/styles to avoid executing app code here
+      tempDiv.querySelectorAll('script, style, link').forEach((n) => n.remove())
 
-    // Find mermaid containers produced by markdown or direct mermaid blocks
-    const mermaidDivs = tempDiv.querySelectorAll('div.mermaid, div.mermaid-diagram')
-    if (!mermaidDivs || mermaidDivs.length === 0) return tempDiv.innerHTML
+      // Find mermaid containers produced by markdown or direct mermaid blocks
+      const mermaidDivs = tempDiv.querySelectorAll('div.mermaid, div.mermaid-diagram')
+      if (!mermaidDivs || mermaidDivs.length === 0) return tempDiv.innerHTML
 
-    // Lazy-init mermaid instance and cache it on window to avoid re-init
-    let mermaidInstance = window.__mermaidExportInstance || window.mermaid
-    if (!mermaidInstance) {
-      try {
-        mermaidInstance = (await import('mermaid')).default
-        mermaidInstance.initialize({
-          startOnLoad: false,
-          theme: 'default',
-          securityLevel: 'loose',
-          fontFamily: settings?.editor?.fontFamily || 'Inter, sans-serif',
-          themeVariables: { fontFamily: settings?.editor?.fontFamily || 'Inter, sans-serif', fontSize: '14px' }
-        })
-        window.__mermaidExportInstance = mermaidInstance
-      } catch (err) {
-        console.warn('Mermaid import failed:', err)
-        return tempDiv.innerHTML
+      // Lazy-init mermaid instance and cache it on window to avoid re-init
+      let mermaidInstance = window.__mermaidExportInstance || window.mermaid
+      if (!mermaidInstance) {
+        try {
+          mermaidInstance = (await import('mermaid')).default
+          mermaidInstance.initialize({
+            startOnLoad: false,
+            theme: 'default',
+            securityLevel: 'loose',
+            fontFamily: settings?.editor?.fontFamily || 'Inter, sans-serif',
+            themeVariables: {
+              fontFamily: settings?.editor?.fontFamily || 'Inter, sans-serif',
+              fontSize: '14px'
+            }
+          })
+          window.__mermaidExportInstance = mermaidInstance
+        } catch (err) {
+          console.warn('Mermaid import failed:', err)
+          return tempDiv.innerHTML
+        }
       }
-    }
 
-    // Helper to decode HTML entities produced by escaped content
-    const decodeEntities = (str) => {
-      const txt = document.createElement('textarea')
-      txt.innerHTML = str
-      return txt.value
-    }
-
-    for (const div of Array.from(mermaidDivs)) {
-      try {
-        // Prefer innerHTML decoding, fall back to textContent
-        const raw = div.innerHTML && div.innerHTML.trim() ? div.innerHTML : div.textContent || ''
-        const mermaidCode = decodeEntities(raw).trim()
-        if (!mermaidCode) continue
-
-        const id = `mermaid-export-${Math.random().toString(36).slice(2, 9)}`
-        // mermaid.render sometimes returns svg string or object depending on version
-        const renderResult = await mermaidInstance.render(id, mermaidCode)
-        const svg = (renderResult && renderResult.svg) || renderResult || ''
-        if (!svg || svg.length < 20) throw new Error('empty svg')
-
-        const svgContainer = document.createElement('div')
-        svgContainer.innerHTML = svg
-        const svgElement = svgContainer.querySelector('svg')
-        if (!svgElement) throw new Error('no svg element')
-
-        // Apply safe inline sizing and color resets
-        svgElement.setAttribute('role', 'img')
-        svgElement.style.maxWidth = '100%'
-        svgElement.style.height = 'auto'
-        svgElement.style.display = 'block'
-        svgElement.style.margin = '1.2em auto'
-        svgElement.style.background = 'white'
-        svgElement.querySelectorAll('text').forEach((t) => (t.style.fill = '#000'))
-
-        div.replaceWith(svgElement)
-      } catch (err) {
-        console.warn('Mermaid render failed for a diagram, leaving source as code block', err)
-        // Replace with a safe code block to preserve readability
-        const pre = document.createElement('pre')
-        pre.textContent = div.textContent || div.innerText || ''
-        div.replaceWith(pre)
+      // Helper to decode HTML entities produced by escaped content
+      const decodeEntities = (str) => {
+        const txt = document.createElement('textarea')
+        txt.innerHTML = str
+        return txt.value
       }
-    }
 
-    return tempDiv.innerHTML
-  }, [settings?.editor?.fontFamily])
+      for (const div of Array.from(mermaidDivs)) {
+        try {
+          // Prefer innerHTML decoding, fall back to textContent
+          const raw = div.innerHTML && div.innerHTML.trim() ? div.innerHTML : div.textContent || ''
+          const mermaidCode = decodeEntities(raw).trim()
+          if (!mermaidCode) continue
+
+          const id = `mermaid-export-${Math.random().toString(36).slice(2, 9)}`
+          // mermaid.render sometimes returns svg string or object depending on version
+          const renderResult = await mermaidInstance.render(id, mermaidCode)
+          const svg = (renderResult && renderResult.svg) || renderResult || ''
+          if (!svg || svg.length < 20) throw new Error('empty svg')
+
+          const svgContainer = document.createElement('div')
+          svgContainer.innerHTML = svg
+          const svgElement = svgContainer.querySelector('svg')
+          if (!svgElement) throw new Error('no svg element')
+
+          // Apply safe inline sizing and color resets
+          svgElement.setAttribute('role', 'img')
+          svgElement.style.maxWidth = '100%'
+          svgElement.style.height = 'auto'
+          svgElement.style.display = 'block'
+          svgElement.style.margin = '1.2em auto'
+          svgElement.style.background = 'white'
+          svgElement.querySelectorAll('text').forEach((t) => (t.style.fill = '#000'))
+
+          div.replaceWith(svgElement)
+        } catch (err) {
+          console.warn('Mermaid render failed for a diagram, leaving source as code block', err)
+          // Replace with a safe code block to preserve readability
+          const pre = document.createElement('pre')
+          pre.textContent = div.textContent || div.innerText || ''
+          div.replaceWith(pre)
+        }
+      }
+
+      return tempDiv.innerHTML
+    },
+    [settings?.editor?.fontFamily]
+  )
 
   // Sanitize and rebuild a minimal, print-ready HTML wrapper to avoid app CSS leakage
-  const sanitizeExportHtml = useCallback((html) => {
-    try {
-      const temp = document.createElement('div')
-      temp.innerHTML = html || ''
+  const sanitizeExportHtml = useCallback(
+    (html) => {
+      try {
+        const temp = document.createElement('div')
+        temp.innerHTML = html || ''
 
-      // Remove scripts/styles and external links
-      temp.querySelectorAll('script, style, link').forEach((n) => n.remove())
+        // Remove scripts/styles and external links
+        temp.querySelectorAll('script, style, link').forEach((n) => n.remove())
 
-      // Remove UI artifacts from preview
-      temp.querySelectorAll('.preview-intel, .code-actions, .copy-code-btn, .ui-element, .preview-engine-toolbar').forEach((n) => n.remove())
+        // Remove UI artifacts from preview
+        temp
+          .querySelectorAll(
+            '.preview-intel, .code-actions, .copy-code-btn, .ui-element, .preview-engine-toolbar'
+          )
+          .forEach((n) => n.remove())
 
-      // Extract main content element
-      const contentElement = temp.querySelector('#content') || temp.querySelector('body') || temp
-      if (!contentElement) return html
+        // Extract main content element
+        const contentElement = temp.querySelector('#content') || temp.querySelector('body') || temp
+        if (!contentElement) return html
 
-      // Strip classes/ids/styles to avoid accidental styling inheritance
-      Array.from(contentElement.querySelectorAll('*')).forEach((el) => {
-        if (el === contentElement) return
-        el.removeAttribute('class')
-        el.removeAttribute('id')
-        el.removeAttribute('style')
-      })
+        // Strip classes/ids/styles to avoid accidental styling inheritance
+        Array.from(contentElement.querySelectorAll('*')).forEach((el) => {
+          if (el === contentElement) return
+          el.removeAttribute('class')
+          el.removeAttribute('id')
+          el.removeAttribute('style')
+        })
 
-      const contentHtml = contentElement.innerHTML || ''
+        const contentHtml = contentElement.innerHTML || ''
 
-      const printCss = `
+        const printCss = `
         @page { margin: 1.2in; size: letter; }
-        html, body { background: white; color: #000; font-family: ${settings?.editor?.fontFamily || "Inter, sans-serif"}; margin: 0; padding: 0; }
+        html, body { background: white; color: #000; font-family: ${settings?.editor?.fontFamily || 'Inter, sans-serif'}; margin: 0; padding: 0; }
         .preview-container { max-width: 6.5in; margin: 0 auto; padding: 20px; box-sizing: border-box; }
         img, svg { max-width: 100%; height: auto; }
         pre { background: #fafafa; border: 1px solid #e1e5e9; padding: 12px; overflow-x: auto; font-family: monospace; }
@@ -595,19 +621,24 @@ const SnippetEditor = ({
         th, td { border: 1px solid #d1d5db; padding: 8px; }
       `
 
-      const titleSafe = (title || 'snippet').replace(/[^a-z0-9]/gi, '_').toLowerCase()
-      return `<!doctype html><html><head><meta charset="utf-8"><title>${titleSafe}</title><style>${printCss}</style></head><body><div id="content" class="preview-container">${contentHtml}</div></body></html>`
-    } catch (err) {
-      console.warn('Sanitize export HTML failed, falling back to original HTML', err)
-      return html
-    }
-  }, [settings?.editor?.fontFamily, title])
+        const titleSafe = (title || 'snippet').replace(/[^a-z0-9]/gi, '_').toLowerCase()
+        return `<!doctype html><html><head><meta charset="utf-8"><title>${titleSafe}</title><style>${printCss}</style></head><body><div id="content" class="preview-container">${contentHtml}</div></body></html>`
+      } catch (err) {
+        console.warn('Sanitize export HTML failed, falling back to original HTML', err)
+        return html
+      }
+    },
+    [settings?.editor?.fontFamily, title]
+  )
 
   const handleCopyToClipboard = useCallback(async () => {
     try {
       // Generate HTML and pre-render diagrams first
       let fullHtml = await generateFullHtml(false)
-      if (fullHtml && (fullHtml.includes('class="mermaid"') || fullHtml.includes('class="mermaid-diagram"'))) {
+      if (
+        fullHtml &&
+        (fullHtml.includes('class="mermaid"') || fullHtml.includes('class="mermaid-diagram"'))
+      ) {
         fullHtml = await preRenderMermaidDiagrams(fullHtml)
       }
 
@@ -620,7 +651,9 @@ const SnippetEditor = ({
       if (!contentDiv) throw new Error('No content to copy')
 
       // Remove remaining interactive elements
-      contentDiv.querySelectorAll('.copy-code-btn, .ui-element, .code-actions').forEach((n) => n.remove())
+      contentDiv
+        .querySelectorAll('.copy-code-btn, .ui-element, .code-actions')
+        .forEach((n) => n.remove())
 
       // Remove specific headings we don't want copied
       contentDiv.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach((el) => {
@@ -678,12 +711,12 @@ const SnippetEditor = ({
     try {
       // Generate HTML specifically optimized for PDF (rendered markdown)
       let fullHtml = await generateFullHtml(true) // true for print
-      
+
       // Pre-render Mermaid diagrams to SVG for PDF export
       if (fullHtml.includes('class="mermaid"')) {
         fullHtml = await preRenderMermaidDiagrams(fullHtml)
       }
-      
+
       if (window.api?.invoke) {
         const sanitizedTitle = (title || 'snippet').replace(/[^a-z0-9]/gi, '_').toLowerCase()
         const success = await window.api.invoke('export:pdf', fullHtml, sanitizedTitle)
@@ -704,15 +737,15 @@ const SnippetEditor = ({
       // Generate HTML optimized for Word (rendered markdown)
       // Use print-optimized HTML for Word export to avoid including app CSS
       let fullHtml = await generateFullHtml(true) // true for print/export
-      
+
       // For Word export, handle Mermaid diagrams differently
       if (fullHtml.includes('class="mermaid"')) {
         // For Word, we'll keep Mermaid as code blocks since html-to-docx may not handle SVG well
         const tempDiv = document.createElement('div')
         tempDiv.innerHTML = fullHtml
-        
+
         const mermaidDivs = tempDiv.querySelectorAll('div.mermaid, div.mermaid-diagram')
-        mermaidDivs.forEach(div => {
+        mermaidDivs.forEach((div) => {
           // Try to extract Mermaid code from the original source
           const extractMermaidCode = (code) => {
             const mermaidRegex = /```mermaid\s*\n([\s\S]*?)\n```/g
@@ -723,10 +756,10 @@ const SnippetEditor = ({
             }
             return matches
           }
-          
+
           const mermaidBlocks = extractMermaidCode(code)
           let mermaidIndex = 0
-          
+
           const mermaidCode = div.textContent.trim()
           if (mermaidCode) {
             // Replace with a formatted code block that preserves Mermaid formatting
@@ -745,22 +778,22 @@ const SnippetEditor = ({
               color: #24292f;
               overflow-x: auto;
             `
-            
+
             // Format the Mermaid code properly
             const formattedCode = mermaidCode
               .split('\n')
-              .map(line => line.trimEnd()) // Remove trailing spaces but keep indentation
+              .map((line) => line.trimEnd()) // Remove trailing spaces but keep indentation
               .join('\n')
               .trim()
-            
+
             codeBlock.textContent = `mermaid\n${formattedCode}`
             div.parentNode.replaceChild(codeBlock, div)
           }
         })
-        
+
         fullHtml = tempDiv.innerHTML
       }
-      
+
       if (window.api?.invoke) {
         const sanitizedTitle = (title || 'snippet').replace(/[^a-z0-9]/gi, '_').toLowerCase()
         const success = await window.api.invoke('export:word', fullHtml, sanitizedTitle)
@@ -792,7 +825,13 @@ const SnippetEditor = ({
       if (onCancel) onCancel()
     },
     onToggleMode: cycleMode,
-    onCopyToClipboard: handleCopyToClipboard
+    onCopyToClipboard: handleCopyToClipboard,
+    // Zoom handlers for keyboard and mouse wheel
+    onZoomIn: () => setZoom((z) => z + ZOOM_STEP),
+    onZoomOut: () => setZoom((z) => z - ZOOM_STEP),
+    onZoomReset: () => setZoom(1.0),
+    onEditorZoomIn: () => setEditorZoom((z) => z + ZOOM_STEP),
+    onEditorZoomOut: () => setEditorZoom((z) => z - ZOOM_STEP)
   })
 
   const handleSave = async (forceSave = false, customTitle = null) => {

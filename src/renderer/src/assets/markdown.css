@@ -92,6 +92,7 @@
   margin: 0 auto;
   padding: 45px;
   background-color: transparent !important;
+  font-size: 12px !important;
 }
 
 /* Force pure black scrollbar for Minimal Gray */
@@ -217,29 +218,29 @@ html[data-theme='minimal-gray'] ::-webkit-scrollbar-track {
 }
 
 .markdown-body h1 {
-  font-size: 32px !important;
+  font-size: 16px !important;
   padding-bottom: 0.3em !important;
   border-bottom: 1px solid var(--color-border, #30363d) !important;
   margin-top: 0 !important; /* Top header should be flush */
 }
 
 .markdown-body h2 {
-  font-size: 26px !important;
+  font-size: 14px !important;
   padding-bottom: 0.3em !important;
   border-bottom: 1px solid var(--color-border, #30363d) !important;
 }
 
 .markdown-body h3 {
-  font-size: 22px !important;
+  font-size: 13px !important;
 }
 .markdown-body h4 {
-  font-size: 18px !important;
+  font-size: 12px !important;
 }
 .markdown-body h5 {
-  font-size: 16px !important;
+  font-size: 11px !important;
 }
 .markdown-body h6 {
-  font-size: 14px !important;
+  font-size: 10px !important;
   color: var(--color-text-secondary, #8b949e) !important;
 }
 

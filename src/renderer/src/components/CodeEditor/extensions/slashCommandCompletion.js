@@ -64,7 +64,8 @@ const COMMANDS = [
     label: 'Table',
     detail: 'Professional GFM table',
     section: 'Basic Blocks',
-    template: '\n| Header | Info |\n| :--- | :--- |\n| Cell | Data |\n',
+    template:
+      '\n| Column 1 | Column 2 | Column 3 |\n| -------- | -------- | -------- |\n|          |          |          |\n|          |          |          |\n',
     icon: '田'
   },
   {

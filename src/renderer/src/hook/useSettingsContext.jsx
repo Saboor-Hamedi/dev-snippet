@@ -90,8 +90,8 @@ export const SettingsProvider = ({ children }) => {
   useEffect(() => {
     if (settings.editor) {
       const root = document.documentElement
-      const baseFontSize = settings.editor.fontSize || 14
-      const fontFamily = settings.editor.fontFamily || 'JetBrains Mono'
+      const baseFontSize = settings.editor.fontSize || 12
+      const fontFamily = settings.editor.fontFamily || "'Outfit', 'Inter', sans-serif"
 
       // Cumulative result: (Setting Size * Editor Local Zoom)
       const finalFontSize = baseFontSize * editorZoom
