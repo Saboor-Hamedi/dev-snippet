@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { ShieldAlert, RefreshCw, Terminal, Info } from 'lucide-react'
+import pkg from '../../../../package.json'
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -119,7 +120,7 @@ class ErrorBoundary extends React.Component {
 
             {/* Footer */}
             <div className="px-8 py-4 bg-slate-50/50 dark:bg-slate-900/40 border-t border-slate-100 dark:border-slate-800 flex justify-center text-[11px] font-bold text-slate-400 dark:text-slate-600 uppercase tracking-widest">
-              Safe Recovery Mode • v1.1.6
+              Safe Recovery Mode • v{pkg.version}
             </div>
           </div>
         </div>

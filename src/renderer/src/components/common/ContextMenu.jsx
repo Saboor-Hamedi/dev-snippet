@@ -11,17 +11,23 @@ const ContextMenu = ({ x, y, items, onClose }) => {
   React.useLayoutEffect(() => {
     if (menuRef.current) {
       const height = menuRef.current.offsetHeight
-      const width = menuRef.current.offsetWidth || 200
+      const width = menuRef.current.offsetWidth || 180
 
       const spaceAbove = y
       const spaceBelow = window.innerHeight - y
 
       let finalY = y
+      // Avoid going off-screen to the right, with 10px padding
       let finalX = Math.min(x, window.innerWidth - width - 10)
+      // Avoid going off-screen to the left
+      finalX = Math.max(10, finalX)
 
       // If not enough space below, and more space above, flip it
       if (spaceBelow < height && spaceAbove > spaceBelow) {
-        finalY = y - height
+        finalY = Math.max(10, y - height)
+      } else if (spaceBelow < height) {
+        // Not enough space below, and above isn't better, just cap at bottom
+        finalY = Math.max(10, window.innerHeight - height - 10)
       }
 
       setStyle({
@@ -58,12 +64,13 @@ const ContextMenu = ({ x, y, items, onClose }) => {
   return (
     <div
       ref={menuRef}
-      className="fixed z-[9999] min-w-[200px] rounded-[5px] border py-1 animate-in fade-in zoom-in-95 duration-75 ease-out select-none"
+      className="fixed z-[9999] min-w-[160px] max-w-[calc(100vw-20px)] max-h-[85vh] overflow-y-auto rounded-[5px] border py-1 animate-in fade-in zoom-in-95 duration-75 ease-out select-none scrollbar-hide"
       style={{
         ...style,
-        backgroundColor: 'var(--color-bg-tertiary, #1e1e1e)',
+        backgroundColor: 'rgba(var(--color-bg-primary-rgb, 13, 17, 23), 0.98)',
         borderColor: 'var(--color-border)',
-        boxShadow: '0 12px 32px rgba(0, 0, 0, 0.6)' // Matching UniversalModal shadow
+        backdropFilter: 'blur(20px)',
+        boxShadow: '0 12px 32px rgba(0, 0, 0, 0.6)'
       }}
     >
       <div className="flex flex-col">
@@ -79,7 +86,7 @@ const ContextMenu = ({ x, y, items, onClose }) => {
                 e.stopPropagation()
                 if (!item.disabled) {
                   item.onClick()
-                  onClose()
+                  if (!item.stayOpen) onClose()
                 }
               }}
               className={`

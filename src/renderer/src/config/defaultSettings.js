@@ -79,12 +79,8 @@ export const DEFAULT_SETTINGS = {
     showPerformance: true,
     showLanguage: true,
     showStats: true,
+    showChars: true,
     showZoom: true
-  },
-  pagination: {
-    enablePagination: true, // Enable/disable pagination entirely
-    pageSize: 5, // Items per page (5-50 recommended)
-    autoSelectOnSearch: true // Auto-select first search result
   },
   activityBar: {
     bgColor: '#18181b',

@@ -3,11 +3,14 @@
  * Refactored for better organization and maintainability
  */
 
-const { app, BrowserWindow, globalShortcut, protocol } = require('electron')
-const path = require('path')
-
-// AUTO-DETECT: Enable DevTools in Dev, Disable in Production
-const ENABLE_DEVTOOLS = !app.isPackaged
+import { app, BrowserWindow, globalShortcut, protocol } from 'electron'
+import path from 'path'
+import { initDB, getDB, getPreparedStatements } from './database'
+import { createWindow } from './window'
+import { registerAllHandlers } from './ipc'
+// QuickCapture hook logic is frontend-only, we should not import it here in Main.
+// Instead, logic for toggling the window should be inside createWindow or handled via IPC if needed.
+// For now, we'll remove this incorrect import.
 
 // --- GLOBAL ERROR HANDLING (Prevent App Collapse) ---
 process.on('uncaughtException', (error) => {
@@ -17,12 +20,6 @@ process.on('uncaughtException', (error) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('UNHANDLED PROMISE REJECTION in Main Process:', reason)
 })
-
-// Import modules
-import { initDB, getDB, getPreparedStatements } from './database'
-import { createWindow } from './window'
-import { registerAllHandlers } from './ipc'
-import { toggleQuickCapture } from '../renderer/src/components/QuickCapture/useQuickCapture'
 
 // Main window reference
 let mainWindow = null
@@ -36,6 +33,9 @@ app.whenReady().then(() => {
     app.setAppUserModelId('com.devsnippet.app')
   }
 
+  // AUTO-DETECT: Enable DevTools in Dev, Disable in Production
+  const ENABLE_DEVTOOLS = !app.isPackaged
+
   // Initialize database
   const db = initDB(app)
   const preparedStatements = getPreparedStatements()
@@ -46,7 +46,19 @@ app.whenReady().then(() => {
   // 🚀 Register Global Quick Capture (Shift + Alt + Space)
   const shortcut = 'Shift+Alt+Space'
   const ret = globalShortcut.register(shortcut, () => {
-    toggleQuickCapture(app, ENABLE_DEVTOOLS)
+    if (mainWindow) {
+      if (mainWindow.isVisible()) {
+        if (mainWindow.isFocused()) {
+          mainWindow.hide()
+        } else {
+          mainWindow.show()
+          mainWindow.focus()
+        }
+      } else {
+        mainWindow.show()
+        mainWindow.focus()
+      }
+    }
   })
   if (!ret) {
     console.warn(`❌ Global shortcut [${shortcut}] registration failed.`)
@@ -70,7 +82,7 @@ app.whenReady().then(() => {
   // macOS: Re-create window when dock icon is clicked
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) {
-      mainWindow = createWindow(app, ENABLE_DEVTOOLS)
+      mainWindow = createWindow(app, !app.isPackaged)
     }
   })
 

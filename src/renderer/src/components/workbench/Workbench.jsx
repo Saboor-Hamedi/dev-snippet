@@ -66,10 +66,6 @@ const Workbench = ({
   onSelectionChange,
   settings,
   isSettingsOpen,
-  currentPage,
-  totalPages,
-  onPageChange,
-  enablePagination,
   // Clipboard operations
   onCopy,
   onCut,
@@ -340,10 +336,6 @@ const Workbench = ({
                 onToggle={() => setIsSidebarOpen(false)}
                 isCompact={isCompact}
                 showToast={showToast}
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={onPageChange}
-                enablePagination={enablePagination}
                 // Clipboard operations
                 onCopy={onCopy}
                 onCut={onCut}
@@ -455,10 +447,6 @@ Workbench.propTypes = {
   onAutosave: PropTypes.func,
   showPreview: PropTypes.bool,
   onTogglePreview: PropTypes.func,
-  currentPage: PropTypes.number,
-  totalPages: PropTypes.number,
-  onPageChange: PropTypes.func,
-  enablePagination: PropTypes.bool,
   // Clipboard operations
   onCopy: PropTypes.func,
   onCut: PropTypes.func,

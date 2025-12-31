@@ -1,0 +1,176 @@
+/* 
+  UNIFIED TOOLTIP STYLING (Robust & Centralized)
+  Targets: Autocomplete, Slash Commands, Wiki Links, Hover Previews
+*/
+
+/* 1. Global Tooltip Container Reset & Base Style */
+/* Using high specificity to override any default or hidden styles */
+body .cm-tooltip.cm-tooltip-autocomplete,
+body .cm-tooltip:has(.cm-link-preview-tooltip) {
+  /* Layout & Position */
+  position: absolute !important;
+  z-index: 100000 !important; /* Maximum priority */
+
+  /* Visuals - Theme Aware & Solid */
+  background-color: var(--color-tooltip-bg, #1e1e1e) !important;
+  border: 1px solid var(--color-border, #444) !important;
+  border-radius: 6px !important;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.45),
+    0 0 0 1px var(--color-border, rgba(255, 255, 255, 0.1)) !important;
+  color: var(--color-text-primary, #e6edf3) !important;
+
+  /* Reset generic styles */
+  padding: 0 !important;
+  margin: 0 !important;
+
+  /* Sizing - Allow natural expansion */
+  width: auto !important;
+  min-width: 150px !important; /* Minimum valid size */
+  max-width: 400px !important;
+  height: auto !important;
+  max-height: 350px !important;
+
+  /* Visibility & Animation */
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+  animation: cm-tooltip-slide-in 0.15s cubic-bezier(0.2, 0, 0.13, 1) forwards !important;
+
+  /* Interaction */
+  pointer-events: auto !important;
+  overflow: visible !important; /* CRITICAL for the "bridge" pseudo-element */
+}
+
+/* Animation Keyframes */
+@keyframes cm-tooltip-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 2. INVISIBLE BRIDGE (Gap Closer) */
+/* This pseudo-element fills the gap between cursor and tooltip to prevent 'mouse leave' closing */
+
+/* For tooltips appearing BELOW using 'padding-top' trick logic or explicit pseudo element */
+body .cm-tooltip.cm-tooltip-below::before {
+  content: '' !important;
+  position: absolute !important;
+  display: block !important;
+  top: -24px !important; /* Extend upward to meet the cursor */
+  left: 0 !important;
+  width: 100% !important;
+  height: 24px !important;
+  background: transparent !important; /* Invisible */
+  pointer-events: auto !important;
+  z-index: 100000 !important;
+}
+
+/* For tooltips appearing ABOVE */
+body .cm-tooltip.cm-tooltip-above::after {
+  content: '' !important;
+  position: absolute !important;
+  display: block !important;
+  bottom: -24px !important; /* Extend downward to meet the cursor */
+  left: 0 !important;
+  width: 100% !important;
+  height: 24px !important;
+  background: transparent !important;
+  pointer-events: auto !important;
+  z-index: 100000 !important;
+}
+
+/* 3. ROBUST POSITIONING */
+/* Enforce "Right Below" visually, overriding any CM defaults */
+
+body .cm-tooltip.cm-tooltip-below {
+  margin-top: 2px !important; /* Tiny visual gap */
+}
+
+body .cm-tooltip.cm-tooltip-above {
+  margin-top: -2px !important; /* Tiny visual gap */
+}
+
+/* 4. CONTENT STYLING (Lists & Items) */
+
+/* Scroll container */
+body .cm-tooltip-autocomplete ul {
+  max-height: 350px !important;
+  padding: 4px !important;
+  margin: 0 !important;
+  list-style: none !important;
+  overflow-y: auto !important;
+}
+
+/* List Items */
+body .cm-tooltip-autocomplete ul li {
+  padding: 6px 10px !important;
+  font-family: var(--editor-font-family, sans-serif) !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  color: var(--color-text-secondary, #ccc) !important;
+  cursor: pointer !important;
+  border-radius: 4px !important;
+  transition: background-color 0.1s ease !important;
+}
+
+/* Selected/Hover Item */
+body .cm-tooltip-autocomplete ul li[aria-selected='true'],
+body .cm-tooltip-autocomplete ul li:hover {
+  background-color: var(--color-accent-primary, #3b82f6) !important;
+  color: #ffffff !important;
+}
+
+/* Icons in list */
+body .cm-completionIcon {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 20px !important;
+  height: 20px !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-radius: 3px !important;
+  font-size: 10px !important;
+  flex-shrink: 0 !important;
+  padding-right: 0 !important;
+  margin-right: 0 !important;
+}
+
+body .cm-completionDetail {
+  font-size: 10px !important;
+  opacity: 0.6 !important;
+  margin-left: auto !important;
+  font-style: italic !important;
+}
+
+body .cm-tooltip-autocomplete ul li[aria-selected='true'] .cm-completionDetail {
+  color: #fff !important;
+  opacity: 0.9 !important;
+}
+
+/* 5. LINK PREVIEW CONTENT SPECIFICS */
+body .cm-link-preview-tooltip {
+  padding: 0 !important;
+  background-color: var(--color-bg-secondary, #1e1e1e) !important;
+  color: var(--color-text-primary, #e6edf3) !important;
+  width: auto !important;
+  max-width: 400px !important;
+  border-radius: 6px !important;
+}
+
+/* 6. MOBILE RESPONSIVENESS (Generic) */
+/* Ensure it stays on screen on small devices */
+@media (max-width: 768px) {
+  body .cm-tooltip.cm-tooltip-autocomplete,
+  body .cm-tooltip:has(.cm-link-preview-tooltip) {
+    max-width: 90vw !important;
+    left: 20px !important; /* Safe left alignment if CM tries to put it offscreen */
+  }
+}

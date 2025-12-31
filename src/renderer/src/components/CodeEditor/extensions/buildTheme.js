@@ -26,10 +26,10 @@ const buildTheme = (EditorView, options = {}) => {
         lineHeight: '1.6',
         height: '100%',
         paddingLeft: '0',
-        textAlign: 'justify'
+        textAlign: 'left'
       },
       '.cm-line': {
-        textAlign: 'justify'
+        textAlign: 'left'
       },
       '.cm-content .cm-line-h1, .cm-content .cm-line-h2, .cm-content .cm-line-h3, .cm-content .cm-line-h4, .cm-content .cm-line-h5, .cm-content .cm-line-h6':
         {
@@ -52,10 +52,10 @@ const buildTheme = (EditorView, options = {}) => {
       // Height of the content should be 100% of the scroller
       '.cm-content': {
         width: '100%',
-        maxWidth: 'var(--editor-max-width, 700px) !important',
+        maxWidth: 'var(--editor-max-width, 1000px) !important',
         margin: '0 auto !important', // Center in strict flex/block context
         marginRight: 'auto',
-        flex: '0 1 auto !important',
+        flex: '1 1 auto !important',
         // centered content with auto margins
 
         minHeight: '100%',

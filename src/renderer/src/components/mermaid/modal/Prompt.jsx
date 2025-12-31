@@ -26,7 +26,17 @@ const Prompt = ({
     if (isOpen) {
       setIsProcessing(false) // Reset state when opening
       if (showInput) {
-        setTimeout(() => inputRef.current?.focus(), 100)
+        // Use multiple attempts to ensure focus after animation/render
+        const focus = () => {
+          if (inputRef.current) {
+            inputRef.current.focus()
+            inputRef.current.select()
+          }
+        }
+
+        focus()
+        setTimeout(focus, 50)
+        setTimeout(focus, 150)
       }
     }
   }, [isOpen, showInput])

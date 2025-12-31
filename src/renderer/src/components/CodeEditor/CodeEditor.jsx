@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
+import { AnimatePresence } from 'framer-motion'
 import * as React from 'react'
 import useCursorProp from '../../hook/settings/useCursorProp.js'
 import useGutterProp from '../../hook/settings/useGutterProp.js'
@@ -6,9 +7,11 @@ import { useSettings, useZoomLevel, useEditorZoomLevel } from '../../hook/useSet
 import useFocus from '../../hook/useFocus'
 import settingsManager from '../../config/settingsManager'
 import CodeMirror from '@uiw/react-codemirror'
-import { EditorView } from '@codemirror/view'
+import { EditorView, closeHoverTooltips } from '@codemirror/view'
+import { closeCompletion } from '@codemirror/autocomplete'
 import buildTheme from './extensions/buildTheme'
 import buildExtensions from './extensions/buildExtensions'
+import './UnifiedTooltip.css' // Import unified tooltip styling
 import ErrorBoundary from '../ErrorBoundary'
 import SearchPanel from './search/SearchPanel'
 import { lineNumbers } from '@codemirror/view'
@@ -76,6 +79,7 @@ const CodeEditor = ({
   const [isDark, setIsDark] = useState(forcedIsDark ?? false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [lastSearchQuery, setLastSearchQuery] = useState('')
+  const [searchFocusTrigger, setSearchFocusTrigger] = useState({ mode: 'find', ts: 0 })
 
   // Use focus hook for gutter toggle
   useFocus(viewRef, showGutter)
@@ -129,21 +133,54 @@ const CodeEditor = ({
     return () => window.removeEventListener('app:focus-editor', handleFocusEditor)
   }, [])
 
-  // Ctrl+F to open search
+  // Listen for request to close tooltips (from global shortcuts)
   useEffect(() => {
-    const editorContainer = editorDomRef.current
-    if (!editorContainer) return
+    const handleCloseTooltips = () => {
+      if (viewRef.current) {
+        if (typeof closeHoverTooltips === 'function') closeHoverTooltips(viewRef.current)
+        if (typeof closeCompletion === 'function') closeCompletion(viewRef.current)
+      }
+    }
+    window.addEventListener('app:close-tooltips', handleCloseTooltips)
+    return () => window.removeEventListener('app:close-tooltips', handleCloseTooltips)
+  }, [])
 
+  // Ctrl+F to open search
+  // Ctrl+F / Ctrl+H shortcuts (Global listener to catch even when specific focus is lost)
+  useEffect(() => {
     const handleKeyDown = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+      const isMod = e.ctrlKey || e.metaKey
+      const key = e.key.toLowerCase()
+
+      // Escape: Close tooltips first
+      if (key === 'escape') {
+        const hasTooltipFn = typeof closeHoverTooltips === 'function'
+        if (viewRef.current && hasTooltipFn && closeHoverTooltips(viewRef.current)) {
+          e.preventDefault()
+          e.stopPropagation()
+          return
+        }
+      }
+
+      // Ctrl+F: Find
+      if (isMod && key === 'f') {
         e.preventDefault()
         e.stopPropagation()
         setIsSearchOpen(true)
+        setSearchFocusTrigger({ mode: 'find', ts: Date.now() })
+      }
+      // Ctrl+H: Replace
+      else if (isMod && key === 'h') {
+        e.preventDefault()
+        e.stopPropagation()
+        setIsSearchOpen(true)
+        setSearchFocusTrigger({ mode: 'replace', ts: Date.now() })
       }
     }
 
-    editorContainer.addEventListener('keydown', handleKeyDown, true)
-    return () => editorContainer.removeEventListener('keydown', handleKeyDown, true)
+    // Use capture to ensure we get it before browser defaults or inner elements swallow it
+    window.addEventListener('keydown', handleKeyDown, true)
+    return () => window.removeEventListener('keydown', handleKeyDown, true)
   }, [])
 
   const [zoomLevel] = useZoomLevel()
@@ -336,8 +373,14 @@ const CodeEditor = ({
 
     const handler = setTimeout(() => {
       const charCount = (value || '').length
-      const lineCount = value.split('\n').length
-      const isLarge = lineCount > 10000 || charCount > 500000
+      // --- BLAZE OPTIMIZATION: Regex Line Counting ---
+      // split('\n').length creates a massive array of strings, which causes GC spikes.
+      // value.match(/\n/g) is much lighter on memory.
+      const lineCount = ((value || '').match(/\n/g) || []).length + 1
+
+      // Thresholds: Only disable complex features for truly massive files
+      // 100k lines or 5M characters
+      const isLarge = lineCount > 100000 || charCount > 5000000
 
       if (isLarge !== lastLargeState.current) {
         lastLargeState.current = isLarge
@@ -373,7 +416,7 @@ const CodeEditor = ({
           fontSize: 'var(--editor-font-size, 14px)',
           cursorBlinking: isBlinking,
           cursorBlinkingSpeed,
-          wordWrap: isLargeFile ? 'off' : wordWrap,
+          wordWrap,
           language: isLargeFile ? 'plaintext' : language,
           isLargeFile,
           snippetTitles,
@@ -491,6 +534,7 @@ const CodeEditor = ({
           onClose={() => setIsSearchOpen(false)}
           initialQuery={lastSearchQuery}
           onQueryChange={setLastSearchQuery}
+          focusTrigger={searchFocusTrigger}
         />
       )}
     </div>

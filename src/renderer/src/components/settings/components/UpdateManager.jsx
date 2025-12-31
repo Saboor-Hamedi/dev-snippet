@@ -75,15 +75,24 @@ const UpdateManager = () => {
     }
   }, [])
 
-  const handleCheck = async () => {
+  // Auto-check on mount
+  useEffect(() => {
+    handleCheck(true)
+  }, [])
+
+  const handleCheck = async (silent = false) => {
     if (!window.api?.checkForUpdates) {
-      setShowRestartModal(true)
+      if (!silent) {
+        setShowRestartModal(true)
+      }
       return
     }
 
     try {
-      setError(null)
-      setStatus('checking')
+      if (!silent) {
+        setError(null)
+        setStatus('checking')
+      }
 
       // Artificial delay for visual feedback
       setTimeout(async () => {
@@ -95,13 +104,17 @@ const UpdateManager = () => {
           }
         } catch (e) {
           // If it throws, it's an actual error (network, config, etc)
-          setError(e.message || 'Connection failed')
-          setStatus('error')
+          if (!silent) {
+            setError(e.message || 'Connection failed')
+            setStatus('error')
+          }
         }
       }, 700)
     } catch (err) {
-      setError('Communication error')
-      setStatus('error')
+      if (!silent) {
+        setError('Communication error')
+        setStatus('error')
+      }
     }
   }
 

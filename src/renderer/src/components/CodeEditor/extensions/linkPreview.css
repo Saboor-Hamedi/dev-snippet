@@ -1,26 +1,18 @@
-/* Link Preview Tooltip - Premium Aesthetic */
+/* Link Preview Tooltip - Premium Compact Aesthetic */
 .cm-link-preview-tooltip {
-  /* Box Framework */
-  background-color: var(--color-bg-secondary);
+  background-color: var(--color-tooltip-bg, #1e1e1e) !important;
   border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 0;
-  width: 270px; /* Slightly wider for Diagram Preview label */
-  min-height: 24px; /* Compact */
+  width: 270px;
+  min-height: 24px;
   display: flex;
   flex-direction: column;
   z-index: 99999999 !important;
   overflow: hidden;
-
-  /* Floating Effect */
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
-
-  /* Smooth Entry with DELAY to prevent jump */
-  /* backwards fill-mode ensures opacity is 0 during the delay */
   animation: tooltipFadeIn 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.05s backwards;
   transform-origin: bottom center;
-
-  /* Ensure mouse interaction */
   pointer-events: auto;
 }
 
@@ -40,16 +32,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 80px; /* More compact loading */
+  height: 70px;
   color: var(--color-text-tertiary);
-  font-size: 10px; /* Requested Size */
+  font-size: 10px;
   font-family: var(--font-sans, sans-serif);
   font-style: italic;
 }
 
-/* 1. Header Row */
+/* Header Row */
 .cm-link-preview-tooltip .preview-header {
-  padding: 2px 8px; /* Tighter */
+  padding: 2px 8px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
   display: flex;
   align-items: center;
@@ -70,44 +62,37 @@
   letter-spacing: -0.01em;
 }
 
-/* Pill (Language Tag) */
 .cm-link-preview-tooltip .preview-lang-pill {
   font-size: 9px;
-  background-color: var(--color-accent-primary); /* Blue Pill */
+  background-color: var(--color-accent-primary);
   color: white;
   padding: 1px 6px;
-  border-radius: 10px; /* Fully rounded pill */
+  border-radius: 10px;
   text-transform: uppercase;
   font-weight: 600;
   letter-spacing: 0.5px;
   line-height: 1.2;
 }
 
-/* 2. Body Preview */
+/* Body Preview - Tighter Spacing */
 .cm-link-preview-tooltip .preview-body {
-  padding: 6px 10px;
-  font-size: 8.5px; /* Balanced compact size */
-  line-height: 1.4;
+  padding: 6px 9px; /* Reduced horizontal padding slightly */
+  font-size: 8.5px;
+  line-height: 1.25;
   color: var(--color-text-secondary);
   font-family: var(--editor-font-family, 'Inter', sans-serif);
   white-space: pre-wrap;
   word-break: break-word;
   background-color: var(--color-bg-primary);
-
-  /* Enable Scrolling */
   flex-grow: 1;
-  max-height: 200px; /* Increased slightly */
-  overflow-y: auto; /* Allow scrolling */
-  overscroll-behavior: contain; /* Prevent parent scroll */
-
-  /* Remove mask to allow reading clear text */
-  mask-image: none;
-  -webkit-mask-image: none;
+  max-height: 200px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
-/* Minimal Scrollbar for the tooltip */
+/* Compact Scrollbar */
 .cm-link-preview-tooltip .preview-body::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 .cm-link-preview-tooltip .preview-body::-webkit-scrollbar-track {
   background: transparent;
@@ -122,9 +107,9 @@
   background-color: rgba(155, 155, 155, 0.5);
 }
 
-/* 3. Footer */
+/* Footer */
 .cm-link-preview-tooltip .preview-footer {
-  padding: 4px 12px;
+  padding: 3px 10px;
   font-size: 9px;
   color: var(--color-text-tertiary);
   background-color: var(--color-bg-tertiary);
@@ -133,129 +118,87 @@
   opacity: 0.7;
 }
 
-/* Rendered Markdown Constraints within Tooltip */
+/* Tight Markdown Styling Inside Tooltip */
 .cm-link-preview-tooltip .preview-body h1,
 .cm-link-preview-tooltip .preview-body h2,
 .cm-link-preview-tooltip .preview-body h3,
 .cm-link-preview-tooltip .preview-body h4 {
-  margin: 0.5em 0 0.2em 0;
+  margin: 0.6em 0 0.3em;
   font-size: 1.1em;
   font-weight: 600;
   line-height: 1.2;
-  border: none;
-  padding: 0;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0.2em;
+  color: var(--color-accent-primary);
 }
 
 .cm-link-preview-tooltip .preview-body h1 {
-  font-size: 1.1em; /* Reduced */
-  color: var(--color-accent-primary);
+  font-size: 1.15em;
 }
+
 .cm-link-preview-tooltip .preview-body p {
-  margin: 0.4em 0;
+  margin: 0.35em 0;
 }
+
 .cm-link-preview-tooltip .preview-body ul,
 .cm-link-preview-tooltip .preview-body ol {
   margin: 0.4em 0;
-  padding-left: 1.2em;
+  padding-left: 1.3em;
 }
+
 .cm-link-preview-tooltip .preview-body li {
-  margin: 0.1em 0;
-}
-.cm-link-preview-tooltip .preview-body blockquote {
-  margin: 0.4em 0;
-  padding-left: 8px;
-  border-left: 2px solid var(--color-accent-secondary);
-  font-style: italic;
-  opacity: 0.8;
-}
-.cm-link-preview-tooltip .preview-body code {
-  font-size: 0.9em;
-  background: rgba(127, 127, 127, 0.1);
-  padding: 0 3px;
-  border-radius: 3px;
-}
-.cm-link-preview-tooltip .preview-body pre {
-  background: rgba(0, 0, 0, 0.2) !important;
-  padding: 10px !important;
-  border-radius: 8px !important;
-  overflow-x: auto;
-  border: 1px solid rgba(255, 255, 255, 0.05) !important;
-}
-
-/* Enhanced Markdown Fidelity */
-.cm-link-preview-tooltip .preview-body h1,
-.cm-link-preview-tooltip .preview-body h2 {
-  border-bottom: 1px solid var(--color-border) !important;
-  padding-bottom: 0.2em;
-  margin-top: 1em;
-  color: var(--color-accent-primary) !important;
+  margin: 0.15em 0;
 }
 
 .cm-link-preview-tooltip .preview-body blockquote {
-  border-left: 3px solid var(--color-accent-primary) !important;
-  background: rgba(var(--color-accent-primary-rgb), 0.05) !important;
-  padding: 6px 12px !important;
+  margin: 0.6em 0;
+  padding: 5px 10px;
+  border-left: 3px solid var(--color-accent-primary);
+  background: rgba(var(--color-accent-primary-rgb), 0.05);
   border-radius: 0 4px 4px 0;
-  margin: 10px 0 !important;
+  font-style: italic;
+  opacity: 0.9;
 }
 
 .cm-link-preview-tooltip .preview-body code:not(pre code) {
-  background: rgba(255, 255, 255, 0.05) !important;
-  color: var(--color-accent-primary) !important;
-  padding: 1px 4px !important;
-  border-radius: 4px !important;
+  font-size: 0.9em;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-accent-primary);
+  padding: 1px 4px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.cm-link-preview-tooltip .preview-body pre {
+  background: rgba(0, 0, 0, 0.2) !important;
+  padding: 8px !important;
+  border-radius: 6px !important;
+  overflow-x: auto;
   border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  margin: 0.6em 0 !important;
 }
 
-.cm-link-preview-tooltip .preview-body ul,
-.cm-link-preview-tooltip .preview-body ol {
-  padding-left: 1.5em !important;
-}
-
-.cm-link-preview-tooltip .preview-body li {
-  margin-bottom: 0.2em !important;
-}
-
-/* Mermaid Tooltip Specifics */
+/* Mermaid Diagrams */
 .cm-link-preview-tooltip .mermaid {
   background: transparent !important;
   display: flex;
   justify-content: center;
-  padding: 10px 0;
-  width: 100%;
+  padding: 8px 0;
 }
 
 .cm-link-preview-tooltip .mermaid svg {
-  max-width: 100% !important;
+  max-width: 92% !important;
   height: auto !important;
   background: transparent !important;
 }
 
-/* Ensure flowlines and arrows are visible if the theme doesn't set them */
-.cm-link-preview-tooltip .mermaid .edgePath path {
-  stroke: #333333 !important;
-}
-
+.cm-link-preview-tooltip .mermaid .edgePath path,
 .cm-link-preview-tooltip .mermaid .arrowheadPath {
+  stroke: #333333 !important;
   fill: #333333 !important;
 }
 
-.cm-link-preview-tooltip .mermaid-diagram-wrapper {
-  margin: 8px 0;
-  overflow: visible;
-}
-
-/* Tooltip specific scaling override for consistent header look */
-.cm-link-preview-tooltip .code-language {
-  font-size: 8px !important;
-  opacity: 0.8 !important;
-}
-
-.cm-link-preview-tooltip .code-actions {
-  gap: 4px !important;
-}
-
-/* Specific to standard markdown code blocks if the class is present */
+/* Code Block Enhancements */
 .cm-link-preview-tooltip .markdown-body .code-block-wrapper {
   background-color: var(--color-bg-tertiary) !important;
   border: 1px solid var(--color-border) !important;
@@ -284,13 +227,17 @@
   opacity: 1;
 }
 
-/* Ensure SVG icons inside tooltip buttons are visible but tiny */
 .cm-link-preview-tooltip button svg {
   width: 9px !important;
   height: 9px !important;
   stroke-width: 2.5px !important;
 }
 
-.cm-link-preview-tooltip .mermaid svg {
-  max-width: 90% !important;
+.cm-link-preview-tooltip .code-language {
+  font-size: 8px !important;
+  opacity: 0.8 !important;
+}
+
+.cm-link-preview-tooltip .code-actions {
+  gap: 4px !important;
 }

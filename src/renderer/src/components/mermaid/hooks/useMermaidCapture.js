@@ -1,5 +1,4 @@
 import { useCallback } from 'react'
-import mermaid from 'mermaid'
 import { getMermaidConfig } from '../mermaidConfig'
 
 /**
@@ -20,6 +19,9 @@ export const useMermaidCapture = (fontFamily) => {
       const blobPromise = (async () => {
         let renderDiv = null
         try {
+          // Load Mermaid dynamically
+          const { default: mermaid } = await import('mermaid')
+
           // Initialize Mermaid with the 'neutral' document-style theme
           const captureConfig = getMermaidConfig(false, fontFamily)
           mermaid.initialize({

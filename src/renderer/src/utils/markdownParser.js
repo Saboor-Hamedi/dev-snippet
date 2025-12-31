@@ -363,4 +363,11 @@ export const markdownToHtml = async (text, options = {}) => {
   return finalHtml
 }
 
+export const codeToHtml = async (code, language = 'javascript') => {
+  if (!code) return ''
+  const md = `\`\`\`${language}\n${code}\n\`\`\``
+  const result = await mdParser.process(md)
+  return result.toString()
+}
+
 export default markdownToHtml

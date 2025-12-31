@@ -133,74 +133,7 @@
 
 /* Smooth but stable scroller */
 /* Autocompletion Tooltip */
-.cm-tooltip-autocomplete {
-  background-color: var(--color-bg-secondary) !important;
-  border: 1px solid var(--color-border) !important;
-  border-radius: 8px !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
-  overflow: hidden !important;
-  z-index: 9999 !important;
-}
-
-.cm-tooltip-autocomplete ul {
-  max-height: 250px !important;
-}
-
-.cm-tooltip-autocomplete ul li {
-  padding: 6px 12px !important;
-  font-size: 13px !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-  transition: all 0.15s ease !important;
-  color: var(--color-text-secondary) !important;
-  cursor: pointer !important;
-}
-
-.cm-tooltip-autocomplete ul li:hover {
-  background-color: var(--color-hover-bg, rgba(255, 255, 255, 0.05)) !important;
-}
-
-.cm-tooltip-autocomplete ul li[aria-selected] {
-  background-color: var(--color-accent-primary) !important;
-  color: white !important;
-  padding-left: 16px !important; /* Tiny visual shift on hover/select */
-}
-
-/* Label for the snippet itself */
-.cm-completionLabel {
-  font-family: var(--editor-font-family, 'JetBrains Mono') !important;
-  font-weight: 500 !important;
-  color: var(--color-text-primary) !important;
-}
-
-.cm-tooltip-autocomplete ul li[aria-selected] .cm-completionLabel {
-  color: white !important;
-}
-
-/* Secondary info (the "Snippet:" prefix or type) */
-.cm-completionDetail {
-  font-size: 11px !important;
-  opacity: 0.6 !important;
-  font-style: italic !important;
-  color: var(--color-text-secondary) !important;
-}
-
-.cm-tooltip-autocomplete ul li[aria-selected] .cm-completionDetail {
-  color: rgba(255, 255, 255, 0.8) !important;
-}
-
-.cm-completionType {
-  opacity: 0.4 !important;
-  font-size: 10px !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.5px !important;
-}
-
-.cm-scroller {
-  scroll-behavior: auto !important; /* Disable browser 'smooth scroll' which lags parser sync */
-  will-change: scroll-position !important;
-}
+/* Tooltip Styling moved to UnifiedTooltip.css to prevent conflicts and ensure robust positioning */
 
 /* --- RICH MARKDOWN EDITOR STYLING --- */
 
@@ -216,22 +149,26 @@
 }
 
 .cm-line-h1 {
-  font-size: 1.8em;
-  padding: 0.8em 0 0.15em 0 !important;
+  font-size: 1.4em;
+  padding: 0.15em 0 !important;
+  line-height: 1.6 !important; /* Seamless match to paragraphs */
 }
 .cm-line-h2 {
-  font-size: 1.5em;
-  padding: 0.7em 0 0.12em 0 !important;
+  font-size: 1.25em;
+  padding: 0.12em 0 !important;
+  line-height: 1.6 !important;
 }
 .cm-line-h3 {
-  font-size: 1.25em;
-  padding: 0.6em 0 0.1em 0 !important;
+  font-size: 1.15em;
+  padding: 0.1em 0 !important;
+  line-height: 1.6 !important;
 }
 .cm-line-h4,
 .cm-line-h5,
 .cm-line-h6 {
   font-size: 1.1em;
-  padding: 0.4em 0 0.1em 0 !important;
+  padding: 0.08em 0 !important;
+  line-height: 1.6 !important;
 }
 
 /* Active line background - Disabled for cleaner look */
@@ -394,7 +331,7 @@
 /* Constrain the actual text area to a readable width */
 /* Constrain the actual text area to a readable width with padding */
 .cm-editor-container.is-centered .cm-content {
-  max-width: 750px !important;
+  max-width: 850px !important;
   width: 100% !important;
   margin-left: auto !important;
   margin-right: auto !important;
@@ -495,8 +432,39 @@ html body .cm-content *::selection {
 .cm-force-selection {
   background-color: var(--cursor-selection-bg, rgba(65, 206, 92, 0.5)) !important;
   color: var(--selection-text, #ffffff) !important;
-  border-radius: 2px;
+  /* Exactly match 1.6 line-height: 0.3 (top) + 1.0 (text) + 0.3 (bottom) = 1.6 */
+  padding-top: 0.15em;
+  padding-bottom: 0.15em;
+  /* Horizontal padding */
+  padding-left: 4px;
+  padding-right: 4px;
+  /* Ensure background wraps cleanly */
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  border-radius: 0 !important;
 }
+
+/* Precisely match the caret height by accounting for symmetric line padding */
+/* Adjusted asymmetrically based on audio feedback for perfect alignment */
+.cm-line-h1 .cm-force-selection {
+  padding-top: 0.8em; /* Increased to fix "smaller from top" issue */
+  padding-bottom: 0.3em; /* Balanced height */
+}
+.cm-line-h2 .cm-force-selection {
+  padding-top: 0.44em;
+  padding-bottom: 0.2em; /* Reduced to fix "bigger from bottom" issue */
+}
+.cm-line-h3 .cm-force-selection {
+  padding-top: 0.4em;
+  padding-bottom: 0.34em;
+}
+.cm-line-h4 .cm-force-selection,
+.cm-line-h5 .cm-force-selection,
+.cm-line-h6 .cm-force-selection {
+  padding-top: 0.35em;
+  padding-bottom: 0.3em;
+}
+
 /* ============================================================================ */
 /* Zen Focus Mode Styles */
 .cm-zen-dimmed {

@@ -481,34 +481,34 @@ const SnippetEditor = ({
 
   const [namePrompt, setNamePrompt] = useState({ isOpen: false, initialName: '' })
 
-  // Low-priority stats calculation using debounced code to prevent typing lag
-  const stats = useMemo(() => {
+  // Word count is computationally expensive for large files, so we debounce it
+  const words = useMemo(() => {
     const text = debouncedCode || ''
     const len = text.length
-
-    // Optimized Word Count (O(n) time, O(1) memory) - No array allocation
-    let words = 0
+    let count = 0
     let inWord = false
-
-    // Loop optimized for performance on large strings
     for (let i = 0; i < len; i++) {
-      const code = text.charCodeAt(i)
-      // Check for whitespace: space (32), tab (9), newline (10), cr (13)
-      const isWhitespace = code === 32 || code === 9 || code === 10 || code === 13 || code === 160 // 160 is NBSP
-
+      const charCode = text.charCodeAt(i)
+      const isWhitespace =
+        charCode === 32 || charCode === 9 || charCode === 10 || charCode === 13 || charCode === 160
       if (isWhitespace) {
         inWord = false
       } else if (!inWord) {
         inWord = true
-        words++
+        count++
       }
     }
-
-    return {
-      chars: len,
-      words: words
-    }
+    return count
   }, [debouncedCode])
+
+  // Chars are O(1) and safe to compute live
+  const stats = useMemo(
+    () => ({
+      chars: (code || '').length,
+      words: words
+    }),
+    [code.length, words]
+  )
 
   useEffect(() => {
     if (isInitialMount.current) {
@@ -888,12 +888,28 @@ const SnippetEditor = ({
     },
     onToggleMode: cycleMode,
     onCopyToClipboard: handleCopyToClipboard,
-    // Zoom handlers for keyboard and mouse wheel
-    onZoomIn: () => setZoom((z) => z + ZOOM_STEP),
-    onZoomOut: () => setZoom((z) => z - ZOOM_STEP),
-    onZoomReset: () => setZoom(1.0),
-    onEditorZoomIn: () => setEditorZoom((z) => z + ZOOM_STEP),
-    onEditorZoomOut: () => setEditorZoom((z) => z - ZOOM_STEP)
+    onEscapeMenusOnly: (e) => {
+      // 1. Close Pin Popover if open
+      if (pinPopover?.visible) {
+        setPinPopover?.({ ...pinPopover, visible: false })
+        return true
+      }
+      // 2. Close Universal Modal if open
+      if (isUniOpen && closeModal) {
+        closeModal()
+        return true
+      }
+      if (isUniOpen && closeUni) {
+        closeUni()
+        return true
+      }
+
+      // 3. Dispatch to CodeEditor to close internal tooltips (link preview, autocomplete)
+      window.dispatchEvent(new CustomEvent('app:close-tooltips'))
+
+      // Return false so we don't block other Escape behaviors (like clearing selection)
+      return false
+    }
   })
 
   const handleSave = async (forceSave = false, customTitle = null) => {
@@ -1167,6 +1183,8 @@ const SnippetEditor = ({
                     </svg>
                   )
                 },
+
+                // Switch modes
                 {
                   id: 'live_preview',
                   label: 'Live',

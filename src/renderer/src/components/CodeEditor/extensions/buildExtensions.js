@@ -82,10 +82,19 @@ const buildExtensions = async (options, handlers = {}) => {
       if (wikiLinkCompletionSource) {
         completionSources.push(wikiLinkCompletionSource(snippetTitles))
       }
-      // Add Slash Command completions for markdown
+    } catch (e) {
+      console.warn('[Editor] Failed to load wiki link completion', e)
+    }
+
+    // 3. SLASH COMMANDS
+    try {
       const { slashCommandCompletionSource } = await import('./slashCommandCompletion.js')
-      completionSources.push(slashCommandCompletionSource)
-    } catch (e) {}
+      if (slashCommandCompletionSource) {
+        completionSources.push(slashCommandCompletionSource)
+      }
+    } catch (e) {
+      console.warn('[Editor] Failed to load slash commands', e)
+    }
   }
 
   // 3. CORE EDITOR FUNCTIONALITY (Try-Catch to prevent complete engine failure)
@@ -95,8 +104,13 @@ const buildExtensions = async (options, handlers = {}) => {
     const { indentOnInput, bracketMatching, defaultHighlightStyle } =
       await import('@codemirror/language')
     const { defaultKeymap, historyKeymap, history } = await import('@codemirror/commands')
-    const { closeBrackets, closeBracketsKeymap, completionKeymap, autocompletion } =
-      await import('@codemirror/autocomplete')
+    const {
+      closeBrackets,
+      closeBracketsKeymap,
+      completionKeymap,
+      closeCompletion,
+      autocompletion
+    } = await import('@codemirror/autocomplete')
 
     // Define premium syntax highlighting style
     const premiumHighlightStyle = HighlightStyle.define([
@@ -260,7 +274,11 @@ const buildExtensions = async (options, handlers = {}) => {
       // Add Obsidian-style Live Preview
       exts.push(richMarkdownExtension)
     }
-    // Priority 3: Dynamic discovery
+    // Priority 3: Plain text (no extensions needed)
+    else if (['plaintext', 'text', 'txt', ''].includes(normalizedLang)) {
+      // Logic for plain text: No specific language extension required.
+    }
+    // Priority 4: Dynamic discovery
     else if (langDesc) {
       const langSupport = await langDesc.load()
       exts.push(langSupport)

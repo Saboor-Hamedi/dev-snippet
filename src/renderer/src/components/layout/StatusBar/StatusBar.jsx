@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo, memo } from 'react'
 import { createPortal } from 'react-dom'
 import PropTypes from 'prop-types'
 import { useZoomLevel, useEditorZoomLevel, useSettings } from '../../../hook/useSettingsContext'
-import { Check, Eye, Edit2 } from 'lucide-react'
+import { Check, Eye, Edit2, Hash } from 'lucide-react'
+import Prompt from '../../mermaid/modal/Prompt'
 
 import './StatusBar.css'
 import ContextMenu from '../../common/ContextMenu'
@@ -11,16 +12,15 @@ import ContextMenu from '../../common/ContextMenu'
  * CursorDisplay - Specialized for high-frequency cursor position updates.
  */
 const CursorDisplay = memo(({ line, col, show }) => {
-  if (!show) return null
   return (
     <div
-      className="status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer min-w-[40px] sm:min-w-[80px] justify-end"
+      className={`status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer min-w-[30px] sm:min-w-[80px] justify-end ${!show ? 'opacity-0 invisible pointer-events-none' : ''}`}
       title="Go to Line"
     >
       <span className="font-mono tabular-nums hidden sm:inline">
         Ln {line}, Col {col}
       </span>
-      <span className="font-mono tabular-nums sm:hidden">
+      <span className="font-mono tabular-nums sm:hidden text-[10px]">
         {line}:{col}
       </span>
     </div>
@@ -30,17 +30,25 @@ const CursorDisplay = memo(({ line, col, show }) => {
 /**
  * StatsDisplay - Specialized for debounced document statistics.
  */
-const StatsDisplay = memo(({ stats, show }) => {
-  if (!stats || !show) return null
+const StatsDisplay = memo(({ words, chars, showWords, showChars }) => {
+  const hasContent = (showWords && words !== undefined) || (showChars && chars !== undefined)
   return (
     <div
-      className="status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer flex"
-      title="Word Count"
+      className={`status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer flex gap-2 sm:gap-3 ${!hasContent ? 'opacity-0 invisible pointer-events-none' : ''}`}
+      title={`Words: ${words} | Characters: ${chars}`}
     >
-      <span className="font-sans tabular-nums">
-        <span className="sm:hidden">{stats.words}w</span>
-        <span className="hidden sm:inline">{stats.words} words</span>
-      </span>
+      {showWords && (
+        <span className="font-sans tabular-nums flex items-center gap-1">
+          <span className="sm:hidden">{words}w</span>
+          <span className="hidden sm:inline">{words} words</span>
+        </span>
+      )}
+      {showChars && (
+        <span className="font-sans tabular-nums flex items-center gap-1 opacity-80">
+          <span className="sm:hidden">{chars}c</span>
+          <span className="hidden sm:inline">{chars} characters</span>
+        </span>
+      )}
     </div>
   )
 })
@@ -59,18 +67,8 @@ const StatusBar = ({
   const [zoom] = useZoomLevel()
   const [editorZoom] = useEditorZoomLevel()
 
-  const [displayZoom, setDisplayZoom] = useState(zoom)
-  const [displayEditorZoom, setDisplayEditorZoom] = useState(editorZoom)
-
-  useEffect(() => {
-    const t = setTimeout(() => setDisplayZoom(zoom), 50)
-    return () => clearTimeout(t)
-  }, [zoom])
-
-  useEffect(() => {
-    const t = setTimeout(() => setDisplayEditorZoom(editorZoom), 50)
-    return () => clearTimeout(t)
-  }, [editorZoom])
+  const [displayZoom] = useZoomLevel()
+  const [displayEditorZoom] = useEditorZoomLevel()
 
   useEffect(() => {
     window.api?.getVersion().then(setVersion)
@@ -83,6 +81,7 @@ const StatusBar = ({
   const showFlowMode = getSetting('statusBar.showFlowMode') !== false
   const showLanguage = getSetting('statusBar.showLanguage') !== false
   const showStats = getSetting('statusBar.showStats') !== false
+  const showChars = getSetting('statusBar.showChars') !== false
   const showZoom = getSetting('statusBar.showZoom') !== false
   const showCursorPosition = getSetting('statusBar.showCursorPosition') !== false
   const showIndentation = getSetting('statusBar.showIndentation') !== false
@@ -90,6 +89,8 @@ const StatusBar = ({
 
   const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0 })
   const [zoomMenu, setZoomMenu] = useState({ visible: false, x: 0, y: 0 })
+  const [showZoomPrompt, setShowZoomPrompt] = useState(false)
+  const [tempZoom, setTempZoom] = useState('')
 
   const [, setEditorZoomInternal] = useEditorZoomLevel()
 
@@ -120,6 +121,7 @@ const StatusBar = ({
     { label: 'Encoding', key: 'statusBar.showEncoding', checked: showEncoding },
     { label: 'Language', key: 'statusBar.showLanguage', checked: showLanguage },
     { label: 'Word Count', key: 'statusBar.showStats', checked: showStats },
+    { label: 'Character Count', key: 'statusBar.showChars', checked: showChars },
     { label: 'Zoom', key: 'statusBar.showZoom', checked: showZoom }
   ]
 
@@ -186,7 +188,12 @@ const StatusBar = ({
             </div>
           )}
 
-          <StatsDisplay stats={stats} show={showStats} />
+          <StatsDisplay
+            words={stats?.words}
+            chars={stats?.chars}
+            showWords={showStats}
+            showChars={showChars}
+          />
 
           {!minimal && showLanguage && (
             <div
@@ -207,6 +214,7 @@ const StatusBar = ({
                 onClick={(e) => {
                   e.stopPropagation()
                   const rect = e.currentTarget.getBoundingClientRect()
+                  setTempZoom(Math.round((displayEditorZoom || 1) * 100).toString())
                   setZoomMenu({
                     visible: true,
                     x: rect.left,
@@ -249,6 +257,7 @@ const StatusBar = ({
                 items={menuItems.map((item) => ({
                   label: item.label,
                   checked: item.checked,
+                  stayOpen: true,
                   onClick: () => updateSetting(item.key, !item.checked)
                 }))}
                 onClose={() => setContextMenu({ ...contextMenu, visible: false })}
@@ -277,7 +286,12 @@ const StatusBar = ({
                   { label: '110%', onClick: () => setEditorZoomInternal(1.1) },
                   { label: '120%', onClick: () => setEditorZoomInternal(1.2) },
                   { label: '150%', onClick: () => setEditorZoomInternal(1.5) },
-                  { label: '200%', onClick: () => setEditorZoomInternal(2.0) }
+                  { label: '200%', onClick: () => setEditorZoomInternal(2.0) },
+                  { label: 'separator' },
+                  {
+                    label: 'Custom...',
+                    onClick: () => setShowZoomPrompt(true)
+                  }
                 ]}
                 onClose={() => setZoomMenu({ ...zoomMenu, visible: false })}
               />
@@ -285,6 +299,24 @@ const StatusBar = ({
           </div>,
           document.body
         )}
+
+      <Prompt
+        isOpen={showZoomPrompt}
+        title="Custom Zoom Level"
+        message="Enter a zoom percentage (10 - 300)"
+        confirmLabel="Apply"
+        showInput={true}
+        inputValue={tempZoom}
+        onInputChange={(val) => setTempZoom(val)}
+        onConfirm={(val) => {
+          const num = parseInt(val, 10)
+          if (!isNaN(num) && num >= 10 && num <= 300) {
+            setEditorZoomInternal(num / 100)
+            setShowZoomPrompt(false)
+          }
+        }}
+        onClose={() => setShowZoomPrompt(false)}
+      />
     </>
   )
 }

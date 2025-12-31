@@ -368,7 +368,6 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
       // If opened in command mode, pre-fill '>'
       const initialText = initialMode === 'command' ? '>' : ''
       setSearch(initialText)
-
       // Give a slight delay for the modal animation to settle before focusing
       const timer = setTimeout(() => {
         if (inputRef.current) {
@@ -379,7 +378,18 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
           }
         }
       }, 50) // Slightly faster focus
-      return () => clearTimeout(timer)
+
+      // Double-check focus
+      const timer2 = setTimeout(() => {
+        if (inputRef.current && document.activeElement !== inputRef.current) {
+          inputRef.current.focus()
+        }
+      }, 150)
+
+      return () => {
+        clearTimeout(timer)
+        clearTimeout(timer2)
+      }
     }
   }, [isOpen, initialMode])
 

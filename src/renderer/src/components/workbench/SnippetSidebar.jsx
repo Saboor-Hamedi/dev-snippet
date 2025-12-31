@@ -15,7 +15,6 @@ import {
 import SidebarHeader from '../layout/SidebarHeader'
 import VirtualList from '../common/VirtualList'
 import ContextMenu from '../common/ContextMenu'
-import Pagination from '../../hook/pagination/Pagination'
 import SnippetSidebarRow from './sidebar/SnippetSidebarRow'
 import { useSidebarLogic } from './sidebar/useSidebarLogic'
 
@@ -46,10 +45,6 @@ const SnippetSidebar = ({
   onToggle,
   isCompact = false,
   showToast,
-  currentPage = 1,
-  totalPages = 1,
-  onPageChange = () => {},
-  enablePagination = true,
   // Clipboard operations
   onCopy,
   onCut,
@@ -471,6 +466,10 @@ const SnippetSidebar = ({
             width={size.width}
             itemCount={treeItems.length}
             itemSize={isCompact ? 24 : 30}
+            overscan={15} // Explicitly set overscan to 15
+            // The GPU promotion style should be applied to the individual rows (SnippetSidebarRow),
+            // not the VirtualList container itself.
+            // This style is passed down to SnippetSidebarRow via itemData.
             itemData={{
               treeItems,
               selectedSnippet,
@@ -508,15 +507,6 @@ const SnippetSidebar = ({
           onClose={() => setContextMenu(null)}
         />
       )}
-
-      {enablePagination && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={onPageChange}
-          className="border-t border-gray-600"
-        />
-      )}
     </div>
   )
 }
@@ -547,10 +537,6 @@ SnippetSidebar.propTypes = {
   onToggle: PropTypes.func,
   isCompact: PropTypes.bool,
   showToast: PropTypes.func,
-  currentPage: PropTypes.number,
-  totalPages: PropTypes.number,
-  onPageChange: PropTypes.func,
-  enablePagination: PropTypes.bool,
   // Clipboard operations
   onCopy: PropTypes.func,
   onCut: PropTypes.func,

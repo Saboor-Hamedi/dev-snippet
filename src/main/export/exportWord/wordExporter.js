@@ -1,8 +1,6 @@
 // Word Exporter Utility
-// Uses html-to-docx and markdown-it to generate a Word document from rendered markdown
+// Uses html-to-docx and unified to generate a Word document from rendered markdown
 
-import MarkdownIt from 'markdown-it'
-import HTMLToDOCX from 'html-to-docx'
 import fs from 'fs/promises'
 
 /**
@@ -13,7 +11,18 @@ import fs from 'fs/promises'
  */
 export async function exportSnippetsToWord(snippets, outputPath) {
   try {
-    const md = new MarkdownIt()
+    const { unified } = await import('unified')
+    const { default: remarkParse } = await import('remark-parse')
+    const { default: remarkGfm } = await import('remark-gfm')
+    const { default: remarkRehype } = await import('remark-rehype')
+    const { default: rehypeStringify } = await import('rehype-stringify')
+    const { default: HTMLToDOCX } = await import('html-to-docx')
+
+    const mdParser = unified()
+      .use(remarkParse)
+      .use(remarkGfm)
+      .use(remarkRehype)
+      .use(rehypeStringify)
 
     let html = `
       <!DOCTYPE html>
@@ -30,8 +39,8 @@ export async function exportSnippetsToWord(snippets, outputPath) {
       if (snippet.description) {
         html += `<p><strong>Description:</strong> ${snippet.description}</p>`
       }
-      const rendered = md.render(snippet.code || '')
-      html += rendered
+      const result = await mdParser.process(snippet.code || '')
+      html += result.toString()
       html += '<hr style="margin: 40px 0;">'
     }
 

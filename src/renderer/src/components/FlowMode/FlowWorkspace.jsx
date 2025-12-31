@@ -32,6 +32,13 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
   const [showPreview, setShowPreview] = useState(true)
   const [isZenFocused, setIsZenFocused] = useState(false)
   const [isStationMaximized, setIsStationMaximized] = useState(false)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   // Timer State
   const [seconds, setSeconds] = useState(0)
@@ -311,14 +318,16 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
         </div>
       )}
       <div
-        className={`flex h-full w-full relative overflow-hidden transition-all duration-500 ${isStationMaximized ? 'rounded-none' : 'rounded-xl'} ${isZenFocused ? 'bg-[var(--color-bg-primary)] shadow-none' : 'bg-[var(--color-bg-primary)] shadow-[0_4px_40px_rgba(0,0,0,0.6)]'}`}
+        className={`flex h-full w-full relative overflow-hidden transition-all duration-500 ${isStationMaximized ? 'rounded-none' : 'rounded-xl'} ${isZenFocused ? 'bg-[var(--color-bg-primary)] shadow-none' : 'bg-[var(--color-bg-primary)] shadow-[0_4px_40px_rgba(0,0,0,0.6)]'} ${isMobile ? 'flex-col' : 'flex-row'}`}
         style={{
           backgroundColor: 'var(--color-bg-primary)',
           opacity: 1
         }}
       >
         {/* Editor Column */}
-        <div className="flex-1 min-w-[320px] flex flex-col border-r border-white/5 bg-[var(--editor-bg)]">
+        <div
+          className={`flex-1 min-w-[320px] flex flex-col bg-[var(--editor-bg)] ${isMobile ? 'border-b border-white/5' : 'border-r border-white/5'}`}
+        >
           {renderEditor()}
         </div>
 
@@ -327,7 +336,8 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
           <div
             className={`flex-none transition-all duration-350 relative ${isLocked ? 'click-through' : ''}`}
             style={{
-              width: getPreviewWidth(),
+              width: isMobile ? '100%' : getPreviewWidth(),
+              height: isMobile ? '40%' : '100%',
               opacity: opacity,
               backgroundColor: 'rgba(10, 12, 16, 0.4)',
               backdropFilter: 'blur(30px) saturate(150%)'

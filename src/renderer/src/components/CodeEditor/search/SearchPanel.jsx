@@ -1,20 +1,109 @@
 import React, { useState, useEffect, useRef } from 'react'
 import PropTypes from 'prop-types'
-import { Search, X, ChevronUp, ChevronDown, CaseSensitive, Regex, WholeWord } from 'lucide-react'
+import {
+  Search,
+  X,
+  ChevronUp,
+  ChevronDown,
+  CaseSensitive,
+  Regex,
+  WholeWord,
+  ChevronRight,
+  ArrowRight,
+  CopyCheck
+} from 'lucide-react'
 import { EditorView } from '@codemirror/view'
+import { motion, AnimatePresence } from 'framer-motion'
 
 /**
- * VS Code-style Search Panel
+ * VS Code-style Search Panel with Replace
  * Compact search box positioned at top-right of editor
  */
-const SearchPanel = ({ editorView, onClose, initialQuery = '', onQueryChange }) => {
+const SearchPanel = ({
+  editorView,
+  onClose,
+  initialQuery = '',
+  onQueryChange,
+  focusTrigger = 0
+}) => {
   const [query, setQuery] = useState(initialQuery)
+  const [replaceQuery, setReplaceQuery] = useState('')
+  const [isReplaceOpen, setIsReplaceOpen] = useState(() => {
+    return typeof focusTrigger === 'object' && focusTrigger?.mode === 'replace'
+  })
+
   const [caseSensitive, setCaseSensitive] = useState(false)
   const [wholeWord, setWholeWord] = useState(false)
   const [useRegex, setUseRegex] = useState(false)
+
   const [currentMatch, setCurrentMatch] = useState(0)
   const [totalMatches, setTotalMatches] = useState(0)
+
   const inputRef = useRef(null)
+  const replaceInputRef = useRef(null)
+
+  const handleClose = () => {
+    onClose()
+    if (editorView && editorView.focus) {
+      editorView.focus()
+    }
+  }
+
+  // Force focus, update selection, and toggle Replace mode when trigger changes
+  useEffect(() => {
+    if (!focusTrigger) return
+
+    // 1. Update Query from Selection (Only if editor is focused to prevent overwriting user input)
+    if (editorView && editorView.hasFocus) {
+      const selection = editorView.state.selection.main
+      const selectedText = editorView.state.doc.sliceString(selection.from, selection.to)
+      if (selectedText.length > 0 && selectedText.length < 200) {
+        setQuery(selectedText)
+      }
+    }
+
+    // 2. Handle Focus & Mode
+    if (typeof focusTrigger === 'object') {
+      if (focusTrigger.mode === 'replace') {
+        setIsReplaceOpen(true)
+        setTimeout(() => {
+          replaceInputRef.current?.focus()
+          replaceInputRef.current?.select()
+        }, 0)
+      } else {
+        // 'find' mode
+        inputRef.current?.focus()
+        inputRef.current?.select()
+      }
+    } else if (focusTrigger > 0) {
+      // Legacy or simple trigger - prioritize Search focus unless Replace is explicitly desired
+      if (isReplaceOpen) {
+        // If replace is already open, keep it open but focus based on last interaction?
+        // Default to searching again usually means focusing search input.
+        inputRef.current?.focus()
+        inputRef.current?.select()
+      } else {
+        inputRef.current?.focus()
+        inputRef.current?.select()
+      }
+    }
+  }, [focusTrigger, editorView])
+
+  // Global Key Listener for Esc (Ctrl+H handled by CodeEditor via bubbling)
+  useEffect(() => {
+    const handleGlobalKey = (e) => {
+      // Escape to close
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
+        handleClose()
+      }
+    }
+
+    // Use capture phase to ensure we catch it before editor/inputs if needed
+    window.addEventListener('keydown', handleGlobalKey, true)
+    return () => window.removeEventListener('keydown', handleGlobalKey, true)
+  }, [handleClose])
 
   // Update parent when query changes
   useEffect(() => {
@@ -23,51 +112,48 @@ const SearchPanel = ({ editorView, onClose, initialQuery = '', onQueryChange }) 
     }
   }, [query, onQueryChange])
 
-  // Focus input on mount and auto-fill with selected text
+  // Clear highlights on unmount
+  useEffect(() => {
+    return () => {
+      if (editorView) {
+        import('./searchHighlighter.js').then(({ clearSearch }) => {
+          try {
+            editorView.dispatch({ effects: clearSearch.of() })
+          } catch (e) {
+            // Ignore errors if view is already destroyed
+          }
+        })
+      }
+    }
+  }, [editorView])
+
+  // Focus input on mount and auto-fill
   useEffect(() => {
     if (editorView) {
-      // Get selected text
       const selection = editorView.state.selection.main
       const selectedText = editorView.state.doc.sliceString(selection.from, selection.to)
-
-      // If there's selected text, use it as the search query (overrides initialQuery)
       if (selectedText && selectedText.length > 0 && selectedText.length < 100) {
         setQuery(selectedText)
       }
     }
-
-    // Focus the input
-    inputRef.current?.focus()
-    // Select all text in input for easy replacement
-    inputRef.current?.select()
+    requestAnimationFrame(() => {
+      inputRef.current?.focus()
+      inputRef.current?.select()
+    })
   }, [])
 
-  // Define handleClose before it's used
-  const handleClose = () => {
-    onClose()
-    if (editorView && editorView.focus) {
-      editorView.focus()
-    }
-  }
-
-  // Helper: Build search pattern (DRY - used in multiple places)
   const buildSearchPattern = (searchQuery) => {
     let searchText = searchQuery
-
-    // Escape special regex characters if not using regex mode
     if (!useRegex) {
       searchText = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     }
-
-    // Add word boundary if whole word is enabled
     if (wholeWord) {
       searchText = `\\b${searchText}\\b`
     }
-
     return searchText
   }
 
-  // Handle search and highlighting
+  // --- Search Logic ---
   useEffect(() => {
     if (!editorView || !editorView.state) return
 
@@ -75,45 +161,37 @@ const SearchPanel = ({ editorView, onClose, initialQuery = '', onQueryChange }) 
       if (!query) {
         setCurrentMatch(0)
         setTotalMatches(0)
-        // Clear highlighting
         try {
           const { clearSearch } = await import('./searchHighlighter.js')
-          editorView.dispatch({
-            effects: clearSearch.of()
-          })
+          editorView.dispatch({ effects: clearSearch.of() })
         } catch (e) {
-          console.warn('Clear search error:', e)
+          console.warn(e)
         }
         return
       }
 
       try {
-        // Build search pattern
         const searchText = buildSearchPattern(query)
         const flags = caseSensitive ? 'g' : 'gi'
         const regex = new RegExp(searchText, flags)
 
-        // Count matches
         const text = editorView.state.doc.toString()
         const matches = text.match(regex)
         const matchCount = matches ? matches.length : 0
 
         setTotalMatches(matchCount)
 
-        // Reset currentMatch if it's out of bounds or this is a new search
         if (matchCount === 0) {
           setCurrentMatch(0)
         } else if (currentMatch === 0 || currentMatch > matchCount) {
           setCurrentMatch(1)
         }
 
-        // Trigger highlighting
         const { setSearchQuery } = await import('./searchHighlighter.js')
         editorView.dispatch({
           effects: setSearchQuery.of({ query: searchText, caseSensitive, useRegex: true })
         })
       } catch (e) {
-        // Invalid regex or other error
         console.warn('Search error:', e)
         setTotalMatches(0)
         setCurrentMatch(0)
@@ -123,44 +201,75 @@ const SearchPanel = ({ editorView, onClose, initialQuery = '', onQueryChange }) 
     runSearch()
   }, [query, caseSensitive, wholeWord, useRegex, editorView])
 
-  // Handle keyboard shortcuts (global, not just on input)
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        e.preventDefault()
-        handleClose()
-      }
-    }
+  // --- Replace Logic ---
+  const replaceCurrent = () => {
+    if (totalMatches === 0 || !editorView) return
 
-    // Listen globally
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleClose])
+    try {
+      const searchText = buildSearchPattern(query)
+      const flags = caseSensitive ? 'g' : 'gi'
+      const regex = new RegExp(searchText, flags)
+      const text = editorView.state.doc.toString()
 
-  // Clear highlighting when component unmounts (search closes)
-  useEffect(() => {
-    return async () => {
-      if (editorView && editorView.state) {
-        try {
-          const { clearSearch } = await import('./searchHighlighter.js')
+      let match
+      let count = 0
+      while ((match = regex.exec(text)) !== null) {
+        count++
+        if (count === currentMatch) {
+          const from = match.index
+          const to = match.index + match[0].length
+
           editorView.dispatch({
-            effects: clearSearch.of()
+            changes: { from, to, insert: replaceQuery }
           })
-        } catch (e) {
-          console.warn('Clear search on unmount error:', e)
+          break
         }
       }
+    } catch (e) {
+      console.error('Replace failed', e)
     }
-  }, [editorView])
+  }
 
+  const replaceAll = () => {
+    if (totalMatches === 0 || !editorView) return
+    try {
+      const searchText = buildSearchPattern(query)
+      const flags = caseSensitive ? 'g' : 'gi'
+      const regex = new RegExp(searchText, flags)
+      const text = editorView.state.doc.toString()
+
+      const changes = []
+      let match
+      while ((match = regex.exec(text)) !== null) {
+        changes.push({
+          from: match.index,
+          to: match.index + match[0].length,
+          insert: replaceQuery
+        })
+      }
+
+      if (changes.length > 0) {
+        editorView.dispatch({ changes })
+      }
+    } catch (e) {
+      console.error('Replace All failed', e)
+    }
+  }
+
+  // --- Handlers ---
   const handleInputKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault()
-      if (e.shiftKey) {
-        handlePrevious()
-      } else {
-        handleNext()
-      }
+      if (e.shiftKey) handlePrevious()
+      else handleNext()
+    }
+  }
+
+  const handleReplaceKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      if (e.shiftKey) replaceAll()
+      else replaceCurrent()
     }
   }
 
@@ -181,15 +290,13 @@ const SearchPanel = ({ editorView, onClose, initialQuery = '', onQueryChange }) 
   }
 
   const highlightAndScrollToMatch = async (matchIndex) => {
-    if (!editorView || !editorView.state || !query || matchIndex === 0) return
-
+    if (!editorView || !editorView.state || !query) return
     try {
       const searchText = buildSearchPattern(query)
       const flags = caseSensitive ? 'g' : 'gi'
       const regex = new RegExp(searchText, flags)
       const text = editorView.state.doc.toString()
 
-      // Find the position of the nth match for scrolling
       let match
       let count = 0
       let matchPosition = null
@@ -197,15 +304,11 @@ const SearchPanel = ({ editorView, onClose, initialQuery = '', onQueryChange }) 
       while ((match = regex.exec(text)) !== null) {
         count++
         if (count === matchIndex) {
-          matchPosition = {
-            from: match.index,
-            to: match.index + match[0].length
-          }
+          matchPosition = { from: match.index, to: match.index + match[0].length }
           break
         }
       }
 
-      // Update highlighting to show current match differently
       const { setCurrentMatch: setCurrentMatchEffect } = await import('./searchHighlighter.js')
       editorView.dispatch({
         effects: setCurrentMatchEffect.of({
@@ -216,135 +319,179 @@ const SearchPanel = ({ editorView, onClose, initialQuery = '', onQueryChange }) 
         })
       })
 
-      // Scroll to the match position
       if (matchPosition) {
         editorView.dispatch({
-          effects: EditorView.scrollIntoView(matchPosition.from, {
-            y: 'center',
-            yMargin: 50
-          })
+          effects: EditorView.scrollIntoView(matchPosition.from, { y: 'center', yMargin: 50 })
         })
       }
     } catch (e) {
-      console.warn('Highlight and scroll error:', e)
+      console.warn('Highlight scroll error:', e)
     }
   }
 
   return (
-    <div
-      className="absolute top-1 right-3 z-50 flex items-center gap-0.5 rounded shadow-lg px-1.5 py-1 border transition-all duration-300"
-      style={{
-        minWidth: '280px',
-        maxWidth: '320px',
-        backgroundColor: 'var(--color-bg-secondary)',
-        borderColor: 'var(--color-border)',
-        color: 'var(--color-text-primary)'
-      }}
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.15 }}
+      className="search-panel-widget absolute top-1 right-8 z-[1001] flex flex-col p-2 gap-1.5"
+      style={{ width: '400px' }}
     >
-      {/* Search Icon */}
-      <Search size={12} className="opacity-60 flex-shrink-0" />
-
-      {/* Search Input */}
-      <input
-        ref={inputRef}
-        type="text"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        onKeyDown={handleInputKeyDown}
-        placeholder="Find"
-        className="flex-1 bg-transparent outline-none px-1 py-0.5"
-        style={{
-          fontSize: '12px',
-          minWidth: '80px',
-          color: 'var(--color-text-primary)',
-          '::placeholder': { color: 'var(--color-text-tertiary)' }
-        }}
-      />
-
-      {/* Match Counter - always reserve space */}
-      <span
-        className="opacity-60 px-1 whitespace-nowrap"
-        style={{ fontSize: '10px', minWidth: '60px', textAlign: 'right' }}
-      >
-        {query
-          ? totalMatches > 0
-            ? `${currentMatch} of ${totalMatches}`
-            : 'No results'
-          : 'No results'}
-      </span>
-
-      {/* Navigation Buttons */}
-      <div
-        className="flex items-center gap-0.5 border-l pl-0.5"
-        style={{ borderColor: 'var(--color-border)' }}
-      >
+      {/* FIND ROW */}
+      <div className="flex items-center gap-1.5 h-8">
+        {/* Toggle Replace Arrow */}
         <button
-          onClick={handlePrevious}
-          disabled={totalMatches === 0}
-          className="p-0.5 hover:bg-[var(--hover-bg)] rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          title="Previous match (Shift+Enter)"
+          onClick={() => setIsReplaceOpen(!isReplaceOpen)}
+          className={`shrink-0 flex items-center justify-center w-6 h-8 rounded transition-colors ml-0.5 ${
+            isReplaceOpen ? 'rotate-90' : ''
+          } hover:bg-[var(--color-bg-tertiary)]`}
+          title="Toggle Replace"
         >
-          <ChevronUp size={12} />
+          <ChevronRight size={14} className="opacity-60" />
         </button>
-        <button
-          onClick={handleNext}
-          disabled={totalMatches === 0}
-          className="p-0.5 hover:bg-[var(--hover-bg)] rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          title="Next match (Enter)"
-        >
-          <ChevronDown size={12} />
-        </button>
+
+        {/* Input Area Group */}
+        <div className="flex-1 flex items-center h-full px-2 rounded search-panel-input focus-within:ring-1 focus-within:ring-[var(--color-accent-primary)] transition-all overflow-hidden">
+          <input
+            ref={inputRef}
+            type="text"
+            className="flex-1 min-w-0 bg-transparent border-none outline-none text-[13px] py-1 placeholder:opacity-50"
+            placeholder="Find"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleInputKeyDown}
+            style={{ color: 'inherit' }}
+          />
+
+          {/* Inline Metrics (Fixed width to prevent jump) */}
+          <div
+            className="shrink-0 flex items-center h-full text-[11px] opacity-60 select-none font-mono justify-end mr-1"
+            style={{ width: '50px' }}
+          >
+            {query && totalMatches > 0 ? `${currentMatch}/${totalMatches}` : query ? '0/0' : ''}
+          </div>
+
+          {/* Options Group */}
+          <div className="flex items-center gap-0.5 border-l border-[var(--color-border)] pl-1 h-6">
+            <button
+              onClick={() => setCaseSensitive(!caseSensitive)}
+              className={`p-1 rounded flex items-center justify-center transition-colors ${
+                caseSensitive
+                  ? 'text-[var(--color-accent-primary)] bg-[var(--color-accent-primary)]/15'
+                  : 'opacity-40 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)]'
+              }`}
+              title="Match Case"
+            >
+              <CaseSensitive size={14} />
+            </button>
+            <button
+              onClick={() => setWholeWord(!wholeWord)}
+              className={`p-1 rounded flex items-center justify-center transition-colors ${
+                wholeWord
+                  ? 'text-[var(--color-accent-primary)] bg-[var(--color-accent-primary)]/15'
+                  : 'opacity-40 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)]'
+              }`}
+              title="Match Whole Word"
+            >
+              <WholeWord size={14} />
+            </button>
+            <button
+              onClick={() => setUseRegex(!useRegex)}
+              className={`p-1 rounded flex items-center justify-center transition-colors ${
+                useRegex
+                  ? 'text-[var(--color-accent-primary)] bg-[var(--color-accent-primary)]/15'
+                  : 'opacity-40 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)]'
+              }`}
+              title="Use Regular Expression"
+            >
+              <Regex size={14} />
+            </button>
+          </div>
+        </div>
+
+        {/* Navigation Group - Fixed Width */}
+        <div className="flex items-center gap-0.5 shrink-0 w-[84px] justify-end h-full">
+          <button
+            onClick={handlePrevious}
+            disabled={!totalMatches}
+            className="p-1 rounded hover:bg-[var(--color-bg-tertiary)] disabled:opacity-20"
+            title="Previous Match (Shift+Enter)"
+          >
+            <ChevronUp size={16} />
+          </button>
+          <button
+            onClick={handleNext}
+            disabled={!totalMatches}
+            className="p-1 rounded hover:bg-[var(--color-bg-tertiary)] disabled:opacity-20"
+            title="Next Match (Enter)"
+          >
+            <ChevronDown size={16} />
+          </button>
+          <button
+            onClick={handleClose}
+            className="p-1 rounded hover:bg-[var(--color-bg-tertiary)] opacity-60 hover:opacity-100 ml-0.5"
+            title="Close (Escape)"
+          >
+            <X size={16} />
+          </button>
+        </div>
       </div>
 
-      {/* Toggle Options */}
-      <div
-        className="flex items-center gap-0.5 border-l pl-0.5"
-        style={{ borderColor: 'var(--color-border)' }}
-      >
-        <button
-          onClick={() => setCaseSensitive(!caseSensitive)}
-          className={`p-0.5 rounded transition-colors ${
-            caseSensitive
-              ? 'bg-[var(--color-accent-primary)] text-white'
-              : 'hover:bg-[var(--hover-bg)] opacity-60'
-          }`}
-          title="Match Case (Alt+C)"
-        >
-          <CaseSensitive size={12} />
-        </button>
-        <button
-          onClick={() => setWholeWord(!wholeWord)}
-          className={`p-0.5 rounded transition-colors ${
-            wholeWord
-              ? 'bg-[var(--color-accent-primary)] text-white'
-              : 'hover:bg-[var(--hover-bg)] opacity-60'
-          }`}
-          title="Match Whole Word (Alt+W)"
-        >
-          <WholeWord size={12} />
-        </button>
-        <button
-          onClick={() => setUseRegex(!useRegex)}
-          className={`p-0.5 rounded transition-colors ${
-            useRegex
-              ? 'bg-[var(--color-accent-primary)] text-white'
-              : 'hover:bg-[var(--hover-bg)] opacity-60'
-          }`}
-          title="Use Regular Expression (Alt+R)"
-        >
-          <Regex size={12} />
-        </button>
-      </div>
+      {/* REPLACE ROW */}
+      <AnimatePresence>
+        {isReplaceOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="flex items-center gap-1.5 h-8">
+              <div className="w-6 shrink-0 ml-0.5" /> {/* Arrow Spacer */}
+              <div className="flex-1 flex items-center h-full px-2 rounded search-panel-input focus-within:ring-1 focus-within:ring-[var(--color-accent-primary)] transition-all overflow-hidden">
+                <input
+                  ref={replaceInputRef}
+                  type="text"
+                  className="flex-1 min-w-0 bg-transparent border-none outline-none text-[13px] py-1 placeholder:opacity-50"
+                  placeholder="Replace"
+                  value={replaceQuery}
+                  onChange={(e) => setReplaceQuery(e.target.value)}
+                  onKeyDown={handleReplaceKeyDown}
+                  style={{ color: 'inherit' }}
+                />
 
-      {/* Close Button */}
-      <button
-        onClick={handleClose}
-        className="p-0.5 hover:bg-[var(--hover-bg)] rounded transition-colors ml-auto opacity-60 hover:opacity-100"
-        title="Close (Escape)"
-      >
-        <X size={12} />
-      </button>
-    </div>
+                {/* Visual parity spacer to match Find metrics */}
+                <div style={{ width: '50px' }} className="shrink-0 mr-1" />
+
+                {/* Actions Group - Mirrored Style */}
+                <div className="flex items-center gap-0.5 border-l border-[var(--color-border)] pl-1 h-6">
+                  <button
+                    onClick={replaceCurrent}
+                    disabled={!totalMatches}
+                    className="p-1 rounded opacity-60 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] disabled:opacity-20"
+                    title="Replace"
+                  >
+                    <ArrowRight size={14} />
+                  </button>
+                  <button
+                    onClick={replaceAll}
+                    disabled={!totalMatches}
+                    className="p-1 rounded opacity-60 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] disabled:opacity-20"
+                    title="Replace All"
+                  >
+                    <CopyCheck size={14} />
+                  </button>
+                  {/* Empty spacer to match find button count (3 icons vs 2) */}
+                  <div className="w-[22px]" />
+                </div>
+              </div>
+              <div className="w-[84px] shrink-0" /> {/* Nav Group Spacer */}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   )
 }
 
@@ -352,7 +499,8 @@ SearchPanel.propTypes = {
   editorView: PropTypes.object,
   onClose: PropTypes.func.isRequired,
   initialQuery: PropTypes.string,
-  onQueryChange: PropTypes.func
+  onQueryChange: PropTypes.func,
+  focusTrigger: PropTypes.oneOfType([PropTypes.number, PropTypes.object])
 }
 
 export default SearchPanel

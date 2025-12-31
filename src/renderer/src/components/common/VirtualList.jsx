@@ -7,9 +7,10 @@ import PropTypes from 'prop-types'
  * Avoids bundler/CJS issues with react-window
  */
 const VirtualList = React.forwardRef(
-  ({ height, width, itemCount, itemSize, itemData, children: Row, overscan = 2 }, ref) => {
+  ({ height, width, itemCount, itemSize, itemData, children: Row, overscan = 10 }, ref) => {
     const containerRef = React.useRef(null)
     const [scrollTop, setScrollTop] = React.useState(0)
+    const frameId = React.useRef(null)
 
     React.useImperativeHandle(ref, () => ({
       scrollToItem: (index) => {
@@ -30,10 +31,29 @@ const VirtualList = React.forwardRef(
             containerRef.current.scrollTop = itemBottom - height
             setScrollTop(itemBottom - height)
           }
-          // Else: Item is fully visible, do nothing
         }
       }
     }))
+
+    const handleScroll = (e) => {
+      const { scrollTop: newScrollTop } = e.currentTarget
+
+      // --- BLAZE OPTIMIZATION: RequestAnimationFrame ---
+      // Instead of updating state on every scroll event (which can fire 100s of times/sec),
+      // we sync the update with the browser's paint cycle. This eliminates "white flickering"
+      // during high-speed flick-scrolling.
+      if (frameId.current) cancelAnimationFrame(frameId.current)
+
+      frameId.current = requestAnimationFrame(() => {
+        setScrollTop(newScrollTop)
+      })
+    }
+
+    React.useEffect(() => {
+      return () => {
+        if (frameId.current) cancelAnimationFrame(frameId.current)
+      }
+    }, [])
 
     const visibleCount = Math.ceil(height / itemSize)
     const startIndex = Math.max(0, Math.floor(scrollTop / itemSize) - overscan)
@@ -50,7 +70,9 @@ const VirtualList = React.forwardRef(
             top: i * itemSize,
             left: 0,
             width: '100%',
-            height: itemSize
+            height: itemSize,
+            willChange: 'transform',
+            transform: 'translateZ(0)'
           }}
           data={itemData}
         />
@@ -61,7 +83,7 @@ const VirtualList = React.forwardRef(
       <div
         ref={containerRef}
         style={{ height, width, overflowY: 'auto', overflowX: 'hidden', position: 'relative' }}
-        onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)}
+        onScroll={handleScroll}
         className="custom-scrollbar"
       >
         <div style={{ height: itemCount * itemSize, width: '100%' }}>{items}</div>

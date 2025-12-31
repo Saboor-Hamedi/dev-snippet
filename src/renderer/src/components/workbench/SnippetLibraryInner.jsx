@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { useToast } from '../../hook/useToast'
 import ToastNotification from '../../utils/ToastNotification'
 import Workbench from './Workbench'
 import { useSettings, useZoomLevel, useEditorZoomLevel } from '../../hook/useSettingsContext'
 import useAdvancedSplitPane from '../splitPanels/useAdvancedSplitPane.js'
 import useFontSettings from '../../hook/settings/useFontSettings'
+import { ZOOM_STEP } from '../../hook/useZoomLevel.js'
 import { useView } from '../../context/ViewContext'
 import { useModal } from './manager/ModalContext'
 import KeyboardHandler from './manager/KeyboardHandler'
@@ -12,7 +13,6 @@ import AltPHandler from './AltPHandler'
 import PinPopover from './sidebar/PinPopover'
 import { useThemeManager } from '../../hook/useThemeManager'
 import { themeProps } from '../preference/theme/themeProps'
-import { usePagination } from '../../hook/pagination/usePagination'
 import { handleRenameSnippet } from '../../hook/handleRenameSnippet'
 import { useFlowMode } from '../FlowMode/useFlowMode'
 import { getBaseTitle } from '../../utils/snippetUtils'
@@ -87,47 +87,43 @@ const SnippetLibraryInner = ({ snippetData }) => {
   // Clipboard state for cut/copy/paste operations
   const [clipboard, setClipboard] = useState(null) // { type: 'cut'|'copy', items: [{id, type, data}] }
 
-  // Use pagination hook
-  const handleSearchResults = useCallback(
-    (searchResults) => {
-      // Auto-select first search result if available and pagination allows it
-      if (searchResults.length > 0) {
-        const firstResult = searchResults[0]
-        setSelectedSnippet(firstResult)
-        setSelectedFolderId(null)
-        setSelectedIds([firstResult.id])
-        navigateTo('editor')
-      }
-    },
-    [setSelectedSnippet, setSelectedFolderId, setSelectedIds, navigateTo]
-  )
+  const [searchQuery, setSearchQuery] = useState('')
 
-  const {
-    paginatedSnippets,
-    totalPages,
-    currentPage,
-    hasSearchResults,
-    isSearching,
-    searchQuery,
-    handlePageChange,
-    handleSearchSnippets,
-    clearSearch,
-    resetPagination,
-    hasMultiplePages,
-    canGoNext,
-    canGoPrevious,
-    enablePagination
-  } = usePagination(snippets, null, handleSearchResults)
+  const sortedAndFilteredSnippets = useMemo(() => {
+    let filtered = [...snippets]
 
-  // Wrap handleSearchSnippets to clear folder selection when search is cleared
-  const handleSearchSnippetsWrapped = useCallback(
+    // Apply search filter
+    if (searchQuery && searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim()
+      filtered = filtered.filter(
+        (snippet) =>
+          (snippet.title || '').toLowerCase().includes(query) ||
+          (snippet.code || '').toLowerCase().includes(query) ||
+          (snippet.language || '').toLowerCase().includes(query) ||
+          (Array.isArray(snippet.tags) ? snippet.tags.join(' ') : snippet.tags || '')
+            .toLowerCase()
+            .includes(query)
+      )
+    }
+
+    // Sort: pinned first, then by timestamp DESC (newest first)
+    filtered.sort((a, b) => {
+      if (a.is_pinned && !b.is_pinned) return -1
+      if (!a.is_pinned && b.is_pinned) return 1
+      return b.timestamp - a.timestamp
+    })
+
+    return filtered
+  }, [snippets, searchQuery])
+
+  const handleSearchSnippets = useCallback(
     (query) => {
-      handleSearchSnippets(query)
+      setSearchQuery(query)
       if (!query || !query.trim()) {
         setSelectedFolderId(null)
       }
     },
-    [handleSearchSnippets, setSelectedFolderId]
+    [setSelectedFolderId]
   )
 
   // Lifted Sidebar State - defaults to closed, remembers last state
@@ -155,39 +151,9 @@ const SnippetLibraryInner = ({ snippetData }) => {
       setSelectedFolderId(null)
       setSelectedIds([s.id])
 
-      // Only switch pages if pagination is enabled AND the snippet is not currently visible
-      // This prevents unwanted pagination when clicking snippets already visible in sidebar
-      if (enablePagination) {
-        // Check if the snippet is already in the current paginated results
-        const isSnippetVisible = paginatedSnippets.some((snippet) => snippet.id === s.id)
-        if (!isSnippetVisible) {
-          // Snippet is not visible, calculate which page it should be on
-          const snippetIndex = snippets.findIndex((snippet) => snippet.id === s.id)
-          if (snippetIndex !== -1) {
-            const pageSize = getSetting('pagination.pageSize') || 5
-            const targetPage = Math.floor(snippetIndex / pageSize) + 1
-
-            if (targetPage !== currentPage) {
-              handlePageChange(targetPage)
-            }
-          }
-        }
-      }
-
       navigateTo('editor')
     },
-    [
-      setSelectedSnippet,
-      setSelectedFolderId,
-      setSelectedIds,
-      enablePagination,
-      paginatedSnippets,
-      snippets,
-      getSetting,
-      currentPage,
-      handlePageChange,
-      navigateTo
-    ]
+    [setSelectedSnippet, setSelectedFolderId, setSelectedIds, navigateTo]
   )
 
   // Session Restoration (P1 Feature) - Must be after state init & handler definition
@@ -220,11 +186,11 @@ const SnippetLibraryInner = ({ snippetData }) => {
 
   // --- Zoom Listeners ---
   useEffect(() => {
-    const handleZoomIn = () => setZoomLevel((z) => z + 0.1)
-    const handleZoomOut = () => setZoomLevel((z) => z - 0.1)
+    const handleZoomIn = () => setZoomLevel((z) => z + ZOOM_STEP)
+    const handleZoomOut = () => setZoomLevel((z) => z - ZOOM_STEP)
     const handleZoomReset = () => setZoomLevel(1.0)
-    const handleEditorZoomIn = () => setEditorZoom((z) => z + 0.1)
-    const handleEditorZoomOut = () => setEditorZoom((z) => z - 0.1)
+    const handleEditorZoomIn = () => setEditorZoom((z) => z + ZOOM_STEP)
+    const handleEditorZoomOut = () => setEditorZoom((z) => z - ZOOM_STEP)
 
     window.addEventListener('app:zoom-in', handleZoomIn)
     window.addEventListener('app:zoom-out', handleZoomOut)
@@ -645,7 +611,6 @@ const SnippetLibraryInner = ({ snippetData }) => {
   const handleSelectFolder = (folderId) => {
     setSelectedFolderId(folderId)
     setSelectedIds(folderId ? [folderId] : [])
-    resetPagination() // Reset to first page when changing folders
   }
 
   const handleSelectionChange = (ids) => {
@@ -987,12 +952,10 @@ const SnippetLibraryInner = ({ snippetData }) => {
           onFavorite={toggleFavoriteSnippet}
           currentContext={activeView}
           selectedSnippet={selectedSnippet}
-          snippets={paginatedSnippets}
+          snippets={sortedAndFilteredSnippets}
           allSnippets={snippets}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-          enablePagination={enablePagination}
+          onPageChange={() => {}}
+          enablePagination={false}
           setSnippets={setSnippets}
           saveSnippet={saveSnippet}
           folders={folders}
@@ -1093,7 +1056,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
           onTogglePin={togglePinnedSnippet}
           onToggleFavorite={toggleFavoriteSnippet}
           onSelectSnippet={handleSelectSnippet}
-          onSearchSnippets={handleSearchSnippetsWrapped}
+          onSearchSnippets={handleSearchSnippets}
           searchQuery={searchQuery}
           onOpenSettings={() => openSettingsModal()}
           isSettingsOpen={isSettingsOpen}

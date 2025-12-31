@@ -88,17 +88,20 @@ export const SettingsProvider = ({ children }) => {
     return () => clearTimeout(timer)
   }, [zoom, editorZoom])
 
-  // 5. Exposure Setters
   const setZoom = (value) => {
     setZoomInternal((prev) => {
-      const next = typeof value === 'function' ? value(prev) : value
+      let next = typeof value === 'function' ? value(prev) : value
+      // Magnetic Snap to 100% (1.0)
+      if (prev !== 1.0 && next >= 0.95 && next <= 1.05) next = 1.0
       return clamp(roundTo(next, 2), MIN_ZOOM, MAX_ZOOM)
     })
   }
 
   const setEditorZoom = (value) => {
     setEditorZoomInternal((prev) => {
-      const next = typeof value === 'function' ? value(prev) : value
+      let next = typeof value === 'function' ? value(prev) : value
+      // Magnetic Snap to 100% (1.0)
+      if (prev !== 1.0 && next >= 0.95 && next <= 1.05) next = 1.0
       return clamp(roundTo(next, 2), MIN_ZOOM, MAX_ZOOM)
     })
   }

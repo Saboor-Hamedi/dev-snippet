@@ -1,6 +1,6 @@
 /* ===== CSS VARIABLES & THEMES ===== */
-:root,
-.midnight-syntax {
+/* ===== CSS VARIABLES & THEMES ===== */
+:root {
   --color-bg-primary: #0d1117;
   --color-bg-primary-rgb: 13, 17, 23;
   --color-bg-secondary: #010409;
@@ -26,7 +26,33 @@
   --color-shadow: rgba(0, 0, 0, 0.4);
 }
 
-.solar-dawn {
+[data-theme='midnight-syntax'] {
+  --color-bg-primary: #0d1117;
+  --color-bg-primary-rgb: 13, 17, 23;
+  --color-bg-secondary: #010409;
+  --color-bg-secondary-rgb: 1, 4, 9;
+  --color-bg-tertiary: #161b22;
+  --color-bg-tertiary-rgb: 22, 27, 34;
+  --color-bg-card: #0d1117;
+
+  --color-text-primary: #e6edf3;
+  --color-text-secondary: #8b949e;
+  --color-text-tertiary: #6e7681;
+
+  --color-accent-primary: #58a6ff;
+  --color-accent-primary-rgb: 88, 166, 255;
+  --color-accent-secondary: #1f6feb;
+
+  --color-border: #30363d;
+  --color-border-rgb: 48, 54, 61;
+
+  --color-success: #238636;
+  --color-error: #da3633;
+  --color-info: #388bfd;
+  --color-shadow: rgba(0, 0, 0, 0.4);
+}
+
+[data-theme='solar-dawn'] {
   --color-bg-primary: #ffffff;
   --color-bg-primary-rgb: 255, 255, 255;
   --color-bg-secondary: #f6f8fa;
@@ -49,30 +75,30 @@
   --color-shadow: rgba(31, 35, 40, 0.08);
 }
 
-.polaris {
-  --color-bg-primary: rgba(255, 255, 255, 0.7);
+[data-theme='polaris'] {
+  --color-bg-primary: #ffffff;
   --color-bg-primary-rgb: 255, 255, 255;
-  --color-bg-secondary: rgba(246, 248, 250, 0.6);
+  --color-bg-secondary: #f6f8fa;
   --color-bg-secondary-rgb: 246, 248, 250;
-  --color-bg-tertiary: rgba(241, 243, 244, 0.5);
+  --color-bg-tertiary: #f1f3f4;
   --color-bg-tertiary-rgb: 241, 243, 244;
-  --color-bg-card: rgba(255, 255, 255, 0.7);
+  --color-bg-card: #ffffff;
 
-  --color-text-primary: #000000;
-  --color-text-secondary: #000000;
-  --color-text-tertiary: #404040;
+  --color-text-primary: #1f2328;
+  --color-text-secondary: #57606a;
+  --color-text-tertiary: #8c959f;
 
   --color-accent-primary: #0969da;
   --color-accent-primary-rgb: 9, 105, 218;
   --color-accent-secondary: #54aeff;
 
-  --color-border: rgba(9, 105, 218, 0.2);
-  --color-border-rgb: 9, 105, 218;
+  --color-border: #d0d7de;
+  --color-border-rgb: 208, 215, 222;
 
-  --color-shadow: rgba(31, 38, 135, 0.1);
+  --color-shadow: rgba(31, 35, 40, 0.1);
 }
 
-.glass-blue {
+[data-theme='glass-blue'] {
   --color-bg-primary: rgba(30, 41, 59, 0.75);
   --color-bg-primary-rgb: 30, 41, 59;
   --color-bg-secondary: rgba(15, 23, 42, 0.65);
@@ -95,7 +121,7 @@
   --color-shadow: rgba(0, 0, 0, 0.4);
 }
 
-.obsidian {
+[data-theme='obsidian'] {
   --color-bg-primary: rgba(34, 30, 42, 0.5);
   --color-bg-primary-rgb: 34, 30, 42;
   --color-bg-secondary: rgba(34, 30, 42, 0.4);
@@ -118,7 +144,7 @@
   --color-shadow: rgba(0, 0, 0, 0.5);
 }
 
-.magma {
+[data-theme='magma'] {
   --color-bg-primary: rgba(28, 25, 23, 0.55);
   --color-bg-primary-rgb: 28, 25, 23;
   --color-bg-secondary: rgba(28, 25, 23, 0.45);
@@ -141,7 +167,7 @@
   --color-shadow: rgba(0, 0, 0, 0.5);
 }
 
-.oceanic {
+[data-theme='oceanic'] {
   --color-bg-primary: rgba(15, 23, 42, 0.55);
   --color-bg-primary-rgb: 15, 23, 42;
   --color-bg-secondary: rgba(15, 23, 42, 0.45);
@@ -164,7 +190,7 @@
   --color-shadow: rgba(0, 0, 0, 0.5);
 }
 
-.forest {
+[data-theme='forest'] {
   --color-bg-primary: rgba(23, 28, 25, 0.55);
   --color-bg-primary-rgb: 23, 28, 25;
   --color-bg-secondary: rgba(23, 28, 25, 0.45);
@@ -187,7 +213,7 @@
   --color-shadow: rgba(0, 0, 0, 0.5);
 }
 
-.nebula {
+[data-theme='nebula'] {
   --color-bg-primary: rgba(9, 9, 11, 0.55);
   --color-bg-primary-rgb: 9, 9, 11;
   --color-bg-secondary: rgba(9, 9, 11, 0.45);
@@ -210,7 +236,7 @@
   --color-shadow: rgba(0, 0, 0, 0.5);
 }
 
-.royal-gold {
+[data-theme='royal-gold'] {
   --color-bg-primary: rgba(24, 24, 27, 0.55);
   --color-bg-primary-rgb: 24, 24, 27;
   --color-bg-secondary: rgba(24, 24, 27, 0.45);
@@ -233,7 +259,7 @@
   --color-shadow: rgba(0, 0, 0, 0.5);
 }
 
-.midnight-pro {
+[data-theme='midnight-pro'] {
   --color-bg-primary: rgba(13, 17, 23, 0.55);
   --color-bg-primary-rgb: 13, 17, 23;
   --color-bg-secondary: rgba(13, 17, 23, 0.45);
@@ -256,7 +282,7 @@
   --color-shadow: rgba(0, 0, 0, 0.5);
 }
 
-.minimal-gray {
+[data-theme='minimal-gray'] {
   --color-bg-primary: rgba(255, 255, 255, 0.7);
   --color-bg-primary-rgb: 255, 255, 255;
   --color-bg-secondary: rgba(246, 246, 246, 0.6);

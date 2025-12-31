@@ -1,14 +1,12 @@
-// b:\electron\dev-snippet\src\renderer\src\components\SettingsModal.jsx
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
+import pkg from '../../../../package.json'
 import {
   X,
   Settings,
   Monitor,
   Keyboard,
   Type,
-  MousePointer2,
-  FileCode,
   Zap,
   RotateCcw,
   Search,
@@ -19,13 +17,11 @@ import {
   Database,
   FileJson,
   Info,
-  Cloud,
-  List
+  Cloud
 } from 'lucide-react'
 import { DEFAULT_SETTINGS } from '../config/defaultSettings'
 import CodeEditor from './CodeEditor/CodeEditor'
 import { MIN_ZOOM, MAX_ZOOM } from '../hook/useZoomLevel'
-import { ToggleButton } from './ToggleButton'
 import {
   SettingRow,
   SettingSection,
@@ -50,6 +46,23 @@ const SettingsModal = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState('updates')
   const [searchQuery, setSearchQuery] = useState('')
   const [showMobileMenu, setShowMobileMenu] = useState(false)
+  const [hasUpdate, setHasUpdate] = useState(false)
+
+  useEffect(() => {
+    // Listen for update available event
+    if (window.api?.onUpdateAvailable) {
+      const unsub = window.api.onUpdateAvailable(() => setHasUpdate(true))
+      return unsub
+    }
+  }, [])
+
+  // Auto-check for updates on open
+  useEffect(() => {
+    if (isOpen && window.api?.checkForUpdates) {
+      // Trigger a silent check. If update is found, onUpdateAvailable will fire.
+      window.api.checkForUpdates().catch(() => {})
+    }
+  }, [isOpen])
 
   // Sync local settings when context settings change
   useEffect(() => {
@@ -90,7 +103,6 @@ const SettingsModal = ({ isOpen, onClose }) => {
     { id: 'editor', label: 'Editor', icon: Type },
     { id: 'appearance', label: 'Appearance', icon: Monitor },
     { id: 'behavior', label: 'Behavior', icon: Zap },
-    { id: 'pagination', label: 'Pagination', icon: List },
     { id: 'shortcuts', label: 'Shortcuts', icon: Keyboard },
     { id: 'sync', label: 'Sync', icon: Cloud },
     { id: 'system', label: 'System & Data', icon: Database },
@@ -177,6 +189,12 @@ const SettingsModal = ({ isOpen, onClose }) => {
                 >
                   <Icon size={12} strokeWidth={activeTab === section.id ? 2.5 : 2} />
                   {section.label}
+                  {section.id === 'updates' && hasUpdate && (
+                    <span className="flex h-2 w-2 ml-auto relative">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                    </span>
+                  )}
                 </button>
               )
             })}
@@ -468,41 +486,6 @@ const SettingsModal = ({ isOpen, onClose }) => {
                   </div>
                 )}
 
-                {activeTab === 'pagination' && (
-                  <div className="animate-in slide-in-from-right-4 duration-300">
-                    <SettingSection title="Snippet List" icon={List}>
-                      <SettingToggle
-                        label="Enable Pagination"
-                        description="Split snippets into pages for better performance with large collections."
-                        checked={localSettings.pagination?.enablePagination !== false}
-                        onChange={(v) => updateSetting('pagination.enablePagination', v)}
-                      />
-                      {localSettings.pagination?.enablePagination !== false && (
-                        <SettingInput
-                          label="Items Per Page"
-                          description="Number of snippets to show per page (5-50 recommended)."
-                          type="number"
-                          min={5}
-                          max={50}
-                          value={localSettings.pagination?.pageSize || 5}
-                          onChange={(v) =>
-                            updateSetting(
-                              'pagination.pageSize',
-                              Math.max(5, Math.min(50, parseInt(v) || 5))
-                            )
-                          }
-                        />
-                      )}
-                      <SettingToggle
-                        label="Auto-Select on Search"
-                        description="Automatically select the first search result."
-                        checked={localSettings.pagination?.autoSelectOnSearch !== false}
-                        onChange={(v) => updateSetting('pagination.autoSelectOnSearch', v)}
-                      />
-                    </SettingSection>
-                  </div>
-                )}
-
                 {activeTab === 'shortcuts' && (
                   <div className="animate-in slide-in-from-right-4 duration-300">
                     <KeyboardShortcuts modKey={navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'} />
@@ -525,7 +508,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
                           const snippets = await window.api.getSnippets({ metadataOnly: false })
                           const data = {
                             exportDate: new Date().toISOString(),
-                            version: '1.1.6',
+                            version: pkg.version,
                             snippets
                           }
                           await window.api.exportJSON(data)
@@ -626,11 +609,6 @@ export const DEFAULT_SETTINGS = {
     showLanguage: true,
     showStats: true,
     showZoom: true
-  },
-  pagination: {
-    enablePagination: true, // Enable/disable pagination entirely
-    pageSize: 5, // Items per page (5-50 recommended)
-    autoSelectOnSearch: true // Auto-select first search result
   },
   activityBar: {
     bgColor: '#18181b',

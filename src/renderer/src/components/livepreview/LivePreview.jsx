@@ -16,7 +16,6 @@ import { themes } from '../preference/theme/themes'
 import { useModal } from '../workbench/manager/ModalContext'
 import useAdvancedSplitPane from '../splitPanels/useAdvancedSplitPane.js'
 import ShadowSurface from '../preview/ShadowSurface'
-import mermaid from 'mermaid'
 
 /**
  * LivePreview - High-Performance Shadow DOM Rendering Engine.
@@ -171,7 +170,7 @@ const LivePreview = ({
       --font-sans: ${fontFamily}, sans-serif;
     }`
 
-    return `${variableStyles}\n${themeVars}\n${previewStyles}\n${markdownStyles}\n${mermaidStyles}\n.markdown-body { text-align: justify !important; }`
+    return `${variableStyles}\n${themeVars}\n${previewStyles}\n${markdownStyles}\n${mermaidStyles}\n.markdown-body { padding-bottom: 5rem !important; }`
   }, [theme, fontFamily, settings.editor?.fontSize])
 
   // --- 3. Shadow DOM Event Pipeline ---
@@ -285,7 +284,8 @@ const LivePreview = ({
                 document.body.appendChild(bridge)
               }
 
-              // 2. Refresh Config
+              // 2. Load and Refresh Config
+              const { default: mermaid } = await import('mermaid')
               mermaid.initialize({
                 ...getMermaidConfig(isDark, fontFamily),
                 startOnLoad: false,

@@ -1,13 +1,8 @@
 /* Slash Command Menu Styling */
 
 /* Force solid background for autocomplete tooltip (Fix for theme transparency) */
-.cm-tooltip.cm-tooltip-autocomplete {
-  background-color: #1e1e1e !important; /* Solid dark color */
-  border: 1px solid var(--color-border, #444) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
-  backdrop-filter: none !important;
-  opacity: 1 !important;
-}
+/* Tooltip container styling moved to CodeEditor.css for consistency */
+/* .cm-tooltip.cm-tooltip-autocomplete { ... } */
 
 /* The main option container */
 .cm-slash-option {

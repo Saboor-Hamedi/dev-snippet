@@ -8,6 +8,7 @@ export const themes = [
     description: '',
     colors: {
       '--color-bg-primary': 'rgba(255, 255, 255, 0.7)', // Frosty White Glass
+      '--color-tooltip-bg': '#ffffff',
       '--color-bg-secondary': 'rgba(246, 248, 250, 0.6)',
       '--color-bg-tertiary': 'rgba(241, 243, 244, 0.5)',
       '--color-text-primary': '#000000',
@@ -113,6 +114,7 @@ export const themes = [
     description: 'Deep Cosmic Glass',
     colors: {
       '--color-bg-primary': 'rgba(13, 17, 23, 0.55)', // Glassy Midnight Void
+      '--color-tooltip-bg': '#0d1117',
       '--color-bg-secondary': 'rgba(13, 17, 23, 0.45)',
       '--color-bg-tertiary': 'rgba(22, 27, 34, 0.45)',
       '--color-text-primary': '#c9d1d9',
@@ -202,6 +204,7 @@ export const themes = [
     description: '',
     colors: {
       '--color-bg-primary': 'rgba(9, 9, 11, 0.55)', // Glassy Cosmic Void
+      '--color-tooltip-bg': '#09090b',
       '--color-bg-secondary': 'rgba(9, 9, 11, 0.45)',
       '--color-bg-tertiary': 'rgba(24, 24, 27, 0.45)',
       '--color-text-primary': '#ffffff',
@@ -307,6 +310,7 @@ export const themes = [
     description: '',
     colors: {
       '--color-bg-primary': 'rgba(23, 28, 25, 0.55)', // Glassy Forest Void
+      '--color-tooltip-bg': '#1c1917',
       '--color-bg-secondary': 'rgba(23, 28, 25, 0.45)',
       '--color-bg-tertiary': 'rgba(34, 42, 38, 0.45)',
       '--color-text-primary': '#ffffff',
@@ -412,6 +416,7 @@ export const themes = [
     description: 'Luxurious Gold Glass',
     colors: {
       '--color-bg-primary': 'rgba(24, 24, 27, 0.55)', // Glassy Zinc Void
+      '--color-tooltip-bg': '#18181b',
       '--color-bg-secondary': 'rgba(24, 24, 27, 0.45)',
       '--color-bg-tertiary': 'rgba(39, 39, 42, 0.45)',
       '--color-text-primary': '#ffffff',
@@ -501,6 +506,7 @@ export const themes = [
     description: 'Deep Blue & Cyan',
     colors: {
       '--color-bg-primary': 'rgba(15, 23, 42, 0.55)', // Deep Sea Glass Void
+      '--color-tooltip-bg': '#0f172a',
       '--color-bg-secondary': 'rgba(15, 23, 42, 0.45)',
       '--color-bg-tertiary': 'rgba(30, 41, 59, 0.45)',
       '--color-text-primary': '#f8fafc',
@@ -589,6 +595,7 @@ export const themes = [
     description: 'Fiery Red & Dark',
     colors: {
       '--color-bg-primary': 'rgba(28, 25, 23, 0.55)', // Glassy Ember Void
+      '--color-tooltip-bg': '#171717',
       '--color-bg-secondary': 'rgba(28, 25, 23, 0.45)',
       '--color-bg-tertiary': 'rgba(45, 38, 32, 0.45)',
       '--color-text-primary': '#fafafa',
@@ -678,6 +685,7 @@ export const themes = [
     description: 'Clean & minimal',
     colors: {
       '--color-bg-primary': 'rgba(255, 255, 255, 0.7)', // Steel Glass Void
+      '--color-tooltip-bg': '#ffffff',
       '--color-bg-secondary': 'rgba(246, 246, 246, 0.6)',
       '--color-bg-tertiary': 'rgba(237, 237, 237, 0.5)',
       '--color-text-primary': '#000000',
@@ -782,6 +790,7 @@ export const themes = [
     description: 'Glassmorphism with Purple Glow',
     colors: {
       '--color-bg-primary': 'rgba(34, 30, 42, 0.5)', // Purple-tinted Void
+      '--color-tooltip-bg': '#1e1e2e',
       '--color-bg-secondary': 'rgba(34, 30, 42, 0.4)',
       '--color-bg-tertiary': 'rgba(48, 44, 62, 0.45)',
       '--color-text-primary': '#dcddde',
@@ -883,6 +892,7 @@ export const themes = [
     description: 'Glassmorphism with Blue Glow',
     colors: {
       '--color-bg-primary': 'rgba(30, 41, 59, 0.75)', // Unified Glassy Cobalt
+      '--color-tooltip-bg': '#0f172a',
       '--color-bg-secondary': 'rgba(30, 41, 59, 0.65)',
       '--color-bg-tertiary': 'rgba(51, 65, 85, 0.5)',
       '--color-text-primary': '#f1f5f9',

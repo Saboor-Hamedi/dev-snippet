@@ -19,7 +19,7 @@
 
 .pin-popover {
   position: fixed;
-  background: var(--color-bg-tertiary, #1e1e1e);
+  background-color: var(--color-tooltip-bg, #1e1e1e) !important;
   border: 1px solid var(--color-border);
   border-radius: 8px;
   box-shadow:
@@ -131,4 +131,174 @@
 /* Premium micro-animations */
 .pin-popover-item:active {
   transform: scale(0.98);
+}
+
+/* Light Theme Overrides for Pin Popover */
+[data-theme='polaris'] .pin-popover,
+[data-theme='latte'] .pin-popover,
+[data-theme='solar-dawn'] .pin-popover,
+[data-theme='minimal-gray'] .pin-popover,
+[data-theme='quiet-light'] .pin-popover {
+  background: #ffffff !important;
+  border-color: #d0d7de !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme='polaris'] .pin-popover-header,
+[data-theme='latte'] .pin-popover-header,
+[data-theme='solar-dawn'] .pin-popover-header,
+[data-theme='minimal-gray'] .pin-popover-header,
+[data-theme='quiet-light'] .pin-popover-header {
+  background: #f6f8fa !important;
+  border-bottom-color: #d0d7de !important;
+}
+
+[data-theme='polaris'] .pin-popover-item:hover,
+[data-theme='latte'] .pin-popover-item:hover,
+[data-theme='solar-dawn'] .pin-popover-item:hover,
+[data-theme='minimal-gray'] .pin-popover-item:hover,
+[data-theme='quiet-light'] .pin-popover-item:hover {
+  background: #f0f7ff !important;
+  color: #0366d6 !important;
+}
+
+[data-theme='polaris'] .pin-popover-item:hover .pin-icon,
+[data-theme='latte'] .pin-popover-item:hover .pin-icon,
+[data-theme='solar-dawn'] .pin-popover-item:hover .pin-icon,
+[data-theme='minimal-gray'] .pin-popover-item:hover .pin-icon,
+[data-theme='quiet-light'] .pin-popover-item:hover .pin-icon {
+  color: #0366d6 !important;
+}
+
+/* --- Mode Switcher (Floating Flow) --- */
+.cm-editor-mode-switcher {
+  position: absolute;
+  bottom: 12px;
+  right: 20px;
+  display: flex !important;
+  background: var(--color-bg-secondary) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 5px;
+  padding: 2px;
+  gap: 2px;
+  z-index: 1000;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(24px);
+  user-select: none;
+  transition: box-shadow 0.2s ease;
+}
+
+/* Consolidated Light Theme Overrides for Mode Switcher */
+[data-theme='polaris'] .cm-editor-mode-switcher,
+[data-theme='latte'] .cm-editor-mode-switcher,
+[data-theme='solar-dawn'] .cm-editor-mode-switcher,
+[data-theme='minimal-gray'] .cm-editor-mode-switcher,
+[data-theme='quiet-light'] .cm-editor-mode-switcher {
+  background: #ffffff !important;
+  border-color: #d0d7de !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
+  backdrop-filter: none !important;
+}
+
+[data-theme='polaris'] .cm-mode-btn.is-active,
+[data-theme='latte'] .cm-mode-btn.is-active,
+[data-theme='solar-dawn'] .cm-mode-btn.is-active,
+[data-theme='minimal-gray'] .cm-mode-btn.is-active,
+[data-theme='quiet-light'] .cm-mode-btn.is-active {
+  background: #0366d6 !important;
+  color: #fff !important;
+}
+
+.cm-editor-mode-switcher.is-floating {
+  border-color: var(--color-accent-primary) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+}
+
+.cm-editor-mode-switcher.is-dragging {
+  opacity: 0.9;
+  cursor: move !important;
+}
+
+.cm-mode-item {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 4px;
+  border: none !important;
+  background: transparent !important;
+  color: var(--color-text-tertiary) !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cm-mode-item:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: var(--color-text-secondary) !important;
+}
+
+.cm-mode-toggle-float {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: none !important;
+  background: transparent !important;
+  color: var(--color-text-tertiary) !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cm-mode-toggle-float:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: var(--color-text-secondary) !important;
+}
+
+.cm-mode-toggle-float.is-active {
+  color: var(--color-accent-primary) !important;
+}
+
+.cm-mode-divider {
+  width: 1px;
+  height: 18px;
+  background: var(--color-border);
+  margin: 0 4px;
+  align-self: center;
+}
+
+.cm-mode-btn {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 75px;
+  height: 28px;
+  border-radius: 4px;
+  border: none !important;
+  background: transparent !important;
+  color: var(--color-text-secondary) !important;
+  font-size: 10.5px !important;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cm-mode-btn span {
+  display: inline;
+  opacity: 1;
+}
+
+.cm-mode-btn:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: var(--color-text-primary) !important;
+}
+
+.cm-mode-btn.is-active {
+  background: var(--color-accent-primary) !important;
+  color: #fff !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }

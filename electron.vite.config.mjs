@@ -34,7 +34,6 @@ export default defineConfig({
             // Split vendor libraries into separate chunks
             'react-vendor': ['react', 'react-dom'],
             'codemirror-vendor': ['@uiw/react-codemirror', '@codemirror/state', '@codemirror/view'],
-            'markdown-vendor': ['react-markdown', 'remark-gfm', 'react-syntax-highlighter'],
             'ui-vendor': ['lucide-react']
           }
         }

@@ -1,26 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { X, Download, Copy, Check, Image as ImageIcon, Loader2 } from 'lucide-react'
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { toBlob, toPng } from 'html-to-image'
 import { saveAs } from 'file-saver'
 import PropTypes from 'prop-types'
 import { ToggleButton } from '../../ToggleButton'
-
-const customVscDarkPlus = {
-  ...vscDarkPlus,
-  'pre[class*="language-"]': {
-    ...vscDarkPlus['pre[class*="language-"]'],
-    background: 'transparent',
-    textShadow: 'none'
-  },
-  'code[class*="language-"]': {
-    ...vscDarkPlus['code[class*="language-"]'],
-    background: 'transparent',
-    textShadow: 'none'
-  }
-}
+import { codeToHtml } from '../../../utils/markdownParser'
 
 const GRADIENTS = [
   { name: 'Purple Haze', class: 'bg-gradient-to-br from-purple-600 to-blue-500' },
@@ -43,6 +28,7 @@ const ImageExportModal = ({ isOpen, onClose, snippet }) => {
   const [showLineNumbers, setShowLineNumbers] = useState(true)
   const [isExporting, setIsExporting] = useState(false)
   const [exportState, setExportState] = useState(null)
+  const [highlightedHtml, setHighlightedHtml] = useState('')
 
   const exportRef = useRef(null)
 
@@ -51,8 +37,14 @@ const ImageExportModal = ({ isOpen, onClose, snippet }) => {
     if (isOpen) {
       setExportState(null)
       setIsExporting(false)
+
+      const highlight = async () => {
+        const html = await codeToHtml(snippet.code, snippet.language)
+        setHighlightedHtml(html)
+      }
+      highlight()
     }
-  }, [isOpen])
+  }, [isOpen, snippet.code, snippet.language])
 
   if (!isOpen || !snippet) return null
 
@@ -134,25 +126,17 @@ const ImageExportModal = ({ isOpen, onClose, snippet }) => {
                   </div>
                 </div>
 
-                <div className="p-0">
-                  <SyntaxHighlighter
-                    language={snippet.language || 'javascript'}
-                    style={customVscDarkPlus}
-                    showLineNumbers={showLineNumbers}
-                    customStyle={{
-                      margin: 0,
-                      padding: '1.5rem',
-                      background: 'transparent',
-                      fontSize: '14px',
-                      lineHeight: '1.6',
-                      fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace"
-                    }}
-                    wrapLines={true}
-                    wrapLongLines={true}
-                  >
-                    {snippet.code || ''}
-                  </SyntaxHighlighter>
-                </div>
+                <div
+                  className={`p-6 overflow-hidden code-content ${showLineNumbers ? 'show-line-numbers' : ''}`}
+                  style={{
+                    fontSize: '14px',
+                    lineHeight: '1.6',
+                    fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+                    color: '#d4d4d4',
+                    background: 'transparent'
+                  }}
+                  dangerouslySetInnerHTML={{ __html: highlightedHtml }}
+                />
               </div>
             </div>
           </div>

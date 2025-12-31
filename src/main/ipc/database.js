@@ -68,18 +68,29 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
 
       const ftsQuery = terms.map((term) => `"${term.replace(/"/g, '""')}"*`).join(' AND ')
 
+      // --- BLAZING PERFORMANCE FTS5 OPTIMIZATION ---
+      // We use a subquery to find matched rowids and their ranks FIRST.
+      // This allows SQLite to perform the heavy lifting of sorting and limiting
+      // BEFORE it tries to generate the 'match_context' (snippet) for only
+      // the top results, drastically reducing CPU usage for large libraries.
       const results = db
         .prepare(
           `
-        SELECT s.id, s.title, s.language, s.timestamp, s.type, s.tags, s.is_draft, s.is_pinned, s.is_favorite, s.sort_index, 
-        CASE WHEN (s.code_draft IS NOT NULL AND s.code_draft != '' AND s.code_draft != s.code) THEN 1 ELSE 0 END as is_modified,
-        snippet(snippets_fts, 1, '__MARK__', '__/MARK__', '...', 20) as match_context
-        FROM snippets s
-        INNER JOIN snippets_fts fts ON s.rowid = fts.rowid
-        WHERE snippets_fts MATCH ? AND s.is_deleted = 0
-        ORDER BY bm25(snippets_fts, 10.0, 1.0, 5.0)
-        LIMIT 10
-      `
+          SELECT s.id, s.title, s.language, s.timestamp, s.type, s.tags, s.is_draft, s.is_pinned, s.is_favorite, s.sort_index, 
+          CASE WHEN (s.code_draft IS NOT NULL AND s.code_draft != '' AND s.code_draft != s.code) THEN 1 ELSE 0 END as is_modified,
+          snippet(snippets_fts, 1, '__MARK__', '__/MARK__', '...', 20) as match_context
+          FROM (
+            SELECT rowid, rank 
+            FROM snippets_fts 
+            WHERE snippets_fts MATCH ? 
+            ORDER BY bm25(snippets_fts, 10.0, 1.0, 5.0) 
+            LIMIT 10
+          ) as fts
+          JOIN snippets s ON s.rowid = fts.rowid
+          JOIN snippets_fts ON snippets_fts.rowid = fts.rowid
+          WHERE s.is_deleted = 0
+          ORDER BY fts.rank
+        `
         )
         .all(ftsQuery)
 
