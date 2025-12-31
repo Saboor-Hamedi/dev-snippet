@@ -162,6 +162,7 @@ export const ModalProvider = ({
         {deleteModal.isOpen && (
           <Prompt
             isOpen={true}
+            zIndex={10002}
             variant="danger"
             title={
               deleteModal.snippetId === 'empty-trash'

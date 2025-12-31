@@ -338,6 +338,7 @@
 }
 
 .cm-marker-hidden {
+  display: none !important;
   opacity: 0 !important;
   color: transparent !important;
   user-select: none;
@@ -397,8 +398,8 @@
   width: 100% !important;
   margin-left: auto !important;
   margin-right: auto !important;
-  padding-left: 0 !important; /* Removed padding to tighten selection */
-  padding-right: 0 !important;
+  padding-left: 30px !important; /* Premium Obsidian-style breathing room */
+  padding-right: 30px !important;
 }
 
 .cm-editor-container.is-centered .cm-line {
@@ -414,14 +415,23 @@
   position: sticky !important;
   left: 0;
   z-index: 20;
+  padding-left: 10px !important; /* Space for the line numbers from edge */
 }
 
-/* Responsive Padding for Small Screens */
-@media (max-width: 768px) {
+/* Responsive Padding for Small Screens - Extra deep margins on tablets/mobile */
+@media (max-width: 1024px) {
   .cm-content,
   .cm-editor-container.is-centered .cm-content {
-    padding-left: 5px !important;
-    padding-right: 5px !important;
+    padding-left: 45px !important;
+    padding-right: 45px !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .cm-content,
+  .cm-editor-container.is-centered .cm-content {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
   }
 }
 
@@ -488,3 +498,33 @@ html body .cm-content *::selection {
   border-radius: 2px;
 }
 /* ============================================================================ */
+/* Zen Focus Mode Styles */
+.cm-zen-dimmed {
+  opacity: 0.1 !important;
+  transition:
+    opacity 0.5s ease,
+    filter 0.5s ease !important;
+  filter: blur(1.5px) grayscale(50%);
+  pointer-events: none; /* Avoid accidental clicks on dimmed content */
+}
+
+.cm-zen-active {
+  opacity: 1 !important;
+  transition: opacity 0.2s ease !important;
+  filter: none !important;
+}
+
+/* Ensure widgets (images, diagrams) inside dimmed lines are translucent too */
+.cm-zen-dimmed .cm-widgetBuffer,
+.cm-zen-dimmed .cm-line-img-container,
+.cm-zen-dimmed .cm-checkbox-img,
+.cm-zen-dimmed .mermaid-diagram-wrapper {
+  opacity: 0.2 !important;
+  filter: blur(2px) !important;
+}
+
+/* Ensure no background overrides during Zen Focus */
+.cm-zen-dimmed .cm-activeLine,
+.cm-zen-dimmed .cm-activeLineGutter {
+  background-color: transparent !important;
+}

@@ -71,7 +71,9 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
       const results = db
         .prepare(
           `
-        SELECT s.id, s.title, s.language, s.timestamp, s.type, s.tags, s.is_draft, s.sort_index, snippet(snippets_fts, 1, '__MARK__', '__/MARK__', '...', 20) as match_context
+        SELECT s.id, s.title, s.language, s.timestamp, s.type, s.tags, s.is_draft, s.is_pinned, s.is_favorite, s.sort_index, 
+        CASE WHEN (s.code_draft IS NOT NULL AND s.code_draft != '' AND s.code_draft != s.code) THEN 1 ELSE 0 END as is_modified,
+        snippet(snippets_fts, 1, '__MARK__', '__/MARK__', '...', 20) as match_context
         FROM snippets s
         INNER JOIN snippets_fts fts ON s.rowid = fts.rowid
         WHERE snippets_fts MATCH ? AND s.is_deleted = 0
@@ -88,7 +90,8 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
       return db
         .prepare(
           `
-        SELECT id, title, language, timestamp, type, tags, is_draft, sort_index 
+        SELECT id, title, language, timestamp, type, tags, is_draft, is_pinned, is_favorite, sort_index,
+        CASE WHEN (code_draft IS NOT NULL AND code_draft != '' AND code_draft != code) THEN 1 ELSE 0 END as is_modified
         FROM snippets
         WHERE (title LIKE ? OR code LIKE ? OR tags LIKE ?) AND is_deleted = 0
         ORDER BY timestamp DESC
@@ -165,9 +168,10 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
   ipcMain.handle('db:saveSnippetDraft', (event, payload) => {
     const { id, code_draft, language } = payload
     const stmt = db.prepare(
-      'UPDATE snippets SET code_draft = ?, is_draft = 1, language = COALESCE(?, language) WHERE id = ?'
+      'UPDATE snippets SET code_draft = ?, language = COALESCE(?, language) WHERE id = ?'
     )
     stmt.run(code_draft, language || null, id)
+    notifyDataChanged()
     return true
   })
 
@@ -179,6 +183,7 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
         'UPDATE snippets SET code = code_draft, code_draft = NULL, is_draft = 0, timestamp = ? WHERE id = ?'
       )
       stmt.run(Date.now(), id)
+      notifyDataChanged()
     }
     return true
   })

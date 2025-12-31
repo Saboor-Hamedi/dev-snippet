@@ -182,6 +182,7 @@ const FlowPreview = ({ selectedSnippet, snippets, fontFamily, show }) => {
             fontFamily={fontFamily}
             showHeader={false}
             enableScrollSync={true}
+            fontSize={device === 'mini' || device === 'mobile' ? 16 : null}
           />
         </div>
 

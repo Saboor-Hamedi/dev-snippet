@@ -35,9 +35,42 @@ export class MermaidWidget extends WidgetType {
    * We include 'from' and 'to' to ensure that if the block shifts (e.g., text added above),
    * the widget re-syncs its event handlers with the fresh document positions.
    */
+  /**
+   * Equality check.
+   * We now return TRUE even if code changes, so that CodeMirror preserves the DOM instance.
+   * This allows us to handle updates gracefully in updateDOM() with debouncing,
+   * avoiding the "destroy & recreate" flicker.
+   */
   eq(other) {
     if (other.mode !== this.mode) return false
-    return other.code === this.code && other.from === this.from && other.to === this.to
+    // We allow code to be different so updateDOM can handle the transition
+    return other.from === this.from && other.to === this.to
+  }
+
+  /**
+   * updateDOM called when eq() returns true.
+   * We use this to trigger a "Soft Update" of the diagram without destroying the container.
+   */
+  updateDOM(dom) {
+    // If code hasn't changed, do nothing
+    if (dom.dataset.code === this.code) return true
+
+    // Code changed! Update the data attribute
+    dom.dataset.code = this.code
+
+    // Trigger debounced render on this existing DOM node
+    const container = dom
+    this.startDebouncedRender(container, this.code)
+    return true
+  }
+
+  /**
+   * Cleanup when widget is destroyed.
+   * Crucial to prevent zombie timers from triggering renders on detached nodes.
+   */
+  destroy(dom) {
+    if (dom._debounceTimer) clearTimeout(dom._debounceTimer)
+    dom._isDestroyed = true
   }
 
   /**
@@ -51,6 +84,7 @@ export class MermaidWidget extends WidgetType {
     // Generate a unique ID for mermaid.render() to target
     const uniqueId = 'mermaid-' + Math.random().toString(36).substr(2, 9)
     wrap.id = uniqueId
+    wrap.dataset.code = this.code // Track code for updates
     wrap.innerHTML = '<div class="cm-mermaid-loading">Generating schematic...</div>'
 
     const svgContainer = document.createElement('div')
@@ -172,13 +206,19 @@ export class MermaidWidget extends WidgetType {
      * It waits for the element to be attached to the DOM so that CSS variables
      * (for colors/fonts) are correctly resolved before rendering.
      */
-    const runRender = async () => {
+    const runRender = async (codeOverride, retryCount = 0) => {
       try {
         const container = wrap
-        if (!container) return
+        const codeToRender = codeOverride !== undefined ? codeOverride : this.code
+
+        // Safety: If widget was destroyed, stop immediately
+        if (!container || container._isDestroyed) return
 
         if (!container.isConnected) {
-          setTimeout(runRender, 50)
+          // Retry for ~1 second (20 * 50ms)
+          if (retryCount < 20) {
+            setTimeout(() => runRender(codeToRender, retryCount + 1), 50)
+          }
           return
         }
 
@@ -219,7 +259,7 @@ export class MermaidWidget extends WidgetType {
         }
 
         // Perform the actual render
-        const { svg } = await mermaid.render(uniqueId + '-svg', this.code)
+        const { svg } = await mermaid.render(uniqueId + '-svg', codeToRender)
 
         const loading = container.querySelector('.cm-mermaid-loading')
         if (loading) loading.remove()
@@ -242,9 +282,28 @@ export class MermaidWidget extends WidgetType {
       }
     }
 
+    // Attach to DOM for external updates
+    wrap.runRender = runRender
+
     // Defer the heavy rendering work to the next tick to keep the UI snappy
     setTimeout(runRender, 0)
 
     return wrap
+  }
+
+  /**
+   * Helper to trigger a delayed render on the container.
+   * We store the timer on the DOM element to persist across widget refreshes.
+   */
+  startDebouncedRender(container, newCode) {
+    if (container._debounceTimer) {
+      clearTimeout(container._debounceTimer)
+    }
+
+    container._debounceTimer = setTimeout(() => {
+      if (container.runRender) {
+        container.runRender(newCode)
+      }
+    }, 300) // 300ms debounce
   }
 }

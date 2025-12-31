@@ -1,8 +1,8 @@
 # DevSnippet Technical Reference Manual
 
-**Version**: 1.2.3
+**Version**: 1.2.4
 **Date**: December 31, 2025
-**Status**: Stable (Zero-Latency Engine Update)
+**Status**: Stable (DevSnippet Evolution Update)
 
 ---
 
@@ -14,8 +14,9 @@ It is built on a **Local-First** architecture:
 
 * **No Cloud Dependency**: All data resides in `app.getPath('userData')`.
 * **Instant Search**: Full-Text Search (FTS) queries complete in sub-10ms.
-*   **Interoperability**: Data can be exported to standard formats (PDF, DOCX, JSON).
-*   **Session Persistence**: Automatically restores the user's last active file, folder, and view state on launch (added v1.2.4).
+* **Interoperability**: Data can be exported to standard formats (PDF, DOCX, JSON).
+* **Session Persistence**: Automatically restores the user's last active file, folder, and view state on launch (added v1.2.4).
+* **Zen Focus Mode**: A hardware-accelerated immersion layer that dims the UI and inactive text blocks to minimize cognitive load during deep work (added v1.2.4).
 
 ---
 
@@ -78,6 +79,8 @@ The application uses a request-response pattern via `ipcRenderer.invoke()` (Prom
 * **Command Palette (`Cmd+P`)**: A centralized navigation hub featuring a **Hybrid Search Engine**. It merges client-side fuzzy matching for titles with backend Full-Text Search (FTS) for content, providing sub-50ms results.
 * **Pinned Section**: A specialized virtualization layer within the Sidebar (`SnippetSidebarRow.jsx`) that supports collapsible states and "Folder-like" visual hierarchy for high-frequency access items.
 * **Responsive Status Bar**: A context-aware footer that progressively hides information (Indentation, Encoding) based on viewport width (`sm/md/lg` breakpoints), ensuring vital data (Cursor, Zoom) is always accessible.
+* **Real-time Status Indicators**: The Sidebar (`SnippetSidebarRow.jsx`) now features **Git-style dots** (Yellow for Modified, Green for Drafts) powered by an on-the-fly SQLite diffing engine.
+* **Zen Focus Mode**: A hardware-accelerated immersion layer that dims the UI and inactive text blocks to minimize cognitive load during deep work.
 
 ---
 
@@ -204,6 +207,15 @@ The editor includes a robust local asset system designed for offline-first usage
 
 By using a single source of truth for parsing, "visual drift" (where the preview looks different from the export) is mathematically eliminated.
 
+### 4.7 Mermaid Widget Optimization
+
+To support seamless typing within diagram blocks without "layout jumping" or "caret resetting", the Mermaid widget (`MermaidWidget.js`) employs a **Debounced In-Place Update** strategy.
+
+1.  **In-Place Equality**: The widget's `eq(other)` method returns **true** even if the code content has changed. This prevents CodeMirror from destroying the DOM container on every keystroke.
+2.  **Soft Update**: The `updateDOM(dom)` method detects code changes and triggers a **Debounced Render** (300ms delay). This ensures the diagram only re-renders when the user pauses typing.
+3.  **Zombie Prevention**: A robust `destroy(dom)` lifecycle hook ensures that if the widget is removed from the DOM (e.g., during line deletion), any pending render timers are immediately cleared. This prevents "zombie" processes from trying to update detached nodes, which previously caused scroll position resets.
+4.  **Connect-Check**: The render loop explicitly checks `isConnected` and implements a retry limit (20 attempts) to ensure it never gets stuck in an infinite loop waiting for a detached node.
+
 ---
 
 ## 5. User Reference
@@ -258,6 +270,13 @@ If you see `TypeError: Failed to fetch dynamically imported module`:
 
 1. This indicates the internal Vite graph is desynchronized.
 2. **Action**: Close the app terminal. Delete the `node_modules/.vite` folder. Restart the app.
+
+### 6.2 Modal Stacking Issues (Z-Index)
+
+If a confirmation prompt (e.g., "Delete Forever") appears *behind* its parent modal:
+
+1.  **Mechanism**: The app heavily relies on stacking contexts.
+2.  **Fix**: The `Prompt` component now accepts a dynamic `zIndex` prop. Critical destructive actions use `zIndex={10002}` to force themselves above the standard `UniversalModal` (`zIndex={10001}`).
 
 ### 6.2 Search Not Returning Results
 

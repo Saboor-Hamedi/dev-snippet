@@ -58,12 +58,13 @@ body {
 
 /* METADATA CARD */
 .preview-metadata-card {
-  padding: 40px;
-  background: var(--color-bg-tertiary);
-  border-radius: 16px;
+  padding: 40px 0;
+  background: transparent;
+  border-radius: 0;
   margin-bottom: 40px;
-  border: 1px solid var(--color-border);
-  text-align: center;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
   animation: slideInDown 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .meta-title {
@@ -77,7 +78,7 @@ body {
 }
 .meta-details {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 24px;
   color: var(--color-text-secondary);
   font-size: 0.95rem;
@@ -107,6 +108,17 @@ h6 {
   line-height: 1.6;
   margin: 0;
   padding: 0;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+  text-align: left !important;
+}
+h1::before,
+h2::before,
+h3::before,
+h4::before,
+h5::before,
+h6::before {
+  content: none !important;
 }
 
 h1 {
@@ -130,8 +142,10 @@ h6 {
   padding: 0.4em 0 0.1em 0 !important;
 }
 
-p {
+p,
+li {
   margin: 1em 0;
+  text-align: justify !important;
 }
 ul,
 ol {

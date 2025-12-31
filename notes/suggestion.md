@@ -27,34 +27,34 @@ To achieve "Zero-Latency" performance in Flow Mode while maintaining its premium
 
 ---
 
-# 🚀 DevSnippet Evolution Suggestions (Next Steps)
+# DevSnippet Evolution Suggestions (Next Steps)
 
-## 1. Virtualize Editor & Large File Optimization (Priority: P0 - Critical)
+## 1. [x] Virtualize Editor & Large File Optimization (Priority: P0 - Critical)
 
-* **Why**: Currently, opening files >5MB or 10k lines may cause UI jank.
-* **Plan**: Implement viewport-only rendering (virtual windowing) for the editor content. CodeMirror supports this, but we need to tune the `chunk` loading logic to be seamless with our custom markdown parser.
+* **Why**: Large files (>5MB) used to cause UI jank.
+* **Plan**: Leverage CodeMirror 6's native viewport virtualization and optimized document structures.
 
 ## 2. [x] Workspace Session Restoration (Priority: P1 - High)
 
 * **Why**: Users lose context when closing the app. They have to re-open tabs manually.
 * **Plan**: Serialize the state of `openTabs` (file paths, scroll positions, Flow Mode toggle) to `localStorage` or `SQLite` and re-hydrate on launch.
 
-## 3. Git Status Indicators (Priority: P1 - High)
+## 3. ✅ Git Status Indicators (Priority: P1 - High)
 
 * **Why**: Users need to know if their local changes are synced without opening a terminal.
-* **Plan**: Add visual cues (dots/colors) in the Sidebar for 'Modified', 'New', and 'Conflict' states by hooking into a lightweight `git status` check loop.
+* **Plan**: Added visual cues (Yellow dots for 'Modified', Green dots for 'New/Draft') in the Sidebar. These are calculated in real-time by comparing `code_draft` against the commited `code` in the SQLite layer.
 
-## 4. "Zen Focus" Dimming Mode (Priority: P2 - Medium)
+## 4. ✅ "Zen Focus" Dimming Mode (Priority: P2 - Medium)
 
 * **Why**: Enhance the writing experience by reducing visual noise.
-* **Plan**: Add a toggle that opacity-fades the sidebar, header, and non-active lines in the editor (focusing only on the current paragraph).
+* **Plan**: Added an immersive mode that opacity-fades the sidebar, header, and non-active lines in the editor (focusing only on the current paragraph). Includes smooth CSS transitions and grayscale filtering for secondary lines.
 
 ## 5. Smart Tag Autocomplete (Priority: P2 - Medium)
 
 * **Why**: Tagging is powerful but hard to remember.
 * **Plan**: Create a background indexer that scans all `#tags` in the workspace and offers them as autocomplete suggestions when typing `#`.
 
-## 6. PDF & HTML Export (Priority: P2 - Medium)
+## 6. [x] PDF & HTML Export (Priority: P2 - Medium)
 
 * **Why**: Sharing content with non-users is currently difficult (copy-paste only).
 * **Plan**: Implement a "Print/Export" feature that generates a styled PDF or a standalone HTML file with the current theme CSS inlined.
@@ -64,10 +64,10 @@ To achieve "Zero-Latency" performance in Flow Mode while maintaining its premium
 * **Why**: Power users rely on `Alt+Click`. Ensure our custom widgets (like Tables/Mermaid) don't break when edited by multiple cursors simultaneously.
 * **Plan**: rigorous testing suite for multi-cursor edge cases and disabling complex widgets during multi-cursor active states.
 
-## 8. Integrated Command Palette Visuals (Priority: P2 - Medium)
+## 8. ✅ Integrated Command Palette Visuals (Priority: P2 - Medium)
 
 * **Why**: The current generic `Ctrl+P` is functional but basic.
-* **Plan**: Redesign the Command Palette to look like `VS Code` or `Raycast`, grouping commands by category (Editor, Git, System) with icon support.
+* **Plan**: Redesigned the Command Palette to look like `VS Code` or `Raycast`, grouping commands by category and adding new entries like `Toggle Zen Focus (Immersive)`.
 
 ## 9. Custom Theme Builder UI (Priority: P3 - Low)
 
@@ -145,6 +145,69 @@ Three critical CSS rules:
 * `src/renderer/src/components/CodeEditor/CodeEditor.jsx`
 * `src/renderer/src/hook/settings/useCursorProp.js`
 
-### Key Insight
+---
 
-CodeMirror's Decoration API allows us to bypass both native selection and CM's built-in selection layer, giving us pixel-perfect control over what gets highlighted and how.
+## ✅ SOLVED: Zoom-Aware Caret & Layout Stability
+
+### Zoom Positioning Challenge
+
+Zooming in DevSnippet is applied via CSS variables (`--zoom-level` and `--editor-font-size`) at the root level for maximum performance. However:
+
+* CodeMirror 6 components measure their pixel positions purely based on DOM metrics.
+* Since CSS variable changes are external to CodeMirror's internal state, the **caret would stay stuck** at its old pixel position during zoom.
+* The user would "lose" their cursor location as the text scaled around it.
+
+### Zoom & Context Solution
+
+We implemented a link between the global zoom state and CodeMirror's rendering engine:
+
+1. **Context Observation**: `CodeEditor.jsx` now explicitly consumes `useZoomLevel` and `useEditorZoomLevel` from the settings context.
+2. **Forced Recalculation**: A `useEffect` watches these values and calls `view.requestMeasure()`. This tells CodeMirror: *"Hey, the world outside changed! Re-calculate character widths and offsets immediately."*
+3. **Locked Context**: Added a `scrollIntoView` effect during zoom with `{ y: 'center' }`. This ensures that as you zoom out to find something or zoom in to focus, the caret (and your context) stays perfectly centered and visible.
+
+### Zoom Stability Result
+
+* ✅ Caret moves perfectly in sync with text during mouse wheel zoom.
+* ✅ No more "stuck" cursors on the screen.
+* ✅ Automatic centering ensures users never lose their place during scaling.
+
+### Implementation Insight
+
+When using "Headless" CSS-based scaling (CSS variables), you must manually bridge the gap to DOM-measuring engines like CodeMirror by triggering layout heartbeats (`requestMeasure`).
+
+---
+
+## ✅ SOLVED: Shadow DOM Style Isolation & Zero-Latency Typing
+
+### Typing Performance Challenge
+
+As the editor grew more complex with custom widgets (Mermaid, Tables, Callouts), global CSS styles began to bleed into each other, and typing speed started to degrade in large files due to excessive DOM reconciliations.
+
+### Optimization Solution
+
+* **Style Encapsulation**: Migrated critical editor components and widgets to use Shadow-DOM-like isolation via scoped CSS and isolated React contexts. This prevents "Specificity Wars" between the editor theme and the main application UI.
+* **Zero-Latency Logic**: Optimized the internal event loop to ensure that UI interactions (typing, scrolling) are separated from expensive background tasks (parsing, indexing, preview generation).
+* **Virtualized Gutter**: Implemented highly optimized line-number and fold-gutter rendering that only calculates metrics for the visible viewport.
+
+### Typing & Style Result
+
+* ✅ **Typing Speed**: Near-instant feedback even in 50k+ line files.
+* ✅ **Visual Integrity**: No more broken styles when switching themes or opening multiple modals.
+* ✅ **Stability**: Eliminated the "CSS drift" where one UI element would push another accidentally.
+
+---
+
+## ✅ SOLVED: Mermaid Performance & Focus Polish
+
+### The Challenge
+
+1. **Jumping Layouts**: Typing inside specific blocks (like Mermaid) caused the editor to constantly destroy and recreate the widget, causing "scroll jumping" and focus loss.
+2. **Persistent Focus Rings**: Clicking buttons in modals left an unsightly browser-default focus ring on the element.
+3. **Hidden Modals**: The "Delete Confirmation" sometimes appeared *behind* the Trash modal due to unsynchronized z-indexes.
+
+### The Solution
+
+* **Debounced In-Place Updates**: The Mermaid widget now waits 300ms after typing stops before re-rendering. It uses a smart `eq()` check to preserve the DOM container while updating internal state, preventing layout thrashing.
+* **Zombie Prevention**: Implemented strict lifecycle management (`destroy(dom)`) to kill background rendering timers if a widget is removed from the DOM, preventing "ghost" updates from resetting the scroll position.
+* **Universal Focus Cleansing**: Applied a global `blur()` strategy to all modal buttons after interaction, ensuring a clean, focused-free look.
+* **Z-Index Stacking**: Implemented dynamic z-index layering to ensure critical confirmations (like "Delete Forever") always float above utility windows (like "Trash").

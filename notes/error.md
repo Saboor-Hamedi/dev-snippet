@@ -47,10 +47,19 @@ If you modify these, the editor will start **JUMPING** or trigger **Measure Loop
 
 ### ❌ Error: "Title selection highlights full width block"
 
-* **Why it happens**: Using `drawSelection()` creates a simulated selection layer that measures the full block width of headers (`display: block`).
+* **Why it happens**: CodeMirror's `drawSelection()` is required for custom caret shapes, but it renders selection backgrounds as absolute-positioned blocks that fill the line width (ugly on headers).
+* **The Fix (Hybrid Selection Hack)**:
+  1. **Enable `drawSelection()`**: Keep it on for custom cursor width/shape.
+  2. **The `forceSelection.js` extension**: Create a custom ViewPlugin that applies `Decoration.mark` to selected ranges. This paints selection exactly over the text.
+  3. **CSS Masking**: Set `.cm-selectionBackground { display: none !important; }` to hide the blocky layer, while styling `.cm-force-selection` with the user's color.
+
+### ❌ Error: "Caret stays on screen or loses position during zoom"
+
+* **Why it happens**: Global Zoom is applied via CSS variables (`--zoom-level`). CodeMirror's DOM measurements don't automatically update when these CSS variables change, causing the caret to get caught at old pixel offsets.
 * **The Fix**:
-  1. **Disable `drawSelection`**: Comment it out in `buildExtensions.js`. Falling back to **Native Browser Selection** ensures highlighting respects the exact text width.
-  2. **Constraint**: Add `width: fit-content` to header line styles (`.cm-line-h*`) in `buildTheme.js` to ensure the element's box model hugs the text, further guiding native behavior.
+  1. **Zoom Observer**: Use `useZoomLevel` and `useEditorZoomLevel` hooks in `CodeEditor.jsx`.
+  2. **Reactive Measurement**: Use a `useEffect` watching those levels to trigger `view.requestMeasure()`. This forces CodeMirror to recalculate char widths for the new scale.
+  3. **Auto-Centering**: Call `view.dispatch({ effects: [EditorView.scrollIntoView(..., {y: 'center'})] })` during zoom to keep the user's context locked.
 
 ---
 

@@ -1,6 +1,7 @@
 import { forceSelection } from './forceSelection'
 import buildTheme from './buildTheme'
 import { premiumTypingBundle } from './premiumFeatures'
+import { zenFocusExtension } from './zenFocus'
 import { linkPreviewTooltip } from './linkPreview'
 import './linkPreview.css'
 import { tags as t } from '@lezer/highlight'
@@ -39,7 +40,8 @@ const buildExtensions = async (options, handlers = {}) => {
     cursorWidth = 2,
     cursorShape = 'bar',
     cursorSelectionBg,
-    snippetTitles = []
+    snippetTitles = [],
+    zenFocus = false
   } = options
   const { debouncedSaveZoom } = handlers
 
@@ -66,6 +68,9 @@ const buildExtensions = async (options, handlers = {}) => {
 
   // 2.5 LINK PREVIEW (WikiLinks) - Premium Feature
   exts.push(linkPreviewTooltip)
+
+  // 2.5.1 ZEN FOCUS - Immersive Writing Feature
+  exts.push(zenFocusExtension(zenFocus))
 
   // 2.6 DOUBLE-CLICK WARP - Navigation Speed Feature
   const { wikiLinkWarp } = await import('./linkPreview')

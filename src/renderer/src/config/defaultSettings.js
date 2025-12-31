@@ -57,6 +57,7 @@ export const DEFAULT_SETTINGS = {
     showStatusBar: true,
     showFlowMode: false,
     showPreview: false,
+    zenFocus: false,
     sidebarIconColor: '#c9d1d9',
     sidebarWidth: 250,
     previewPosition: 'right',

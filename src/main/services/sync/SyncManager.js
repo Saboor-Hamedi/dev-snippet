@@ -11,6 +11,7 @@ class SyncManager {
     this.isSyncing = false
   }
 
+  // Initialize with the database instance
   initialize(db) {
     this.db = db
   }

@@ -61,6 +61,15 @@ const SnippetLibraryInner = ({ snippetData }) => {
   useThemeManager()
   useFlowMode({ showPreview, togglePreview })
 
+  // Sync Zen Focus state to global UI
+  useEffect(() => {
+    if (settings?.ui?.zenFocus) {
+      document.body.classList.add('zen-focus-active')
+    } else {
+      document.body.classList.remove('zen-focus-active')
+    }
+  }, [settings?.ui?.zenFocus])
+
   // Session Restoration (P1 Feature)
 
   const isCompact = getSetting('ui.compactMode') || false
@@ -454,6 +463,24 @@ const SnippetLibraryInner = ({ snippetData }) => {
       updateSetting('ui.showSidebar', next)
       showToast(next ? 'Workspace expanded' : 'Zen Mode enabled', 'info')
     }
+    const onCommandZenFocus = () => {
+      const current = settings?.ui?.zenFocus === true
+      const next = !current
+      updateSetting('ui.zenFocus', next)
+      // When enabling Zen Focus, we also hide sidebars for maximum immersion
+      if (next) {
+        updateSetting('ui.showActivityBar', false)
+        updateSetting('ui.showSidebar', false)
+        updateSetting('ui.showHeader', false)
+        updateSetting('ui.showStatusBar', false)
+      } else {
+        updateSetting('ui.showActivityBar', true)
+        updateSetting('ui.showSidebar', true)
+        updateSetting('ui.showHeader', true)
+        updateSetting('ui.showStatusBar', true)
+      }
+      showToast(next ? 'Zen Focus Enabled' : 'Zen Focus Disabled', 'info')
+    }
     const onCommandReset = () => {
       updateSetting('ui.showFlowMode', false)
       // updateSetting('ui.showSidebar', true)
@@ -517,6 +544,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
     window.addEventListener('app:open-settings', onCommandSettings)
     window.addEventListener('app:toggle-activity-bar', onCommandActivityBar)
     window.addEventListener('app:toggle-zen', onCommandZen)
+    window.addEventListener('app:toggle-zen-focus', onCommandZenFocus)
     window.addEventListener('app:reset-layout', onCommandReset)
     // window.addEventListener('app:toggle-flow', onCommandFlow) - Handled in useFlowMode
     window.addEventListener('app:command-copy-image', onCommandCopyImage)
@@ -536,6 +564,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
       window.removeEventListener('app:open-settings', onCommandSettings)
       window.removeEventListener('app:toggle-activity-bar', onCommandActivityBar)
       window.removeEventListener('app:toggle-zen', onCommandZen)
+      window.removeEventListener('app:toggle-zen-focus', onCommandZenFocus)
       window.removeEventListener('app:reset-layout', onCommandReset)
       // window.removeEventListener('app:toggle-flow', onCommandFlow)
       window.removeEventListener('app:command-copy-image', onCommandCopyImage)

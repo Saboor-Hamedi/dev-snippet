@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import * as React from 'react'
 import useCursorProp from '../../hook/settings/useCursorProp.js'
 import useGutterProp from '../../hook/settings/useGutterProp.js'
-import { useSettings } from '../../hook/useSettingsContext'
+import { useSettings, useZoomLevel, useEditorZoomLevel } from '../../hook/useSettingsContext'
 import useFocus from '../../hook/useFocus'
 import settingsManager from '../../config/settingsManager'
 import CodeMirror from '@uiw/react-codemirror'
@@ -42,7 +42,8 @@ const CodeEditor = ({
   isDark: forcedIsDark = undefined,
   autoFocus = false,
   centered = false, // Default to false for modals/smaller views
-  snippetId = null
+  snippetId = null,
+  zenFocus = false
 }) => {
   // Zoom level is now managed globally by useZoomLevel at the root/SettingsProvider level.
   // Individual components consume the result via CSS variables.
@@ -144,6 +145,25 @@ const CodeEditor = ({
     editorContainer.addEventListener('keydown', handleKeyDown, true)
     return () => editorContainer.removeEventListener('keydown', handleKeyDown, true)
   }, [])
+
+  const [zoomLevel] = useZoomLevel()
+  const [editorZoom] = useEditorZoomLevel()
+
+  // Force cursor update when zoom changes (fixes caret staying on screen during mouse wheel zoom)
+  useEffect(() => {
+    if (!viewRef.current) return
+
+    const view = viewRef.current
+
+    // Trigger CodeMirror to recalculate cursor position and layout
+    // This ensures the cursor updates immediately when zoom level changes
+    view.requestMeasure()
+
+    // Center the cursor after zoom to prevent the user from "losing their place"
+    view.dispatch({
+      effects: [EditorView.scrollIntoView(view.state.selection.main, { y: 'center' })]
+    })
+  }, [zoomLevel, editorZoom])
 
   // 1. Permanent Static Frame (Theme + Gutters) - MUST BE DEFINED BEFORE EFFECTS THAT USE IT
   const baseExtensions = useMemo(() => {
@@ -356,7 +376,8 @@ const CodeEditor = ({
           wordWrap: isLargeFile ? 'off' : wordWrap,
           language: isLargeFile ? 'plaintext' : language,
           isLargeFile,
-          snippetTitles
+          snippetTitles,
+          zenFocus
         }
 
         const exts = await buildExtensions(options, {
@@ -390,7 +411,8 @@ const CodeEditor = ({
     snippetTitles,
     isDark,
     language,
-    theme
+    theme,
+    zenFocus
   ])
 
   return (

@@ -118,16 +118,29 @@ const TableEditorModal = ({ initialCode, onSave, onCancel }) => {
     <div className="table-editor-modal">
       <div className="table-editor-toolbar">
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <button className="btn-action small" onClick={() => addRow()}>
+          <button
+            className="btn-action small"
+            onClick={(e) => {
+              e.currentTarget.blur()
+              addRow()
+            }}
+          >
             <Plus size={14} /> Row
           </button>
-          <button className="btn-action small" onClick={() => addColumn()}>
+          <button
+            className="btn-action small"
+            onClick={(e) => {
+              e.currentTarget.blur()
+              addColumn()
+            }}
+          >
             <Plus size={14} /> Col
           </button>
           {selectedIndex.type && (
             <button
               className="btn-action small danger"
-              onClick={() => {
+              onClick={(e) => {
+                e.currentTarget.blur()
                 if (selectedIndex.type === 'row') removeRow(selectedIndex.index)
                 else removeColumn(selectedIndex.index)
               }}
@@ -147,7 +160,13 @@ const TableEditorModal = ({ initialCode, onSave, onCancel }) => {
           <button className="btn-cancel small" onClick={onCancel}>
             Cancel
           </button>
-          <button className="btn-save small" onClick={() => onSave(generateMarkdownTable())}>
+          <button
+            className="btn-save small"
+            onClick={(e) => {
+              e.currentTarget.blur()
+              onSave(generateMarkdownTable())
+            }}
+          >
             <Save size={14} /> Apply
           </button>
         </div>

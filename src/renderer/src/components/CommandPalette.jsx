@@ -254,6 +254,13 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
         action: () => window.dispatchEvent(new CustomEvent('app:toggle-zen'))
       },
       {
+        id: 'cmd-toggle-zen-focus',
+        title: 'Toggle Zen Focus (Immersive)',
+        icon: Zap,
+        description: 'Deep focus: hide all UI and dim non-active editor lines',
+        action: () => window.dispatchEvent(new CustomEvent('app:toggle-zen-focus'))
+      },
+      {
         id: 'cmd-toggle-flow',
         title: 'Toggle Flow Mode',
         icon: Command,

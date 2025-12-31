@@ -33,8 +33,12 @@ export const runMigrations = (db) => {
     // --- SNIPPET TABLE EVOLUTION ---
     ensureCol('snippets', 'tags', 'ALTER TABLE snippets ADD COLUMN tags TEXT')
     ensureCol('snippets', 'code_draft', 'ALTER TABLE snippets ADD COLUMN code_draft TEXT')
-    ensureCol('snippets', 'is_draft', 'ALTER TABLE snippets ADD COLUMN is_draft INTEGER')
-    ensureCol('snippets', 'sort_index', 'ALTER TABLE snippets ADD COLUMN sort_index INTEGER')
+    ensureCol('snippets', 'is_draft', 'ALTER TABLE snippets ADD COLUMN is_draft INTEGER DEFAULT 0')
+    ensureCol(
+      'snippets',
+      'sort_index',
+      'ALTER TABLE snippets ADD COLUMN sort_index INTEGER DEFAULT 0'
+    )
     ensureCol(
       'snippets',
       'is_deleted',
@@ -62,6 +66,16 @@ export const runMigrations = (db) => {
       'ALTER TABLE folders ADD COLUMN is_deleted INTEGER DEFAULT 0'
     )
     ensureCol('folders', 'deleted_at', 'ALTER TABLE folders ADD COLUMN deleted_at INTEGER')
+
+    // --- DATA SANITIZATION (Legacy Fixes) ---
+    // Ensure Boolean-like columns have actual integer values (0/1) instead of NULL
+    // for existing rows, ensuring our truthy checks in the UI work perfectly.
+    db.exec(`
+      UPDATE snippets SET is_draft = 0 WHERE is_draft IS NULL;
+      UPDATE snippets SET is_pinned = 0 WHERE is_pinned IS NULL;
+      UPDATE snippets SET is_favorite = 0 WHERE is_favorite IS NULL;
+      UPDATE snippets SET is_deleted = 0 WHERE is_deleted IS NULL;
+    `)
   } catch (e) {
     console.warn('⚠️ Migration warning (non-critical):', e.message)
   }

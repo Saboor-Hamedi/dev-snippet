@@ -490,6 +490,19 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         </span>
 
         <div className="flex items-center gap-1.5 flex-shrink-0">
+          {/* Status Indicators (Proposed DevSnippet Evolution Feature) */}
+          {!!itemData.is_modified && (
+            <div
+              className="w-1.5 h-1.5 rounded-full bg-yellow-500 shadow-[0_0_5px_rgba(234,179,8,0.5)] flex-shrink-0"
+              title="Modified (Unsaved Changes)"
+            />
+          )}
+          {!!itemData.is_draft && (
+            <div
+              className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)] flex-shrink-0"
+              title="New (Draft)"
+            />
+          )}
           {itemData.is_pinned === 1 && (
             <div className="text-[var(--color-accent-primary)] opacity-80" title="Pinned">
               <Pin size={12} className="fill-current" />

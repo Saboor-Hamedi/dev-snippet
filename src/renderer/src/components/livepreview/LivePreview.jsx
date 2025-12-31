@@ -34,7 +34,8 @@ const LivePreview = ({
   onOpenMiniPreview,
   onExportPDF,
   showHeader = true,
-  enableScrollSync = false
+  enableScrollSync = false,
+  fontSize = null
 }) => {
   // --- Refs & Context ---
   const lastScrollPercentage = useRef(0)
@@ -166,11 +167,11 @@ const LivePreview = ({
 
     const themeVars = `:root, .shadow-wrapper {
       ${cssVars}
-      --editor-font-size: ${((settings.editor?.fontSize || 14) * 1) / 16}rem;
+      --editor-font-size: ${((fontSize || settings.editor?.fontSize || 14) * 1) / 16}rem;
       --font-sans: ${fontFamily}, sans-serif;
     }`
 
-    return `${variableStyles}\n${themeVars}\n${previewStyles}\n${markdownStyles}\n${mermaidStyles}`
+    return `${variableStyles}\n${themeVars}\n${previewStyles}\n${markdownStyles}\n${mermaidStyles}\n.markdown-body { text-align: justify !important; }`
   }, [theme, fontFamily, settings.editor?.fontSize])
 
   // --- 3. Shadow DOM Event Pipeline ---
@@ -501,7 +502,8 @@ LivePreview.propTypes = {
   onOpenMiniPreview: PropTypes.func,
   onExportPDF: PropTypes.func,
   enableScrollSync: PropTypes.bool,
-  showHeader: PropTypes.bool
+  showHeader: PropTypes.bool,
+  fontSize: PropTypes.number
 }
 
 export default React.memo(LivePreview)

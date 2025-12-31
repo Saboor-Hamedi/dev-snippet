@@ -345,9 +345,22 @@ const SnippetEditor = ({
           detail: { code, language: detectedLang }
         })
       )
+
+      // SILENT DRAFT SYNC: Ensures "Modified" (Yellow Dot) appears in the sidebar.
+      // This is a P1 Evolution feature. We write to the draft column silently
+      // so the database-level diffing engine can report the snippet as modified.
+      if (initialSnippet?.id && isDirty && window.api?.saveSnippetDraft) {
+        window.api
+          .saveSnippetDraft({
+            id: initialSnippet.id,
+            code_draft: code,
+            language: detectedLang
+          })
+          .catch(() => {})
+      }
     }, wait)
     return () => clearTimeout(timer)
-  }, [code, detectedLang])
+  }, [code, detectedLang, initialSnippet?.id, isDirty])
 
   // Unified AutoSave Hook - Source of Truth
   const [autoSaveEnabled] = useAutoSave()
@@ -998,6 +1011,7 @@ const SnippetEditor = ({
                       className="h-full"
                       textareaRef={textareaRef}
                       snippets={snippets}
+                      zenFocus={getSetting('ui.zenFocus')}
                       onCursorChange={handleCursorChange}
                     />
                   </div>

@@ -241,7 +241,14 @@ const DiagramEditorModal = ({ initialCode, onSave, onCancel }) => {
             </button>
           </div>
           <div className="divider" />
-          <button className="small btn-danger-text" onClick={clearAll} title="Clear All">
+          <button
+            className="small btn-danger-text"
+            onClick={(e) => {
+              e.currentTarget.blur()
+              clearAll()
+            }}
+            title="Clear All"
+          >
             <Trash2 size={12} />
           </button>
         </div>
@@ -250,7 +257,14 @@ const DiagramEditorModal = ({ initialCode, onSave, onCancel }) => {
           <button className="btn-cancel small" onClick={onCancel}>
             Cancel
           </button>
-          <button className="btn-save small" onClick={() => onSave(code)} title="Save changes">
+          <button
+            className="btn-save small"
+            onClick={(e) => {
+              e.currentTarget.blur()
+              onSave(code)
+            }}
+            title="Save changes"
+          >
             <Save size={16} />
           </button>
         </div>

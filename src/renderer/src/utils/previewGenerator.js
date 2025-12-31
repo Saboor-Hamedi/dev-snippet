@@ -208,6 +208,12 @@ const buildHeader = (title, theme, isDark, fontFamily, themeVars, forPrint = fal
           margin-top: 1.5em !important;
           margin-bottom: 0.5em !important;
           line-height: 1.2 !important;
+          margin-left: 0 !important;
+          padding-left: 0 !important;
+          text-align: left !important;
+        }
+        h1::before, h2::before, h3::before, h4::before, h5::before, h6::before {
+          content: none !important;
         }
         h1 { font-size: 2em !important; }
         h2 { font-size: 1.5em !important; }
@@ -215,7 +221,7 @@ const buildHeader = (title, theme, isDark, fontFamily, themeVars, forPrint = fal
         h4, h5, h6 { font-size: 1em !important; }
         
         /* Text elements */
-        p { margin: 1em 0 !important; }
+        p { margin: 1em 0 !important; text-align: justify !important; }
         strong, b { font-weight: 600 !important; }
         em, i { font-style: italic !important; }
         

@@ -16,12 +16,12 @@ export const createPreparedStatements = (db) => {
      * and UI snappy when the user has 1000s of snippets.
      */
     getMetadata: db.prepare(
-      'SELECT id, title, language, timestamp, type, tags, is_draft, sort_index, folder_id, is_pinned, is_favorite FROM snippets WHERE is_deleted = 0 ORDER BY is_pinned DESC, COALESCE(sort_index, 0) ASC, title COLLATE NOCASE ASC'
+      "SELECT id, title, language, timestamp, type, tags, is_draft, sort_index, folder_id, is_pinned, is_favorite, CASE WHEN (code_draft IS NOT NULL AND code_draft != '' AND code_draft != code) THEN 1 ELSE 0 END as is_modified FROM snippets WHERE is_deleted = 0 ORDER BY is_pinned DESC, COALESCE(sort_index, 0) ASC, title COLLATE NOCASE ASC"
     ),
 
     // Paginated version for "Infinite Scroll" or batch loading
     getMetadataPaginated: db.prepare(
-      'SELECT id, title, language, timestamp, type, tags, is_draft, sort_index, folder_id, is_pinned, is_favorite FROM snippets WHERE is_deleted = 0 ORDER BY is_pinned DESC, COALESCE(sort_index, 0) ASC, title COLLATE NOCASE ASC LIMIT ? OFFSET ?'
+      "SELECT id, title, language, timestamp, type, tags, is_draft, sort_index, folder_id, is_pinned, is_favorite, CASE WHEN (code_draft IS NOT NULL AND code_draft != '' AND code_draft != code) THEN 1 ELSE 0 END as is_modified FROM snippets WHERE is_deleted = 0 ORDER BY is_pinned DESC, COALESCE(sort_index, 0) ASC, title COLLATE NOCASE ASC LIMIT ? OFFSET ?"
     ),
 
     // Full fetch: Used when exporting or performing global operations

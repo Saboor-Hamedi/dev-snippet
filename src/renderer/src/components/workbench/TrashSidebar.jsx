@@ -41,6 +41,7 @@ const Row = ({ index, style, data }) => {
           <button
             onClick={(e) => {
               e.stopPropagation()
+              e.currentTarget.blur()
               onRestore(item.id)
             }}
             className="p-1 hover:bg-emerald-500/20 text-emerald-500 rounded transition-colors"
@@ -51,6 +52,7 @@ const Row = ({ index, style, data }) => {
           <button
             onClick={(e) => {
               e.stopPropagation()
+              e.currentTarget.blur()
               onPermanentDelete(item.id)
             }}
             className="p-1 hover:bg-red-500/20 text-red-500 rounded transition-colors"
@@ -156,7 +158,10 @@ const TrashSidebar = ({ items, onRestore, onPermanentDelete, onLoadTrash, openDe
         </span>
         {filteredItems.length > 0 && (
           <button
-            onClick={handleEmptyTrash}
+            onClick={(e) => {
+              e.currentTarget.blur()
+              handleEmptyTrash()
+            }}
             className="text-xs text-red-500/70 hover:text-red-500 hover:bg-red-500/10 px-2 py-1 rounded transition-colors flex items-center gap-1.5"
             title="Empty Trash"
           >

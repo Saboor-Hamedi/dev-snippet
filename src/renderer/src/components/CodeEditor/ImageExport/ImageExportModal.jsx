@@ -92,10 +92,10 @@ const ImageExportModal = ({ isOpen, onClose, snippet }) => {
         className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm animate-in fade-in duration-200"
         onMouseDown={onClose}
       />
-      <div className="relative w-full max-w-5xl h-[85vh] bg-[var(--bg-secondary)] rounded-2xl shadow-2xl border border-[var(--color-border)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)] bg-[var(--bg-primary)]">
+      <div className="relative w-full max-w-5xl h-[85vh] bg-[var(--color-bg-primary)] rounded-2xl shadow-2xl border border-white/10 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/5 backdrop-blur-md">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-500">
+            <div className="p-2 bg-[var(--color-accent-primary)]/10 rounded-lg text-[var(--color-accent-primary)]">
               <ImageIcon size={20} />
             </div>
             <div>
@@ -157,7 +157,7 @@ const ImageExportModal = ({ isOpen, onClose, snippet }) => {
             </div>
           </div>
 
-          <div className="w-80 border-l border-[var(--color-border)] bg-[var(--bg-primary)] p-6 overflow-y-auto flex flex-col gap-8">
+          <div className="w-80 border-l border-white/10 bg-black/20 p-6 overflow-y-auto flex flex-col gap-8 backdrop-blur-md">
             <section>
               <h3 className="text-xs font-bold uppercase text-[var(--color-text-tertiary)] tracking-wider mb-4">
                 Background
@@ -220,7 +220,7 @@ const ImageExportModal = ({ isOpen, onClose, snippet }) => {
               <button
                 onClick={handleCopy}
                 disabled={isExporting}
-                className="w-full h-10 flex items-center justify-center gap-2 bg-[var(--bg-secondary)] border border-[var(--color-border)] hover:bg-[var(--hover-bg)] text-[var(--color-text-primary)] font-medium rounded-lg transition-all"
+                className="w-full h-9 flex items-center justify-center gap-2 bg-[var(--bg-secondary)] border border-[var(--color-border)] hover:bg-[var(--hover-bg)] text-[var(--color-text-primary)] font-medium rounded-lg transition-all"
               >
                 {isExporting && exportState === 'copied' ? (
                   <Loader2 className="animate-spin" size={16} />
@@ -235,7 +235,7 @@ const ImageExportModal = ({ isOpen, onClose, snippet }) => {
               <button
                 onClick={handleSave}
                 disabled={isExporting}
-                className="w-full h-10 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-lg shadow-indigo-500/20 transition-all"
+                className="w-full h-9 flex items-center justify-center gap-2 bg-[var(--color-accent-primary)] hover:opacity-90 text-[var(--color-bg-primary)] font-bold rounded-lg transition-all"
               >
                 {isExporting && exportState !== 'copied' ? (
                   <Loader2 className="animate-spin" size={16} />

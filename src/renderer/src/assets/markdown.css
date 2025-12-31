@@ -205,12 +205,12 @@ html[data-theme='minimal-gray'] ::-webkit-scrollbar-track {
 }
 
 /* Typography - Clean, readable headers */
-.markdown-body h1,
-.markdown-body h2,
-.markdown-body h3,
-.markdown-body h4,
-.markdown-body h5,
-.markdown-body h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   color: var(--color-text-primary, #e6edf3) !important;
   border: none !important;
   margin-top: 1.5rem !important;
@@ -218,6 +218,8 @@ html[data-theme='minimal-gray'] ::-webkit-scrollbar-track {
   font-weight: 600 !important;
   line-height: 1.25 !important;
   position: relative;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
 }
 
 .markdown-body h1 {
@@ -251,12 +253,24 @@ html[data-theme='minimal-gray'] ::-webkit-scrollbar-track {
   margin: 0.5rem 0 !important; /* Reduced from 1.25rem for tighter spacing */
   color: var(--color-text-primary, #e6edf3) !important;
   line-height: 1.8 !important; /* Slightly tighter line height */
+  text-align: justify !important;
 }
 
 .markdown-body p,
 .markdown-body li {
   line-height: 1.8 !important;
   margin-bottom: 1.25em !important;
+  text-align: justify !important;
+}
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  text-align: left !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
 }
 .markdown-body ul,
 .markdown-body ol {

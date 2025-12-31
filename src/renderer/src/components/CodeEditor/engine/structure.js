@@ -229,7 +229,13 @@ export const richMarkdownStateField = StateField.define({
         const isException = node.name === 'ListMark' || node.name === 'TaskMarker'
 
         if (isMarker && !isException && !isRangeActive(from, to)) {
-          collected.push({ from, to, deco: hideMarkerDeco })
+          // If the next character is a space (standard for headings/lists),
+          // hide it too to ensure perfect left-alignment with paragraphs.
+          let actualTo = to
+          if (doc.sliceString(to, to + 1) === ' ') {
+            actualTo++
+          }
+          collected.push({ from, to: actualTo, deco: hideMarkerDeco })
         }
       }
     })

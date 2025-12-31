@@ -25,7 +25,18 @@ const buildTheme = (EditorView, options = {}) => {
         fontSize: 'inherit',
         lineHeight: '1.6',
         height: '100%',
-        paddingLeft: '0'
+        paddingLeft: '0',
+        textAlign: 'justify'
+      },
+      '.cm-line': {
+        textAlign: 'justify'
+      },
+      '.cm-content .cm-line-h1, .cm-content .cm-line-h2, .cm-content .cm-line-h3, .cm-content .cm-line-h4, .cm-content .cm-line-h5, .cm-content .cm-line-h6':
+        {
+          textAlign: 'left !important'
+        },
+      '.cm-code-block, .cm-code-block *': {
+        textAlign: 'left !important'
       },
       '.cm-scroller': {
         display: 'flex !important',
@@ -154,28 +165,24 @@ const buildTheme = (EditorView, options = {}) => {
       '.cm-line-h1': {
         paddingTop: '1.2em !important',
         paddingBottom: '0.4em !important',
-        lineHeight: '1.3 !important',
-        width: 'fit-content'
+        lineHeight: '1.3 !important'
       },
       '.cm-line-h2': {
         paddingTop: '1em !important',
         paddingBottom: '0.3em !important',
-        lineHeight: '1.35 !important',
-        width: 'fit-content'
+        lineHeight: '1.35 !important'
       },
       '.cm-line-h3': {
         paddingTop: '0.8em !important',
         paddingBottom: '0.2em !important',
-        lineHeight: '1.4 !important',
-        width: 'fit-content'
+        lineHeight: '1.4 !important'
       },
       '.cm-line-h4': {
         paddingTop: '0.6em !important',
-        lineHeight: '1.5 !important',
-        width: 'fit-content'
+        lineHeight: '1.5 !important'
       },
-      '.cm-line-h5': { paddingTop: '0.4em !important', width: 'fit-content' },
-      '.cm-line-h6': { paddingTop: '0.4em !important', width: 'fit-content' },
+      '.cm-line-h5': { paddingTop: '0.4em !important' },
+      '.cm-line-h6': { paddingTop: '0.4em !important' },
 
       // Header Text (Font/Color) - Inline decorations only
       '.cm-h1': {
@@ -207,13 +214,13 @@ const buildTheme = (EditorView, options = {}) => {
       },
 
       // Header Padding Compensation (For Stable Live Preview)
-      // When hashes are hidden, we add padding-left to the text to prevent jumping.
-      '.cm-pad-h1': { paddingLeft: '2ch' },
-      '.cm-pad-h2': { paddingLeft: '3ch' },
-      '.cm-pad-h3': { paddingLeft: '4ch' },
-      '.cm-pad-h4': { paddingLeft: '5ch' },
-      '.cm-pad-h5': { paddingLeft: '6ch' },
-      '.cm-pad-h6': { paddingLeft: '7ch' },
+      // Removed to ensure headers align perfectly with paragraphs as per user request.
+      '.cm-pad-h1': { paddingLeft: '0' },
+      '.cm-pad-h2': { paddingLeft: '0' },
+      '.cm-pad-h3': { paddingLeft: '0' },
+      '.cm-pad-h4': { paddingLeft: '0' },
+      '.cm-pad-h5': { paddingLeft: '0' },
+      '.cm-pad-h6': { paddingLeft: '0' },
 
       '.cm-md-checkbox': {
         display: 'inline-flex',

@@ -341,9 +341,9 @@ export const markdownToHtml = async (text, options = {}) => {
   let metadataHtml = ''
   if (options.renderMetadata && (metadata.title || metadata.author)) {
     metadataHtml = `
-      <div class="preview-metadata-card">
-        ${metadata.title ? `<h1 class="meta-title">${metadata.title}</h1>` : ''}
-        ${metadata.author ? `<div class="meta-details">By ${metadata.author}</div>` : ''}
+      <div class="preview-metadata-card" style="padding: 40px 0 !important; background: transparent !important; margin-bottom: 40px !important; border: none !important; border-bottom: 1px solid var(--color-border) !important; text-align: left !important;">
+        ${metadata.title ? `<h1 class="meta-title" style="margin-left: 0 !important; padding-left: 0 !important;">${metadata.title}</h1>` : ''}
+        ${metadata.author ? `<div class="meta-details" style="display: flex; justify-content: flex-start; gap: 24px;">By ${metadata.author}</div>` : ''}
         ${metadata.theme ? `<div class="meta-theme-pill">${metadata.theme}</div>` : ''}
       </div>`
   }

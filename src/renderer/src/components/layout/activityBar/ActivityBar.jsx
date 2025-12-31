@@ -40,7 +40,10 @@ const ActivityBar = ({
 
     return (
       <button
-        onClick={() => (item.id === 'settings' ? onSettings() : handleAction(item))}
+        onClick={(e) => {
+          e.currentTarget.blur()
+          item.id === 'settings' ? onSettings() : handleAction(item)
+        }}
         className={`w-full h-[40px] flex items-center justify-center relative cursor-pointer transition-all duration-300 group ${
           glow
             ? 'bg-[var(--color-accent-primary)]/10 ring-1 ring-inset ring-[var(--color-accent-primary)]/20 shadow-[0_0_20px_rgba(var(--color-accent-primary-rgb),0.15)]'
