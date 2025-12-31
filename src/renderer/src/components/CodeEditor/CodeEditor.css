@@ -39,13 +39,11 @@
 }
 
 /* Cursor Blinking Logic - GPU Optimized */
-.cm-cursor {
-  border-left-color: var(--caret-color, #fefeffff) !important;
-  border-left-width: var(--caret-width, 2px) !important;
-}
+/* Base cursor styling is handled by buildTheme.js to support dynamic shapes (Block/Line/Underline) */
 
-.cm-editor.cm-focused .cm-cursor {
-  animation: cm-cursor-blink var(--cursor-blinking-speed, 500ms) step-end infinite;
+.cm-editor.cm-focused .cm-cursor,
+.cm-editor-container[data-cursor-blinking='true'] .cm-cursor {
+  animation: cm-cursor-blink var(--cursor-blinking-speed, 500ms) steps(2, start) infinite;
 }
 
 /* Force Stop Blinking */
@@ -417,3 +415,76 @@
   left: 0;
   z-index: 20;
 }
+
+/* Responsive Padding for Small Screens */
+@media (max-width: 768px) {
+  .cm-content,
+  .cm-editor-container.is-centered .cm-content {
+    padding-left: 5px !important;
+    padding-right: 5px !important;
+  }
+}
+
+/* 
+   FORCE SELECTION COLOR 
+   Overrides any native or theme-based selection clearing.
+   Uses CSS variable driven by settings/hooks.
+   Added 'html body' prefix to overpower CodeMirror's injected styles.
+*/
+html body .cm-editor ::selection,
+html body .cm-content ::selection,
+html body .cm-scroller ::selection,
+html body .cm-line ::selection,
+html body .cm-content *::selection {
+  background-color: var(--cursor-selection-bg, rgba(65, 206, 92, 0.5)) !important;
+  background: var(--cursor-selection-bg, rgba(65, 206, 92, 0.5)) !important;
+  color: var(--selection-text, #ffffff) !important;
+  -webkit-text-fill-color: var(--selection-text, #ffffff) !important;
+}
+
+/* ============================================================================
+   HYBRID SELECTION SYSTEM - CSS LAYER
+   ============================================================================
+   
+   This CSS is part of a 3-part solution to achieve:
+   - Custom cursor shapes (block, underline) from settings.json
+   - Text-only selection highlighting (no full-width blocks on headers)
+   
+   PART 1: Hide CodeMirror's default selection background
+   -------------------------------------------------------------------
+   CodeMirror's 'drawSelection' extension creates .cm-selectionBackground
+   elements that span the full width of lines. We hide these completely.
+*/
+.cm-selectionBackground {
+  display: none !important;
+}
+
+/* PART 2: Force native text selection capability
+   -------------------------------------------------------------------
+   Even though 'drawSelection' is enabled (for custom cursors), we need
+   to ensure the text remains selectable natively for our decoration-based
+   highlighting to work properly.
+*/
+.cm-content,
+.cm-line,
+.cm-editor {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  cursor: text !important;
+}
+
+/* PART 3: Style our custom selection decoration
+   -------------------------------------------------------------------
+   The forceSelection.js extension adds .cm-force-selection to selected text.
+   This provides the visible highlight using the user's configured color from
+   settings.json (via --cursor-selection-bg CSS variable).
+   
+   This decoration wraps only the selected text (not the full line width),
+   giving us the "text-only" selection behavior the user requested.
+*/
+.cm-force-selection {
+  background-color: var(--cursor-selection-bg, rgba(65, 206, 92, 0.5)) !important;
+  color: var(--selection-text, #ffffff) !important;
+  border-radius: 2px;
+}
+/* ============================================================================ */

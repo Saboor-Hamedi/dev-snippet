@@ -46,6 +46,23 @@ export const SettingsProvider = ({ children }) => {
     return settingsManager.get('editor.fontZoom') ?? 1.0
   })
 
+  // NEW: Sync local zoom states with external setting changes (e.g. file edits)
+  useEffect(() => {
+    if (settings?.editor) {
+      const externalZoom = settings.editor.zoomLevel
+      if (externalZoom !== undefined && Math.abs(Number(externalZoom) - zoom) > 0.01) {
+        setZoomInternal(clamp(Number(externalZoom), MIN_ZOOM, MAX_ZOOM))
+      }
+      const externalFontZoom = settings.editor.fontZoom
+      if (
+        externalFontZoom !== undefined &&
+        Math.abs(Number(externalFontZoom) - editorZoom) > 0.01
+      ) {
+        setEditorZoomInternal(clamp(Number(externalFontZoom), MIN_ZOOM, MAX_ZOOM))
+      }
+    }
+  }, [settings])
+
   // 3. Apply UI Zoom to the native window and CSS
   useEffect(() => {
     if (window.api?.setZoom) {

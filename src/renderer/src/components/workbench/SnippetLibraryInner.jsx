@@ -16,6 +16,7 @@ import { usePagination } from '../../hook/pagination/usePagination'
 import { handleRenameSnippet } from '../../hook/handleRenameSnippet'
 import { useFlowMode } from '../FlowMode/useFlowMode'
 import { getBaseTitle } from '../../utils/snippetUtils'
+import { useSessionRestore } from '../../hook/session/useSessionRestore'
 
 // The Core Logic Component
 const SnippetLibraryInner = ({ snippetData }) => {
@@ -59,6 +60,8 @@ const SnippetLibraryInner = ({ snippetData }) => {
   useFontSettings()
   useThemeManager()
   useFlowMode({ showPreview, togglePreview })
+
+  // Session Restoration (P1 Feature)
 
   const isCompact = getSetting('ui.compactMode') || false
   const setIsCompact = (val) => updateSetting('ui.compactMode', val)
@@ -123,6 +126,71 @@ const SnippetLibraryInner = ({ snippetData }) => {
   const handleToggleSidebar = useCallback(() => {
     updateSetting('ui.showSidebar', !isSidebarOpen)
   }, [isSidebarOpen, updateSetting])
+
+  const handleSelectSnippet = useCallback(
+    (s) => {
+      try {
+        console.debug(
+          '[handleSelectSnippet] called with:',
+          s && { id: s.id, title: s.title, is_draft: s.is_draft }
+        )
+      } catch (e) {}
+      if (!s) {
+        setSelectedSnippet(null)
+        setSelectedFolderId(null)
+        setSelectedIds([])
+        return
+      }
+
+      setSelectedSnippet(s)
+      setSelectedFolderId(null)
+      setSelectedIds([s.id])
+
+      // Only switch pages if pagination is enabled AND the snippet is not currently visible
+      // This prevents unwanted pagination when clicking snippets already visible in sidebar
+      if (enablePagination) {
+        // Check if the snippet is already in the current paginated results
+        const isSnippetVisible = paginatedSnippets.some((snippet) => snippet.id === s.id)
+        if (!isSnippetVisible) {
+          // Snippet is not visible, calculate which page it should be on
+          const snippetIndex = snippets.findIndex((snippet) => snippet.id === s.id)
+          if (snippetIndex !== -1) {
+            const pageSize = getSetting('pagination.pageSize') || 5
+            const targetPage = Math.floor(snippetIndex / pageSize) + 1
+
+            if (targetPage !== currentPage) {
+              handlePageChange(targetPage)
+            }
+          }
+        }
+      }
+
+      navigateTo('editor')
+    },
+    [
+      setSelectedSnippet,
+      setSelectedFolderId,
+      setSelectedIds,
+      enablePagination,
+      paginatedSnippets,
+      snippets,
+      getSetting,
+      currentPage,
+      handlePageChange,
+      navigateTo
+    ]
+  )
+
+  // Session Restoration (P1 Feature) - Must be after state init & handler definition
+  const { isRestoring } = useSessionRestore({
+    snippets,
+    selectedSnippet,
+    selectedFolderId,
+    activeView,
+    setSelectedSnippet, // Reverted to stable setter to prevent loop
+    setSelectedFolderId,
+    navigateTo
+  })
 
   const focusEditor = useCallback(() => {
     if (activeView !== 'editor' && !isCreatingSnippet) return
@@ -545,46 +613,6 @@ const SnippetLibraryInner = ({ snippetData }) => {
     })
   }
 
-  const handleSelectSnippet = (s) => {
-    try {
-      console.debug(
-        '[handleSelectSnippet] called with:',
-        s && { id: s.id, title: s.title, is_draft: s.is_draft }
-      )
-    } catch (e) {}
-    if (!s) {
-      setSelectedSnippet(null)
-      setSelectedFolderId(null)
-      setSelectedIds([])
-      return
-    }
-
-    setSelectedSnippet(s)
-    setSelectedFolderId(null)
-    setSelectedIds([s.id])
-
-    // Only switch pages if pagination is enabled AND the snippet is not currently visible
-    // This prevents unwanted pagination when clicking snippets already visible in sidebar
-    if (enablePagination) {
-      // Check if the snippet is already in the current paginated results
-      const isSnippetVisible = paginatedSnippets.some((snippet) => snippet.id === s.id)
-      if (!isSnippetVisible) {
-        // Snippet is not visible, calculate which page it should be on
-        const snippetIndex = snippets.findIndex((snippet) => snippet.id === s.id)
-        if (snippetIndex !== -1) {
-          const pageSize = getSetting('pagination.pageSize') || 5
-          const targetPage = Math.floor(snippetIndex / pageSize) + 1
-
-          if (targetPage !== currentPage) {
-            handlePageChange(targetPage)
-          }
-        }
-      }
-    }
-
-    navigateTo('editor')
-  }
-
   const handleSelectFolder = (folderId) => {
     setSelectedFolderId(folderId)
     setSelectedIds(folderId ? [folderId] : [])
@@ -824,6 +852,14 @@ const SnippetLibraryInner = ({ snippetData }) => {
         })
       },
       'Rename Snippet'
+    )
+  }
+
+  if (isRestoring) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <div className="app-loading-placeholder animate-pulse opacity-50" />
+      </div>
     )
   }
 

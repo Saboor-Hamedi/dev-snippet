@@ -63,7 +63,7 @@ export const useCursorProp = () => {
       root.style.setProperty('--caret-shape', cursorShape)
       root.style.setProperty('--cursor-blinking', cursorBlinking ? 'true' : 'false')
       root.style.setProperty('--cursor-blinking-speed', `${cursorBlinkingSpeed}ms`)
-      root.style.setProperty('--selection-background', cursorSelectionBg)
+      root.style.setProperty('--cursor-selection-bg', cursorSelectionBg)
       // Map new keys to existing CSS variables
       root.style.setProperty('--active-line-bg', cursorActiveLineBg)
       root.style.setProperty('--shadow-box-bg', cursorShadowBoxColor)

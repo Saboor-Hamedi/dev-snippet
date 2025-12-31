@@ -1044,37 +1044,20 @@ textarea {
   scrollbar-width: none;
 }
 
-/* CodeMirror 6 Selection Override - Aggressive */
-/* 
-.cm-editor ::selection,
-.cm-editor *::selection,
-.cm-content ::selection,
-.cm-content *::selection,
-.cm-line ::selection {
-  background-color: rgba(0, 0, 0, 0) !important;
-  background: rgba(0, 0, 0, 0) !important;
-  color: inherit !important;
-  text-shadow: none !important;
-  -webkit-text-fill-color: inherit !important;
+/* CodeMirror 6 Selection Override - Aggressive (Force Visible Selection) */
+html body ::selection {
+  background-color: var(--cursor-selection-bg, rgba(65, 206, 92, 0.5)) !important;
+  color: var(--selection-text, #ffffff) !important;
+  -webkit-text-fill-color: var(--selection-text, #ffffff) !important;
 }
-*/
 
-/* Firefox Support */
-/*
-.cm-editor ::-moz-selection,
-.cm-editor *::-moz-selection,
-.cm-content ::-moz-selection {
-  background-color: rgba(0, 0, 0, 0) !important;
-  background: rgba(0, 0, 0, 0) !important;
-  color: inherit !important;
-  text-shadow: none !important;
-}
-*/
-
-/* Fallback for native selection in other areas if needed */
-::selection {
-  background-color: var(--selected-bg, rgba(147, 185, 246, 0.3));
-  color: var(--selected-text, inherit);
+/* Specific overrides for Editor to ensure it wins against any JS injection */
+html body .cm-editor ::selection,
+html body .cm-content ::selection,
+html body .cm-line ::selection,
+html body .cm-content *::selection {
+  background-color: var(--cursor-selection-bg, rgba(65, 206, 92, 0.5)) !important;
+  background: var(--cursor-selection-bg, rgba(65, 206, 92, 0.5)) !important;
 }
 
 /* NOTION-LIKE SLASH MENU STYLING (CodeMirror Autocomplete) */

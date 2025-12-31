@@ -9,6 +9,10 @@ const buildTheme = (EditorView, options = {}) => {
     fontSize = 'var(--editor-font-size, 12px)',
     fontFamily = 'var(--editor-font-family, "Outfit", "Inter", sans-serif)',
     caretColor = 'var(--caret-color, #ffffff)',
+    cursorShape = 'bar',
+    cursorShadowBoxColor = 'var(--shadow-box-bg, var(--caret-color))',
+    cursorActiveLineBg = 'var(--active-line-bg, transparent)',
+    cursorSelectionBg = 'rgba(88,166,255,0.28)',
     disableComplexCM = false
   } = options
 
@@ -36,7 +40,7 @@ const buildTheme = (EditorView, options = {}) => {
       },
       // Height of the content should be 100% of the scroller
       '.cm-content': {
-        width: 'var(--editor-max-width, 700px)',
+        width: '100%',
         maxWidth: 'var(--editor-max-width, 700px) !important',
         margin: '0 auto !important', // Center in strict flex/block context
         marginRight: 'auto',
@@ -45,7 +49,8 @@ const buildTheme = (EditorView, options = {}) => {
 
         minHeight: '100%',
         backgroundColor: 'transparent',
-        padding: '0',
+        // Let CSS handle padding (CodeEditor.css)
+        // padding: '0',
         paddingBottom: '0',
         position: 'relative',
         fontFamily: 'inherit',
@@ -556,9 +561,23 @@ const buildTheme = (EditorView, options = {}) => {
       },
 
       '.cm-cursor': {
-        borderLeftColor: caretColor,
-        borderLeftWidth: 'var(--caret-width, 2px)',
-        boxShadow: disableComplexCM ? 'none' : '0 0 5px var(--caret-color)',
+        borderLeftColor: `${caretColor} !important`,
+        borderLeftWidth:
+          cursorShape === 'block' || cursorShape === 'underline'
+            ? '0px !important'
+            : 'var(--caret-width, 2px)',
+        borderBottom:
+          cursorShape === 'underline' ? `var(--caret-width, 2px) solid ${caretColor}` : 'none',
+        // Use !important to prevent specificify wars with native CM styles
+        backgroundColor: cursorShape === 'block' ? `${caretColor} !important` : 'transparent',
+        width: cursorShape === 'block' || cursorShape === 'underline' ? '1ch !important' : '0px', // Bar relies on border-left
+        opacity: cursorShape === 'block' ? '0.6 !important' : '1',
+        // Override any default styling
+        display: 'block',
+        boxShadow:
+          disableComplexCM || cursorShape === 'block' || cursorShape === 'underline'
+            ? 'none'
+            : `0 0 10px 2px ${cursorShadowBoxColor || 'var(--caret-color)'} !important`,
         transition: 'none !important'
       },
 
@@ -597,7 +616,7 @@ const buildTheme = (EditorView, options = {}) => {
       // highlighting on single click. Keep only a subtle caret indicator.
       '.cm-activeLine': {
         boxShadow: 'none !important',
-        backgroundColor: 'transparent !important',
+        backgroundColor: `${cursorActiveLineBg} !important`,
         transition: 'none !important'
       },
 
@@ -640,11 +659,20 @@ const buildTheme = (EditorView, options = {}) => {
         userSelect: 'text !important'
         // WebkitUserSelect: 'text !important'
       },
+      // Re-enable CodeMirror's custom selection background.
+      // We must use this because native selection is suppressed by drawSelection.
+      // This causes full-width blocks on headers, but ensures selection is VISIBLE.
+      '.cm-selectionBackground': {
+        backgroundColor: `${cursorSelectionBg} !important`,
+        background: `${cursorSelectionBg} !important`,
+        borderRadius: '2px'
+      },
+
       // Pleasant selection color for both modes (no transitions)
-      '.cm-content ::selection': {
-        background: 'rgba(88,166,255,0.28) !important',
+      '& ::selection, .cm-content ::selection': {
+        backgroundColor: `${cursorSelectionBg} !important`,
+        background: `${cursorSelectionBg} !important`,
         color: 'var(--selection-text, #ffffff) !important'
-        // backgroundColor: 'transparent !important'
       },
       // Prevent full-block background selection on large headings and some
       // rendered block widgets. Clicking wrapped lines inside these elements

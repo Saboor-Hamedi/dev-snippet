@@ -229,6 +229,7 @@ const Workbench = ({
   }
 
   const showFlowMode = settings?.ui?.showFlowMode
+  const sidebarWidth = settings?.ui?.sidebarWidth || 250
 
   return (
     <div
@@ -257,7 +258,7 @@ const Workbench = ({
             }
             setActiveSidebarTab('explorer')
           }}
-          sidebarWidth={250}
+          sidebarWidth={sidebarWidth}
           onRename={onRename}
           onClose={handleCloseSnippet}
         />
@@ -292,13 +293,16 @@ const Workbench = ({
         <aside
           className="flex flex-col overflow-hidden h-full z-10 relative bg-[var(--sidebar-bg)] border-[var(--color-border)]"
           style={{
-            width: isSidebarOpen && !showFlowMode ? 250 : 0,
+            width: isSidebarOpen && !showFlowMode ? sidebarWidth : 0,
             opacity: isSidebarOpen && !showFlowMode ? 1 : 0,
             borderRightWidth: isSidebarOpen && !showFlowMode ? 1 : 0,
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
           }}
         >
-          <div className="h-full min-w-[250px] w-[250px] flex flex-col overflow-hidden">
+          <div
+            className="h-full flex flex-col overflow-hidden"
+            style={{ width: sidebarWidth, minWidth: sidebarWidth }}
+          >
             {activeSidebarTab === 'explorer' && (
               <SnippetSidebar
                 isOpen={isSidebarOpen}

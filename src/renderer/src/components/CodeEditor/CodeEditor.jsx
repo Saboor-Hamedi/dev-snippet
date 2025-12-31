@@ -155,6 +155,9 @@ const CodeEditor = ({
         fontFamily,
         cursorWidth,
         cursorShape,
+        cursorShadowBoxColor,
+        cursorActiveLineBg,
+        cursorSelectionBg,
         disableComplexCM: settingsManager.get('advanced.disableComplexCM')
       }),
       // SCROLL SYNC
@@ -203,7 +206,20 @@ const CodeEditor = ({
     }
 
     return extensions
-  }, [isDark, cursorColor, cursorWidth, cursorShape, showGutter, fontFamily, onCursorChange])
+  }, [
+    isDark,
+    cursorColor,
+    cursorWidth,
+    cursorShape,
+    showGutter,
+    fontFamily,
+    onCursorChange,
+    cursorBlinking,
+    cursorBlinkingSpeed,
+    cursorSelectionBg,
+    cursorActiveLineBg,
+    cursorShadowBoxColor
+  ])
 
   // Preserve cursor position when gutter toggles
   const lastCursorPos = useRef(null)
@@ -333,6 +349,7 @@ const CodeEditor = ({
           caretColor: cursorColor,
           cursorWidth,
           cursorShape,
+          cursorSelectionBg,
           fontSize: 'var(--editor-font-size, 14px)',
           cursorBlinking: isBlinking,
           cursorBlinkingSpeed,

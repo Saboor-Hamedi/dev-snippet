@@ -1,3 +1,4 @@
+import { forceSelection } from './forceSelection'
 import buildTheme from './buildTheme'
 import { premiumTypingBundle } from './premiumFeatures'
 import { linkPreviewTooltip } from './linkPreview'
@@ -37,6 +38,7 @@ const buildExtensions = async (options, handlers = {}) => {
     cursorBlinkingSpeed = 500,
     cursorWidth = 2,
     cursorShape = 'bar',
+    cursorSelectionBg,
     snippetTitles = []
   } = options
   const { debouncedSaveZoom } = handlers
@@ -44,7 +46,16 @@ const buildExtensions = async (options, handlers = {}) => {
   const exts = []
 
   // 1. THEME & VISUALS (Always first)
-  exts.push(buildTheme(EditorView, { isDark, caretColor, fontSize, cursorWidth, cursorShape }))
+  exts.push(
+    buildTheme(EditorView, {
+      isDark,
+      caretColor,
+      fontSize,
+      cursorWidth,
+      cursorShape,
+      cursorSelectionBg
+    })
+  )
 
   const { tooltips } = await import('@codemirror/view')
   exts.push(
@@ -123,9 +134,28 @@ const buildExtensions = async (options, handlers = {}) => {
       }
     ])
 
-    // Basic UI Extensions
-    exts.push(dropCursor())
-    // exts.push(drawSelection({ cursorBlinkRate: 0 })) // Usage of drawSelection causes full-width block highlighting. Disabled to use Native Selection (Text-only).
+    // ========================================================================
+    // HYBRID SELECTION SYSTEM (Custom Cursor + Text-Only Selection)
+    // ========================================================================
+    //
+    // THE CHALLENGE:
+    // - CodeMirror's 'drawSelection' is REQUIRED for custom cursor shapes (block, underline).
+    // - BUT 'drawSelection' creates full-width selection backgrounds (ugly on headers).
+    // - Disabling 'drawSelection' gives clean selection but kills custom cursors.
+    // - Hiding CM's selection layer while forcing native ::selection fails (transparent).
+    //
+    // THE SOLUTION (3-Part Hybrid):
+    // 1. Enable 'drawSelection' below → Provides custom cursor rendering
+    // 2. Add 'forceSelection()' extension → Decorates selected text with .cm-force-selection
+    // 3. CSS in CodeEditor.css:
+    //    - Hides .cm-selectionBackground (kills full-width blocks)
+    //    - Styles .cm-force-selection (provides visible text-only highlight)
+    //
+    // RESULT: Custom cursor shapes + Clean text-only selection highlighting
+    // ========================================================================
+    exts.push(drawSelection({ cursorBlinkRate: 0 }))
+    exts.push(forceSelection())
+
     // Intentionally DO NOT add highlightActiveLine() to avoid aggressive
     // full-line background highlighting on single click. Background
     // indicator is managed via theme CSS instead.
