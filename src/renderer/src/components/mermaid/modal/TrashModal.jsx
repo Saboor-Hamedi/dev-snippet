@@ -135,17 +135,17 @@ const TrashModal = ({
         className="relative w-full max-w-xl bg-white/95 dark:bg-[#0d1117]/95 rounded-[5px] shadow-[0_25px_70px_-15px_rgba(0,0,0,0.6)] border-none overflow-hidden flex flex-col animate-in zoom-in-95 duration-200"
         style={{ height: '70vh' }}
       >
-        {/* Header */}
-        <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+        {/* Header - Seamless Compact Design */}
+        <div className="px-3 py-2 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-[5px] bg-red-500/10 flex items-center justify-center text-red-500">
-              <Trash size={16} strokeWidth={2.5} />
+            <div className="w-8 h-8 rounded-[4px] flex items-center justify-center text-red-500 hover:bg-red-500/10 transition-colors flex-shrink-0 cursor-default">
+              <Trash size={15} strokeWidth={2.5} />
             </div>
-            <div>
-              <h3 className="text-[15px] font-semibold text-slate-800 dark:text-slate-100 leading-none">
+            <div className="flex flex-col justify-center">
+              <h3 className="text-[13px] font-semibold text-slate-800 dark:text-slate-100 leading-tight">
                 Recycle Bin
               </h3>
-              <p className="text-[11px] text-slate-500 mt-1">
+              <p className="text-[10px] text-slate-500 leading-tight opacity-80">
                 {items.length} item{items.length !== 1 ? 's' : ''} in trash
               </p>
             </div>
@@ -155,31 +155,31 @@ const TrashModal = ({
             {items.length > 0 && (
               <button
                 onClick={handleEmptyTrash}
-                className="h-8 px-3 text-[11px] font-medium text-red-500 hover:bg-red-500/10 rounded-[4px] transition-colors flex items-center gap-1.5"
+                className="h-6 px-3 text-[10px] font-medium bg-red-500 text-white hover:bg-red-600 rounded-[3px] transition-colors flex items-center gap-1.5 shadow-sm"
               >
-                <Trash2 size={14} />
+                <Trash2 size={11} strokeWidth={2} />
                 Empty Trash
               </button>
             )}
             <button
               onClick={onClose}
-              className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-[4px] text-slate-500 transition-colors"
+              className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-[3px] text-slate-500 transition-colors"
             >
-              <X size={18} />
+              <X size={14} />
             </button>
           </div>
         </div>
 
-        {/* Search */}
-        <div className="p-4 bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800">
+        {/* Search - Compact */}
+        <div className="px-3 py-2 bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800">
           <div className="relative group">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 group-focus-within:text-[var(--color-accent-primary)] transition-colors" />
+            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400 group-focus-within:text-[var(--color-accent-primary)] transition-colors" />
             <input
               type="text"
               placeholder="Search deleted items..."
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="w-full h-9 rounded-[5px] pl-10 pr-4 text-[13px] outline-none ring-1 ring-slate-200 dark:ring-slate-800 focus:ring-[var(--color-accent-primary)] bg-white dark:bg-black/20 text-slate-800 dark:text-slate-100 transition-all"
+              className="w-full h-7 rounded-[4px] pl-8 pr-3 text-[12px] outline-none ring-1 ring-slate-200 dark:ring-slate-800 focus:ring-[var(--color-accent-primary)] bg-white dark:bg-black/20 text-slate-800 dark:text-slate-100 transition-all placeholder:text-[11px]"
             />
           </div>
         </div>

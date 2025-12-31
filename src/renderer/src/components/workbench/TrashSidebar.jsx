@@ -19,7 +19,7 @@ const Row = ({ index, style, data }) => {
   return (
     <div style={style} className=" group">
       <div
-        className="flex items-center gap-2 px-2 w-full text-left h-full text-sm select-none rounded hover:bg-white/5 transition-colors relative"
+        className="flex items-center gap-2 px-2 w-full text-left h-full text-xs select-none rounded hover:bg-white/5 transition-colors relative"
         onContextMenu={(e) => {
           e.preventDefault()
           onContextMenu(e, item)
@@ -32,7 +32,7 @@ const Row = ({ index, style, data }) => {
           <Icon size={14} strokeWidth={1.5} />
         </div>
 
-        <span className="flex-1 min-w-0 truncate font-light opacity-50 decoration-slate-600 group-hover:opacity-90 transition-opacity normal-case">
+        <span className="flex-1 min-w-0 truncate font-normal opacity-70 decoration-slate-600 group-hover:opacity-100 transition-opacity normal-case text-[12px] text-slate-700 dark:text-slate-300">
           {item.title || item.name || 'Untitled'}
         </span>
 

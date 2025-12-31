@@ -94,7 +94,6 @@
   min-width: 200px;
   max-width: 980px;
   margin: 0 auto;
-  padding: 10px !important;
   background-color: transparent !important;
   font-size: var(--editor-font-size, 14px) !important;
 }

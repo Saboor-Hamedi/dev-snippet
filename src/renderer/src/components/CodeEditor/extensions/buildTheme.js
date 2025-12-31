@@ -149,21 +149,28 @@ const buildTheme = (EditorView, options = {}) => {
       '.cm-line-h1': {
         paddingTop: '1.2em !important',
         paddingBottom: '0.4em !important',
-        lineHeight: '1.3 !important'
+        lineHeight: '1.3 !important',
+        width: 'fit-content'
       },
       '.cm-line-h2': {
         paddingTop: '1em !important',
         paddingBottom: '0.3em !important',
-        lineHeight: '1.35 !important'
+        lineHeight: '1.35 !important',
+        width: 'fit-content'
       },
       '.cm-line-h3': {
         paddingTop: '0.8em !important',
         paddingBottom: '0.2em !important',
-        lineHeight: '1.4 !important'
+        lineHeight: '1.4 !important',
+        width: 'fit-content'
       },
-      '.cm-line-h4': { paddingTop: '0.6em !important', lineHeight: '1.5 !important' },
-      '.cm-line-h5': { paddingTop: '0.4em !important' },
-      '.cm-line-h6': { paddingTop: '0.4em !important' },
+      '.cm-line-h4': {
+        paddingTop: '0.6em !important',
+        lineHeight: '1.5 !important',
+        width: 'fit-content'
+      },
+      '.cm-line-h5': { paddingTop: '0.4em !important', width: 'fit-content' },
+      '.cm-line-h6': { paddingTop: '0.4em !important', width: 'fit-content' },
 
       // Header Text (Font/Color) - Inline decorations only
       '.cm-h1': {
@@ -600,6 +607,10 @@ const buildTheme = (EditorView, options = {}) => {
         transition: 'none !important'
       },
 
+      '.cm-activeLineGutter': {
+        backgroundColor: 'transparent !important'
+      },
+
       // --- Mode Specific Layout Polish ---
       '&.cm-reading-mode': {
         cursor: 'text !important'
@@ -607,11 +618,10 @@ const buildTheme = (EditorView, options = {}) => {
       // Disable the active-line highlight in non-editing modes to avoid
       // a full-paragraph background showing on single click (Obsidian-like)
       '&.cm-reading-mode .cm-activeLine, &.cm-live-preview-mode .cm-activeLine': {
-        // boxShadow: 'none !important',
-        // backgroundColor: 'transparent !important',
+        boxShadow: 'none !important',
+        backgroundColor: 'transparent !important',
         borderLeft:
-          'var(--active-line-border-width, 0px) solid var(--caret-color, #ffffff) !important',
-        boxShadow: 'inset var(--active-line-border-width, 0px) 0'
+          'var(--active-line-border-width, 0px) solid var(--caret-color, #ffffff) !important'
       },
       '&.cm-reading-mode .cm-cursor': {
         display: 'none !important'
@@ -634,6 +644,7 @@ const buildTheme = (EditorView, options = {}) => {
       '.cm-content ::selection': {
         background: 'rgba(88,166,255,0.28) !important',
         color: 'var(--selection-text, #ffffff) !important'
+        // backgroundColor: 'transparent !important'
       },
       // Prevent full-block background selection on large headings and some
       // rendered block widgets. Clicking wrapped lines inside these elements

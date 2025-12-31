@@ -132,19 +132,23 @@ function customCodePlugin() {
         const ICON_COPY = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`
 
         const html = `
-          <div class="mermaid-diagram-wrapper" style="position: relative; width: 100%; display: flex !important; flex-direction: column !important; margin: 1.5rem 0; background: transparent; border: 1px solid var(--color-border); border-radius: 8px; overflow: hidden; box-sizing: border-box;">
-             <div class="code-block-header" style="display: flex !important; justify-content: space-between !important; align-items: center !important; padding: 8px 16px !important; background: var(--color-bg-tertiary) !important; border-bottom: 1px solid var(--color-border) !important; width: 100% !important; box-sizing: border-box !important; flex-shrink: 0 !important; height: 36px !important;">
-                <span class="code-language font-bold" style="color: var(--color-accent-primary) !important; opacity: 0.9 !important; font-size: 11px !important; text-transform: uppercase !important; letter-spacing: 0.12em !important; font-family: 'Outfit', sans-serif !important;">Diagram Preview</span>
-                <div class="code-actions" style="display: flex !important; gap: 8px !important; align-items: center !important;">
-                   <button class="copy-image-btn" data-lang="mermaid" data-code="${encoded}" title="Export Image" style="background: transparent !important; border: none !important; cursor: pointer !important; color: var(--color-text-tertiary) !important; padding: 4px !important; display: flex !important; align-items: center !important; transition: all 0.2s ease;">
-                      ${ICON_IMAGE}
-                   </button>
-                   <button class="copy-code-btn" data-code="${encoded}" title="Copy Source" style="background: transparent !important; border: none !important; cursor: pointer !important; color: var(--color-text-tertiary) !important; padding: 4px !important; display: flex !important; align-items: center !important; transition: all 0.2s ease;">
-                      ${ICON_COPY}
-                   </button>
+          <div class="mermaid-diagram-wrapper" style="display: flex !important; flex-direction: column !important; width: 100% !important; background: var(--color-bg-secondary) !important; border: 1px solid var(--color-border) !important; border-radius: 12px !important; margin: 2rem 0 !important; box-sizing: border-box !important; shadow: var(--box-shadow-premium) !important; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5) !important;">
+              <div class="code-block-header" style="display: flex !important; justify-content: space-between !important; align-items: center !important; padding: 12px 20px !important; background: var(--color-bg-tertiary) !important; backdrop-filter: blur(12px) saturate(180%) !important; border-bottom: 1px solid var(--color-border) !important; width: 100% !important; box-sizing: border-box !important; flex-shrink: 0 !important; height: 44px !important;">
+                <div style="display: flex !important; align-items: center !important; gap: 8px !important;">
+                  <div style="width: 10px; height: 10px; border-radius: 50%; background: #ff5f56; box-shadow: 0 0 6px #ff5f5666; border: 0.5px solid rgba(0,0,0,0.1); margin: 0 !important; padding: 0 !important;"></div>
+                  <div style="width: 10px; height: 10px; border-radius: 50%; background: #ffbd2e; box-shadow: 0 0 6px #ffbd2e66; border: 0.5px solid rgba(0,0,0,0.1); margin: 0 !important; padding: 0 !important;"></div>
+                  <div style="width: 10px; height: 10px; border-radius: 50%; background: #27c93f; box-shadow: 0 0 6px #27c93f66; border: 0.5px solid rgba(0,0,0,0.1); margin: 0 !important; padding: 0 !important;"></div>
                 </div>
-             </div>
-             <div class="mermaid" style="display: flex !important; justify-content: center !important; width: 100% !important; padding: 32px 10px !important; background: transparent !important; box-sizing: border-box !important;">${escaped}</div>
+                <div class="code-actions" style="display: flex !important; gap: 10px !important; align-items: center !important;">
+                  <button class="copy-image-btn" data-code="${encoded}" data-lang="mermaid" title="Export as Image" style="background: transparent !important; border: none !important; cursor: pointer !important; color: var(--color-text-tertiary) !important; padding: 6px !important; border-radius: 6px !important; display: flex !important; align-items: center !important; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); hover:background: rgba(255,255,255,0.05) !important;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-image"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                  </button>
+                  <button class="copy-code-btn" data-code="${encoded}" title="Copy Mermaid Source" style="background: transparent !important; border: none !important; cursor: pointer !important; color: var(--color-text-tertiary) !important; padding: 6px !important; border-radius: 6px !important; display: flex !important; align-items: center !important; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); hover:background: rgba(255,255,255,0.05) !important;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                  </button>
+                </div>
+              </div>
+            <div class="mermaid" data-mermaid-src="${encoded}" style="display: flex !important; justify-content: center !important; width: 100% !important; padding: 40px 20px !important; background: var(--color-bg-primary) !important; box-sizing: border-box !important; position: relative !important; overflow: visible !important; min-height: 150px !important;">${escaped}</div>
           </div>
         `
 

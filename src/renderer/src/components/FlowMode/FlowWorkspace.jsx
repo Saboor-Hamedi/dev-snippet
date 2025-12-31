@@ -30,7 +30,7 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
   const [isLocked, setIsLocked] = useState(false)
   const [showStats, setShowStats] = useState(false)
   const [showPreview, setShowPreview] = useState(true)
-  const [isZenFocused, setIsZenFocused] = useState(true)
+  const [isZenFocused, setIsZenFocused] = useState(false)
   const [isStationMaximized, setIsStationMaximized] = useState(false)
 
   // Timer State
@@ -85,13 +85,17 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
         setIsStationMaximized(false)
       }
     }
+    const flowPreviewHandler = () => setShowPreview((prev) => !prev)
+
     window.addEventListener('app:code-update', handler)
     window.addEventListener('app:maximize-station', maxHandler)
     window.addEventListener('keydown', escHandler)
+    window.addEventListener('app:flow-toggle-preview', flowPreviewHandler)
     return () => {
       window.removeEventListener('app:code-update', handler)
       window.removeEventListener('app:maximize-station', maxHandler)
       window.removeEventListener('keydown', escHandler)
+      window.removeEventListener('app:flow-toggle-preview', flowPreviewHandler)
     }
   }, [isStationMaximized])
 
@@ -113,58 +117,72 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
       className="flex items-center justify-between w-full h-full pr-1 font-mono"
       style={{ pointerEvents: 'auto' }}
     >
-      <div className="flex items-center gap-4">
-        {/* Timer Integration */}
-        <div className="flex items-center gap-3 bg-black/30 px-3 py-1 rounded-lg border border-white/5">
-          <div className="flex flex-col items-center">
-            <span className="text-[7px] font-black text-[var(--color-accent-primary)] uppercase tracking-tighter">
-              Focus Session
+      <div className="flex items-center gap-6">
+        {/* Timer Integration - Clean & Minimal */}
+        <div className="flex items-center gap-3 pl-1">
+          <div className="flex flex-col items-start justify-center h-full pt-1">
+            <span
+              className="text-[9px] font-black uppercase tracking-widest opacity-40 leading-none"
+              style={{ color: 'var(--color-text-secondary)' }}
+            >
+              Session
             </span>
-            <span className="text-[12px] font-bold text-white tabular-nums">
+            <span
+              className="text-[14px] font-bold tabular-nums leading-none"
+              style={{ color: 'var(--color-text-primary)' }}
+            >
               {formatTime(seconds)}
             </span>
           </div>
-          <div className="flex gap-1 border-l border-white/10 pl-2">
+          <div className="flex gap-0.5 items-center opacity-0 group-hover:opacity-100 transition-opacity">
             <button
               onClick={(e) => {
                 e.stopPropagation()
                 setIsTimerActive(!isTimerActive)
               }}
-              className="p-1 rounded hover:bg-white/10 text-white/40 hover:text-white transition-all"
+              className="p-1 rounded hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition-all"
             >
-              {isTimerActive ? <Pause size={12} /> : <Play size={12} />}
+              {isTimerActive ? <Pause size={10} /> : <Play size={10} />}
             </button>
             <button
               onClick={(e) => {
                 e.stopPropagation()
                 setSeconds(0)
               }}
-              className="p-1 rounded hover:bg-white/10 text-white/40 hover:text-white transition-all"
+              className="p-1 rounded hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition-all"
             >
-              <RotateCcw size={11} />
+              <RotateCcw size={10} />
             </button>
           </div>
         </div>
 
-        {/* Station Identity (Robust File Name Display) */}
-        <div className="hidden md:flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5 shadow-inner">
-          <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent-primary)] animate-pulse shadow-[0_0_8px_rgba(var(--color-accent-primary-rgb),0.8)]" />
-          <span className="text-[11px] font-black text-white/80 tracking-[0.15em] uppercase">
-            {fileName}
-          </span>
+        {/* Station Identity (Clean Text Only) */}
+        <div className="hidden md:flex items-center gap-3">
+          <div className="flex items-center gap-3 opacity-60">
+            <div className="w-1 h-1 rounded-full bg-[var(--color-accent-primary)]" />
+            <span
+              className="text-[10px] font-bold tracking-[0.2em] uppercase"
+              style={{ color: 'var(--color-text-secondary)' }}
+            >
+              {fileName}
+            </span>
+          </div>
+          {/* Autosave Indicator - Moved beside tab */}
+          <div className="pl-2 border-l border-white/5">
+            <AutosaveIndicator />
+          </div>
         </div>
+      </div>
 
-        {/* Workspace Controls */}
-        <div className="flex items-center gap-1 bg-black/40 rounded-md p-1 border border-white/5">
+      <div className="flex items-center gap-1.5" style={{ pointerEvents: 'auto' }}>
+        {/* Simplified Control Group */}
+        <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-[var(--color-bg-tertiary)] border border-[var(--color-border)]">
           <button
             onClick={(e) => {
               e.stopPropagation()
               setShowPreview(!showPreview)
             }}
-            className={`p-1.5 rounded-md transition-all ${showPreview ? 'text-white shadow-[0_0_10px_rgba(var(--color-accent-primary-rgb),0.5)]' : 'text-white/20 hover:text-white'}`}
-            style={{
-              backgroundColor: showPreview ? 'var(--color-accent-primary, #3b82f6)' : 'transparent'
-            }}
+            className={`p-1.5 rounded-md transition-all ${showPreview ? 'text-[var(--color-accent-primary)] bg-[var(--color-bg-primary)] shadow-sm' : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]'}`}
             title="Toggle Scientist Preview"
           >
             <Columns size={13} />
@@ -175,12 +193,7 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
               e.stopPropagation()
               setIsStationMaximized(!isStationMaximized)
             }}
-            className={`p-1.5 rounded-md transition-all ${isStationMaximized ? 'text-white shadow-[0_0_10px_rgba(var(--color-accent-primary-rgb),0.5)]' : 'text-white/20 hover:text-white'}`}
-            style={{
-              backgroundColor: isStationMaximized
-                ? 'var(--color-accent-primary, #3b82f6)'
-                : 'transparent'
-            }}
+            className={`p-1.5 rounded-md transition-all ${isStationMaximized ? 'text-[var(--color-accent-primary)] bg-[var(--color-bg-primary)] shadow-sm' : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]'}`}
             title={
               isStationMaximized
                 ? 'Restore Station Layout (Windowed)'
@@ -195,10 +208,7 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
               e.stopPropagation()
               setIsZenFocused(!isZenFocused)
             }}
-            className={`p-1.5 rounded-md transition-all ${isZenFocused ? 'text-white shadow-[0_0_10px_rgba(var(--color-accent-primary-rgb),0.5)]' : 'text-white/20 hover:text-white'}`}
-            style={{
-              backgroundColor: isZenFocused ? 'var(--color-accent-primary, #3b82f6)' : 'transparent'
-            }}
+            className={`p-1.5 rounded-md transition-all ${isZenFocused ? 'text-[var(--color-accent-primary)] bg-[var(--color-bg-primary)] shadow-sm' : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]'}`}
             title={
               isZenFocused
                 ? 'Exit Zen Environment (Snap Backdrop to Frame)'
@@ -207,50 +217,26 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
           >
             {isZenFocused ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
           </button>
-
-          <AutosaveIndicator />
         </div>
-      </div>
-
-      <div className="flex items-center gap-2" style={{ pointerEvents: 'auto' }}>
         {showPreview && (
-          <div className="hidden sm:flex items-center gap-2 border-r border-white/10 pr-2 mr-2">
+          <div className="hidden sm:flex items-center gap-2 border-l border-[var(--color-border)] pl-2 ml-1">
             <button
               onClick={(e) => {
                 e.stopPropagation()
                 setIsLocked(!isLocked)
               }}
-              className={`p-1.5 rounded-md border transition-all ${isLocked ? 'shadow-[inset_0_0_10px_rgba(var(--color-accent-primary-rgb),0.2)] text-[var(--color-accent-primary)]' : 'bg-white/5 border-white/10 text-white/30 hover:text-white'}`}
-              style={{
-                borderColor: isLocked
-                  ? 'var(--color-accent-primary, #3b82f6)'
-                  : 'rgba(255,255,255,0.1)',
-                backgroundColor: isLocked
-                  ? 'rgba(var(--color-accent-primary-rgb, 59, 130, 246), 0.1)'
-                  : 'transparent'
-              }}
+              className={`p-1.5 rounded-md transition-all ${isLocked ? 'text-[var(--color-accent-primary)] bg-[var(--color-bg-tertiary)]' : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]'}`}
               title={isLocked ? 'Disable Ghost Interactivity' : 'Enable Ghost Interactivity'}
             >
-              <Ghost size={12} />
+              <Ghost size={13} />
             </button>
 
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowStats(!showStats)
-              }}
-              className={`p-1.5 rounded-md border transition-all ${showStats ? 'bg-white/10 border-white/20 text-white' : 'bg-white/5 border-white/10 text-white/20'}`}
-              title="Toggle Statistics Telemetry"
-            >
-              <Hash size={12} />
-            </button>
-
-            {/* Viewport Presets */}
-            <div className="flex items-center gap-0.5 bg-black/40 rounded-md p-0.5 border border-white/5">
+            {/* Viewport Presets - Minimalist */}
+            <div className="flex items-center gap-0.5">
               {[
-                { id: 'mini', icon: Layout, size: 10 },
-                { id: 'mobile', icon: Smartphone, size: 11 },
-                { id: 'tablet', icon: Tablet, size: 11 },
+                { id: 'mini', icon: Layout, size: 11 },
+                { id: 'mobile', icon: Smartphone, size: 12 },
+                { id: 'tablet', icon: Tablet, size: 12 },
                 { id: 'desktop', icon: Monitor, size: 13 }
               ].map((v) => (
                 <button
@@ -260,11 +246,7 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
                     setDevice(v.id)
                     setShowPreview(true)
                   }}
-                  className={`p-1.5 rounded transition-all ${device === v.id && showPreview ? 'text-white shadow-[0_0_10px_rgba(var(--color-accent-primary-rgb),0.5)]' : 'text-white/20 hover:text-white'}`}
-                  style={{
-                    backgroundColor:
-                      device === v.id && showPreview ? 'var(--color-accent-primary)' : 'transparent'
-                  }}
+                  className={`p-1.5 rounded hover:bg-[var(--color-bg-tertiary)] transition-all ${device === v.id && showPreview ? 'text-[var(--color-accent-primary)]' : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]'}`}
                 >
                   <v.icon size={v.size} />
                 </button>
@@ -278,7 +260,7 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
             e.stopPropagation()
             onExit()
           }}
-          className="p-1.5 rounded-md bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white transition-all border border-red-500/20"
+          className="ml-2 p-1.5 rounded-md bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white transition-all"
           title="Terminate Station"
         >
           <LogOut size={13} />
@@ -305,12 +287,12 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
       isOpen={true}
       onClose={onExit}
       title={header}
-      width={showPreview ? 'min(1200px, 95vw)' : 'min(800px, 95vw)'}
-      height="min(800px, 90vh)"
+      width={showPreview ? 1100 : 800} // Numeric width for smoother JS interpolation
+      height={800}
       noOverlay={true}
       customKey="flow_workspace_position"
       isMaximized={isStationMaximized}
-      className={`flow-ghost-modal no-padding ${!isZenFocused ? 'snap-frame' : ''}`}
+      className={`flow-ghost-modal no-padding transition-all duration-300 ease-in-out ${!isZenFocused ? 'snap-frame' : ''}`}
     >
       {isStationMaximized && (
         <div

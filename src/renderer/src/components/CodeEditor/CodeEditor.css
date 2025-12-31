@@ -13,7 +13,8 @@
   --border-color: #232731;
   --border-width: 0;
   --border-round: 0;
-  --active-line-bg: rgba(88, 166, 255, 0.1);
+  /* --active-line-bg: rgba(88, 166, 255, 0.1); */
+  --active-line-bg: transparent;
   --shadow-box-color: #58a6ff;
   --active-line-border-width: 0px;
   --active-line-gutter-border-width: 0px;
@@ -235,15 +236,24 @@
   padding: 0.4em 0 0.1em 0 !important;
 }
 
-/* Active line background */
-.cm-activeLine {
+/* Active line background - Disabled for cleaner look */
+/* .cm-activeLine {
   background-color: var(--color-active-line, rgba(88, 166, 255, 0.05)) !important;
-}
+} */
 
 /* Force standard gutter width to prevent horizontal "jump" on mode switch */
 .cm-gutters {
   min-width: 48px !important;
   text-align: right !important;
+}
+
+/* Ensure ALL active line backgrounds are transparent to fix user issue */
+.cm-editor .cm-activeLine,
+.cm-editor.cm-focused .cm-activeLine,
+.cm-activeLineGutter,
+.cm-editor .cm-activeLineGutter {
+  background-color: transparent !important;
+  background: transparent !important;
 }
 
 /* Wiki Link Stying in Editor */
@@ -383,12 +393,20 @@
 }
 
 /* Constrain the actual text area to a readable width */
-.cm-editor-container.is-centered .cm-content,
-.cm-editor-container.is-centered .cm-line {
+/* Constrain the actual text area to a readable width with padding */
+.cm-editor-container.is-centered .cm-content {
   max-width: 750px !important;
   width: 100% !important;
   margin-left: auto !important;
   margin-right: auto !important;
+  padding-left: 0 !important; /* Removed padding to tighten selection */
+  padding-right: 0 !important;
+}
+
+.cm-editor-container.is-centered .cm-line {
+  /* Lines just fill the padded content area */
+  width: 100% !important;
+  max-width: 100% !important;
 }
 
 /* Gutter alignment in centered mode */

@@ -8,7 +8,7 @@
 
 ## 1. Executive Summary
 
-**DevSnippet** is a desktop application designed to bridge the gap between a snippet manager and a technical notebook. Unlike traditional snippet tools that only store code blocks, DevSnippet provides a full Markdown editor environment ("Live Preview") capable of rendering diagrams, tables, and mathematical notation alongside code.
+**DevSnippet** is a desktop application designed to bridge the gap between a snippet manager and a technical notebook. Unlike traditional snippet tools that only store code blocks, DevSnippet provides a full Markdown editor environment ("Live Preview") powered by a **Zero-Latency Shadow DOM Engine**, capable of rendering diagrams, tables, and mathematical notation alongside code.
 
 It is built on a **Local-First** architecture:
 
@@ -130,31 +130,24 @@ The editor is the most complex component of the Frontend. It transforms CodeMirr
 
 ### 4.1 Unified Engine Architecture
 
-The engine has been consolidated into a single, high-performance pass that is fully viewport-aware.
+The engine has been consolidated into a single, high-performance pass that is fully viewport-aware. In Version 1.2.3, the rendering logic moved from an Iframe-based sandbox to a **Shadow DOM Surface**, eliminating postMessage latency and serialization overhead.
 
 ```mermaid
 classDiagram
-    note "Unified pass handles Blocks + Inline"
-    class RichMarkdownState {
-        +update(transaction)
-        +isRangeActive(pos)
-        +processViewport()
+    note "Shadow DOM Architecture (v1.2.3)"
+    class ShadowSurface {
+        +html String
+        +styles String
+        +onRender callback
     }
     
-    class WidgetFactory {
-        +createMermaid()
-        +createTable()
-        +createCheckbox()
+    class LivePreviewEngine {
+        +parseMarkdown()
+        +syncStyles()
+        +triggerMermaid()
     }
 
-    class StyleEngine {
-        +applyLineStyles()
-        +hideMarkers()
-    }
-
-    CodeMirror_View --> RichMarkdownState : Viewport Ranges
-    RichMarkdownState --> WidgetFactory : Requests Visual Units
-    RichMarkdownState --> StyleEngine : Atomic Marker Hiding
+    LivePreviewEngine --> ShadowSurface : Direct DOM Sync
 ```
 
 ### 4.2 Handling "Jumps" (Layout Stability)
@@ -188,7 +181,7 @@ To maintain a clean aesthetic without losing functionality, links are "Ghosted":
 
 ### 4.5 Standardized Parsing Engine (Unified)
 
-To ensure 100% rendering consistency between the **Live Preview**, **Reading Mode**, and **PDF Export**, the application utilizes the **Unified.js** ecosystem (`markdownParser.js`).
+To ensure 100% rendering consistency between the **Live Preview**, **Reading Mode**, and **PDF Export**, the application utilizes the **Unified.js** ecosystem (`markdownParser.js`) and a specialized **Shadow DOM High-Performance Surface**.
 
 * **Parser**: `remark-parse` + `remark-gfm` + `remark-breaks`.
 * **Transpiler**: `remark-rehype` (converting Markdown AST to HTML AST).
@@ -303,7 +296,10 @@ The **Flow Workspace** (`FlowWorkspace.jsx`) unifies separate floating windows i
   * **Focus Session Timer**: Pause/Play/Reset controls for pomodoro-style focus.
   * **Viewport Presets**: Instantly switch between Mini, Mobile, Tablet, and Desktop preview widths.
   * **Ghost Interactivity**: Toggle "Click-Through" mode to allow typing "through" the preview layer.
-*   **Kinetic Scroll Sync**: A RequestAnimationFrame-based smoothing engine that ensures the preview glides in perfect alignment with the editor's scroll position.
+* **Kinetic Scroll Sync**: A RequestAnimationFrame-based smoothing engine that ensures the preview glides in perfect alignment with the editor's scroll position.
+* **Autosave Confidence**: The autosave status indicator (Saving/Saved) has been relocated to the left-side header group, placing it directly beside the file identity label for immediate visibility without eye-scanning fatigue.
+* **Context-Aware Shortcuts**: The `Ctrl + \` global preview shortcut is now context-aware. If Flow Mode is active, pressing it smoothly toggles the local "Scientist Station" preview pane instead of opening the main application sidebar, preventing harsh layout shifts.
+* **Smoothed Layout Transitions**: The preview pane toggle utilizes a CSS transition engine that animates the width change `(1100px <-> 800px)` (cubic-bezier) rather than abruptly snapping, eliminating "visual shaking" and providing a fluid, premium feel.
 
 ### 7.3 Zero-Latency Performance Engine
 

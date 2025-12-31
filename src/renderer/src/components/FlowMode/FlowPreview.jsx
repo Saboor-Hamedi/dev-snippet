@@ -81,11 +81,14 @@ const FlowPreview = ({ selectedSnippet, snippets, fontFamily, show }) => {
       className="flex items-center justify-between w-full pr-1 h-full"
       style={{ pointerEvents: 'auto' }}
     >
-      <div className="flex items-center gap-2">
-        <Activity size={12} className="text-blue-500/60 animate-pulse" />
-        <span className="text-[10px] font-bold text-white/20 tracking-widest uppercase">
-          Scientist Station
-        </span>
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <Activity size={12} className="text-blue-500/60 animate-pulse" />
+          <span className="text-[9px] font-bold text-white/20 tracking-widest uppercase">
+            Scientist Station
+          </span>
+        </div>
+        <AutosaveIndicator />
       </div>
 
       <div className="flex items-center gap-2" style={{ pointerEvents: 'auto' }}>
@@ -138,9 +141,6 @@ const FlowPreview = ({ selectedSnippet, snippets, fontFamily, show }) => {
             </div>
           </>
         )}
-
-        <AutosaveIndicator />
-
         {/* Global Toggle */}
         <button
           onClick={(e) => {

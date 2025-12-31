@@ -76,7 +76,7 @@ const Header = ({
         <div className="flex items-center w-full gap-2 px-1" style={{ WebkitAppRegion: 'no-drag' }}>
           <button
             onClick={onToggleSidebar}
-            className="theme-exempt bg-transparent flex items-center justify-center p-1 rounded-md transition-colors cursor-pointer opacity-60 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)]"
+            className="theme-exempt bg-transparent flex items-center focus:outline-none justify-center p-1 rounded-md transition-colors cursor-pointer opacity-60 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)]"
             style={{ color: 'var(--header-text)' }}
             title={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'}
           >

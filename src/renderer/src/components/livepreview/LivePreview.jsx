@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useEffect, useState } from 'react'
+import React, { useMemo, useRef, useEffect, useState, useCallback, useContext } from 'react'
 import PropTypes from 'prop-types'
 import { useSettings } from '../../hook/useSettingsContext'
 import { Smartphone, Tablet, Monitor, Layers } from 'lucide-react'
@@ -15,11 +15,13 @@ import { useMermaidCapture } from '../mermaid/hooks/useMermaidCapture'
 import { themes } from '../preference/theme/themes'
 import { useModal } from '../workbench/manager/ModalContext'
 import useAdvancedSplitPane from '../splitPanels/useAdvancedSplitPane.js'
+import ShadowSurface from '../preview/ShadowSurface'
+import mermaid from 'mermaid'
 
 /**
- * LivePreview - Premium Sandboxed Rendering Engine.
+ * LivePreview - High-Performance Shadow DOM Rendering Engine.
  * Manages the asynchronous parsing of Markdown/Mermaid and synchronizes
- * the rendered output with a secured iframe sandbox.
+ * the rendered output within a secure, isolated Shadow DOM boundary.
  */
 const LivePreview = ({
   code = '',
@@ -36,15 +38,16 @@ const LivePreview = ({
 }) => {
   // --- Refs & Context ---
   const lastScrollPercentage = useRef(0)
-  const iframeRef = useRef(null)
-  const splitContext = React.useContext(SplitPaneContext)
+  const splitContext = useContext(SplitPaneContext)
   const { overlayMode: isOverlay, setOverlayMode: setOverlay } = useAdvancedSplitPane()
   const { settings } = useSettings()
 
   // --- State ---
   const [renderedHtml, setRenderedHtml] = useState('')
   const [isParsing, setIsParsing] = useState(false)
-  const [iframeReady, setIframeReady] = useState(false)
+  const shadowContentRef = useRef(null)
+  const lastRenderedConfig = useRef('')
+  const isRendering = useRef(false)
 
   // --- Derived Memos ---
   const existingTitles = useMemo(() => {
@@ -98,52 +101,23 @@ const LivePreview = ({
             .replace(/"/g, '&quot;')
           const encoded = encodeURIComponent(visibleCode)
           result = `
-            <div class="mermaid-diagram-wrapper" style="display: flex !important; flex-direction: column !important; width: 100% !important; background: transparent !important; border: 1px solid var(--color-border) !important; border-radius: 8px !important; overflow: hidden !important; margin: 1.5rem 0 !important; box-sizing: border-box !important;">
-              <div class="code-block-header" style="display: flex !important; justify-content: space-between !important; align-items: center !important; padding: 8px 16px !important; background: var(--color-bg-tertiary) !important; border-bottom: 1px solid var(--color-border) !important; width: 100% !important; box-sizing: border-box !important; flex-shrink: 0 !important; height: 36px !important;">
-                <span class="code-language font-bold" style="color: var(--color-accent-primary) !important; opacity: 0.9 !important; font-size: 11px !important; text-transform: uppercase !important; letter-spacing: 0.12em !important; font-family: 'Outfit', sans-serif !important;">Diagram Preview</span>
-                <div class="code-actions" style="display: flex !important; gap: 8px !important; align-items: center !important;">
-                  <button class="copy-image-btn" data-code="${encoded}" data-lang="mermaid" title="Export as Image" style="background: transparent !important; border: none !important; cursor: pointer !important; color: var(--color-text-tertiary) !important; padding: 4px !important; display: flex !important; align-items: center !important; transition: all 0.2s ease;">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-image"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+            <div class="mermaid-diagram-wrapper" style="display: flex !important; flex-direction: column !important; width: 100% !important; background: var(--color-bg-secondary) !important; border: 1px solid var(--color-border) !important; border-radius: 12px !important; margin: 2rem 0 !important; box-sizing: border-box !important; shadow: var(--box-shadow-premium) !important; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5) !important;">
+              <div class="code-block-header" style="display: flex !important; justify-content: space-between !important; align-items: center !important; padding: 12px 20px !important; background: var(--color-bg-tertiary) !important; backdrop-filter: blur(12px) saturate(180%) !important; border-bottom: 1px solid var(--color-border) !important; width: 100% !important; box-sizing: border-box !important; flex-shrink: 0 !important; height: 44px !important;">
+                <div style="display: flex !important; align-items: center !important; gap: 8px !important;">
+                  <div style="width: 10px; height: 10px; border-radius: 50%; background: #ff5f56; box-shadow: 0 0 6px #ff5f5666; border: 0.5px solid rgba(0,0,0,0.1); margin: 0 !important; padding: 0 !important;"></div>
+                  <div style="width: 10px; height: 10px; border-radius: 50%; background: #ffbd2e; box-shadow: 0 0 6px #ffbd2e66; border: 0.5px solid rgba(0,0,0,0.1); margin: 0 !important; padding: 0 !important;"></div>
+                  <div style="width: 10px; height: 10px; border-radius: 50%; background: #27c93f; box-shadow: 0 0 6px #27c93f66; border: 0.5px solid rgba(0,0,0,0.1); margin: 0 !important; padding: 0 !important;"></div>
+                </div>
+                <div class="code-actions" style="display: flex !important; gap: 10px !important; align-items: center !important;">
+                  <button class="copy-image-btn" data-code="${encoded}" data-lang="mermaid" title="Export as Image" style="background: transparent !important; border: none !important; cursor: pointer !important; color: var(--color-text-tertiary) !important; padding: 6px !important; border-radius: 6px !important; display: flex !important; align-items: center !important; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); hover:background: rgba(255,255,255,0.05) !important;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-image"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
                   </button>
-                  <button class="copy-code-btn" data-code="${encoded}" title="Copy Mermaid Source" style="background: transparent !important; border: none !important; cursor: pointer !important; color: var(--color-text-tertiary) !important; padding: 4px !important; display: flex !important; align-items: center !important; transition: all 0.2s ease;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                  <button class="copy-code-btn" data-code="${encoded}" title="Copy Mermaid Source" style="background: transparent !important; border: none !important; cursor: pointer !important; color: var(--color-text-tertiary) !important; padding: 6px !important; border-radius: 6px !important; display: flex !important; align-items: center !important; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); hover:background: rgba(255,255,255,0.05) !important;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                   </button>
                 </div>
               </div>
-            <div class="mermaid" style="display: flex !important; justify-content: center !important; width: 100% !important; padding: 32px 10px !important; background: transparent !important; box-sizing: border-box !important;">${escaped}</div>
-            <script>
-              if (window.mermaid) {
-                mermaid.initialize({
-                  startOnLoad: false,
-                  theme: 'neutral',
-                  securityLevel: 'loose',
-                  themeVariables: {
-                    primaryColor: '#ffffff',
-                    primaryTextColor: '#000000',
-                    primaryBorderColor: '#333333',
-                    lineColor: '#333333',
-                    secondaryColor: '#f4f4f4',
-                    tertiaryColor: '#fff',
-                    nodeBorder: '#333333',
-                    clusterBkg: '#ffffff',
-                    clusterBorder: '#333333',
-                    actorBkg: '#ffffff',
-                    actorTextColor: '#000000',
-                    actorBorder: '#333333',
-                    actorLineColor: '#333333',
-                    edgeLabelBackground: '#ffffff',
-                    labelBackgroundColor: '#ffffff',
-                    fontSize: '16px'
-                  },
-                  flowchart: {
-                    useMaxWidth: true,
-                    htmlLabels: true,
-                    curve: 'basis'
-                  }
-                });
-                setTimeout(() => mermaid.run(), 100);
-              }
-            </script>
+            <div class="mermaid" data-mermaid-src="${encoded}" style="display: flex !important; justify-content: center !important; width: 100% !important; padding: 40px 20px !important; background: var(--color-bg-primary) !important; box-sizing: border-box !important; position: relative !important; overflow: visible !important; min-height: 150px !important;">${escaped}</div>
           </div>`
         } else {
           const escaped = visibleCode
@@ -182,110 +156,194 @@ const LivePreview = ({
     }
   }, [code, language, showHeader, existingTitles, disabled])
 
-  // --- 1.5 Iframe Reset Logic (On Reload) ---
-  useEffect(() => {
-    const iframe = iframeRef.current
-    if (!iframe) return
+  // --- 2. Style Merging (DRY Token Engine) ---
+  const combinedStyles = useMemo(() => {
+    const currentThemeObj = themes.find((t) => t.id === theme) || themes[0]
+    const cssVars = Object.entries(currentThemeObj.colors)
+      .filter(([key]) => key.startsWith('--'))
+      .map(([key, value]) => `${key}: ${value};`)
+      .join('\n')
 
-    const handleLoad = () => {
-      // When the iframe document reloads, it's not ready until it says so via message
-      setIframeReady(false)
-    }
+    const themeVars = `:root, .shadow-wrapper {
+      ${cssVars}
+      --editor-font-size: ${((settings.editor?.fontSize || 14) * 1) / 16}rem;
+      --font-sans: ${fontFamily}, sans-serif;
+    }`
 
-    iframe.addEventListener('load', handleLoad)
-    return () => iframe.removeEventListener('load', handleLoad)
-  }, [])
+    return `${variableStyles}\n${themeVars}\n${previewStyles}\n${markdownStyles}\n${mermaidStyles}`
+  }, [theme, fontFamily, settings.editor?.fontSize])
 
-  // --- 2. Style Synchronization (Only on Theme Change or Iframe Ready) ---
-  useEffect(() => {
-    const iframe = iframeRef.current
-    if (!iframe || !iframeReady) return
+  // --- 3. Shadow DOM Event Pipeline ---
+  const handleShadowClick = useCallback(
+    (e) => {
+      // 0. Shadow DOM Retargeting Fix: use composedPath to find elements inside the shadow root
+      const path = e.nativeEvent.composedPath()
+      const target = path[0]
 
-    const syncStyles = () => {
-      const currentThemeObj = themes.find((t) => t.id === theme) || themes[0]
-      const cssVars = Object.entries(currentThemeObj.colors)
-        .filter(([key]) => key.startsWith('--'))
-        .map(([key, value]) => `${key}: ${value};`)
-        .join('\n')
+      // 1. Copy Code/Image
+      const btn = target.closest('.copy-code-btn') || target.closest('.copy-image-btn')
+      if (btn) {
+        let raw = ''
+        try {
+          raw = decodeURIComponent(btn.dataset.code)
+        } catch {
+          raw = btn.dataset.code
+        }
 
-      const themeVars = `:root {
-        ${cssVars}
-        --editor-font-size: ${((settings.editor?.fontSize || 14) * 1) / 16}rem;
-        --font-sans: ${fontFamily}, sans-serif;
-      }`
+        const type = btn.classList.contains('copy-code-btn') ? 'copy-text' : 'copy-image'
 
-      if (iframe.contentWindow) {
-        iframe.contentWindow.postMessage(
-          {
-            type: 'styles',
-            theme,
-            isDark,
-            styles: `${variableStyles}\n${themeVars}\n${previewStyles}\n${mermaidStyles}`,
-            mermaidConfig: getMermaidConfig(false, fontFamily),
-            mermaidEngine: getMermaidEngine(),
-            baseFontSize: settings.editor?.fontSize || 14
-          },
-          '*'
-        )
-      }
-    }
-
-    syncStyles()
-  }, [iframeReady, theme, isDark, fontFamily, settings.editor?.fontSize])
-
-  // --- 3. Content Synchronization ---
-  useEffect(() => {
-    const iframe = iframeRef.current
-    if (!iframe || !iframeReady) return
-
-    const syncContent = () => {
-      if (iframe.contentWindow) {
-        iframe.contentWindow.postMessage(
-          {
-            type: 'render',
-            html: renderedHtml,
-            initialScrollPercentage: lastScrollPercentage.current,
-            editorZoom: 1
-          },
-          '*'
-        )
-      }
-    }
-    syncContent()
-  }, [iframeReady, renderedHtml])
-
-  // --- 3. Event Listeners & Message Handlers ---
-  useEffect(() => {
-    const handleMessage = (event) => {
-      // SECURITY & RELIABILITY: Only handle messages from OUR iframe
-      if (iframeRef.current && event.source !== iframeRef.current.contentWindow) return
-
-      if (event.data?.type === 'app:ready') {
-        setIframeReady(true)
-      }
-
-      if (event.data?.type === 'app:open-external' && event.data.url) {
-        if (window.api && window.api.openExternal) window.api.openExternal(event.data.url)
-        else window.open(event.data.url, '_blank')
-      }
-      if (event.data?.type === 'app:copy-text' && event.data.text) {
-        navigator.clipboard.writeText(event.data.text)
-      }
-      if (event.data?.type === 'app:copy-as-image' && event.data.code) {
-        if (event.data.language === 'mermaid') {
-          handleQuickCopyMermaid(event.data.code)
+        if (type === 'copy-text') {
+          navigator.clipboard.writeText(raw)
         } else {
-          openImageExportModal({
-            title: 'Code Snippet',
-            code: event.data.code,
-            language: event.data.language || language || 'text'
+          const lang = btn.dataset.lang || 'text'
+          if (lang === 'mermaid') {
+            handleQuickCopyMermaid(raw)
+          } else {
+            openImageExportModal({
+              title: 'Code Snippet',
+              code: raw,
+              language: lang
+            })
+          }
+        }
+
+        // Visual Feedback
+        const oldHtml = btn.innerHTML
+        btn.innerHTML =
+          '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>'
+        setTimeout(() => {
+          btn.innerHTML = oldHtml
+        }, 2000)
+        return
+      }
+
+      // 2. Open Snippet (QuickLink)
+      const quickLink = target.closest('.preview-quicklink')
+      if (quickLink) {
+        window.dispatchEvent(
+          new CustomEvent('app:open-snippet', {
+            detail: { title: quickLink.dataset.title }
+          })
+        )
+        return
+      }
+
+      // 3. Anchors
+      const link = target.closest('a')
+      if (link) {
+        const href = link.getAttribute('href')
+        if (!href) return
+
+        if (href.startsWith('#')) {
+          e.preventDefault()
+          const targetId = decodeURIComponent(href.substring(1))
+          const element = shadowContentRef.current?.querySelector(`[id="${targetId}"]`)
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth' })
+          }
+        } else if (href.startsWith('http') || href.startsWith('mailto:')) {
+          e.preventDefault()
+          if (window.api && window.api.openExternal) window.api.openExternal(href)
+          else window.open(href, '_blank')
+        }
+      }
+    },
+    [handleQuickCopyMermaid, openImageExportModal]
+  )
+
+  // --- 4. Shadow Rendering Callback (Mermaid & Logic) ---
+  const onShadowRender = useCallback(
+    (shadowRoot, contentContainer) => {
+      shadowContentRef.current = contentContainer
+
+      // 1. Initial Scroll Preservation
+      if (typeof lastScrollPercentage.current === 'number') {
+        requestAnimationFrame(() => {
+          const scrollTarget =
+            (contentContainer.scrollHeight - contentContainer.clientHeight) *
+            lastScrollPercentage.current
+          contentContainer.scrollTop = scrollTarget
+        })
+      }
+
+      // 2. Mermaid Diagram Initialization (Robust Shadow DOM Bridge)
+      if (renderedHtml.includes('class="mermaid"')) {
+        const nodes = contentContainer.querySelectorAll('.mermaid')
+        if (nodes.length > 0 && !isRendering.current) {
+          isRendering.current = true
+
+          requestAnimationFrame(async () => {
+            try {
+              // 1. Setup Bridge
+              let bridge = document.getElementById('mermaid-render-bridge')
+              if (!bridge) {
+                bridge = document.createElement('div')
+                bridge.id = 'mermaid-render-bridge'
+                bridge.style.cssText =
+                  'position:absolute;left:-9999px;top:-9999px;visibility:hidden;width:1200px;'
+                document.body.appendChild(bridge)
+              }
+
+              // 2. Refresh Config
+              mermaid.initialize({
+                ...getMermaidConfig(isDark, fontFamily),
+                startOnLoad: false,
+                securityLevel: 'loose'
+              })
+
+              const currentConfig = `${isDark}-${fontFamily}`
+              const forceReRender = lastRenderedConfig.current !== currentConfig
+              lastRenderedConfig.current = currentConfig
+
+              const targetNodes = Array.from(nodes).filter(
+                (n) => forceReRender || !n.getAttribute('data-processed')
+              )
+
+              // 3. Sequential Render Cycle
+              for (const node of targetNodes) {
+                const id = `mermaid-sv-${Math.random().toString(36).substring(2, 9)}`
+                const encodedSrc = node.getAttribute('data-mermaid-src')
+                const rawCode = encodedSrc
+                  ? decodeURIComponent(encodedSrc)
+                  : node.textContent.trim()
+
+                if (!rawCode) continue
+
+                try {
+                  // We use a fresh element for EACH render to avoid bridge collision errors
+                  const tempContainer = document.createElement('div')
+                  bridge.appendChild(tempContainer)
+
+                  const { svg } = await mermaid.render(id, rawCode, tempContainer)
+                  node.innerHTML = svg
+                  node.setAttribute('data-processed', 'true')
+
+                  // Entrance animation
+                  node.style.opacity = '0'
+                  requestAnimationFrame(() => {
+                    node.style.transition = 'opacity 0.4s ease'
+                    node.style.opacity = '1'
+                  })
+                } catch (renderErr) {
+                  console.error('Mermaid individual render failure:', renderErr)
+                  node.setAttribute('data-processed', 'error')
+                  node.innerHTML = `<div style="color: #ef4444; font-size: 11px; padding: 12px; border: 1px solid #ef444433; border-radius: 6px; background: rgba(239, 68, 68, 0.05);">Mermaid Error: check diagram syntax</div>`
+                } finally {
+                  // Carefully clear ONLY this render's bridge content
+                  bridge.innerHTML = ''
+                }
+              }
+            } catch (globalErr) {
+              console.error('Mermaid global render failure:', globalErr)
+            } finally {
+              isRendering.current = false
+            }
           })
         }
       }
-    }
-    window.addEventListener('message', handleMessage)
-    return () => window.removeEventListener('message', handleMessage)
-  }, [openImageExportModal, language, handleQuickCopyMermaid])
+    },
+    [renderedHtml, isDark, fontFamily]
+  )
 
   // --- 4. Scroll Synchronization Logic ---
   useEffect(() => {
@@ -297,9 +355,10 @@ const LivePreview = ({
 
       lastScrollPercentage.current = percentage
 
-      const iframe = iframeRef.current
-      if (iframe?.contentWindow) {
-        iframe.contentWindow.postMessage({ type: 'scroll', percentage }, '*')
+      const container = shadowContentRef.current
+      if (container) {
+        const scrollTarget = (container.scrollHeight - container.clientHeight) * percentage
+        container.scrollTo({ top: scrollTarget, behavior: 'instant' })
       }
     }
 
@@ -417,15 +476,14 @@ const LivePreview = ({
       <div
         className="flex-1 w-full min-h-0 relative live-preview-scroller-container"
         style={{ backgroundColor: isDark ? 'transparent' : '#ffffff' }}
+        onClick={handleShadowClick}
       >
-        <iframe
-          ref={iframeRef}
-          title="Live Preview"
-          className="w-full h-full border-none absolute inset-0 bg-transparent"
-          sandbox="allow-scripts allow-modals allow-popups"
-          allow="clipboard-write"
-          src="preview.html"
-          style={{ height: '100%', width: '100%' }}
+        <ShadowSurface
+          html={renderedHtml}
+          styles={combinedStyles}
+          onRender={onShadowRender}
+          isDark={isDark}
+          className="w-full h-full"
         />
       </div>
     </div>

@@ -37,6 +37,21 @@ If you modify these, the editor will start **JUMPING** or trigger **Measure Loop
   1. Force a fixed gutter anchor: `.cm-gutters { min-width: 48px !important; }`.
   2. Standardize the scroller behavior: `.cm-scroller { scroll-behavior: auto !important; }`.
 
+### ❌ Error: "Active line background bleeds into padding/gutter"
+
+* **Why it happens**: Default CodeMirror styling applies a background color to `.cm-activeLine` which spans the full width of the editor line, including padding and gutter areas.
+* **The Fix**:
+  1. **Global Variable Reset**: Set `--active-line-bg: transparent` in `:root`.
+  2. **Explicit Removal**: Ensure `.cm-activeLine` and `.cm-activeLineGutter` are explicitly set to `transparent !important` to prevent override (or accidental coloring during selection).
+  3. **Selection Tightness**: To prevent selection "ghosting" into empty space, remove `padding` from `.cm-content` and manage layout via margins/max-width instead.
+
+### ❌ Error: "Title selection highlights full width block"
+
+* **Why it happens**: Using `drawSelection()` creates a simulated selection layer that measures the full block width of headers (`display: block`).
+* **The Fix**:
+  1. **Disable `drawSelection`**: Comment it out in `buildExtensions.js`. Falling back to **Native Browser Selection** ensures highlighting respects the exact text width.
+  2. **Constraint**: Add `width: fit-content` to header line styles (`.cm-line-h*`) in `buildTheme.js` to ensure the element's box model hugs the text, further guiding native behavior.
+
 ---
 
 ## 3. The "Obsidian Secret" Implementation Details

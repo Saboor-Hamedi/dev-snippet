@@ -50,13 +50,20 @@
 }
 
 /* Floating Editor specific styles */
-.universal-modal.flow-editor-modal {
+.universal-modal.flow-editor-modal,
+.universal-modal.flow-ghost-modal {
   background-color: var(--color-bg-primary) !important;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
   overflow: hidden;
   animation: flowIslandAppear 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+  font-size: 0.85em; /* Global scale down for flow mode */
+}
+
+.flow-editor-modal .markdown-body,
+.flow-ghost-modal .markdown-body {
+  font-size: 0.9em !important; /* Specific override for markdown content */
 }
 
 .flow-editor-modal .universal-modal-content {

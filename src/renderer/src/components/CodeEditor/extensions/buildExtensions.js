@@ -125,7 +125,7 @@ const buildExtensions = async (options, handlers = {}) => {
 
     // Basic UI Extensions
     exts.push(dropCursor())
-    exts.push(drawSelection({ cursorBlinkRate: 0 })) // We use custom blinking
+    // exts.push(drawSelection({ cursorBlinkRate: 0 })) // Usage of drawSelection causes full-width block highlighting. Disabled to use Native Selection (Text-only).
     // Intentionally DO NOT add highlightActiveLine() to avoid aggressive
     // full-line background highlighting on single click. Background
     // indicator is managed via theme CSS instead.

@@ -329,7 +329,7 @@ const SnippetSidebar = ({
       className="h-full flex flex-col w-full"
       style={{ backgroundColor: 'var(--sidebar-bg)', color: 'var(--sidebar-text)' }}
     >
-      <SidebarHeader className="gap-2 z-10 relative pr-0.5">
+      <SidebarHeader className="gap-2 z-10 relative pr-0.5" onToggle={onToggle}>
         <div className="relative group flex-1">
           <Search
             className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 opacity-50"

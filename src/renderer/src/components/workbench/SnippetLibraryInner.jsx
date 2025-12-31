@@ -831,6 +831,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
     <div className="flex h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white overflow-hidden transition-colors duration-200">
       <ToastNotification toast={toast} />
       <KeyboardHandler
+        showFlowMode={settings?.ui?.showFlowMode}
         selectedSnippet={selectedSnippet}
         setSelectedSnippet={setSelectedSnippet}
         saveSnippet={saveSnippet}

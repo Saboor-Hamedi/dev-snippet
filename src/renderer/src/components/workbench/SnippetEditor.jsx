@@ -448,52 +448,6 @@ const SnippetEditor = ({
     }
   }, [initialSnippet?.id])
 
-  // Listen for navigation requests from the Sandboxed Preview (iframe bridge)
-  useEffect(() => {
-    const handleMessage = (event) => {
-      if (event.data?.type === 'app:open-snippet') {
-        const { title } = event.data
-        window.dispatchEvent(
-          new CustomEvent('app:open-snippet', {
-            detail: { title }
-          })
-        )
-      }
-
-      // Re-dispatch shortcuts from iframe
-      if (event.data?.type === 'app:keydown') {
-        const { key, code, ctrlKey, metaKey, shiftKey, altKey } = event.data
-        const syntheticEvent = new KeyboardEvent('keydown', {
-          key,
-          code,
-          ctrlKey,
-          metaKey,
-          shiftKey,
-          altKey,
-          bubbles: true,
-          cancelable: true
-        })
-        window.dispatchEvent(syntheticEvent)
-      }
-
-      // Re-dispatch wheel events from iframe for zoom support
-      if (event.data?.type === 'app:wheel') {
-        const { deltaY, ctrlKey, metaKey } = event.data
-        const syntheticEvent = new WheelEvent('wheel', {
-          deltaY,
-          ctrlKey,
-          metaKey,
-          bubbles: true,
-          cancelable: true
-        })
-        window.dispatchEvent(syntheticEvent)
-      }
-    }
-
-    window.addEventListener('message', handleMessage)
-    return () => window.removeEventListener('message', handleMessage)
-  }, [])
-
   const isInitialMount = useRef(true)
   const lastSnippetId = useRef(initialSnippet?.id)
 
@@ -1050,13 +1004,7 @@ const SnippetEditor = ({
                 </div>
               }
               right={
-                <div
-                  className="h-full w-full p-0 flex justify-center bg-[var(--color-bg-primary)] cursor-text overflow-hidden text-left items-stretch"
-                  onDoubleClick={() => {
-                    if (activeMode === 'reading') return
-                    window.dispatchEvent(new CustomEvent('app:toggle-preview'))
-                  }}
-                >
+                <div className="h-full w-full p-0 flex justify-center bg-[var(--color-bg-primary)] overflow-hidden text-left items-stretch">
                   <div className="w-full max-w-[850px] h-full shadow-sm flex flex-col">
                     {useMemo(() => {
                       const safeTitle = typeof title === 'string' ? title : ''

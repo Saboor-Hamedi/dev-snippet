@@ -126,7 +126,7 @@ const StatusBar = ({
   return (
     <>
       <div
-        className="status-bar-container text-xs select-none"
+        className="status-bar-container text-xs select-none flex items-center justify-between"
         onContextMenu={handleContextMenu}
         style={{ color: 'var(--color-text-secondary)' }}
       >
