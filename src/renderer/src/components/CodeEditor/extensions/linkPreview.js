@@ -1,5 +1,38 @@
-import { hoverTooltip } from '@codemirror/view'
+import { hoverTooltip, EditorView } from '@codemirror/view'
 import { markdownToHtml } from '../../../utils/markdownParser'
+import mermaid from 'mermaid'
+
+// Initialize Mermaid for the main window tooltips
+// Initialize Mermaid for the main window tooltips (Synced with Editor's Neutral Style)
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'neutral',
+  securityLevel: 'loose',
+  fontFamily: 'inherit',
+  themeVariables: {
+    primaryColor: '#ffffff',
+    primaryTextColor: '#000000',
+    primaryBorderColor: '#333333',
+    lineColor: '#333333',
+    secondaryColor: '#f4f4f4',
+    tertiaryColor: '#fff',
+    nodeBorder: '#333333',
+    clusterBkg: '#ffffff',
+    clusterBorder: '#333333',
+    actorBkg: '#ffffff',
+    actorTextColor: '#000000',
+    actorBorder: '#333333',
+    actorLineColor: '#333333',
+    edgeLabelBackground: '#ffffff',
+    labelBackgroundColor: '#ffffff',
+    fontSize: '14px'
+  },
+  flowchart: {
+    useMaxWidth: true,
+    htmlLabels: true,
+    curve: 'basis'
+  }
+})
 
 /**
  * Creates a hover tooltip for WikiLinks ([[Link]]) and potentially standard links.
@@ -30,94 +63,132 @@ export const linkPreviewTooltip = hoverTooltip(async (view, pos, side) => {
 
   if (!title) return null
 
+  // PRE-FETCH DATA before tooltip is created to know content size
+  const snippet = await window.api.invoke('db:getSnippetByTitle', title)
+
   return {
     pos: start,
     end,
-    // Removed 'above: true' to allow dynamic positioning (Top/Bottom) based on space
     create(view) {
       const container = document.createElement('div')
       container.className = 'cm-link-preview-tooltip'
 
-      // Loading State
-      const loadingEl = document.createElement('div')
-      loadingEl.className = 'cm-link-preview-loading'
-      loadingEl.textContent = 'Loading...'
-      container.appendChild(loadingEl)
+      if (!snippet) {
+        const errorEl = document.createElement('div')
+        errorEl.className = 'cm-link-preview-loading'
+        errorEl.textContent = 'Link not found'
+        container.appendChild(errorEl)
+        return { dom: container }
+      }
 
-      window.api
-        .invoke('db:getSnippetByTitle', title)
-        .then(async (snippet) => {
-          container.innerHTML = ''
+      // Render content immediately since we have the data
+      const render = async () => {
+        // Handle Snippet Language: Wrap Mermaid/Code for consistent header behavior
+        let codeToParse = snippet.code || ''
+        const lang = (snippet.language || 'markdown').toLowerCase()
 
-          if (!snippet) {
-            const errorEl = document.createElement('div')
-            errorEl.className = 'cm-link-preview-loading'
-            errorEl.textContent = 'Link not found'
-            container.appendChild(errorEl)
-            return
-          }
+        if (lang === 'mermaid' && !codeToParse.includes('```mermaid')) {
+          codeToParse = `\`\`\`mermaid\n${codeToParse}\n\`\`\``
+        } else if (lang !== 'markdown' && lang !== 'md' && !codeToParse.includes('```')) {
+          codeToParse = `\`\`\`${lang}\n${codeToParse}\n\`\`\``
+        }
 
-          // 1. Header Row
-          const header = document.createElement('div')
-          header.className = 'preview-header'
+        // 1. Header Row
+        const header = document.createElement('div')
+        header.className = 'preview-header'
 
-          const titleSpan = document.createElement('span')
-          titleSpan.className = 'preview-title-text'
-          titleSpan.textContent = snippet.title || 'Untitled'
-          header.appendChild(titleSpan)
+        const titleSpan = document.createElement('span')
+        titleSpan.className = 'preview-title-text'
+        titleSpan.textContent = snippet.title || 'Untitled'
+        header.appendChild(titleSpan)
 
-          if (snippet.language) {
-            const langPill = document.createElement('span')
-            langPill.className = 'preview-lang-pill'
-            langPill.textContent = snippet.language
-            header.appendChild(langPill)
-          }
-          container.appendChild(header)
+        if (snippet.language) {
+          const langPill = document.createElement('span')
+          langPill.className = 'preview-lang-pill'
+          langPill.textContent = snippet.language
+          header.appendChild(langPill)
+        }
+        container.appendChild(header)
 
-          // 2. Body Preview (RENDERED MARKDOWN)
-          const body = document.createElement('div')
-          body.className = 'preview-body'
+        // 2. Body Preview
+        const body = document.createElement('div')
+        body.className = 'preview-body markdown-body'
 
-          try {
-            // Render HTML using the shared parser
-            const rawHTML = await markdownToHtml(snippet.code || '', { renderMetadata: false })
+        try {
+          const rawHTML = await markdownToHtml(codeToParse, { renderMetadata: false })
+          const tempDiv = document.createElement('div')
+          tempDiv.innerHTML = rawHTML
+          const intel = tempDiv.querySelector('.preview-intel')
+          if (intel) intel.remove()
+          const contentDiv = tempDiv.querySelector('.markdown-content')
+          body.innerHTML = contentDiv ? contentDiv.innerHTML : tempDiv.innerHTML
+        } catch (e) {
+          body.textContent = snippet.code || ''
+        }
 
-            // Create a temp div to strip the 'is-ltr/is-rtl' wrapper and 'preview-intel'
-            const tempDiv = document.createElement('div')
-            tempDiv.innerHTML = rawHTML
+        container.appendChild(body)
 
-            // Remove the intel header if present
-            const intel = tempDiv.querySelector('.preview-intel')
-            if (intel) intel.remove()
+        // 3. Trigger Mermaid if nodes exist
+        const mermaidNodes = body.querySelectorAll('.mermaid')
+        if (mermaidNodes.length > 0) {
+          // Delay to ensure DOM is attached for SVG measurement
+          requestAnimationFrame(async () => {
+            try {
+              // Only run on nodes that haven't been processed
+              const unprocessed = Array.from(mermaidNodes).filter(
+                (n) => !n.getAttribute('data-processed')
+              )
+              if (unprocessed.length > 0) {
+                await mermaid.run({
+                  nodes: unprocessed
+                })
+              }
+            } catch (e) {
+              console.warn('Mermaid render error in tooltip (ignoring):', e)
+            }
+          })
+        }
 
-            // Get the cleaned content
-            // We look for .markdown-content, if not found (unexpected), use innerHTML
-            const contentDiv = tempDiv.querySelector('.markdown-content')
-            body.innerHTML = contentDiv ? contentDiv.innerHTML : tempDiv.innerHTML
-          } catch (e) {
-            console.error('Preview render failed', e)
-            body.textContent = snippet.code || ''
-          }
+        // 4. Footer
+        const footer = document.createElement('div')
+        footer.className = 'preview-footer'
+        const dateStr = snippet.timestamp ? new Date(snippet.timestamp).toLocaleDateString() : ''
+        footer.textContent = `Last modified: ${dateStr}`
+        container.appendChild(footer)
+      }
 
-          container.appendChild(body)
-
-          // 3. Footer
-          const footer = document.createElement('div')
-          footer.className = 'preview-footer'
-          const dateStr = snippet.timestamp ? new Date(snippet.timestamp).toLocaleDateString() : ''
-          footer.textContent = `Last modified: ${dateStr}`
-          container.appendChild(footer)
-        })
-        .catch((err) => {
-          container.innerHTML = ''
-          const errorEl = document.createElement('div')
-          errorEl.className = 'cm-link-preview-loading'
-          errorEl.textContent = 'Error loading'
-          container.appendChild(errorEl)
-          console.error(err)
-        })
-
+      render()
       return { dom: container }
     }
+  }
+})
+
+/**
+ * DOUBLE-CLICK WARP ENGINE
+ * Listens for double-clicks in the editor and jumps to linked snippets if valid.
+ */
+/**
+ * DOUBLE-CLICK WARP ENGINE
+ * Listens for double-clicks in the editor and jumps to linked snippets if valid.
+ */
+export const wikiLinkWarp = EditorView.domEventHandlers({
+  dblclick(event, view) {
+    const coords = { x: event.clientX, y: event.clientY }
+    const pos = view.posAtCoords(coords)
+    if (pos === null) return false
+
+    const { from, text } = view.state.doc.lineAt(pos)
+    const relPos = pos - from
+
+    const wikiRegex = /\[\[(.*?)\]\]/g
+    let match
+    while ((match = wikiRegex.exec(text)) !== null) {
+      if (relPos >= match.index && relPos <= match.index + match[0].length) {
+        const title = match[1]
+        window.dispatchEvent(new CustomEvent('app:open-snippet', { detail: { title } }))
+        return true
+      }
+    }
+    return false
   }
 })

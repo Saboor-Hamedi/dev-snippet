@@ -78,7 +78,6 @@ export const useSnippetData = () => {
     let unsubscribe = null
     if (window.api?.onDataChanged) {
       unsubscribe = window.api.onDataChanged(() => {
-        console.log('🔄 Database changed, refreshing UI...')
         loadData()
       })
     }

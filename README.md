@@ -1,5 +1,5 @@
 # dev-snippet
-
+![Banner](/.repo-banner.png)
 dev-snippet is a desktop application built with Electron and React for creating, editing, and managing code/text snippets. It features a CodeMirror-based editor with syntax highlighting, markdown preview, autosave functionality, and SQLite storage. The app provides a clean, frameless window with custom controls and supports building native installers for Windows, macOS, and Linux.
 
 This README explains how the project works, how to develop and build it, the architecture behind it, useful keyboard shortcuts, and troubleshooting tips for common issues.

@@ -19,6 +19,8 @@ export const useSidebarLogic = ({
 }) => {
   const lastSelectedIdRef = useRef(null)
   const [createState, setCreateState] = useState(null) // { type: 'folder'|'snippet', parentId: string|null }
+  const [isPinnedCollapsed, setIsPinnedCollapsed] = useState(false)
+  const togglePinned = useCallback(() => setIsPinnedCollapsed((prev) => !prev), [])
 
   // 1. Flatten Tree Logic
   // This is a pure function that runs only when data changes.
@@ -38,24 +40,21 @@ export const useSidebarLogic = ({
         id: 'PINNED_HEADER',
         type: 'pinned_header',
         depth: 0,
-        label: 'Pinned'
-      })
-      pinnedSnippets.forEach((snippet) => {
-        result.push({
-          id: `pinned-${snippet.id}`, // Unique ID for virtual row
-          realId: snippet.id, // Reference to actual snippet
-          type: 'pinned_snippet',
-          data: snippet,
-          depth: 0.5 // Subtle indent
-        })
+        label: 'Pinned',
+        data: { collapsed: isPinnedCollapsed }
       })
 
-      // Add a subtle spacer after the pinned section
-      result.push({
-        id: 'SECTION_SPACER',
-        type: 'section_spacer',
-        depth: 0
-      })
+      if (!isPinnedCollapsed) {
+        pinnedSnippets.forEach((snippet) => {
+          result.push({
+            id: `pinned-${snippet.id}`, // Unique ID for virtual row
+            realId: snippet.id, // Reference to actual snippet
+            type: 'pinned_snippet',
+            data: snippet,
+            depth: 0.5 // Subtle indent
+          })
+        })
+      }
     }
 
     // 2. MAIN FOLDER TREE
@@ -129,7 +128,7 @@ export const useSidebarLogic = ({
     result = result.concat(flatten(folders, snippets, 0, null))
 
     return result
-  }, [snippets, folders, createState, selectedFolderId])
+  }, [snippets, folders, createState, selectedFolderId, isPinnedCollapsed])
 
   const startCreation = useCallback(
     (type, parentId = null) => {
@@ -351,6 +350,7 @@ export const useSidebarLogic = ({
     createState,
     startCreation,
     cancelCreation,
-    confirmCreation
+    confirmCreation,
+    togglePinned
   }
 }

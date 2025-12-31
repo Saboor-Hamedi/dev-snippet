@@ -1,8 +1,8 @@
 # DevSnippet Technical Reference Manual
 
-**Version**: 1.2.2
-**Date**: December 30, 2025
-**Status**: Stable (Unified Engine Update)
+**Version**: 1.2.3
+**Date**: December 31, 2025
+**Status**: Stable (Zero-Latency Engine Update)
 
 ---
 
@@ -70,6 +70,13 @@ The application uses a request-response pattern via `ipcRenderer.invoke()` (Prom
 | `db:getSnippets` | Fetch list | `{ limit: 20, offset: 0 }` |
 | `db:saveSnippet` | Save/Update | `{ id: 1, title: 'Foo', code: '...' }` |
 | `export:pdf` | Generate PDF | `{ html: '<h1>Hello</h1>' }` |
+| `export:word` | Generate DOCX | `{ html: '...', name: 'my-doc' }` |
+
+### 2.4 Key UI Modules
+
+* **Command Palette (`Cmd+P`)**: A centralized navigation hub featuring a **Hybrid Search Engine**. It merges client-side fuzzy matching for titles with backend Full-Text Search (FTS) for content, providing sub-50ms results.
+* **Pinned Section**: A specialized virtualization layer within the Sidebar (`SnippetSidebarRow.jsx`) that supports collapsible states and "Folder-like" visual hierarchy for high-frequency access items.
+* **Responsive Status Bar**: A context-aware footer that progressively hides information (Indentation, Encoding) based on viewport width (`sm/md/lg` breakpoints), ensuring vital data (Cursor, Zoom) is always accessible.
 
 ---
 
@@ -188,18 +195,18 @@ To ensure 100% rendering consistency between the **Live Preview**, **Reading Mod
 * **Compiler**: `rehype-stringify`.
 * **Standard Features**: GFM Tables, Footnotes, Task Lists, Emojis, Auto-links.
 * **Custom Logic**:
-  * **Directives**: Native handling of `::: info` callouts via `remark-directive`.
-  * **Mermaid Detection**: Automatic detection and wrapping of mermaid diagrams.
-  * **Specialty Blocks**: Robust handling of `[kanban]`, `[tabs]`, and `[grid]` components.
+- **Directives**: Native handling of `::: info` callouts via `remark-directive`.
+- **Mermaid Detection**: Automatic detection and wrapping of mermaid diagrams.
+- **Specialty Blocks**: Robust handling of `[kanban]`, `[tabs]`, and `[grid]` components.
 
 ### 4.6 Local Asset Management
 
 The editor includes a robust local asset system designed for offline-first usage.
 
-*   **Storage**: Images dropped or pasted into the editor are saved to `app.getPath('userData')/assets`.
-*   **Protocol**: A custom `asset://` protocol serves these files securely, bypassing local file restrictions.
-*   **Safety**: If a file with the same name exists, the system automatically appends a timestamp to prevent overwrites.
-*   **Visual Constraints**: To keep the editor clean, all inline images are restricted to a **maximum height of 350px** and center-aligned.
+* **Storage**: Images dropped or pasted into the editor are saved to `app.getPath('userData')/assets`.
+* **Protocol**: A custom `asset://` protocol serves these files securely, bypassing local file restrictions.
+* **Safety**: If a file with the same name exists, the system automatically appends a timestamp to prevent overwrites.
+* **Visual Constraints**: To keep the editor clean, all inline images are restricted to a **maximum height of 350px** and center-aligned.
 
 By using a single source of truth for parsing, "visual drift" (where the preview looks different from the export) is mathematically eliminated.
 
@@ -271,6 +278,41 @@ The editor handles files up to 50,000 lines comfortably due to:
 
 * **Viewport Virtualization**: Only the visible 50-100 lines are rendered.
 * **Incremental Parsing**: `syntaxTree` only re-parses changed regions.
+
+---
+
+## 7. Flow Mode: The Professional Workstation
+
+Flow Mode (Section 7) is a specialized "Zen" environment designed for high-performance technical writing and coding without UI distractions.
+
+### 7.1 Flow Workspace Architecture
+
+The **Flow Workspace** (`FlowWorkspace.jsx`) unifies separate floating windows into a single, resizable dual-column workstation.
+
+* **Left Column**: High-performance CodeMirror editor.
+* **Right Column**: **Scientific Ghost Preview** with real-time rendering and telemetry.
+* **Dual-Column Integration**: The workstation operates as a single unit. Resizing the main container dynamically scales both columns to maintain a consistent aspect ratio.
+
+### 7.2 Core Flow Features
+
+* **WikiWarp (Instant Navigation)**: Double-clicking any `[[WikiLink]]` instantly warps the user to the destination snippet. This bypasses the need for keyboard modifiers and provides a web-like hyperlinking experience.
+* **Snap-to-Frame Engine**: Users can toggle between:
+  * **Zen Mode**: A full-screen non-blocking backdrop blur.
+  * **Snapped Mode**: The background collapses and "fixes" itself to the editor frame, creating a standalone floating workstation with a deep cinematic shadow.
+* **Mission Control Header**: An integrated technical header that houses:
+  * **Focus Session Timer**: Pause/Play/Reset controls for pomodoro-style focus.
+  * **Viewport Presets**: Instantly switch between Mini, Mobile, Tablet, and Desktop preview widths.
+  * **Ghost Interactivity**: Toggle "Click-Through" mode to allow typing "through" the preview layer.
+*   **Kinetic Scroll Sync**: A RequestAnimationFrame-based smoothing engine that ensures the preview glides in perfect alignment with the editor's scroll position.
+
+### 7.3 Zero-Latency Performance Engine
+
+To maintain a premium aesthetic without sacrificing system responsiveness, Flow Mode utilizes a hardware-accelerated performance engine.
+
+*   **GPU Layer Isolation**: Flow windows are promoted to independent GPU compositor layers via `transform: translateZ(0)` and `contain: layout paint`. This prevents the browser from recalculating the main application's layout when the Flow window moves.
+*   **Motion Decoupling**: During active interaction (dragging), the engine dynamically swaps computationally expensive `backdrop-filter: blur()` effects for high-performance semi-transparent solid backgrounds (`rgba(20, 24, 30, 0.95)`). This reduces GPU pixel-shading overhead by ~90% while the window is in motion.
+*   **Shadow Optimization**: Shadows have been tuned for performance, utilizing tighter, more efficient blur radii (40px depth) and reduced opacity to prevent "blue-black" cast bleeding into underlying UI layers.
+*   **Diagnostic Silence**: All non-critical developer telemetry (console logging) has been removed to prevent "Main Thread Jitter" during high-frequency I/O operations like real-time autosaving and cloud synchronization.
 
 ---
 

@@ -103,32 +103,15 @@
       window.addEventListener('message', (event) => {
         const { type } = event.data
 
-        if (type === 'render') {
-          const {
-            html,
-            styles,
-            theme,
-            isDark,
-            isLive,
-            mermaidConfig,
-            mermaidEngine,
-            initialScrollPercentage,
-            editorZoom = 1.0,
-            baseFontSize
-          } = event.data
-
+        if (type === 'styles') {
+          const { theme, isDark, styles, mermaidConfig, mermaidEngine, editorZoom = 1.0, baseFontSize } = event.data
+          
           // Update zoom-aware font size
           const baseSize = baseFontSize || 14
           document.documentElement.style.fontSize = `${baseSize * editorZoom}px`
           document.body.style.fontSize = `${baseSize * editorZoom}px`
           document.documentElement.setAttribute('data-theme', theme)
           document.documentElement.className = theme + (isDark ? ' dark' : '')
-
-          const container = document.querySelector('.preview-container')
-          if (container) {
-            if (isLive) container.classList.add('is-live')
-            else container.classList.remove('is-live')
-          }
 
           if (styles) {
             let styleTag = document.getElementById('dynamic-styles')
@@ -140,12 +123,20 @@
             if (styleTag.textContent !== styles) styleTag.textContent = styles
           }
 
-          // 2. Inject Mermaid Engine logic if provided
           if (mermaidEngine && !window.diagramEngine) {
             const script = document.createElement('script')
             script.textContent = mermaidEngine
             document.body.appendChild(script)
           }
+
+          window._mermaidConfig = mermaidConfig
+        }
+
+        if (type === 'render') {
+          const {
+            html,
+            initialScrollPercentage
+          } = event.data
 
           // 3. Update Content
           const contentDiv = document.getElementById('content')
@@ -174,33 +165,20 @@
             })
           }
 
-          // 4. Process Logic
+          // 4. Process Logic via specialized Diagram Engine
           const runLogic = async () => {
-            if (window.mermaid) {
-              try {
-                const theme = isDark ? 'dark' : 'neutral'
-                window.mermaid.initialize({
-                  startOnLoad: false,
-                  theme,
-                  securityLevel: 'loose', // Important for complex graphs
-                  ...mermaidConfig
+             if (window.diagramEngine) {
+                const isDark = document.documentElement.classList.contains('dark')
+                const themeStr = isDark ? 'dark' : 'neutral'
+                window.diagramEngine.init({
+                   theme: themeStr,
+                   ...(window._mermaidConfig || {})
                 })
-
-                // Find all mermaid divs that haven't been processed yet
-                const elements = document.querySelectorAll('.mermaid:not([data-processed="true"])')
-                if (elements.length > 0) {
-                  await window.mermaid.run({
-                    nodes: elements
-                  })
-                }
-              } catch (err) {
-                console.error('Mermaid render error:', err)
-              }
-            }
+                await window.diagramEngine.run()
+             }
           }
 
           runLogic()
-          // Safety poll
           setTimeout(runLogic, 1000)
         }
 
@@ -217,11 +195,23 @@
               html.offsetHeight
             )
             const windowHeight = window.innerHeight
-
             const scrollTarget = (height - windowHeight) * percentage
-            window.scrollTo({ top: scrollTarget, behavior: 'auto' })
-            document.body.scrollTop = scrollTarget
-            document.documentElement.scrollTop = scrollTarget
+
+            // Smooth Interpolation Engine
+            if (window._scrollRaf) cancelAnimationFrame(window._scrollRaf)
+            
+            const smoothScroll = () => {
+              const current = window.scrollY || document.documentElement.scrollTop
+              const diff = scrollTarget - current
+              if (Math.abs(diff) < 1) {
+                 window.scrollTo(0, scrollTarget)
+                 return
+              }
+              // Rapid convergence (0.3 step) for high-responsiveness
+              window.scrollTo(0, current + diff * 0.3)
+              window._scrollRaf = requestAnimationFrame(smoothScroll)
+            }
+            window._scrollRaf = requestAnimationFrame(smoothScroll)
           }
         }
       })
@@ -231,35 +221,57 @@
         // 1. Copy Code Button
         const btn = e.target.closest('.copy-code-btn')
         if (btn) {
-          const raw = btn.dataset.code
-            .replace(/&amp;/g, '&')
-            .replace(/&lt;/g, '<')
-            .replace(/&gt;/g, '>')
-            .replace(/&quot;/g, '"')
-          navigator.clipboard.writeText(raw).then(() => {
-            const old = btn.innerHTML
-            btn.classList.add('success')
-            btn.innerHTML =
-              '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>'
-            setTimeout(() => {
-              btn.classList.remove('success')
-              btn.innerHTML = old
-            }, 2000)
-          })
+          let raw = ''
+          try {
+            raw = decodeURIComponent(btn.dataset.code)
+          } catch (e) {
+            // Fallback for legacy/unencoded content (if any remains cached)
+            raw = btn.dataset.code
+              .replace(/&amp;/g, '&')
+              .replace(/&lt;/g, '<')
+              .replace(/&gt;/g, '>')
+              .replace(/&quot;/g, '"')
+          }
+          
+          window.parent.postMessage({ type: 'app:copy-text', text: raw }, '*')
+          
+          const old = btn.innerHTML
+          btn.classList.add('success')
+          btn.innerHTML =
+            '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>'
+          setTimeout(() => {
+            btn.classList.remove('success')
+            btn.innerHTML = old
+          }, 2000)
           return
         }
 
         // 1.5 Copy Image Button
         const imgBtn = e.target.closest('.copy-image-btn')
         if (imgBtn) {
-          const raw = imgBtn.dataset.code
-            .replace(/&amp;/g, '&')
-            .replace(/&lt;/g, '<')
-            .replace(/&gt;/g, '>')
-            .replace(/&quot;/g, '"')
+          let raw = ''
+          try {
+             raw = decodeURIComponent(imgBtn.dataset.code)
+          } catch (e) {
+             raw = imgBtn.dataset.code
+               .replace(/&amp;/g, '&')
+               .replace(/&lt;/g, '<')
+               .replace(/&gt;/g, '>')
+               .replace(/&quot;/g, '"')
+          }
 
           const lang = imgBtn.dataset.lang || 'text'
           window.parent.postMessage({ type: 'app:copy-as-image', code: raw, language: lang }, '*')
+          
+          // Add visual feedback
+          const old = imgBtn.innerHTML
+          imgBtn.classList.add('success')
+          imgBtn.innerHTML =
+            '<svg xmlns="http://www.getbootstrap.com/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>'
+          setTimeout(() => {
+            imgBtn.classList.remove('success')
+            imgBtn.innerHTML = old
+          }, 2000)
           return
         }
 

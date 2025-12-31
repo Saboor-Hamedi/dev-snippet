@@ -19,11 +19,12 @@
   border-radius: 5px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   overflow: hidden;
   position: absolute; /* Default for draggable */
   min-width: 300px;
   animation: uni-scale-up 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateZ(0); /* Persistent GPU promotion */
 }
 
 .universal-modal.locked {
@@ -78,6 +79,36 @@
   padding: 0;
 }
 
+.universal-modal.no-overlay {
+  pointer-events: auto;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Premium Flow Ghost Theme */
+.universal-modal.flow-ghost-modal {
+  background: rgba(13, 17, 23, 0.4);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: none !important; /* Removed border per user request */
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.flow-ghost-modal .universal-modal-header {
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 8px 12px;
+}
+
+.flow-ghost-modal .universal-modal-content {
+  background: transparent;
+}
+
+.universal-modal.no-overlay.locked {
+  position: fixed !important;
+  margin: 0;
+}
+
 .universal-modal-footer {
   padding: 10px 14px;
   border-top: 1px solid var(--color-border);
@@ -106,31 +137,65 @@
   }
 }
 
-/* Drag Handle Styling for Mode Switcher */
-.drag-handle-hint {
-  width: 10px;
-  height: 12px;
-  display: flex !important;
-  flex-wrap: wrap;
-  gap: 2px;
-  opacity: 0.4;
-  margin-right: 8px;
-  cursor: move;
-  align-content: center;
-  justify-content: center;
+/* Global Drag State Support */
+body.dragging-active {
+  cursor: move !important;
+  user-select: none !important;
 }
 
-/* Remove default button backgrounds/borders from any icon buttons inside the modal interactions */
+body.dragging-active * {
+  cursor: move !important;
+  user-select: none !important;
+}
+
+/* Optimize Dragging Performance */
+.universal-modal.is-dragging {
+  pointer-events: auto !important;
+  transition: none !important;
+  backdrop-filter: none !important;
+  z-index: 100000 !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
+  will-change: top, left, transform;
+  transform: translateZ(0); /* Force GPU acceleration */
+  contain: layout paint; /* Isolate layout/paint from main app */
+}
+
+/* High-performance background swap for Ghost windows during drag */
+.universal-modal.flow-ghost-modal.is-dragging {
+  background: rgba(20, 24, 30, 0.95) !important;
+}
+
+.universal-modal.is-dragging *,
+.universal-modal.is-dragging ::before,
+.universal-modal.is-dragging ::after {
+  pointer-events: none !important;
+  transition: none !important;
+  animation: none !important;
+  backdrop-filter: none !important; /* Critical: Disable heavy blur during movement */
+}
+
+.universal-modal.is-dragging .universal-modal-header,
+.universal-modal.is-dragging .universal-modal-header * {
+  pointer-events: auto !important; /* Header must stay interactive */
+}
+
 .universal-modal button {
   background: transparent;
   border: none;
   box-shadow: none;
 }
-/* remove focus bg  */
 
-.drag-handle-hint span {
-  width: 2px;
-  height: 2px;
-  background: var(--color-text-primary);
-  border-radius: 50%;
+.universal-modal-resize-handle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 15px;
+  height: 15px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 50%, rgba(255, 255, 255, 0.1) 50%);
+  z-index: 100;
+}
+
+.universal-modal-resize-handle:hover {
+  background: linear-gradient(135deg, transparent 50%, var(--color-blue-primary, #3b82f6) 50%);
 }

@@ -113,11 +113,9 @@ const CodeEditor = ({
   // Listen for focus-editor event (from backup, etc.)
   useEffect(() => {
     const handleFocusEditor = () => {
-      console.log('[CodeEditor] Received focus-editor event')
       if (viewRef.current) {
         requestAnimationFrame(() => {
           if (viewRef.current) {
-            console.log('[CodeEditor] Focusing editor')
             viewRef.current.focus()
           }
         })

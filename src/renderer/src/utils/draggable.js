@@ -18,6 +18,7 @@ export const makeDraggable = (el, handle, onDragEnd) => {
     // Don't drag if clicking buttons inside the handle
     if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return
 
+    // Prevent default to stop text selection
     e.preventDefault()
 
     // Pin current position and clear margin to prevent jumping
@@ -31,6 +32,9 @@ export const makeDraggable = (el, handle, onDragEnd) => {
     el.style.margin = '0'
     el.style.position = 'absolute'
 
+    // Performance hint: Tell the browser this element will move
+    el.style.willChange = 'top, left'
+
     pos3 = e.clientX
     pos4 = e.clientY
 
@@ -38,10 +42,13 @@ export const makeDraggable = (el, handle, onDragEnd) => {
     document.addEventListener('mousemove', mouseMoveHandler)
 
     el.classList.add('is-dragging')
+    document.body.classList.add('dragging-active')
   }
 
   const mouseMoveHandler = (e) => {
-    e.preventDefault()
+    // No preventDefault here to keep it lean, or keep it if needed for text selection
+    // e.preventDefault()
+
     pos1 = pos3 - e.clientX
     pos2 = pos4 - e.clientY
     pos3 = e.clientX
@@ -68,7 +75,11 @@ export const makeDraggable = (el, handle, onDragEnd) => {
   const mouseUpHandler = () => {
     document.removeEventListener('mouseup', mouseUpHandler)
     document.removeEventListener('mousemove', mouseMoveHandler)
+
     el.classList.remove('is-dragging')
+    document.body.classList.remove('dragging-active')
+    el.style.willChange = 'auto'
+
     if (onDragEnd) {
       onDragEnd({ x: el.offsetLeft, y: el.offsetTop })
     }
@@ -80,5 +91,6 @@ export const makeDraggable = (el, handle, onDragEnd) => {
     handle.removeEventListener('mousedown', mouseDownHandler)
     document.removeEventListener('mouseup', mouseUpHandler)
     document.removeEventListener('mousemove', mouseMoveHandler)
+    document.body.classList.remove('dragging-active')
   }
 }

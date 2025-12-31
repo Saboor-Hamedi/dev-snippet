@@ -12,10 +12,13 @@ const UniversalModal = ({
   title,
   children,
   footer,
-  width = '550px',
-  height = 'auto',
+  width: initialWidth = '550px',
+  height: initialHeight = 'auto',
   className = '',
-  resetPosition = false
+  resetPosition = false,
+  noOverlay = false,
+  customKey = 'universal_modal',
+  isMaximized = false
 }) => {
   const modalRef = useRef(null)
   const headerRef = useRef(null)
@@ -27,75 +30,193 @@ const UniversalModal = ({
       const header = headerRef.current
       const isLocked = settings?.ui?.universalLock?.modal
 
-      // 1. Position Setup
-      if (isLocked || resetPosition) {
-        // Clear styles to let flexbox/CSS center it
-        modal.style.left = ''
-        modal.style.top = ''
-        modal.style.margin = 'auto' // Center in flex
-        modal.style.position = isLocked ? 'relative' : 'absolute'
+      // 1. Position & Size Setup
+      const saved = getPersistentPosition(customKey, null)
+
+      if (isMaximized) {
+        modal.classList.add('maximized')
+        modal.style.setProperty('left', '0', 'important')
+        modal.style.setProperty('top', '0', 'important')
+        modal.style.setProperty('width', '100vw', 'important')
+        modal.style.setProperty('height', '100vh', 'important')
+        modal.style.setProperty('margin', '0', 'important')
+        modal.style.setProperty('position', 'fixed', 'important')
+        modal.style.setProperty('border-radius', '0', 'important')
+        modal.style.setProperty('z-index', '99999', 'important')
       } else {
-        const saved = getPersistentPosition('universal_modal', null)
-        if (saved) {
-          modal.style.left = saved.left
-          modal.style.top = saved.top
-          modal.style.margin = '0'
-          modal.style.position = 'absolute'
-        } else {
+        modal.classList.remove('maximized')
+        // Explicitly clear all maximization overrides
+        modal.style.removeProperty('left')
+        modal.style.removeProperty('top')
+        modal.style.removeProperty('width')
+        modal.style.removeProperty('height')
+        modal.style.removeProperty('margin')
+        modal.style.removeProperty('position')
+        modal.style.removeProperty('border-radius')
+        modal.style.removeProperty('z-index')
+
+        if (isLocked || resetPosition) {
+          modal.style.position = isLocked ? 'relative' : 'absolute'
+          modal.style.width = initialWidth
+          modal.style.height = initialHeight
+          modal.style.margin = 'auto'
           modal.style.left = ''
           modal.style.top = ''
-          modal.style.margin = 'auto'
+        } else if (saved) {
           modal.style.position = 'absolute'
+          modal.style.left = saved.left
+          modal.style.top = saved.top
+          modal.style.width = saved.width || initialWidth
+          modal.style.height = saved.height || initialHeight
+          modal.style.margin = '0'
+        } else {
+          modal.style.position = 'absolute'
+          if (noOverlay) {
+            if (customKey === 'flow_editor_position') {
+              modal.style.left = '60px'
+              modal.style.top = '100px'
+            } else if (customKey === 'flow_preview_position') {
+              modal.style.right = '60px'
+              modal.style.top = '100px'
+              modal.style.left = 'auto'
+            } else {
+              modal.style.right = '40px'
+              modal.style.top = '80px'
+              modal.style.left = 'auto'
+            }
+            modal.style.margin = '0'
+          } else {
+            modal.style.left = ''
+            modal.style.top = ''
+            modal.style.margin = 'auto'
+          }
+          modal.style.width = initialWidth
+          modal.style.height = initialHeight
         }
       }
 
-      // 2. Enable Dragging (unless locked)
-      let cleanup
-      if (!isLocked) {
-        cleanup = makeDraggable(modal, header, (pos) => {
-          savePersistentPosition('universal_modal', {
+      // 2. Enable Dragging
+      let cleanupDrag
+      if (!isLocked && !isMaximized) {
+        cleanupDrag = makeDraggable(modal, header, (pos) => {
+          savePersistentPosition(customKey, {
+            ...saved,
             left: `${pos.x}px`,
-            top: `${pos.y}px`
+            top: `${pos.y}px`,
+            width: modal.style.width,
+            height: modal.style.height
           })
         })
       }
 
-      return cleanup
+      // 3. Enable Resizing (Simple bottom-right handle logic)
+      let resizeHandle
+      if (!isLocked && !isMaximized) {
+        resizeHandle = document.createElement('div')
+        resizeHandle.className = 'universal-modal-resize-handle'
+        modal.appendChild(resizeHandle)
+
+        const startResize = (e) => {
+          e.preventDefault()
+          const startWidth = parseInt(document.defaultView.getComputedStyle(modal).width, 10)
+          const startHeight = parseInt(document.defaultView.getComputedStyle(modal).height, 10)
+          const startX = e.clientX
+          const startY = e.clientY
+
+          const doResize = (moveEvent) => {
+            const newWidth = startWidth + moveEvent.clientX - startX
+            const newHeight = startHeight + moveEvent.clientY - startY
+            modal.style.width = `${newWidth}px`
+            modal.style.height = `${newHeight}px`
+          }
+
+          const stopResize = () => {
+            document.removeEventListener('mousemove', doResize)
+            document.removeEventListener('mouseup', stopResize)
+            savePersistentPosition(customKey, {
+              left: modal.style.left,
+              top: modal.style.top,
+              width: modal.style.width,
+              height: modal.style.height
+            })
+          }
+
+          document.addEventListener('mousemove', doResize)
+          document.addEventListener('mouseup', stopResize)
+        }
+
+        resizeHandle.addEventListener('mousedown', startResize)
+      }
+
+      return () => {
+        if (cleanupDrag) cleanupDrag()
+        if (resizeHandle && modal.contains(resizeHandle)) modal.removeChild(resizeHandle)
+      }
     }
-  }, [isOpen, width, settings?.ui?.universalLock?.modal, resetPosition])
+  }, [
+    isOpen,
+    initialWidth,
+    initialHeight,
+    settings?.ui?.universalLock?.modal,
+    resetPosition,
+    isMaximized
+  ])
 
   if (!isOpen) return null
 
   const isDragDisabled = settings?.ui?.universalLock?.modal
-  // Also support the specific toggle if we want backward compat, but user said Change it.
+
+  const modalContent = (
+    <div
+      ref={modalRef}
+      className={`universal-modal ${isDragDisabled ? 'locked' : ''} ${className} ${noOverlay ? 'no-overlay' : ''}`}
+      style={{
+        width: initialWidth,
+        height: initialHeight,
+        zIndex: noOverlay ? 1000 : undefined,
+        pointerEvents: className.includes('click-through') ? 'none' : 'auto'
+      }}
+    >
+      <div
+        ref={headerRef}
+        className="universal-modal-header"
+        onDoubleClick={() => {
+          if (customKey === 'flow_workspace_position' && typeof isMaximized !== 'undefined') {
+            // This is a bit hacky but it works for FlowWorkspace
+            window.dispatchEvent(new CustomEvent('app:maximize-station'))
+          }
+        }}
+        style={{
+          cursor: isDragDisabled ? 'default' : 'move',
+          pointerEvents: 'auto' // Header must always be interactable for dragging
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+          {!isDragDisabled && <GripHorizontal size={14} style={{ opacity: 0.3 }} />}
+          <div className="universal-modal-title" style={{ flex: 1 }}>
+            {title}
+          </div>
+        </div>
+      </div>
+      <div
+        className={`universal-modal-content ${className.includes('no-padding') ? 'no-padding' : ''}`}
+      >
+        {children}
+      </div>
+      {footer && <div className="universal-modal-footer">{footer}</div>}
+    </div>
+  )
+
+  if (noOverlay) {
+    return ReactDOM.createPortal(modalContent, document.body)
+  }
 
   return ReactDOM.createPortal(
     <div
       className="universal-modal-overlay"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div
-        ref={modalRef}
-        className={`universal-modal ${isDragDisabled ? 'locked' : ''} ${className}`}
-        style={{ width, height }}
-      >
-        <div
-          ref={headerRef}
-          className="universal-modal-header"
-          style={{ cursor: isDragDisabled ? 'default' : 'move' }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {!isDragDisabled && <GripHorizontal size={14} style={{ opacity: 0.3 }} />}
-            <span className="universal-modal-title">{title}</span>
-          </div>
-        </div>
-        <div
-          className={`universal-modal-content ${className.includes('no-padding') ? 'no-padding' : ''}`}
-        >
-          {children}
-        </div>
-        {footer && <div className="universal-modal-footer">{footer}</div>}
-      </div>
+      {modalContent}
     </div>,
     document.body
   )

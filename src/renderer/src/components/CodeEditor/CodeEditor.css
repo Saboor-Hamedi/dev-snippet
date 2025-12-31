@@ -368,3 +368,34 @@
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
+
+/* Editor Layout: Centered Island mode */
+.cm-editor-container.is-centered .cm-editor {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+}
+
+.cm-editor-container.is-centered .cm-scroller {
+  display: flex !important;
+  justify-content: center !important;
+  width: 100% !important;
+}
+
+/* Constrain the actual text area to a readable width */
+.cm-editor-container.is-centered .cm-content,
+.cm-editor-container.is-centered .cm-line {
+  max-width: 750px !important;
+  width: 100% !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Gutter alignment in centered mode */
+.cm-editor-container.is-centered .cm-gutters {
+  background-color: transparent !important;
+  border: none !important;
+  position: sticky !important;
+  left: 0;
+  z-index: 20;
+}

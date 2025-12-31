@@ -28,7 +28,7 @@ const GRADIENTS = [
   { name: 'Oceanic', class: 'bg-gradient-to-br from-cyan-500 to-blue-600' },
   { name: 'Emerald', class: 'bg-gradient-to-br from-emerald-400 to-cyan-500' },
   { name: 'Midnight', class: 'bg-gradient-to-br from-slate-700 to-slate-900' },
-  { name: 'Transparent', class: 'bg-transparent' } // Special case
+  { name: 'Transparent', class: 'bg-transparent' }
 ]
 
 const PADDINGS = [
@@ -42,7 +42,7 @@ const ImageExportModal = ({ isOpen, onClose, snippet }) => {
   const [padding, setPadding] = useState(PADDINGS[1])
   const [showLineNumbers, setShowLineNumbers] = useState(true)
   const [isExporting, setIsExporting] = useState(false)
-  const [exportState, setExportState] = useState(null) // 'copied', 'saved'
+  const [exportState, setExportState] = useState(null)
 
   const exportRef = useRef(null)
 
@@ -60,7 +60,6 @@ const ImageExportModal = ({ isOpen, onClose, snippet }) => {
     if (!exportRef.current) return
     setIsExporting(true)
     try {
-      // Filter out elements we don't want in the image if necessary
       const blob = await toBlob(exportRef.current, { pixelRatio: 2 })
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
       setExportState('copied')
@@ -89,15 +88,11 @@ const ImageExportModal = ({ isOpen, onClose, snippet }) => {
 
   return createPortal(
     <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
-      {/* Backdrop */}
       <div
         className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm animate-in fade-in duration-200"
         onMouseDown={onClose}
       />
-
-      {/* Modal Content */}
       <div className="relative w-full max-w-5xl h-[85vh] bg-[var(--bg-secondary)] rounded-2xl shadow-2xl border border-[var(--color-border)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)] bg-[var(--bg-primary)]">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-500">
@@ -121,17 +116,13 @@ const ImageExportModal = ({ isOpen, onClose, snippet }) => {
         </div>
 
         <div className="flex-1 flex min-h-0">
-          {/* Main Preview Area */}
           <div className="flex-1 overflow-auto p-12 bg-slate-50/50 dark:bg-slate-900/50 flex items-start justify-center checkered-bg">
-            {/* The Capture Node */}
             <div
               ref={exportRef}
               className={`relative transition-all duration-300 ${padding.value} ${activeGradient.class} flex items-center justify-center min-w-[500px] shadow-2xl`}
               style={{ minHeight: '300px' }}
             >
-              {/* The Window Container */}
               <div className="w-full bg-[#1e1e1e] rounded-xl shadow-2xl overflow-hidden border border-white/10 ring-1 ring-black/50">
-                {/* Window Controls */}
                 <div className="flex items-center gap-2 px-4 py-3 bg-[#2a2a2b] border-b border-white/5 select-none">
                   <div className="flex gap-1.5">
                     <div className="w-3 h-3 rounded-full bg-[#ff5f56] shadow-inner" />
@@ -151,7 +142,7 @@ const ImageExportModal = ({ isOpen, onClose, snippet }) => {
                     customStyle={{
                       margin: 0,
                       padding: '1.5rem',
-                      background: 'transparent', // Use window container bg
+                      background: 'transparent',
                       fontSize: '14px',
                       lineHeight: '1.6',
                       fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace"
@@ -165,9 +156,8 @@ const ImageExportModal = ({ isOpen, onClose, snippet }) => {
               </div>
             </div>
           </div>
-          {/* Sidebar Controls */}
+
           <div className="w-80 border-l border-[var(--color-border)] bg-[var(--bg-primary)] p-6 overflow-y-auto flex flex-col gap-8">
-            {/* Backgrounds */}
             <section>
               <h3 className="text-xs font-bold uppercase text-[var(--color-text-tertiary)] tracking-wider mb-4">
                 Background
@@ -188,14 +178,11 @@ const ImageExportModal = ({ isOpen, onClose, snippet }) => {
               </div>
             </section>
 
-            {/* Settings */}
             <section>
               <h3 className="text-xs font-bold uppercase text-[var(--color-text-tertiary)] tracking-wider mb-4">
                 Settings
               </h3>
-
               <div className="space-y-4">
-                {/* Padding Toggle */}
                 <div className="space-y-2">
                   <label className="text-xs text-[var(--color-text-secondary)]">Padding</label>
                   <div className="flex bg-[var(--bg-tertiary)] p-1 rounded-lg border border-[var(--color-border)]">
@@ -215,7 +202,6 @@ const ImageExportModal = ({ isOpen, onClose, snippet }) => {
                   </div>
                 </div>
 
-                {/* Toggles */}
                 <div
                   className="flex items-center justify-between group cursor-pointer"
                   onClick={() => setShowLineNumbers(!showLineNumbers)}
@@ -230,7 +216,6 @@ const ImageExportModal = ({ isOpen, onClose, snippet }) => {
 
             <div className="flex-1" />
 
-            {/* Actions */}
             <div className="space-y-3">
               <button
                 onClick={handleCopy}

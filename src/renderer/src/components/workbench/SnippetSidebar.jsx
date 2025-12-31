@@ -75,7 +75,8 @@ const SnippetSidebar = ({
     handleBackgroundClick,
     startCreation,
     cancelCreation,
-    confirmCreation
+    confirmCreation,
+    togglePinned
   } = useSidebarLogic({
     folders,
     snippets,
@@ -413,7 +414,10 @@ const SnippetSidebar = ({
           // Force background selection on any click in this container
           // that hasn't been stopped by a child.
           try {
-            console.debug('[SnippetSidebar] container click', { target: e.target, currentTarget: e.currentTarget })
+            console.debug('[SnippetSidebar] container click', {
+              target: e.target,
+              currentTarget: e.currentTarget
+            })
           } catch (err) {}
 
           if (e.target !== e.currentTarget && e.target.closest('[draggable]')) {
@@ -483,6 +487,7 @@ const SnippetSidebar = ({
               onMoveFolder,
               onContextMenu: handleContextMenu,
               lastSelectedIdRef,
+              togglePinned,
               onTogglePin,
               searchQuery,
               // Creation Props

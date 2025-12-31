@@ -27,25 +27,25 @@ export const searchHighlighter = StateField.define({
         }
 
         try {
-          // Build regex
+          const decorations = []
           const searchText = useRegex ? query : query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
           const flags = caseSensitive ? 'g' : 'gi'
           const regex = new RegExp(searchText, flags)
 
-          // Find all matches
-          const decorations = []
-          const text = tr.state.doc.toString()
-          let match
-
-          while ((match = regex.exec(text)) !== null) {
-            const from = match.index
-            const to = match.index + match[0].length
-
-            decorations.push(
-              Decoration.mark({
-                class: 'cm-search-match'
-              }).range(from, to)
-            )
+          let pos = 0
+          for (let iter = tr.state.doc.iter(); !iter.done; iter.next()) {
+            const fragment = iter.value
+            let match
+            while ((match = regex.exec(fragment)) !== null) {
+              const from = pos + match.index
+              const to = from + match[0].length
+              decorations.push(
+                Decoration.mark({
+                  class: 'cm-search-match'
+                }).range(from, to)
+              )
+            }
+            pos += fragment.length
           }
 
           return {
@@ -67,27 +67,27 @@ export const searchHighlighter = StateField.define({
         }
 
         try {
-          // Build regex
+          const decorations = []
           const searchText = useRegex ? query : query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
           const flags = caseSensitive ? 'g' : 'gi'
           const regex = new RegExp(searchText, flags)
 
-          // Find all matches and mark current one differently
-          const decorations = []
-          const text = tr.state.doc.toString()
-          let match
+          let pos = 0
           let count = 0
-
-          while ((match = regex.exec(text)) !== null) {
-            count++
-            const from = match.index
-            const to = match.index + match[0].length
-
-            decorations.push(
-              Decoration.mark({
-                class: count === currentMatchIndex ? 'cm-search-match-current' : 'cm-search-match'
-              }).range(from, to)
-            )
+          for (let iter = tr.state.doc.iter(); !iter.done; iter.next()) {
+            const fragment = iter.value
+            let match
+            while ((match = regex.exec(fragment)) !== null) {
+              count++
+              const from = pos + match.index
+              const to = from + match[0].length
+              decorations.push(
+                Decoration.mark({
+                  class: count === currentMatchIndex ? 'cm-search-match-current' : 'cm-search-match'
+                }).range(from, to)
+              )
+            }
+            pos += fragment.length
           }
 
           return {

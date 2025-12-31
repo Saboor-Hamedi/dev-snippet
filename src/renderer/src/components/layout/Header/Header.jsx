@@ -13,14 +13,13 @@ import {
   Save,
   File,
   FilePlus,
-  
   Star
 } from 'lucide-react'
 import iconUrl from '../../../assets/icon.png'
 import AutosaveIndicator from './AutosaveIndicator'
 import '../../../assets/css/header.css'
 
-const useHeader = ({
+const Header = ({
   isCompact,
   onToggleCompact,
   title,
@@ -112,7 +111,7 @@ const useHeader = ({
                 }}
                 onDoubleClick={() => onRename && onRename()}
               >
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
                   <File
                     size={14}
                     className="flex-none opacity-60 group-hover:opacity-100 transition-opacity"
@@ -128,11 +127,12 @@ const useHeader = ({
                   </span>
                   {/* Favorite star next to tab title if present */}
                   {typeof isFavorited !== 'undefined' && isFavorited && (
-                    <Star size={12} className="ml-2 text-[var(--color-accent-primary)] fill-current" />
+                    <Star
+                      size={12}
+                      className="ml-2 text-[var(--color-accent-primary)] fill-current"
+                    />
                   )}
                 </div>
-
-                {/* Preview/Read Mode Toggle removed as per user request */}
 
                 {/* Close Button - Always visible but subtle, or hover */}
                 <button
@@ -163,11 +163,6 @@ const useHeader = ({
                 </span>
               </div>
             )}
-
-            {/* Autosave status - Pushed slightly right */}
-            <div className="pb-1.5 opacity-60">
-              <AutosaveIndicator status={autosaveStatus} />
-            </div>
           </div>
         </div>
 
@@ -176,6 +171,11 @@ const useHeader = ({
           className="flex ml-auto flex-none absolute top-0 right-0 h-full"
           style={{ WebkitAppRegion: 'no-drag', zIndex: 50 }}
         >
+          {/* Zen/Autosave Integration area */}
+          <div className="flex items-center h-full pr-2">
+            <AutosaveIndicator status={autosaveStatus} />
+          </div>
+
           {/* Custom Toggle: Compact vs Full */}
           <button
             onClick={() => {
@@ -213,4 +213,4 @@ const useHeader = ({
   )
 }
 
-export default useHeader
+export default Header

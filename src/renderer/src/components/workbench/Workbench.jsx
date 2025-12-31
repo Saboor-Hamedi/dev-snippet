@@ -8,10 +8,12 @@ import { Header } from '../layout/Header'
 import SidebarTheme from '../preference/SidebarTheme'
 import SnippetSidebar from './SnippetSidebar'
 import ActivityBar from '../layout/activityBar/ActivityBar'
-import { useStatusBar as StatusBar, SystemStatusFooter } from '../layout/StatusBar/useStatusBar'
+import { StatusBar, SystemStatusFooter } from '../layout/StatusBar/useStatusBar'
 import { useModal } from './manager/ModalContext'
 import FlowStatusBadge from '../FlowMode/FlowStatusBadge'
 import FlowPreview from '../FlowMode/FlowPreview'
+import UniversalModal from '../universal/UniversalModal'
+import FlowWorkspace from '../FlowMode/FlowWorkspace'
 import '../FlowMode/FlowMode.css'
 import LivePreview from '../livepreview/LivePreview'
 import { useTheme } from '../../hook/useTheme'
@@ -94,6 +96,8 @@ const Workbench = ({
   const { openDeleteModal, openTrashModal } = useModal()
   const [activeSidebarTab, setActiveSidebarTab] = React.useState('explorer')
   const [showFlowPreview, setShowFlowPreview] = React.useState(false)
+
+  // Listen for global commands (Command Palette) - REMOVED (Handled in SnippetLibraryInner)
 
   const handleTabChange = (tabId) => {
     // Only 'explorer' and 'themes' should open/toggle the sidebar
@@ -352,17 +356,34 @@ const Workbench = ({
 
         {/* Content Area */}
         <div
-          className={`flex-1 flex flex-col min-w-0 overflow-hidden transition-all duration-300 ${
-            showFlowMode ? 'flow-convas' : 'bg-[var(--editor-bg)]'
-          }`}
+          className="flex-1 flex flex-col min-w-0 overflow-hidden transition-all duration-300 relative"
           style={{
+            backgroundColor: showFlowMode ? 'transparent' : 'var(--editor-bg)',
             transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
           }}
         >
-          <div className={showFlowMode ? 'flow-content' : 'flex-1 flex flex-col overflow-hidden'}>
-            {renderContent()}
-          </div>
-
+          {showFlowMode && (
+            <div className="flow-convas" style={{ zIndex: -1 }}>
+              <div className="zen-atmosphere">
+                <div className="cyber-grid" />
+                <div className="zen-orb" />
+                <div className="zen-orb" />
+                <div className="zen-orb" />
+                <div className="scanning-laser" />
+              </div>
+            </div>
+          )}
+          {showFlowMode ? (
+            <FlowWorkspace
+              selectedSnippet={selectedSnippet}
+              snippets={snippets}
+              fontFamily={settings?.editor?.fontFamily}
+              renderEditor={renderContent}
+              onExit={() => window.dispatchEvent(new CustomEvent('app:toggle-flow'))}
+            />
+          ) : (
+            <div className="flex-1 flex flex-col overflow-hidden">{renderContent()}</div>
+          )}
           {/* Status Bar - Only show SystemStatusFooter when NOT in editor mode (SnippetEditor has its own StatusBar) */}
           {settings?.ui?.showStatusBar !== false &&
             !showFlowMode &&
@@ -376,23 +397,7 @@ const Workbench = ({
       </div>
 
       {showFlowMode && (
-        <>
-          <div className="flow-drag-handle" />
-          <FlowStatusBadge
-            onExit={() => window.dispatchEvent(new CustomEvent('app:toggle-flow'))}
-            onTogglePreview={() => setShowFlowPreview(!showFlowPreview)}
-            isPreviewVisible={showFlowPreview}
-            snippet={selectedSnippet}
-          />
-
-          <FlowPreview
-            show={showFlowPreview}
-            selectedSnippet={selectedSnippet}
-            snippets={snippets}
-            currentTheme={currentTheme}
-            fontFamily={settings?.editor?.fontFamily}
-          />
-        </>
+        <div style={{ display: 'none' }}>{/* Flow session managed by FlowWorkspace header */}</div>
       )}
     </div>
   )

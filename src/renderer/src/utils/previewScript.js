@@ -62,24 +62,31 @@ export const initPreview = (config = {}) => {
   if (window.mermaid) {
     mermaid.initialize({
       startOnLoad: false,
-      theme: isDark ? 'dark' : 'default',
-      themeVariables: {
-        primaryColor: '#58a6ff',
-        primaryTextColor: isDark ? '#e6edf3' : '#1f2328',
-        lineColor: isDark ? '#8b949e' : '#656d76',
-        secondaryColor: isDark ? '#161b22' : '#f6f8fa',
-        mainBkg: isDark ? '#161b22' : '#ffffff',
-        pie1: '#58a6ff',
-        pie2: '#3fb950',
-        pie3: '#ab7df8',
-        pie4: '#d29922',
-        pie5: '#f85149',
-        pieTitleTextColor: isDark ? '#e6edf3' : '#1f2328',
-        pieSectionTextColor: '#ffffff',
-        pieLegendTextColor: isDark ? '#8b949e' : '#656d76'
-      },
+      theme: 'neutral',
       securityLevel: 'loose',
-      fontFamily: "'Outfit', 'Inter', -apple-system, sans-serif"
+      themeVariables: {
+        primaryColor: '#ffffff',
+        primaryTextColor: '#000000',
+        primaryBorderColor: '#333333',
+        lineColor: '#333333',
+        secondaryColor: '#f4f4f4',
+        tertiaryColor: '#fff',
+        nodeBorder: '#333333',
+        clusterBkg: '#ffffff',
+        clusterBorder: '#333333',
+        actorBkg: '#ffffff',
+        actorTextColor: '#000000',
+        actorBorder: '#333333',
+        actorLineColor: '#333333',
+        edgeLabelBackground: '#ffffff',
+        labelBackgroundColor: '#ffffff',
+        fontSize: '16px'
+      },
+      flowchart: {
+        useMaxWidth: true,
+        htmlLabels: true,
+        curve: 'basis'
+      }
     })
   }
 

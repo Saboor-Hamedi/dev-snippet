@@ -46,11 +46,19 @@ const buildExtensions = async (options, handlers = {}) => {
   // 1. THEME & VISUALS (Always first)
   exts.push(buildTheme(EditorView, { isDark, caretColor, fontSize, cursorWidth, cursorShape }))
 
-  if (!isLargeFile) {
-    exts.push(...premiumTypingBundle)
-  }
+  const { tooltips } = await import('@codemirror/view')
+  exts.push(
+    tooltips({
+      position: 'fixed'
+    })
+  )
 
-  // 2. PREPARE AUTOCOMPLETION
+  // 2.5 LINK PREVIEW (WikiLinks) - Premium Feature
+  exts.push(linkPreviewTooltip)
+
+  // 2.6 DOUBLE-CLICK WARP - Navigation Speed Feature
+  const { wikiLinkWarp } = await import('./linkPreview')
+  exts.push(wikiLinkWarp)
   const completionSources = []
   if (!isLargeFile) {
     try {
@@ -63,10 +71,6 @@ const buildExtensions = async (options, handlers = {}) => {
       completionSources.push(slashCommandCompletionSource)
     } catch (e) {}
   }
-
-  // 2.5 LINK PREVIEW (WikiLinks) - Premium Feature
-  // We enable this for all file sizes as it is on-demand (hover)
-  exts.push(linkPreviewTooltip)
 
   // 3. CORE EDITOR FUNCTIONALITY (Try-Catch to prevent complete engine failure)
   try {
@@ -151,7 +155,6 @@ const buildExtensions = async (options, handlers = {}) => {
       l === 'auto' // Add auto for safety
 
     if (isWikiEnabled && completionSources.length > 0) {
-      console.log('[Editor] Registering completion sources:', completionSources.length)
       autoConfig.override = completionSources
     }
 
@@ -176,19 +179,6 @@ const buildExtensions = async (options, handlers = {}) => {
     console.warn('[Editor] Failed to load search highlighting', e)
   }
 
-  // 4. EDITOR UI (Moved to CodeEditor.jsx baseExtensions for zero-latency)
-  /*
-  try {
-    const { lineNumbers } = await import('@codemirror/view')
-    const { foldGutter, codeFolding } = await import('@codemirror/language')
-    exts.push(lineNumbers({ formatNumber: (n) => n.toString() }))
-    if (!isLargeFile) {
-      exts.push(codeFolding())
-      exts.push(foldGutter({ ... }))
-    }
-  } catch (e) {}
-  */
-
   // 5. WORD WRAP
   if (String(wordWrap) === 'on' || wordWrap === true) {
     exts.push(EditorView.lineWrapping)
@@ -205,16 +195,13 @@ const buildExtensions = async (options, handlers = {}) => {
         l.alias.some((a) => a.toLowerCase() === normalizedLang) ||
         (l.extensions && l.extensions.some((e) => e.toLowerCase() === normalizedLang))
     )
-
     // Priority 1: Explicit JSON (Settings)
     if (normalizedLang === 'json') {
-      console.log('[Editor] Loading explicit JSON support...')
       const { json } = await import('@codemirror/lang-json')
       exts.push(json())
     }
     // Priority 2: Markdown with extras
     else if (normalizedLang === 'markdown' || normalizedLang === 'md') {
-      console.log('[Editor] Loading standard Markdown engine with Live Preview...')
       const { markdown, markdownLanguage } = await import('@codemirror/lang-markdown')
       const { languages } = await import('@codemirror/language-data')
 
@@ -223,7 +210,6 @@ const buildExtensions = async (options, handlers = {}) => {
       try {
         const { GFM, Table, TaskList } = await import('@lezer/markdown')
         mdExtensions = [GFM, Table, TaskList]
-        console.log('[Editor] Markdown GFM extensions loaded.')
       } catch (e) {
         console.warn('[Editor] GFM extensions not found, falling back to CommonMark.', e)
       }

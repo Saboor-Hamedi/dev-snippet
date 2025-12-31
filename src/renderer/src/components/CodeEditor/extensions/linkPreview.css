@@ -5,11 +5,12 @@
   border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 0;
-  width: 300px; /* Slightly tighter width */
-  min-height: 120px;
+  width: 270px; /* Slightly wider for Diagram Preview label */
+  min-height: 40px;
   display: flex;
   flex-direction: column;
-  z-index: 1500;
+  z-index: 99999999 !important;
+  overflow: hidden;
 
   /* Floating Effect */
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
@@ -48,23 +49,24 @@
 
 /* 1. Header Row */
 .cm-link-preview-tooltip .preview-header {
-  padding: 8px 12px;
-  /* Removed heavy border-bottom for cleaner look, or keep it very subtle */
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 3px 8px; /* Tighter */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
   background-color: var(--color-bg-tertiary);
 }
 
 .cm-link-preview-tooltip .preview-title-text {
-  font-weight: 600;
-  font-size: 12px; /* Title slightly larger */
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 10px;
   color: var(--color-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  letter-spacing: -0.01em;
 }
 
 /* Pill (Language Tag) */
@@ -82,11 +84,11 @@
 
 /* 2. Body Preview */
 .cm-link-preview-tooltip .preview-body {
-  padding: 10px 12px;
-  font-size: 10px; /* REQUESTED SIZE */
-  line-height: 1.5;
+  padding: 6px 10px;
+  font-size: 8.5px; /* Balanced compact size */
+  line-height: 1.4;
   color: var(--color-text-secondary);
-  font-family: var(--editor-font-mono, 'JetBrains Mono', monospace);
+  font-family: var(--editor-font-family, 'Inter', sans-serif);
   white-space: pre-wrap;
   word-break: break-word;
   background-color: var(--color-bg-primary);
@@ -144,7 +146,7 @@
 }
 
 .cm-link-preview-tooltip .preview-body h1 {
-  font-size: 1.2em;
+  font-size: 1.1em; /* Reduced */
   color: var(--color-accent-primary);
 }
 .cm-link-preview-tooltip .preview-body p {
@@ -172,8 +174,122 @@
   border-radius: 3px;
 }
 .cm-link-preview-tooltip .preview-body pre {
-  background: rgba(0, 0, 0, 0.2);
-  padding: 6px;
-  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.2) !important;
+  padding: 10px !important;
+  border-radius: 8px !important;
   overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Enhanced Markdown Fidelity */
+.cm-link-preview-tooltip .preview-body h1,
+.cm-link-preview-tooltip .preview-body h2 {
+  border-bottom: 1px solid var(--color-border) !important;
+  padding-bottom: 0.2em;
+  margin-top: 1em;
+  color: var(--color-accent-primary) !important;
+}
+
+.cm-link-preview-tooltip .preview-body blockquote {
+  border-left: 3px solid var(--color-accent-primary) !important;
+  background: rgba(var(--color-accent-primary-rgb), 0.05) !important;
+  padding: 6px 12px !important;
+  border-radius: 0 4px 4px 0;
+  margin: 10px 0 !important;
+}
+
+.cm-link-preview-tooltip .preview-body code:not(pre code) {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: var(--color-accent-primary) !important;
+  padding: 1px 4px !important;
+  border-radius: 4px !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.cm-link-preview-tooltip .preview-body ul,
+.cm-link-preview-tooltip .preview-body ol {
+  padding-left: 1.5em !important;
+}
+
+.cm-link-preview-tooltip .preview-body li {
+  margin-bottom: 0.2em !important;
+}
+
+/* Mermaid Tooltip Specifics */
+.cm-link-preview-tooltip .mermaid {
+  background: transparent !important;
+  display: flex;
+  justify-content: center;
+  padding: 10px 0;
+  width: 100%;
+}
+
+.cm-link-preview-tooltip .mermaid svg {
+  max-width: 100% !important;
+  height: auto !important;
+  background: transparent !important;
+}
+
+/* Ensure flowlines and arrows are visible if the theme doesn't set them */
+.cm-link-preview-tooltip .mermaid .edgePath path {
+  stroke: #333333 !important;
+}
+
+.cm-link-preview-tooltip .mermaid .arrowheadPath {
+  fill: #333333 !important;
+}
+
+.cm-link-preview-tooltip .mermaid-diagram-wrapper {
+  margin: 8px 0;
+  overflow: visible;
+}
+
+/* Tooltip specific scaling override for consistent header look */
+.cm-link-preview-tooltip .code-language {
+  font-size: 8px !important;
+  opacity: 0.8 !important;
+}
+
+.cm-link-preview-tooltip .code-actions {
+  gap: 4px !important;
+}
+
+/* Specific to standard markdown code blocks if the class is present */
+.cm-link-preview-tooltip .markdown-body .code-block-wrapper {
+  background-color: var(--color-bg-tertiary) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 8px !important;
+}
+
+.cm-link-preview-tooltip .copy-code-btn,
+.cm-link-preview-tooltip .copy-image-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 4px !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 4px !important;
+  color: var(--color-text-tertiary) !important;
+  cursor: pointer !important;
+  opacity: 0.4;
+  transition: all 0.2s ease !important;
+}
+
+.cm-link-preview-tooltip .copy-code-btn:hover,
+.cm-link-preview-tooltip .copy-image-btn:hover {
+  color: var(--color-accent-primary) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  opacity: 1;
+}
+
+/* Ensure SVG icons inside tooltip buttons are visible but tiny */
+.cm-link-preview-tooltip button svg {
+  width: 9px !important;
+  height: 9px !important;
+  stroke-width: 2.5px !important;
+}
+
+.cm-link-preview-tooltip .mermaid svg {
+  max-width: 90% !important;
 }

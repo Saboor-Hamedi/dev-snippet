@@ -7,7 +7,45 @@ import { Check, Eye, Edit2 } from 'lucide-react'
 import './StatusBar.css'
 import ContextMenu from '../../common/ContextMenu'
 
-const useStatusBar = ({
+/**
+ * CursorDisplay - Specialized for high-frequency cursor position updates.
+ */
+const CursorDisplay = memo(({ line, col, show }) => {
+  if (!show) return null
+  return (
+    <div
+      className="status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer min-w-[40px] sm:min-w-[80px] justify-end"
+      title="Go to Line"
+    >
+      <span className="font-mono tabular-nums hidden sm:inline">
+        Ln {line}, Col {col}
+      </span>
+      <span className="font-mono tabular-nums sm:hidden">
+        {line}:{col}
+      </span>
+    </div>
+  )
+})
+
+/**
+ * StatsDisplay - Specialized for debounced document statistics.
+ */
+const StatsDisplay = memo(({ stats, show }) => {
+  if (!stats || !show) return null
+  return (
+    <div
+      className="status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer flex"
+      title="Word Count"
+    >
+      <span className="font-sans tabular-nums">
+        <span className="sm:hidden">{stats.words}w</span>
+        <span className="hidden sm:inline">{stats.words} words</span>
+      </span>
+    </div>
+  )
+})
+
+const StatusBar = ({
   title,
   isFavorited = false,
   isLargeFile = false,
@@ -21,7 +59,6 @@ const useStatusBar = ({
   const [zoom] = useZoomLevel()
   const [editorZoom] = useEditorZoomLevel()
 
-  // Debounce display values to keep statusbar "still" during fast wheeling
   const [displayZoom, setDisplayZoom] = useState(zoom)
   const [displayEditorZoom, setDisplayEditorZoom] = useState(editorZoom)
 
@@ -39,29 +76,21 @@ const useStatusBar = ({
     window.api?.getVersion().then(setVersion)
   }, [])
 
-  const hasEditorContext = title !== undefined && title !== null
-
   const { getSetting, updateSetting } = useSettings()
 
-  // Visibility States
   const showSystemStatus = getSetting('statusBar.showSystemStatus') !== false
   const showVersion = getSetting('statusBar.showVersion') !== false
   const showFlowMode = getSetting('statusBar.showFlowMode') !== false
-  const showPerformance = getSetting('statusBar.showPerformance') !== false
   const showLanguage = getSetting('statusBar.showLanguage') !== false
   const showStats = getSetting('statusBar.showStats') !== false
   const showZoom = getSetting('statusBar.showZoom') !== false
-
-  // New Toggles
   const showCursorPosition = getSetting('statusBar.showCursorPosition') !== false
   const showIndentation = getSetting('statusBar.showIndentation') !== false
   const showEncoding = getSetting('statusBar.showEncoding') !== false
 
-  // Context Menu State
   const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0 })
   const [zoomMenu, setZoomMenu] = useState({ visible: false, x: 0, y: 0 })
 
-  const [, setZoomInternal] = useZoomLevel()
   const [, setEditorZoomInternal] = useEditorZoomLevel()
 
   const handleContextMenu = (e) => {
@@ -73,7 +102,6 @@ const useStatusBar = ({
     })
   }
 
-  // Close context menu on click outside
   useEffect(() => {
     const handleClick = () => {
       if (contextMenu.visible) setContextMenu({ ...contextMenu, visible: false })
@@ -102,24 +130,20 @@ const useStatusBar = ({
         onContextMenu={handleContextMenu}
         style={{ color: 'var(--color-text-secondary)' }}
       >
-        {/* Favorite indicator intentionally removed from status bar; star shown in tab */}
-        {/* LEFT: System Info - HIDDEN in minimal mode */}
-        <div className="status-bar-left">
+        <div className="status-bar-left flex-shrink-0 max-w-[40%] overflow-hidden">
           {!minimal && showFlowMode && (
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('app:toggle-flow'))}
-              className="flex items-center gap-1.5 px-2 py-0.5 rounded hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-all group"
+              className="flex items-center gap-1.5 px-2 py-0.5 rounded hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-all group hidden sm:flex"
               title="Enter Flow Mode (Alt+Shift+F)"
             >
               <span className="text-xs leading-none group-hover:scale-110 transition-transform">
                 🌀
               </span>
-              <span className="font-mono text-xtiny opacity-90">Flow Mode</span>
+              <span className="font-mono text-xtiny opacity-90 hidden md:inline">Flow Mode</span>
             </button>
           )}
 
-          {/* Version (Restored) */}
-          {/* View Mode Toggle - Obsidian Style Button */}
           {!minimal && (
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('app:toggle-preview'))}
@@ -127,72 +151,46 @@ const useStatusBar = ({
               title="Toggle Reading Mode (Ctrl+E)"
             >
               <div className="text-[var(--color-accent-primary)]">
-                {/* We need to know current state - simplified for UI */}
                 <Edit2 size={12} className="group-hover:hidden" />
                 <Eye size={12} className="hidden group-hover:block" />
               </div>
-              <span className="font-mono text-xtiny opacity-90">Mode</span>
+              <span className="font-mono text-xtiny opacity-90 hidden md:inline">Mode</span>
             </button>
           )}
 
-          {/* Git Branch / Version Placeholder (Toggle via System Status) */}
           {!minimal && showSystemStatus && (
-            <div className="status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer opacity-60 hover:opacity-100 flex items-center gap-1">
+            <div className="status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer opacity-60 hover:opacity-100 hidden md:flex items-center gap-1">
               <span className="icon-branch text-[10px]">main*</span>
             </div>
           )}
         </div>
 
-        {/* RIGHT: Context Info (VS Code Style) */}
-        <div className="status-bar-right flex items-center gap-0">
-          {/* 1. Cursor Position - Ln {line}, Col {col} */}
-          {showCursorPosition && (
-            <div
-              className="status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer min-w-[80px] justify-end"
-              title="Go to Line"
-            >
-              <span className="font-mono tabular-nums">
-                Ln {line}, Col {col}
-              </span>
-            </div>
-          )}
+        <div className="status-bar-right flex items-center gap-0 overflow-hidden text-clip">
+          <CursorDisplay line={line} col={col} show={showCursorPosition} />
 
-          {/* 2. Indentation - HIDDEN in minimal mode */}
           {!minimal && showIndentation && (
             <div
-              className="status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer hidden sm:flex"
+              className="status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer hidden lg:flex"
               title="Select Indentation"
             >
               <span className="font-sans">Spaces: 2</span>
             </div>
           )}
 
-          {/* 3. Encoding - HIDDEN in minimal mode */}
           {!minimal && showEncoding && (
             <div
-              className="status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer hidden sm:flex"
+              className="status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer hidden lg:flex"
               title="Select Encoding"
             >
               <span className="font-sans">UTF-8</span>
             </div>
           )}
 
-          {/* 4. Statistics (Char/Word Count) - ALWAYS shown if stats exist */}
-          {stats && (
-            <div
-              className="status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer flex"
-              title="Word Count"
-            >
-              <span className="font-sans tabular-nums">
-                {stats.words} words, {stats.chars} chars
-              </span>
-            </div>
-          )}
+          <StatsDisplay stats={stats} show={showStats} />
 
-          {/* 5. Language Mode - HIDDEN in minimal mode */}
           {!minimal && showLanguage && (
             <div
-              className="status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer"
+              className="status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer flex"
               title="Select Language Mode"
             >
               <span className="font-mono text-xtiny uppercase tracking-wider">
@@ -201,7 +199,6 @@ const useStatusBar = ({
             </div>
           )}
 
-          {/* 6. Zoom Level - HIDDEN in minimal mode */}
           {!minimal && showZoom && displayEditorZoom && (
             <div className="relative group/zoom">
               <div
@@ -220,26 +217,13 @@ const useStatusBar = ({
                 <span className="font-mono tabular-nums text-xtiny">
                   {Math.round((displayEditorZoom || 1) * 100)}%
                 </span>
-                <div className="ml-1 opacity-40 group-hover/zoom:opacity-100 transition-opacity">
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="10"
-                    height="10"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                  >
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                  </svg>
-                </div>
               </div>
             </div>
           )}
 
-          {/* 7. Prettier / Feedback (Smile) - HIDDEN in minimal mode */}
           {!minimal && (
             <div
-              className="status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer px-1.5"
+              className="status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer px-1.5 hidden md:flex"
               title="Tweet Feedback"
             >
               <span className="text-[14px]">😊</span>
@@ -248,7 +232,6 @@ const useStatusBar = ({
         </div>
       </div>
 
-      {/* Context Menu using shared ContextMenu component */}
       {contextMenu.visible &&
         createPortal(
           <div
@@ -275,7 +258,6 @@ const useStatusBar = ({
           document.body
         )}
 
-      {/* Zoom Menu */}
       {zoomMenu.visible &&
         createPortal(
           <div
@@ -285,7 +267,7 @@ const useStatusBar = ({
             <div onClick={(e) => e.stopPropagation()}>
               <ContextMenu
                 x={zoomMenu.x}
-                y={zoomMenu.y} // Flush with top edge
+                y={zoomMenu.y}
                 items={[
                   { label: '50%', onClick: () => setEditorZoomInternal(0.5) },
                   { label: '70%', onClick: () => setEditorZoomInternal(0.7) },
@@ -307,7 +289,7 @@ const useStatusBar = ({
   )
 }
 
-useStatusBar.propTypes = {
+StatusBar.propTypes = {
   title: PropTypes.string,
   isLargeFile: PropTypes.bool,
   snippets: PropTypes.array,
@@ -319,4 +301,4 @@ useStatusBar.propTypes = {
   col: PropTypes.number
 }
 
-export default memo(useStatusBar)
+export default memo(StatusBar)

@@ -10,7 +10,8 @@ import {
   FolderOpen,
   Pin,
   Inbox,
-  Star
+  Star,
+  Calendar
 } from 'lucide-react'
 
 import { getBaseTitle, isDateTitle } from '../../../utils/snippetUtils'
@@ -82,10 +83,46 @@ const getFileIcon = (lang, title = '') => {
   return { icon: File, color: 'var(--sidebar-icon-color)' }
 }
 
-import { Calendar } from 'lucide-react'
-
-// Pinned header removed per UX request — render nothing
-const PinnedHeaderRow = () => null
+const PinnedHeaderRow = ({ style, data, togglePinned }) => {
+  const isCollapsed = data ? data.collapsed : false
+  return (
+    <div style={style} className="select-none outline-none focus:outline-none relative">
+      <div
+        className="group flex items-center gap-[4px] w-full h-full pr-2 relative rounded-[4px] hover:bg-white/[0.02] cursor-pointer"
+        style={{ paddingLeft: '8px', width: 'calc(100% - 8px)', margin: '0 4px' }}
+        onClick={(e) => {
+          e.stopPropagation()
+          togglePinned()
+        }}
+      >
+        <button
+          className="flex-shrink-0 flex items-center justify-center rounded w-4 h-4 opacity-40 hover:opacity-100"
+          onClick={(e) => {
+            e.stopPropagation()
+            togglePinned()
+          }}
+        >
+          <ChevronRight
+            size={12}
+            className={`transition-transform duration-200 ${!isCollapsed ? 'rotate-90' : ''}`}
+          />
+        </button>
+        <div
+          className="flex-shrink-0 opacity-70 group-hover:opacity-100 px-0.5"
+          style={{ color: 'var(--color-accent-primary)' }}
+        >
+          <Pin size={14} className="fill-current" />
+        </div>
+        <span
+          className="flex-1 truncate font-medium text-[12px] opacity-80 group-hover:opacity-100 pl-1"
+          style={{ color: 'var(--sidebar-header-text)' }}
+        >
+          Pinned
+        </span>
+      </div>
+    </div>
+  )
+}
 
 const CreationInputRow = ({ style, depth, itemData, onConfirm, onCancel, isCompact }) => {
   const isFolder = itemData.type === 'folder'
@@ -201,7 +238,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
   const { type, data: itemData, depth } = item
 
   if (type === 'pinned_header') {
-    return <PinnedHeaderRow style={style} label={item.label} />
+    return <PinnedHeaderRow style={style} data={itemData} togglePinned={data.togglePinned} />
   }
 
   if (type === 'section_spacer') {
@@ -427,7 +464,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
             : isSearchMatch
               ? 'bg-[var(--color-accent-primary)]/10'
               : 'hover:bg-white/[0.02]'
-        } rounded-[4px] ${type === 'pinned_snippet' ? 'border-l-2 border-[var(--color-accent-primary)]/30' : ''}`}
+        } rounded-[4px]`}
         style={{
           color: isSelected ? 'var(--selected-text)' : 'var(--sidebar-text)',
           paddingLeft: `${depth * 16 + 24}px`,

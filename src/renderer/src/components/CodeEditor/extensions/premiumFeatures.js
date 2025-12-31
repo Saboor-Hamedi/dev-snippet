@@ -54,7 +54,7 @@ export const beautySelection = EditorView.theme({
   '.cm-selectionBackground': {
     backgroundColor: 'var(--selection-background, rgba(88, 166, 255, 0.2)) !important',
     borderRadius: '2px'
-  },
+  }
   // Active-line visuals are intentionally omitted here to avoid conflicts
   // with centralized editor theming and the selection watcher rules in
   // `CodeEditor.css` and `buildTheme.js`. Keep only selection styling.
@@ -101,21 +101,35 @@ const playTick = (type = 'default') => {
     const now = audioCtx.currentTime
 
     let freq = 120
-    if (type === 'space') freq = 90
-    if (type === 'enter') freq = 70
+    let duration = 0.04
+    let volume = 0.03
 
-    osc.frequency.setValueAtTime(freq + Math.random() * 20, now)
+    if (type === 'space') {
+      freq = 90
+      volume = 0.02
+    } else if (type === 'enter') {
+      freq = 70
+      duration = 0.08
+      volume = 0.05
+    } else if (type === 'backspace') {
+      freq = 150
+      duration = 0.03
+      volume = 0.02
+    }
+
+    // Add organic jitter to frequency
+    osc.frequency.setValueAtTime(freq + Math.random() * 25, now)
 
     gain.gain.setValueAtTime(0, now)
-    gain.gain.linearRampToValueAtTime(0.03, now + 0.002)
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.04)
+    gain.gain.linearRampToValueAtTime(volume, now + 0.002)
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration)
 
     osc.type = 'sine'
     osc.connect(gain)
     gain.connect(audioCtx.destination)
 
     osc.start(now)
-    osc.stop(now + 0.05)
+    osc.stop(now + duration + 0.01)
   } catch (e) {}
 }
 
@@ -123,10 +137,24 @@ export const tactileTyping = ViewPlugin.fromClass(
   class {
     update(update) {
       if (update.docChanged) {
-        const lastTx = update.transactions[update.transactions.length - 1]
-        // Only play sound for real user input
-        if (lastTx?.annotation(EditorView.inputSource) !== undefined) {
-          playTick('default')
+        // Find the last transaction that originated from user input
+        const lastTx = update.transactions.find(
+          (tr) => tr.annotation(EditorView.inputSource) !== undefined
+        )
+
+        if (lastTx) {
+          // Detect what was typed for distinct tactical feedback
+          let type = 'default'
+
+          // Check for 'enter' or 'space' in the transaction's changes
+          lastTx.changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
+            const text = inserted.toString()
+            if (text === '\n' || text === '\r\n') type = 'enter'
+            else if (text === ' ' || text === '\t') type = 'space'
+            else if (toA > fromA && toB === fromB) type = 'backspace' // Deletion
+          })
+
+          playTick(type)
         }
       }
     }

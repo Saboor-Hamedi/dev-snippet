@@ -25,13 +25,8 @@ const SyncSettings = () => {
   }, [])
 
   const loadToken = async () => {
-    console.log('[SyncSettings] Loading token...')
     if (window.api?.syncGetToken) {
       const storedToken = await window.api.syncGetToken()
-      console.log(
-        '[SyncSettings] Token loaded:',
-        storedToken ? `YES (${storedToken.length} chars)` : 'NULL'
-      )
       if (storedToken) {
         setToken(storedToken)
         setHasToken(true)
@@ -45,10 +40,8 @@ const SyncSettings = () => {
 
   const handleSaveToken = async () => {
     if (!token) return
-    console.log('[SyncSettings] Saving token, length:', token.length)
     if (window.api?.syncSetToken) {
       await window.api.syncSetToken(token.trim())
-      console.log('[SyncSettings] Token saved successfully')
       setHasToken(true)
       setStatusMsg('Token saved successfully')
       setStatusType('success')

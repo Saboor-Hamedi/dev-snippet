@@ -23,7 +23,9 @@ import {
   FileDown,
   Cloud,
   CloudDownload,
-  FileText
+  FileText,
+  Star,
+  Zap
 } from 'lucide-react'
 
 /**
@@ -108,10 +110,8 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
             }
           } finally {
             // Close palette first, then focus editor
-            console.log('[Backup] Closing palette and focusing editor')
             onClose()
             setTimeout(() => {
-              console.log('[Backup] Dispatching focus-editor event')
               window.dispatchEvent(new CustomEvent('app:focus-editor'))
             }, 200)
           }
@@ -196,6 +196,20 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
         icon: Layers,
         description: 'Switch between Side-by-Side and Overlay preview',
         action: () => window.dispatchEvent(new CustomEvent('app:toggle-overlay'))
+      },
+      {
+        id: 'cmd-favorite',
+        title: 'Toggle Favorite',
+        icon: Star,
+        description: 'Mark/Unmark current snippet as favorite',
+        action: () => window.dispatchEvent(new CustomEvent('app:toggle-favorite'))
+      },
+      {
+        id: 'cmd-ping',
+        title: 'Toggle Ping',
+        icon: Zap,
+        description: 'Highlight the current snippet in the sidebar',
+        action: () => window.dispatchEvent(new CustomEvent('app:ping-snippet'))
       },
       {
         id: 'cmd-export-pdf',
@@ -285,7 +299,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
 
     // CASE 1: Recents (No Query)
     if (!query) {
-      return [...snippets].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)).slice(0, 15)
+      return [...snippets].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)).slice(0, 5)
     }
 
     // CASE 2: Hybrid Search (Merge Client Title Matches + Backend Content Matches)
@@ -326,7 +340,14 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
 
     const backendOnly = backendMatches.filter((b) => !merged.find((m) => m.id === b.id))
 
-    return [...merged, ...backendOnly].slice(0, 25)
+    // USER FEEDBACK: "When it finds a specific thing (Title/Tag), it shouldn't show the others (Content)."
+    // If we have strong matches (Title/Tags), show ONLY them.
+    if (merged.length > 0) {
+      return merged.slice(0, 5)
+    }
+
+    // Otherwise show content matches (Fallback)
+    return backendOnly.slice(0, 5)
   }, [search, snippets, searchResults, commands, isCommandMode])
 
   // Reset index on search change
@@ -423,10 +444,10 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
       {/* Main UI Container (Refined & Professional) */}
       <div
         onMouseDown={(e) => e.stopPropagation()}
-        className="relative w-full max-w-xl bg-[var(--bg-secondary)] rounded-xl shadow-2xl border border-[var(--color-border)] overflow-hidden flex flex-col animate-in zoom-in-95 slide-in-from-top-4 duration-200 backdrop-blur-xl outline-none ring-0"
+        className="relative w-full max-w-xl bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-[var(--color-border)] overflow-hidden flex flex-col animate-in zoom-in-95 slide-in-from-top-4 duration-200 outline-none ring-0"
       >
         {/* Search Header Area */}
-        <div className="flex items-center px-4 py-4 bg-[var(--bg-tertiary)]/30 border-b border-[var(--color-border)]">
+        <div className="flex items-center px-4 py-4 bg-slate-50 dark:bg-slate-800 border-b border-[var(--color-border)]">
           {isCommandMode ? (
             <Command size={18} className="text-[var(--color-accent-primary)] mr-3.5 stroke-[2]" />
           ) : (
@@ -483,10 +504,10 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
                         await item.action()
                         onClose()
                       }}
-                      className={`group relative px-4 py-3 rounded-lg flex items-center gap-3 cursor-pointer transition-colors duration-100 outline-none ${
+                      className={`group relative px-4 py-3 rounded-lg flex items-center gap-3 cursor-pointer transition-all duration-200 ease-in-out outline-none border border-transparent ${
                         isSelected
-                          ? 'bg-blue-500/10 dark:bg-blue-400/10'
-                          : 'hover:bg-black/5 dark:hover:bg-white/5'
+                          ? 'bg-blue-500/10 dark:bg-blue-400/10 ring-1 ring-blue-500/10'
+                          : 'hover:bg-slate-100 dark:hover:bg-slate-800'
                       }`}
                     >
                       <div
@@ -533,10 +554,10 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
                       onSelect(item)
                       onClose()
                     }}
-                    className={`group relative px-4 py-3 rounded-lg flex items-center gap-3 cursor-pointer transition-colors duration-100 outline-none ${
+                    className={`group relative px-4 py-3 rounded-lg flex items-center gap-3 cursor-pointer transition-all duration-200 ease-in-out outline-none border border-transparent ${
                       isSelected
-                        ? 'bg-blue-500/10 dark:bg-blue-400/10'
-                        : 'hover:bg-black/5 dark:hover:bg-white/5'
+                        ? 'bg-blue-500/10 dark:bg-blue-400/10 ring-1 ring-blue-500/10'
+                        : 'hover:bg-slate-100 dark:hover:bg-slate-800'
                     }`}
                   >
                     {/* Visual Icon Stack */}

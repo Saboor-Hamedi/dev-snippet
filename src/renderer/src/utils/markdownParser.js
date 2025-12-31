@@ -118,19 +118,38 @@ function wikiLinkPlugin() {
  */
 function customCodePlugin() {
   return (tree) => {
-    visit(tree, 'code', (node) => {
+    visit(tree, 'code', (node, index, parent) => {
       if (node.lang === 'mermaid') {
-        const data = node.data || (node.data = {})
-        data.hName = 'div'
-        data.hProperties = { class: 'mermaid-diagram-wrapper' }
-        data.hChildren = [
-          {
-            type: 'element',
-            tagName: 'div',
-            properties: { class: 'mermaid' },
-            children: [{ type: 'text', value: node.value }]
-          }
-        ]
+        const escaped = node.value
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+
+        const encoded = encodeURIComponent(node.value)
+
+        const ICON_IMAGE = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-image"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>`
+        const ICON_COPY = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`
+
+        const html = `
+          <div class="mermaid-diagram-wrapper" style="position: relative; width: 100%; display: flex !important; flex-direction: column !important; margin: 1.5rem 0; background: transparent; border: 1px solid var(--color-border); border-radius: 8px; overflow: hidden; box-sizing: border-box;">
+             <div class="code-block-header" style="display: flex !important; justify-content: space-between !important; align-items: center !important; padding: 8px 16px !important; background: var(--color-bg-tertiary) !important; border-bottom: 1px solid var(--color-border) !important; width: 100% !important; box-sizing: border-box !important; flex-shrink: 0 !important; height: 36px !important;">
+                <span class="code-language font-bold" style="color: var(--color-accent-primary) !important; opacity: 0.9 !important; font-size: 11px !important; text-transform: uppercase !important; letter-spacing: 0.12em !important; font-family: 'Outfit', sans-serif !important;">Diagram Preview</span>
+                <div class="code-actions" style="display: flex !important; gap: 8px !important; align-items: center !important;">
+                   <button class="copy-image-btn" data-lang="mermaid" data-code="${encoded}" title="Export Image" style="background: transparent !important; border: none !important; cursor: pointer !important; color: var(--color-text-tertiary) !important; padding: 4px !important; display: flex !important; align-items: center !important; transition: all 0.2s ease;">
+                      ${ICON_IMAGE}
+                   </button>
+                   <button class="copy-code-btn" data-code="${encoded}" title="Copy Source" style="background: transparent !important; border: none !important; cursor: pointer !important; color: var(--color-text-tertiary) !important; padding: 4px !important; display: flex !important; align-items: center !important; transition: all 0.2s ease;">
+                      ${ICON_COPY}
+                   </button>
+                </div>
+             </div>
+             <div class="mermaid" style="display: flex !important; justify-content: center !important; width: 100% !important; padding: 32px 10px !important; background: transparent !important; box-sizing: border-box !important;">${escaped}</div>
+          </div>
+        `
+
+        // Replace with HTML node
+        parent.children.splice(index, 1, { type: 'html', value: html })
       }
     })
   }
@@ -262,9 +281,28 @@ const preProcessSpecialtyBlocks = (text) => {
 }
 
 /**
+ * Global Cache to prevent redundant parsing cycles.
+ */
+const _parseCache = {
+  text: null,
+  options: null,
+  result: null
+}
+
+/**
  * markdownToHtml - The "DRY" export function.
  */
 export const markdownToHtml = async (text, options = {}) => {
+  if (text === undefined || text === null) return ''
+
+  // 0. QUICK CACHE CHECK: If content and options match last render, return cached string.
+  if (
+    _parseCache.text === text &&
+    JSON.stringify(_parseCache.options) === JSON.stringify(options)
+  ) {
+    return _parseCache.result
+  }
+
   if (text === undefined || text === null) return ''
 
   // 1. Handle Frontmatter Extraction
@@ -307,12 +345,18 @@ export const markdownToHtml = async (text, options = {}) => {
   }
 
   // Wrap in direction container
-  return `
+  const finalHtml = `
     <div class="${isRTL ? 'is-rtl' : 'is-ltr'}">
       ${intelHeader}
       ${metadataHtml}
       <div class="markdown-content">${html}</div>
     </div>`
+
+  _parseCache.text = text
+  _parseCache.options = options
+  _parseCache.result = finalHtml
+
+  return finalHtml
 }
 
 export default markdownToHtml

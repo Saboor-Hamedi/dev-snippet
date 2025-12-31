@@ -301,13 +301,12 @@ tr:hover td {
 /* MERMAID */
 .mermaid-diagram-wrapper {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   margin: 32px 0;
-  background: #ffffff;
-  padding: 24px;
+  background: transparent;
+  border: 1px solid var(--color-border);
   border-radius: 12px;
-  color: #333;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
 }
 .mermaid svg {
   max-width: 100% !important;
@@ -464,4 +463,27 @@ img {
     transform: translateY(0);
     opacity: 1;
   }
+}
+
+/* CODE BUTTONS */
+.copy-code-btn,
+.copy-image-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-tertiary);
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.copy-code-btn:hover,
+.copy-image-btn:hover {
+  background: rgba(125, 125, 125, 0.1);
+  color: var(--color-text-primary);
+}
+.copy-code-btn.success {
+  color: #2ea043 !important;
 }

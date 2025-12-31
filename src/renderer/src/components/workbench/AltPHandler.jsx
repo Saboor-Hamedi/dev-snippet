@@ -12,11 +12,9 @@ const AltPHandler = ({ snippets = [], selectedSnippet, selectedIds = [], onOpen 
         } catch (err) {}
       } catch {}
       const targetId =
-        selectedSnippet?.id || (selectedIds && selectedIds.length === 1 ? selectedIds[0] : null) ||
+        selectedSnippet?.id ||
+        (selectedIds && selectedIds.length === 1 ? selectedIds[0] : null) ||
         (snippets && snippets.length > 0 ? snippets[0].id : null)
-      try {
-        console.debug('[AltPHandler] Alt+P pressed, targetId=', targetId)
-      } catch (err) {}
       if (!targetId) return
       // Attempt to get active element rect to position popover near focus; fallback to centered top area
       let rect = null

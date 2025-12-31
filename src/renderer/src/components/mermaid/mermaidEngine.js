@@ -1,7 +1,3 @@
-/**
- * MermaidEngine - Optimized for a single-layer premium UI.
- */
-
 export const getMermaidEngine = () => `
   window.diagramEngine = {
     init: (config) => {
@@ -13,34 +9,29 @@ export const getMermaidEngine = () => `
     run: async () => {
       if (!window.mermaid) return;
       
-      const nodes = document.querySelectorAll('.mermaid-diagram');
-      
-      for (const node of nodes) {
-        if (node.getAttribute('data-processed')) continue;
+      const elements = document.querySelectorAll('.mermaid:not([data-processed="true"])');
+      if (elements.length === 0) return;
 
-        try {
-          // 1. Make this node the "Wrapper" (The Styled Layer)
-          node.classList.add('mermaid-wrapper');
-          
-          // 2. Extract and Normalize Code
-          let text = node.textContent.trim();
-          
-          // 3. Render directly into this node
-          const id = "m" + Math.random().toString(36).substring(2, 9);
-          const { svg } = await window.mermaid.render(id, text);
-          
-          node.innerHTML = svg;
-          node.setAttribute('data-processed', 'true');
-        } catch (err) {
-          console.error("Mermaid Render Error:", err);
-          node.setAttribute('data-processed', 'error');
-          const msg = err.message ? err.message.split('\\n')[0] : "Syntax Error";
-          node.innerHTML = \`
-            <div class="mermaid-error-container">
-              <div class="mermaid-error-title">Diagram Error</div>
-              <div class="text-xs opacity-70">\${msg}</div>
-            </div>\`;
-        }
+      try {
+        // Use the modern mermaid.run API for better performance and error handling
+        await window.mermaid.run({
+          nodes: Array.from(elements),
+          suppressErrors: false
+        });
+      } catch (err) {
+        console.error("Mermaid Render Error:", err);
+        
+        // Manual fallback/error display for nodes that failed
+        elements.forEach(node => {
+          if (!node.getAttribute('data-processed')) {
+            node.setAttribute('data-processed', 'error');
+            const msg = (err.message || "Syntax Error").split(String.fromCharCode(10))[0];
+            node.innerHTML = '<div class="mermaid-error-container" style="background: rgba(255, 0, 0, 0.05); border: 1px solid rgba(255, 0, 0, 0.2); border-radius: 8px; padding: 16px; margin: 10px 0; color: #ef4444; font-family: inherit;">' +
+                '<div class="mermaid-error-title" style="font-weight: bold; margin-bottom: 4px;">Diagram Syntax Error</div>' +
+                '<div class="text-xs opacity-70" style="font-size: 12px; line-height: 1.4; word-break: break-word;">' + msg + '</div>' +
+              '</div>';
+          }
+        });
       }
     }
   };

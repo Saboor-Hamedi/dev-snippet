@@ -6,7 +6,7 @@ import { useEditorFocus } from '../../hook/useEditorFocus.js'
 import { useZoomLevel, useEditorZoomLevel } from '../../hook/useSettingsContext'
 import { ZOOM_STEP } from '../../hook/useZoomLevel.js'
 import WelcomePage from '../WelcomePage.jsx'
-import { useStatusBar as StatusBar } from '../layout/StatusBar/useStatusBar'
+import { StatusBar } from '../layout/StatusBar/useStatusBar'
 import CodeEditor from '../CodeEditor/CodeEditor.jsx'
 import LivePreview from '../livepreview/LivePreview.jsx'
 import Prompt from '../mermaid/modal/Prompt.jsx'
@@ -44,6 +44,15 @@ const SnippetEditor = ({
   onFavorite
 }) => {
   const [code, setCode] = useState(initialSnippet?.code || '')
+  const handleCodeChange = useCallback((val) => {
+    setCode((prev) => {
+      if (val !== prev) {
+        setIsDirty(true)
+        return val || ''
+      }
+      return prev
+    })
+  }, [])
   const [isDirty, setIsDirty] = useState(false)
   const [zoomLevel, setZoom] = useZoomLevel()
   const [editorZoom, setEditorZoom] = useEditorZoomLevel()
@@ -58,6 +67,9 @@ const SnippetEditor = ({
   const switcherRef = useRef(null)
   const dragHandleRef = useRef(null)
   const [cursorPos, setCursorPos] = useState({ line: 1, col: 1 })
+  const handleCursorChange = useCallback((pos) => {
+    setCursorPos(pos)
+  }, [])
   const [activeMode, setActiveMode] = useState('live_preview')
 
   const {
@@ -325,13 +337,15 @@ const SnippetEditor = ({
 
   useEffect(() => {
     const wait = code.length > 50000 ? 1000 : code.length > 10000 ? 500 : 300
-    const timer = setTimeout(() => setDebouncedCode(code), wait)
-    // Broadcast live code to Ghost Preview
-    window.dispatchEvent(
-      new CustomEvent('app:code-update', {
-        detail: { code, language: detectedLang }
-      })
-    )
+    const timer = setTimeout(() => {
+      setDebouncedCode(code)
+      // Broadcast live code to Ghost Preview only after debounce
+      window.dispatchEvent(
+        new CustomEvent('app:code-update', {
+          detail: { code, language: detectedLang }
+        })
+      )
+    }, wait)
     return () => clearTimeout(timer)
   }, [code, detectedLang])
 
@@ -799,8 +813,6 @@ const SnippetEditor = ({
         const success = await window.api.invoke('export:pdf', fullHtml, sanitizedTitle)
         if (success) {
           showToast?.('Snippet exported to PDF successfully!', 'success')
-        } else {
-          console.log('PDF Export was cancelled or failed internally.')
         }
       }
     } catch (err) {
@@ -945,7 +957,6 @@ const SnippetEditor = ({
       folder_id: initialSnippet?.folder_id || null,
       is_pinned: initialSnippet?.is_pinned || 0
     }
-    console.log(`[Editor] Saving snippet payload:`, payload)
 
     if (saveTimerRef.current) {
       clearTimeout(saveTimerRef.current)
@@ -1016,12 +1027,7 @@ const SnippetEditor = ({
                       centered={true}
                       autoFocus={true}
                       snippetId={initialSnippet?.id}
-                      onChange={(val) => {
-                        if (val !== code) {
-                          setCode(val || '')
-                          setIsDirty(true)
-                        }
-                      }}
+                      onChange={handleCodeChange}
                       onKeyDown={(e) => {
                         if (e.key === 'Escape') onCancel?.()
                         if ((e.ctrlKey || e.metaKey) && e.key === ',') {
@@ -1038,7 +1044,7 @@ const SnippetEditor = ({
                       className="h-full"
                       textareaRef={textareaRef}
                       snippets={snippets}
-                      onCursorChange={setCursorPos}
+                      onCursorChange={handleCursorChange}
                     />
                   </div>
                 </div>

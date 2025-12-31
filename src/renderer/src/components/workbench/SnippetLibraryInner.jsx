@@ -433,6 +433,14 @@ const SnippetLibraryInner = ({ snippetData }) => {
       updateSetting('ui.showHeader', !current)
       showToast(`Header ${!current ? 'Shown' : 'Hidden'}`, 'info')
     }
+    const onCommandFavorite = () => {
+      if (selectedSnippet) toggleFavoriteSnippet(selectedSnippet.id)
+      else showToast('No snippet selected', 'info')
+    }
+    const onCommandPing = () => {
+      if (selectedSnippet) handlePing(selectedSnippet.id)
+      else showToast('No snippet selected', 'info')
+    }
 
     window.addEventListener('app:command-new-snippet', onCommandNew)
     window.addEventListener('app:toggle-theme', onCommandTheme)
@@ -449,6 +457,8 @@ const SnippetLibraryInner = ({ snippetData }) => {
     window.addEventListener('app:toggle-status-bar', onCommandStatusBar)
     window.addEventListener('app:toggle-header', onCommandHeader)
     window.addEventListener('app:reset-window', onResetWindow)
+    window.addEventListener('app:toggle-favorite', onCommandFavorite)
+    window.addEventListener('app:ping-snippet', onCommandPing)
 
     return () => {
       window.removeEventListener('app:command-new-snippet', onCommandNew)
@@ -466,6 +476,8 @@ const SnippetLibraryInner = ({ snippetData }) => {
       window.removeEventListener('app:toggle-status-bar', onCommandStatusBar)
       window.removeEventListener('app:toggle-header', onCommandHeader)
       window.removeEventListener('app:reset-window', onResetWindow)
+      window.removeEventListener('app:toggle-favorite', onCommandFavorite)
+      window.removeEventListener('app:ping-snippet', onCommandPing)
     }
   }, [
     createDraftSnippet,
