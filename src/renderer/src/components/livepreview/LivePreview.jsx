@@ -74,6 +74,7 @@ const LivePreview = ({
 
       // 0. PERFORMANCE GUARD: Skip parsing if the window is currently being dragged
       if (document.body.classList.contains('dragging-active')) {
+        // Just clear the flag if we are dragging to keep the spinner/busy state quiet
         setIsParsing(false)
         return
       }
@@ -273,7 +274,19 @@ const LivePreview = ({
         if (nodes.length > 0 && !isRendering.current) {
           isRendering.current = true
 
+          // 0. GLOBAL PERFORMANCE GUARD: Skip rendering if dragging is active
+          if (document.body.classList.contains('dragging-active')) {
+            isRendering.current = false
+            return
+          }
+
           requestAnimationFrame(async () => {
+            // Re-check inside RAF just in case
+            if (document.body.classList.contains('dragging-active')) {
+              isRendering.current = false
+              return
+            }
+
             try {
               // 1. Setup Bridge
               let bridge = document.getElementById('mermaid-render-bridge')

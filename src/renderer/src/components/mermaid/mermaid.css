@@ -10,6 +10,15 @@
   background: transparent !important;
   box-sizing: border-box !important;
   transition: opacity 0.3s ease;
+  contain: layout paint;
+  /* Ultimate stability during drag */
+  transition: calc(var(--is-dragging-global, 0) * 0s) !important;
+}
+
+.mermaid svg {
+  transform: translateZ(0); /* Persistent GPU acceleration for SVG icons */
+  transition: calc(var(--is-dragging-global, 0) * 0s) !important;
+  filter: none !important; /* Filters like drop-shadow can glitch during move */
 }
 
 /* Ensure text is always readable regardless of parent color: inherit */

@@ -18,6 +18,14 @@ body {
   padding: 0 !important;
   display: flex;
   flex-direction: column;
+  /* Ultimate Stability Override */
+  --transition-speed: calc((1 - var(--is-dragging-global, 0)) * 0.2s);
+}
+
+/* Force-kill all transitions and animations during drag across the shadow DOM */
+body * {
+  animation: calc(var(--is-dragging-global, 0) * 0s) !important;
+  transition: var(--transition-speed, 0.2s) !important;
 }
 
 .preview-container {

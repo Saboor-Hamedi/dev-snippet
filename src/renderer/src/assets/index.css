@@ -529,6 +529,23 @@ button:not(.theme-exempt):hover {
   --hover-text: #f0f6fc;
 }
 
+/* Global Drag Performance Engine */
+body.dragging-active * {
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+body.dragging-active .universal-modal-header,
+body.dragging-active .universal-modal-header * {
+  pointer-events: auto !important;
+}
+
+/* Force stability on all icons during movement to prevent flickering */
+body.dragging-active svg {
+  transition: none !important;
+  animation: none !important;
+  transform: translateZ(0);
+}
 /* Base Styles */
 *,
 *::before,

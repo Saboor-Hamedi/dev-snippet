@@ -44,6 +44,7 @@ export const makeDraggable = (el, handle, onDragEnd) => {
 
     el.classList.add('is-dragging')
     document.body.classList.add('dragging-active')
+    document.documentElement.style.setProperty('--is-dragging-global', '1')
   }
 
   const mouseMoveHandler = (e) => {
@@ -55,8 +56,8 @@ export const makeDraggable = (el, handle, onDragEnd) => {
       pos3 = e.clientX
       pos4 = e.clientY
 
-      let newTop = el.offsetTop - pos2
-      let newLeft = el.offsetLeft - pos1
+      let newTop = Math.round(el.offsetTop - pos2)
+      let newLeft = Math.round(el.offsetLeft - pos1)
 
       const parent = el.offsetParent
       if (parent) {
@@ -71,7 +72,7 @@ export const makeDraggable = (el, handle, onDragEnd) => {
       el.style.bottom = 'auto'
       el.style.right = 'auto'
       el.style.margin = '0'
-      
+
       rafId = null
     })
   }
@@ -86,6 +87,7 @@ export const makeDraggable = (el, handle, onDragEnd) => {
 
     el.classList.remove('is-dragging')
     document.body.classList.remove('dragging-active')
+    document.documentElement.style.setProperty('--is-dragging-global', '0')
     el.style.willChange = 'auto'
 
     if (onDragEnd) {

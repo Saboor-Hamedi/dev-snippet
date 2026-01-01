@@ -21,6 +21,7 @@
     "build:linux": "npm run build && electron-builder --linux",
     "dist": "npm run build && electron-builder --win --x64",
     "dist:publish": "node scripts/publish.js",
+    "analyze": "npm run build && echo 'Analysis complete. Check renderer stats.html'",
     "make:icons": "npx electron-icon-maker --input src/renderer/public/icon.png --output build"
   },
   "dependencies": {
