@@ -175,14 +175,16 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
     return true
   })
 
-  // Save snippet draft
+  // Save snippet draft (Silent sync for 'Modified' status dots)
   ipcMain.handle('db:saveSnippetDraft', (event, payload) => {
     const { id, code_draft, language } = payload
     const stmt = db.prepare(
       'UPDATE snippets SET code_draft = ?, language = COALESCE(?, language) WHERE id = ?'
     )
     stmt.run(code_draft, language || null, id)
-    notifyDataChanged()
+    // NOTE: We intentionally DO NOT call notifyDataChanged() here.
+    // Draft saving is a high-frequency background task. Triggering a
+    // full UI refresh on every keystroke debounce causes massive rendering lag.
     return true
   })
 

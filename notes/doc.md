@@ -1,9 +1,9 @@
 
 # Dev Snippet Technical Reference Manual
 
-**Version**: 1.2.3
-**Date**: December 31, 2025
-**Status**: Stable (Performance & Architecture Cleanup)
+**Version**: 1.3.0
+**Date**: January 2, 2026
+**Status**: Stable (Large File Optimization & Modular Features)
 
 ---
 
@@ -184,9 +184,10 @@ Complex blocks are rendered as interactive widgets that replace the raw markdown
 ### 4.4 Immersive Ghost Links
 
 To maintain a clean aesthetic without losing functionality, links are "Ghosted":
-1. The `[URL]` part is hidden using the Ghost Footprint.
-2. The remaining title text remains interactive.
-3. **Ghost Interaction**: Holding `Cmd/Ctrl + Click` on the title will open the destination browser, even when the URL is invisible.
+
+1.  The `[URL]` part is hidden using the Ghost Footprint.
+2.  The remaining title text remains interactive.
+3.  **Ghost Interaction**: Holding `Cmd/Ctrl + Click` on the title will open the destination browser, even when the URL is invisible.
 
 ### 4.5 Standardized Parsing Engine (Unified)
 
@@ -196,20 +197,22 @@ To ensure 100% rendering consistency between the **Live Preview**, **Reading Mod
 * **Transpiler**: `remark-rehype` (converting Markdown AST to HTML AST).
 * **Compiler**: `rehype-stringify`.
 * **Standard Features**: GFM Tables, Footnotes, Task Lists, Emojis, Auto-links.
+
 * **Custom Logic**:
-- **Directives**: Native handling of `::: info` callouts via `remark-directive`.
-- **Mermaid Detection**: Automatic detection and wrapping of mermaid diagrams.
-- **Specialty Blocks**: Robust handling of `[kanban]`, `[tabs]`, and `[grid]` components.
+  * **Directives**: Native handling of `::: info` callouts via `remark-directive`.
+  * **Mermaid Detection**: Automatic detection and wrapping of mermaid diagrams.
+  * **Specialty Blocks**: Robust handling of `[kanban]`, `[tabs]`, and `[grid]` components.
 
 ### 4.6 Local Asset Management
 
 The editor includes a robust local asset system designed for offline-first usage.
 
-*   **Storage**: Images dropped or pasted into the editor are saved to `app.getPath('userData')/assets`.
-*   **Protocol**:
-    *   **Use `cm-tooltip-autocomplete`**: This class is now the single source of truth.
-    *   **Solid Background**: `#1e1e1e` is enforced.
-    *   **Bridge Mechanism**: `::before` / `::after` pseudo-elements extend the interactive area to the cursor.
+* **Storage**: Images dropped or pasted into the editor are saved to `app.getPath('userData')/assets`.
+
+* **Protocol**:
+  * **Use `cm-tooltip-autocomplete`**: This class is now the single source of truth.
+  * **Solid Background**: `#1e1e1e` is enforced.
+  * **Bridge Mechanism**: `::before` / `::after` pseudo-elements extend the interactive area to the cursor.
 
 ### 4.7 Mermaid Widget Optimization
 
@@ -233,12 +236,16 @@ To reduce bundle size and ensure absolute consistency, the application now uses 
 A centralized interaction bus (`app:close-tooltips`) and unified styling strategy ensures that the application behaves like a native OS window rather than a web page.
 
 #### 4.9.1 Unified Tooltip Styling
+
 To prevent "muddy" or semi-transparent tooltips in light themes, the application enforces a new CSS variable strategy:
-*   **Variable**: `--color-tooltip-bg` is defined in every theme (e.g., `#ffffff` for Polaris, `#1e1e1e` for Dark).
-*   **Implementation**: All floating UI components (UnifiedTooltip, LinkPreview, UniversalModal, PinPopover) use this variable and have `backdrop-filter: none` enforced. This guarantees perfect contrast and readability.
+
+* **Variable**: `--color-tooltip-bg` is defined in every theme (e.g., `#ffffff` for Polaris, `#1e1e1e` for Dark).
+* **Implementation**: All floating UI components (UnifiedTooltip, LinkPreview, UniversalModal, PinPopover) use this variable and have `backdrop-filter: none` enforced. This guarantees perfect contrast and readability.
 
 #### 4.9.2 Global Escape Handler
+
 The `Escape` key now triggers a progressive dismissal sequence:
+
 1.  **Modals/Popovers**: If a Universal Modal or Pin Popover is open, it closes first.
 2.  **Tooltips**: If no modal is open, a global `app:close-tooltips` event is dispatched.
 3.  **Editor State**: The CodeMirror instance listens for this event and executes `closeHoverTooltips()` and `closeCompletion()`.
@@ -323,6 +330,17 @@ The editor handles files up to 50,000 lines comfortably due to:
 * **Viewport Virtualization**: Only the visible 50-100 lines are rendered.
 * **Incremental Parsing**: `syntaxTree` only re-parses changed regions.
 
+### 6.4 Performance Barrier System (v1.3.0)
+
+To prevent application instability (e.g., "Black Screens") in massive single documents, DevSnippet implements a non-blocking **Performance Barrier**:
+
+1.  **Word Count Threshold**: The application monitors documents for a 20,000-word limit.
+2.  **Modular Warning**: When exceeded, a premium **Performance Barrier Banner** appears at the top of the editor.
+3.  **Intelligent Persistence**:
+    *   **Dismissible**: Users can close the banner to focus on reading.
+    *   **Re-trigger on Type**: To maintain safety, the banner automatically reappears if typing resumes in an oversized document.
+4.  **Architecture**: The system is fully modular (`PerformanceBarrier.jsx`), separating warning logic from core editor code for zero performance overhead.
+
 ---
 
 ## 7. Flow Mode: The Professional Workstation
@@ -340,6 +358,7 @@ The **Flow Workspace** (`FlowWorkspace.jsx`) unifies separate floating windows i
 ### 7.2 Core Flow Features
 
 * **WikiWarp (Instant Navigation)**: Double-clicking any `[[WikiLink]]` instantly warps the user to the destination snippet. This bypasses the need for keyboard modifiers and provides a web-like hyperlinking experience.
+
 * **Snap-to-Frame Engine**: Users can toggle between:
   * **Zen Mode**: A full-screen non-blocking backdrop blur.
   * **Snapped Mode**: The background collapses and "fixes" itself to the editor frame, creating a standalone floating workstation with a deep cinematic shadow.
@@ -389,8 +408,78 @@ In version 1.2.5, the styling architecture was refactored to move away from mono
 ---
 
 
+## 9. Web Worker & Performance Offloading (v1.2.7)
 
-Web Workers: Offload Markdown parsing, Tag indexing, and Full-Text Search (FTS) from the UI thread to background workers to prevent "typing lag."
-Rust/WASM: Swap heavy JavaScript logic (like PDF generation or complex syntax highlighting) for WebAssembly modules to get near-native execution speed.
-Virtual Sidebar: If you have 1,000+ snippets, virtualize the Sidebar (render only visible rows) to eliminate DOM bloat and initial load hang.
-Database Indexing (Pragma): Tune SQLite with WAL Mode and Memory Map (mmap) to make reading and writing snippets feel like instant memory access rather than disk I/O.
+To achieve a truly "Zero-Latency" experience in a rich Markdown environment, DevSnippet implements an asynchronous parsing architecture using Web Workers.
+
+### 9.1 Background Parsing Architecture
+
+Computational tasks that exceed 16ms (the frame budget for 60fps) are offloaded to background threads. This ensures the main UI thread never freezes, even when processing massive documents with complex diagrams.
+
+```mermaid
+sequenceDiagram
+    participant Main as UI Thread (React)
+    participant Client as WorkerClient (Singleton)
+    participant Worker as MarkdownWorker (Background)
+
+    Main->>Client: parseMarkdown(text)
+    Client->>Worker: postMessage({ type: 'markdown', payload: text })
+    Note over Worker: Heavy Parsing (Unified, GFM, Plugins)
+    Note over Worker: Syntax Highlighting (Rehype-Highlight)
+    Worker-->>Client: postMessage({ result: html })
+    Client-->>Main: Resolve Promise (Update UI)
+```
+
+### 9.2 The "Latest Wins" Strategy
+
+To prevent race conditions during rapid typing, the `useMarkdownWorker` hook implements a task-cancellation strategy:
+1.  **Task ID Assignment**: Every parse request is assigned a unique incrementing ID.
+2.  **Stale Result Discarding**: When the worker returns a result, the hook compares the result's ID against the `currentTaskId`. If a newer task has already been started, the old result is discarded.
+3.  **Debouncing**: The editor sends update requests to the worker only after a short debounce period, reducing the worker's CPU load.
+
+### 9.3 Unified Consistency
+
+Because the **Worker** uses the exact same `markdownParser.js` logic as the **PDF Export** and **Word Export**, DevSnippet guarantees:
+*   **Editor Preview**
+*   **Printed PDF**
+*   **Word Document**
+*   **Image Export**
+
+All four output channels are mathematically identical in their Markdown rendering.
+
+---
+
+---
+
+## 11. Document Splitting & Sequential Linking
+
+DevSnippet provides an automated workflow to break down monolithic documents into a connected "chain" of smaller, more performant snippets.
+
+### 11.1 The "Continue" Naming Pattern
+When a split is triggered, the system suggests a sequential naming convention:
+*   `My Paper` → `My Paper continue`
+*   `My Paper continue` → `My Paper continue 2`
+*   `My Paper continue 2` → `My Paper continue 3`
+
+The naming engine performs a **Same-Folder Uniqueness Check** to ensure links never break, even in complex workspaces.
+
+### 11.2 WikiLink Bridge Mechanism
+
+Splitting is not just a copy-paste action; it creates a logical bridge:
+
+1. **Tail Link**: The original snippet receives a footer link (e.g., `[[My Paper continue]]`) pointing forward.
+2. **Head Link**: The new snippet receives a header link (e.g., `[[My Paper]]`) pointing backward.
+3. **Silent Save**: The link update in the original document is performed via a **Silent Transaction**. This prevents the UI from "jumping" back to the old file, keeping the user seamlessly focused on the new continuation.
+
+### 11.3 Lifecycle Continuity
+
+Newly created split parts inherit all attributes (Folder ID, Pin status) from their parent and are immediately fully functional (Close, Save, Delete, Rename) within the standard workbench architecture.
+
+---
+
+## 12. Future Roadmap
+
+*   **Rust/WASM**: Swap heavy JavaScript logic for WebAssembly modules to get near-native execution speed.
+*   **Distributed Sync**: Peer-to-peer snippet syncing using CRDTs (Conflict-free Replicated Data Types).
+*   **AI Metadata Extraction**: Automatic tag suggestion and title generation using local LLMs.
+*   **Visual Graph View**: Visualize WikiLinks nodes in a force-directed graph.

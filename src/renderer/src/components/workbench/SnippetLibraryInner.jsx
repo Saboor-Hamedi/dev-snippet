@@ -848,6 +848,43 @@ const SnippetLibraryInner = ({ snippetData }) => {
     )
   }
 
+  const getUniqueTitle = useCallback(
+    (baseTitle, folderId, excludeId = null) => {
+      const normalize = (t) => (t || '').toLowerCase().trim().replace(/\.md$/, '')
+      const targetBase = normalize(baseTitle)
+
+      let counter = 1
+      let finalTitle = baseTitle
+      let currentBase = targetBase
+
+      while (
+        snippets.find(
+          (s) =>
+            normalize(s.title) === currentBase &&
+            (s.folder_id || null) === (folderId || null) &&
+            s.id !== excludeId
+        )
+      ) {
+        const cleanBase = baseTitle.replace(/\.md$/, '')
+        if (cleanBase.match(/\sPart\s\d+$/)) {
+          const basePart = cleanBase.replace(/\sPart\s\d+$/, '')
+          finalTitle = `${basePart} Part ${counter + 1}.md`
+        } else if (cleanBase.match(/\scontinue\s?(\d+)?$/)) {
+          const match = cleanBase.match(/(.*? continue)\s?(\d+)?$/)
+          const base = match ? match[1] : cleanBase
+          const num = match && match[2] ? parseInt(match[2]) + 1 : counter + 1
+          finalTitle = `${base} ${num}.md`
+        } else {
+          finalTitle = `${cleanBase} (${counter}).md`
+        }
+        currentBase = normalize(finalTitle)
+        counter++
+      }
+      return finalTitle
+    },
+    [snippets]
+  )
+
   if (isRestoring) {
     return (
       <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-900">
@@ -939,11 +976,15 @@ const SnippetLibraryInner = ({ snippetData }) => {
         }}
       />
 
-      <div className="flex-1 flex flex-col items-stretch min-h-0 overflow-hidden bg-slate-50 dark:bg-slate-900 transition-colors duration-200">
+      <div
+        className="flex-1 flex flex-col items-stretch min-h-0 overflow-hidden bg-slate-50 dark:bg-slate-900 transition-colors duration-200"
+        style={{ backgroundColor: 'var(--editor-bg)' }}
+      >
         <Workbench
           settings={settings}
           isSidebarOpen={isSidebarOpen}
           setIsSidebarOpen={(val) => updateSetting('ui.showSidebar', val)}
+          onToggleSidebar={handleToggleSidebar}
           activeView={isCreatingSnippet ? 'editor' : activeView}
           pinPopover={pinPopover}
           setPinPopover={setPinPopover}
@@ -982,41 +1023,20 @@ const SnippetLibraryInner = ({ snippetData }) => {
           onSave={async (item) => {
             try {
               if (item.title && item.title.trim()) {
-                const normalize = (t) => (t || '').toLowerCase().trim().replace(/\.md$/, '')
-                const targetBase = normalize(item.title)
-                const duplicate = snippets.find(
-                  (s) =>
-                    normalize(s.title) === targetBase &&
-                    (s.folder_id || null) === (item.folder_id || null) &&
-                    s.id !== item.id
-                )
-                if (duplicate) {
-                  // Auto-increment instead of blocking
-                  let counter = 1
-                  let newTitle = item.title
-                  let newBase = targetBase
-
-                  while (
-                    snippets.find(
-                      (s) =>
-                        normalize(s.title) === newBase &&
-                        (s.folder_id || null) === (item.folder_id || null) &&
-                        s.id !== item.id
-                    )
-                  ) {
-                    newTitle = `${item.title.replace(/\.md$/, '')} (${counter}).md`
-                    newBase = normalize(newTitle)
-                    counter++
-                  }
-
-                  item.title = newTitle
-                  showToast(`Renamed to "${newTitle}" to avoid duplicate`, 'info')
+                const uniqueTitle = getUniqueTitle(item.title, item.folder_id, item.id)
+                if (uniqueTitle !== item.title) {
+                  item.title = uniqueTitle
+                  showToast(`Renamed to "${uniqueTitle}" to avoid duplicate`, 'info')
                 }
               }
               const wasForce = !!window.__forceSave
               if (!wasForce) setAutosaveStatus('saving')
-              await saveSnippet(item)
-              if (isCreatingSnippet) {
+              await saveSnippet(item, { skipSelectedUpdate: !!item._skipSelectionSwitch })
+
+              // PERFORMANCE & NAVIGATION: If this was a background bridge-save, skip the selection bounce
+              if (item._skipSelectionSwitch) return
+
+              if (isCreatingSnippet && item.id === selectedSnippet?.id) {
                 setIsCreatingSnippet(false)
                 setSelectedSnippet(item)
               }
@@ -1033,10 +1053,17 @@ const SnippetLibraryInner = ({ snippetData }) => {
           onDeleteRequest={handleDeleteRequest}
           onBulkDeleteRequest={handleBulkDelete}
           onNewSnippet={async (title, folderId, options) => {
-            const parentId = folderId || selectedFolderId || selectedSnippet?.folder_id || null
-            const draft = createDraftSnippet(title, parentId, options)
-            if (title && title.trim()) {
-              await saveSnippet({ ...draft, is_draft: false }, { skipSelectedUpdate: true })
+            try {
+              const parentId = folderId || selectedFolderId || selectedSnippet?.folder_id || null
+              // Ensure uniqueness right before creation
+              const uniqueTitle = getUniqueTitle(title || 'Untitled', parentId)
+              const draft = createDraftSnippet(uniqueTitle, parentId, options)
+              if (uniqueTitle && uniqueTitle.trim()) {
+                await saveSnippet({ ...draft, is_draft: false }, { skipSelectedUpdate: true })
+              }
+            } catch (e) {
+              console.error('[SnippetLibrary] Failed to create split part:', e)
+              showToast('Automated naming conflict resolved.', 'info')
             }
           }}
           onRenameSnippet={handleRenameSnippetRequest}

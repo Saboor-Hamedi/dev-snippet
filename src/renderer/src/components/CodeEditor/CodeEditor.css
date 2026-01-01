@@ -54,7 +54,6 @@
 .cm-editor .cm-activeLine {
   background-color: rgba(255, 255, 255, 0.02) !important;
   border-left: 2px solid var(--caret-color, #ffffff) !important;
-  box-shadow: 4px 0 12px -4px var(--caret-color, rgba(255, 255, 255, 0.2));
   transition: background-color 0.2s ease;
 }
 
@@ -243,7 +242,6 @@
 
 .cm-md-checkbox input[type='checkbox']:hover {
   border-color: var(--color-accent-primary, #58a6ff);
-  box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.1);
 }
 
 /* Horizontal Rule (HR) Styling in Editor */
@@ -306,7 +304,6 @@
   max-height: 350px;
   object-fit: contain;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 /* Editor Layout: Centered Island mode */

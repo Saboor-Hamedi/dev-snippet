@@ -5,7 +5,7 @@ import { toBlob, toPng } from 'html-to-image'
 import { saveAs } from 'file-saver'
 import PropTypes from 'prop-types'
 import { ToggleButton } from '../../ToggleButton'
-import { codeToHtml } from '../../../utils/markdownParser'
+import { markdownWorkerClient } from '../../../workers/markdownWorkerClient'
 
 const GRADIENTS = [
   { name: 'Purple Haze', class: 'bg-gradient-to-br from-purple-600 to-blue-500' },
@@ -39,9 +39,10 @@ const ImageExportModal = ({ isOpen, onClose, snippet }) => {
       setIsExporting(false)
 
       const highlight = async () => {
-        const html = await codeToHtml(snippet.code, snippet.language)
+        const html = await markdownWorkerClient.parseCode(snippet.code, snippet.language)
         setHighlightedHtml(html)
       }
+
       highlight()
     }
   }, [isOpen, snippet.code, snippet.language])

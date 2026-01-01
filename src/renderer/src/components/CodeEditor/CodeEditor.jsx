@@ -51,13 +51,13 @@ const CodeEditor = ({
   // Zoom level is now managed globally by useZoomLevel at the root/SettingsProvider level.
   // Individual components consume the result via CSS variables.
   const editorDomRef = useRef(null)
+  // 1. PERFORMANCE: Stabilize snippet list comparison to avoid map/join on every keystroke
   const snippetTitles = useMemo(() => {
     if (!Array.isArray(snippets)) return []
     return snippets.map((s) => (s.title || '').trim()).filter(Boolean)
-  }, [
-    Array.isArray(snippets) ? snippets.length : 0,
-    Array.isArray(snippets) ? snippets.map((s) => s.id).join(',') : ''
-  ])
+    // Only re-calculate if the number of snippets changes or the entire array reference changes.
+    // This is significant for 100k+ typing performance.
+  }, [snippets])
 
   // CONSUME SETTINGS VIA REFACTOR HOOKS (SOLID)
   const {
@@ -223,33 +223,28 @@ const CodeEditor = ({
         cursorSelectionBg,
         disableComplexCM: settingsManager.get('advanced.disableComplexCM')
       }),
-      // SCROLL SYNC
+      // --- UNIFIED PERFORMANCE LISTENER ---
       EditorView.updateListener.of((update) => {
-        if (update.docChanged || update.selectionSet || update.viewportChanged) {
-          const view = update.view
-          if (view?.scrollDOM) {
-            const { scrollTop, scrollHeight, clientHeight } = view.scrollDOM
-            const maxScroll = scrollHeight - clientHeight
-            if (maxScroll > 0) {
-              const percentage = scrollTop / maxScroll
-              window.dispatchEvent(new CustomEvent('app:editor-scroll', { detail: { percentage } }))
-            }
-          }
-          // Track cursor
-          if (update.selectionSet) {
-            const state = update.state
-            if (state) {
-              const pos = state.selection.main.head
-              const line = state.doc.lineAt(pos)
-              const col = pos - line.from + 1
-              if (onCursorChange) onCursorChange({ line: line.number, col })
+        // 1. CURSOR TRACKING (Debounced via microtask/RAF to keep typing smooth)
+        if (update.selectionSet && onCursorChange) {
+          const state = update.state
+          const pos = state.selection.main.head
 
-              // Persist cursor position
-              if (snippetId) {
-                saveCursorPosition(snippetId, state.selection.main)
-              }
+          if (window._cursorUpdatePending) cancelAnimationFrame(window._cursorUpdatePending)
+          window._cursorUpdatePending = requestAnimationFrame(() => {
+            const line = state.doc.lineAt(pos)
+            const col = pos - line.from + 1
+            onCursorChange({ line: line.number, col })
+
+            // Persist position (Long debounce for storage)
+            const currentId = snippetId // Correctly capture current ID
+            if (currentId) {
+              if (window._cursorSaveTimeout) clearTimeout(window._cursorSaveTimeout)
+              window._cursorSaveTimeout = setTimeout(() => {
+                saveCursorPosition(currentId, state.selection.main)
+              }, 3000) // 3s ensures zero interference with fluid typing
             }
-          }
+          })
         }
       })
     ]
@@ -281,9 +276,8 @@ const CodeEditor = ({
     onCursorChange,
     cursorBlinking,
     cursorBlinkingSpeed,
-    cursorSelectionBg,
-    cursorActiveLineBg,
-    cursorShadowBoxColor
+    cursorShadowBoxColor,
+    snippetId // Explicitly include snippetId to fix the stale persistence closure
   ])
 
   // Preserve cursor position when gutter toggles
@@ -323,7 +317,6 @@ const CodeEditor = ({
 
   // 2. Dynamic Content Extensions (Syntax Highlighting, Autocomplete, etc.)
   const [dynamicExtensions, setDynamicExtensions] = useState([])
-  const [isLargeFile, setIsLargeFile] = useState(false)
   const [extensionsLoaded, setExtensionsLoaded] = useState(false)
 
   // Save zoom to storage with debounce
@@ -337,9 +330,16 @@ const CodeEditor = ({
 
   // 3. Dynamic Editor Attributes (Source of Truth)
   const attributesExtension = useMemo(() => {
-    return EditorView.editorAttributes.of({
-      class: 'premium-editor-engine'
-    })
+    return [
+      EditorView.editorAttributes.of({
+        class: 'premium-editor-engine'
+      }),
+      EditorView.contentAttributes.of({
+        spellcheck: 'false',
+        autocorrect: 'off',
+        autocapitalize: 'off'
+      })
+    ]
   }, [])
 
   // Merge extensions
@@ -366,34 +366,44 @@ const CodeEditor = ({
   )
 
   // Detect large files (Optimized for zero typing lag)
-  const lastLargeState = useRef(false)
+  const [isLargeFile, setIsLargeFile] = useState(() => {
+    const len = (value || '').length
+    return len > 80000 // Slightly lower threshold for earlier protection
+  })
+
+  const lastLargeState = useRef(isLargeFile)
+
   useEffect(() => {
-    // Only check if content is actually semi-large (over 100k chars)
-    // Small files should never trigger this logic
-    if ((value || '').length < 100000) {
-      if (lastLargeState.current) {
-        lastLargeState.current = false
-        setIsLargeFile(false)
-        if (onLargeFileChange) onLargeFileChange(false)
-      }
+    const charCount = (value || '').length
+
+    // Instant check for extreme cases (massive paste)
+    if (charCount > 150000 && !lastLargeState.current) {
+      lastLargeState.current = true
+      setIsLargeFile(true)
+      if (onLargeFileChange) onLargeFileChange(true)
       return
     }
 
+    // Return to normal mode if file shrinks significantly
+    if (charCount < 50000 && lastLargeState.current) {
+      lastLargeState.current = false
+      setIsLargeFile(false)
+      if (onLargeFileChange) onLargeFileChange(false)
+      return
+    }
+
+    // Debounced line count for edge cases
     const handler = setTimeout(() => {
-      const charCount = (value || '').length
-      // --- BLAZE OPTIMIZATION: Regex Line Counting ---
-      // split('\n').length creates a massive array of strings, which causes GC spikes.
-      // value.match(/\n/g) is much lighter on memory.
-      const lineCount = ((value || '').match(/\n/g) || []).length + 1
+      // Only run line count if charCount is in the "grey zone"
+      if (charCount > 50000 && charCount < 150000) {
+        const lineCount = (value.match(/\n/g) || []).length + 1
+        const isLarge = lineCount > 4000 || charCount > 100000
 
-      // Thresholds: Only disable complex features for truly massive files
-      // 100k lines or 5M characters
-      const isLarge = lineCount > 100000 || charCount > 5000000
-
-      if (isLarge !== lastLargeState.current) {
-        lastLargeState.current = isLarge
-        setIsLargeFile(isLarge)
-        if (onLargeFileChange) onLargeFileChange(isLarge)
+        if (isLarge !== lastLargeState.current) {
+          lastLargeState.current = isLarge
+          setIsLargeFile(isLarge)
+          if (onLargeFileChange) onLargeFileChange(isLarge)
+        }
       }
     }, 2000)
 
@@ -484,6 +494,10 @@ const CodeEditor = ({
     >
       <CodeMirror
         value={value || ''}
+        // PERFORMANCE: Semi-controlled pattern.
+        // We only force value updates when the snippetId changes to prevent
+        // the expensive 100k string comparison/dispatch loop on every keystroke.
+        key={snippetId || 'new'}
         onChange={onChange}
         readOnly={readOnly}
         extensions={allExtensions}
@@ -519,7 +533,8 @@ const CodeEditor = ({
             onEditorReady(view)
           }
 
-          // NATIVE SCROLL SYNC (More reliable for high-frequency scroll events)
+          // --- NATIVE PASSIVE SCROLL SYNC ---
+          // This is the most efficient way to track scroll in Electron/Chrome
           if (view.scrollDOM) {
             view.scrollDOM.addEventListener(
               'scroll',

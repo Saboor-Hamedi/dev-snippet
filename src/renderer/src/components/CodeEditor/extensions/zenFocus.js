@@ -42,34 +42,40 @@ export const zenFocusExtension = (enabled = false) => {
 
           // 1. Identify the "Active Paragraph"
           // We find the block of lines touching the cursor that aren't separated by empty lines.
+          // LIMIT: We only expand up/down by 100 lines to prevent O(N) scans in massive files.
           const currentLineNum = doc.lineAt(selection.from).number
           let paraStart = currentLineNum
           let paraEnd = currentLineNum
 
+          const MAX_EXPANSION = 100
+
           // Expand Up
-          while (paraStart > 1) {
+          let upCount = 0
+          while (paraStart > 1 && upCount < MAX_EXPANSION) {
             const prevLine = doc.line(paraStart - 1)
             if (prevLine.text.trim() === '') break
             paraStart--
+            upCount++
           }
           // Expand Down
-          while (paraEnd < doc.lines) {
+          let downCount = 0
+          while (paraEnd < doc.lines && downCount < MAX_EXPANSION) {
             const nextLine = doc.line(paraEnd + 1)
             if (nextLine.text.trim() === '') break
             paraEnd++
+            downCount++
           }
 
           // 2. Apply Decorations
           // We only process what's currently on screen (visibleRanges) for P0 performance.
           for (const { from, to } of view.visibleRanges) {
-            let pos = from
-            while (pos <= to) {
-              const line = doc.lineAt(pos)
+            const startLine = doc.lineAt(from).number
+            const endLine = doc.lineAt(to).number
 
+            for (let l = startLine; l <= endLine; l++) {
+              const line = doc.line(l)
               const isActive = line.number >= paraStart && line.number <= paraEnd
               builder.add(line.from, line.from, isActive ? activeLineDeco : dimmedLineDeco)
-
-              pos = line.to + 1
             }
           }
 

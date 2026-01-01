@@ -42,6 +42,7 @@ const UniversalModal = ({
       modal.style.setProperty('backdrop-filter', 'none', 'important')
       modal.style.setProperty('opacity', '1', 'important')
       modal.style.setProperty('border-color', solidBorder, 'important')
+      modal.style.setProperty('box-shadow', 'none', 'important')
 
       header.style.setProperty('background', solidBg, 'important')
       header.style.setProperty('background-color', solidBg, 'important')
@@ -148,8 +149,8 @@ const UniversalModal = ({
 
       // 2. Enable Dragging
       let cleanupDrag
-      if (!isLocked && !isMaximized && dragHandleRef.current) {
-        cleanupDrag = makeDraggable(modal, dragHandleRef.current, (pos) => {
+      if (!isLocked && !isMaximized && headerRef.current) {
+        cleanupDrag = makeDraggable(modal, headerRef.current, (pos) => {
           savePersistentPosition(customKey, {
             ...saved,
             left: `${pos.x}px`,
@@ -244,7 +245,7 @@ const UniversalModal = ({
           }
         }}
         style={{
-          cursor: 'default',
+          cursor: !isDragDisabled && !isMaximized ? 'move' : 'default',
           pointerEvents: 'auto', // Header must always be interactable for dragging
           backgroundColor: 'rgb(var(--color-bg-primary-rgb))',
           background: 'rgb(var(--color-bg-primary-rgb))',
@@ -254,9 +255,8 @@ const UniversalModal = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
           {!isDragDisabled && (
             <div
-              ref={dragHandleRef}
               style={{
-                cursor: 'move',
+                cursor: 'inherit',
                 padding: '4px',
                 marginLeft: '-4px',
                 display: 'flex',

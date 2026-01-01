@@ -30,10 +30,14 @@ To achieve "Zero-Latency" performance in Flow Mode while maintaining its premium
 
 # DevSnippet Evolution Suggestions (Next Steps)
 
-## 1. [x] Virtualize Editor & Large File Optimization (Priority: P0 - Critical)
+## 1. ✅ Virtualize Editor & Offloaded Parsing (Priority: P0 - Critical)
 
-* **Why**: Large files (>5MB) used to cause UI jank.
-* **Plan**: Leverage CodeMirror 6's native viewport virtualization and optimized document structures.
+* **Why**: Large files (>5MB) used to cause UI jank during rendering.
+* **Solution**: 
+  * Leveraging CodeMirror 6's native viewport virtualization.
+  * **Web Worker Offloading**: Moved heavy Markdown-to-HTML parsing and syntax highlighting to a background thread.
+  * **Aggressive Truncation**: Live Preview now caps input at 100k chars to prevent DOM injection freezes.
+  * **Extension Guarding**: Automatically disables heavy plugins (Word Wrap, Auto-Indent, Rich Preview) for files > 100k chars.
 
 ## 2. [x] Workspace Session Restoration (Priority: P1 - High)
 

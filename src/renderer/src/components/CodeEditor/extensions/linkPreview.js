@@ -1,5 +1,5 @@
 import { hoverTooltip, EditorView } from '@codemirror/view'
-import { markdownToHtml } from '../../../utils/markdownParser'
+import { markdownWorkerClient } from '../../../workers/markdownWorkerClient'
 import mermaid from 'mermaid'
 
 // Initialize Mermaid (compact, neutral theme matching tooltip)
@@ -78,7 +78,7 @@ export const linkPreviewTooltip = hoverTooltip(async (view, pos, side) => {
 
   let initialHTML = ''
   try {
-    initialHTML = await markdownToHtml(codeToParse, { renderMetadata: false })
+    initialHTML = await markdownWorkerClient.parseMarkdown(codeToParse, { renderMetadata: false })
   } catch (err) {
     initialHTML = `<div>${codeToParse}</div>`
   }

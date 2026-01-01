@@ -22,9 +22,6 @@
   background-color: var(--color-tooltip-bg, #1e1e1e) !important;
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  box-shadow:
-    0 12px 32px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
   min-width: 180px;
   overflow: hidden;
   z-index: 21000;
@@ -141,7 +138,6 @@
 [data-theme='quiet-light'] .pin-popover {
   background: #ffffff !important;
   border-color: #d0d7de !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
 }
 
 [data-theme='polaris'] .pin-popover-header,
@@ -183,10 +179,8 @@
   padding: 2px;
   gap: 2px;
   z-index: 1000;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
   backdrop-filter: none;
   user-select: none;
-  transition: box-shadow 0.2s ease;
 }
 
 /* Consolidated Light Theme Overrides for Mode Switcher */
@@ -197,7 +191,6 @@
 [data-theme='quiet-light'] .cm-editor-mode-switcher {
   background: #ffffff !important;
   border-color: #d0d7de !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
   backdrop-filter: none !important;
 }
 
@@ -212,7 +205,6 @@
 
 .cm-editor-mode-switcher.is-floating {
   border-color: var(--color-accent-primary) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
 }
 
 .cm-editor-mode-switcher.is-dragging {
@@ -301,5 +293,4 @@
 .cm-mode-btn.is-active {
   background: var(--color-accent-primary) !important;
   color: #fff !important;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }

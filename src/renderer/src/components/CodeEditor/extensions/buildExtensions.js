@@ -181,17 +181,26 @@ const buildExtensions = async (options, handlers = {}) => {
     // Intentionally DO NOT add highlightActiveLine() to avoid aggressive
     // full-line background highlighting on single click. Background
     // indicator is managed via theme CSS instead.
-    exts.push(indentOnInput())
-    // Exclude backticks from auto-closing as per user request
-    exts.push(closeBrackets({ brackets: ['(', '[', '{', "'", '"'] }))
-    exts.push(bracketMatching())
+
+    // Only load heavy interaction handlers for standard files
+    if (!isLargeFile) {
+      exts.push(indentOnInput())
+      // Exclude backticks from auto-closing as per user request
+      exts.push(closeBrackets({ brackets: ['(', '[', '{', "'", '"'] }))
+      exts.push(bracketMatching())
+
+      // Add Premium Typing Bundle (Sounds + Selection watcher)
+      // This was previously imported but missing from the push list
+      exts.push(premiumTypingBundle)
+    }
+
     exts.push(syntaxHighlighting(premiumHighlightStyle, { fallback: true }))
     exts.push(history())
 
     // REGISTER UNIFIED AUTOCOMPLETION
     // We use 'override' for markdown to prioritize WikiLinks
     const autoConfig = {
-      activateOnTyping: true,
+      activateOnTyping: !isLargeFile, // Disable auto-popup for massive files
       icons: true,
       defaultKeymap: true
     }
@@ -237,6 +246,13 @@ const buildExtensions = async (options, handlers = {}) => {
   }
 
   // 6. DYNAMIC LANGUAGE DETECTION & LOADING
+  // PERFORMANCE KILL-SWITCH: For large files, we skip all language parsers (Markdown/JS/etc.)
+  // and stay in pure plaintext mode to ensure zero typing lag.
+  if (isLargeFile) {
+    console.warn('[Editor] Massive file detected: Forcing Plaintext mode for performance.')
+    return exts
+  }
+
   try {
     const allLangs = await getLanguages()
     const normalizedLang = language.toLowerCase().replace(/^\./, '')
@@ -274,8 +290,10 @@ const buildExtensions = async (options, handlers = {}) => {
           addKeymap: true
         })
       )
-      // Add Obsidian-style Live Preview
-      exts.push(richMarkdownExtension)
+      // Add Obsidian-style Live Preview ONLY for standard sized files
+      if (!isLargeFile) {
+        exts.push(richMarkdownExtension)
+      }
     }
     // Priority 3: Plain text (no extensions needed)
     else if (['plaintext', 'text', 'txt', ''].includes(normalizedLang)) {

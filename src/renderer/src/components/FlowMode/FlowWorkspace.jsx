@@ -131,12 +131,15 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
         {/* Timer Integration - Clean & Minimal */}
         <div className="flex items-center gap-3 pl-1">
           <div className="flex flex-col items-start justify-center h-full pt-1">
-            <span
-              className="text-[9px] font-black uppercase tracking-widest opacity-40 leading-none"
-              style={{ color: 'var(--color-text-secondary)' }}
-            >
-              Session
-            </span>
+            <div className="flex items-center gap-1.5 h-3">
+              <span
+                className="text-[9px] font-black uppercase tracking-widest opacity-40"
+                style={{ color: 'var(--color-text-secondary)' }}
+              >
+                Session
+              </span>
+              {isTimerActive && <span className="w-1 h-1 rounded-full bg-red-500 animate-pulse" />}
+            </div>
             <span
               className="text-[14px] font-bold tabular-nums leading-none"
               style={{ color: 'var(--color-text-primary)' }}
@@ -169,7 +172,7 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
         {/* Station Identity (Clean Text Only) */}
         <div className="hidden md:flex items-center gap-3">
           <div className="flex items-center gap-3 opacity-60">
-            <div className="w-1 h-1 rounded-none bg-[var(--color-accent-primary)]" />
+            <Activity size={10} className="text-[var(--color-accent-primary)]" />
             <span
               className="text-[10px] font-bold tracking-[0.2em] uppercase"
               style={{ color: 'var(--color-text-secondary)' }}
@@ -257,7 +260,7 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
                   e.stopPropagation()
                   setOpacity(parseFloat(e.target.value))
                 }}
-                className="w-12 h-1 accent-[var(--color-accent-primary)] cursor-pointer opacity-40 hover:opacity-100 transition-opacity"
+                className="w-16 cursor-pointer"
                 title="Adjust Ghost Transparency"
               />
             </div>
@@ -354,7 +357,7 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
         </div>
       )}
       <div
-        className={`flex flex-1 w-full relative overflow-hidden min-h-0 transition-all duration-500 rounded-none ${isZenFocused ? 'bg-[var(--color-bg-primary)] shadow-none' : 'bg-[var(--color-bg-primary)] shadow-[0_4px_40px_rgba(0,0,0,0.6)]'} ${isMobile ? 'flex-col' : 'flex-row'}`}
+        className={`flex flex-1 w-full relative overflow-hidden min-h-0 transition-all duration-500 rounded-none ${isZenFocused ? 'bg-[var(--color-bg-primary)]' : 'bg-[var(--color-bg-primary)]'} ${isMobile ? 'flex-col' : 'flex-row'}`}
         style={{
           backgroundColor: 'var(--color-bg-primary)',
           opacity: 1

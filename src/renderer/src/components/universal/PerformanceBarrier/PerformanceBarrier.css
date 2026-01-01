@@ -1,0 +1,90 @@
+/* Performance Barrier Banner Styling */
+.performance-barrier-banner {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 36px 8px 16px;
+  background: rgba(255, 171, 0, 0.15);
+  border: 1px solid rgba(255, 171, 0, 0.4);
+  backdrop-filter: blur(12px);
+  border-radius: 10px;
+  width: calc(100% - 40px);
+  max-width: 580px;
+  color: var(--color-text-primary);
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  transition: all 0.3s ease;
+}
+
+.performance-barrier-banner .font-bold {
+  font-size: 13px;
+}
+
+@media (max-width: 600px) {
+  .performance-barrier-banner {
+    gap: 12px;
+    padding: 8px 32px 8px 12px;
+    top: 8px;
+  }
+
+  .performance-barrier-banner .text-xs {
+    display: none; /* Hide subtitle on very small screens to save vertical space */
+  }
+
+  .performance-barrier-banner .font-bold {
+    font-size: 13px;
+  }
+}
+
+.performance-barrier-banner .split-action-btn {
+  background: #ffab00;
+  color: #000;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.performance-barrier-banner .split-action-btn:hover {
+  filter: brightness(1.1);
+}
+
+.performance-barrier-banner .split-action-btn:active {
+  transform: translateY(0);
+}
+
+.performance-barrier-banner .close-banner-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: none;
+  border: none;
+  color: var(--color-text-primary);
+  opacity: 0.3;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.performance-barrier-banner .close-banner-btn:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.1);
+}

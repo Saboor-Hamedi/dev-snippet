@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { useSettings } from '../../hook/useSettingsContext'
 import { Smartphone, Tablet, Monitor, Layers } from 'lucide-react'
 import { SplitPaneContext } from '../splitPanels/SplitPaneContext'
-import { markdownToHtml } from '../../utils/markdownParser'
+import { useMarkdownWorker } from '../../hook/useMarkdownWorker'
 import previewStyles from '../../assets/preview.css?raw'
 import markdownStyles from '../../assets/markdown.css?raw'
 import variableStyles from '../../assets/variables.css?raw'
@@ -62,101 +62,65 @@ const LivePreview = ({
   // --- Specialized Hooks ---
   const { handleQuickCopyMermaid } = useMermaidCapture(fontFamily)
   const { openImageExportModal } = useModal()
+  const { parseMarkdown, parseCode, isParsing: isWorkerParsing } = useMarkdownWorker()
 
-  // --- 1. Parsing Engine Engine ---
+  // --- 1. Parsing Engine ---
   useEffect(() => {
     let active = true
+    let timeoutId = null
+
     const parse = async () => {
       if (disabled || code === undefined || code === null) {
         setRenderedHtml('')
         return
       }
 
-      // 0. PERFORMANCE GUARD: Skip parsing if the window is currently being dragged
-      if (document.body.classList.contains('dragging-active')) {
-        // Just clear the flag if we are dragging to keep the spinner/busy state quiet
-        setIsParsing(false)
-        return
-      }
+      // PERFORMANCE GUARD: Skip if window is dragging
+      if (document.body.classList.contains('dragging-active')) return
 
-      setIsParsing(true)
       try {
         const normalizedLang = (language || 'markdown').toLowerCase()
-        const isTooLarge = (code || '').length > 500000
-        const visibleCode = isTooLarge ? code.slice(0, 500000) : code || ''
+        // Aggressive truncation for zero-jank typing
+        // 100k chars is roughly 20 pages of text, sufficient for preview context
+        const LIMIT = 100000
+        const isTooLarge = (code || '').length > LIMIT
+        const visibleCode = isTooLarge ? code.slice(0, LIMIT) : code || ''
         let result = ''
 
         if (normalizedLang === 'markdown' || normalizedLang === 'md') {
-          result = await markdownToHtml(visibleCode, {
+          result = await parseMarkdown(visibleCode, {
             renderMetadata: showHeader,
             titles: existingTitles
           })
-          if (isTooLarge) {
+          if (isTooLarge && result) {
             result +=
               '<div class="preview-performance-notice">Preview truncated for performance.</div>'
           }
-        } else if (normalizedLang === 'mermaid') {
-          const escaped = visibleCode
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-          const encoded = encodeURIComponent(visibleCode)
-          result = `
-            <div class="mermaid-diagram-wrapper" style="display: flex !important; flex-direction: column !important; width: 100% !important; background: var(--color-bg-secondary) !important; border: 1px solid var(--color-border) !important; border-radius: 0 !important; margin: 2rem 0 !important; box-sizing: border-box !important;">
-              <div class="code-block-header" style="display: flex !important; justify-content: space-between !important; align-items: center !important; padding: 12px 20px !important; background: var(--color-bg-tertiary) !important; backdrop-filter: none !important; border-bottom: 1px solid var(--color-border) !important; width: 100% !important; box-sizing: border-box !important; flex-shrink: 0 !important; height: 44px !important;">
-                <div style="display: flex !important; align-items: center !important; gap: 8px !important;">
-                  <div style="width: 10px; height: 10px; border-radius: 50%; background: #ff5f56; border: 0.5px solid rgba(0,0,0,0.1); margin: 0 !important; padding: 0 !important;"></div>
-                  <div style="width: 10px; height: 10px; border-radius: 50%; background: #ffbd2e; border: 0.5px solid rgba(0,0,0,0.1); margin: 0 !important; padding: 0 !important;"></div>
-                  <div style="width: 10px; height: 10px; border-radius: 50%; background: #27c93f; border: 0.5px solid rgba(0,0,0,0.1); margin: 0 !important; padding: 0 !important;"></div>
-                </div>
-                <div class="code-actions" style="display: flex !important; gap: 10px !important; align-items: center !important;">
-                  <button class="copy-image-btn" data-code="${encoded}" data-lang="mermaid" title="Export as Image" style="background: transparent !important; border: none !important; cursor: pointer !important; color: var(--color-text-tertiary) !important; padding: 6px !important; border-radius: 0 !important; display: flex !important; align-items: center !important; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); hover:background: rgba(255,255,255,0.05) !important;">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-image"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-                  </button>
-                  <button class="copy-code-btn" data-code="${encoded}" title="Copy Mermaid Source" style="background: transparent !important; border: none !important; cursor: pointer !important; color: var(--color-text-tertiary) !important; padding: 6px !important; border-radius: 0 !important; display: flex !important; align-items: center !important; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); hover:background: rgba(255,255,255,0.05) !important;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-                  </button>
-                </div>
-              </div>
-            <div class="mermaid" data-mermaid-src="${encoded}" style="display: flex !important; justify-content: center !important; width: 100% !important; padding: 40px 20px !important; background: var(--color-bg-primary) !important; box-sizing: border-box !important; position: relative !important; overflow: visible !important; min-height: 150px !important;">${escaped}</div>
-          </div>`
         } else {
-          const escaped = visibleCode
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-          const encoded = encodeURIComponent(visibleCode)
-          result = `
-            <div class="code-block-wrapper ${normalizedLang === 'plaintext' || normalizedLang === 'text' || normalizedLang === 'txt' ? 'is-plaintext' : ''}">
-              <div class="code-block-header">
-                <span class="code-language font-bold">${normalizedLang}</span>
-                <div class="code-actions">
-                  <button class="copy-image-btn" data-code="${encoded}" data-lang="${normalizedLang}" title="Copy as Image">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-image"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-                  </button>
-                  <button class="copy-code-btn" data-code="${encoded}" title="Copy code">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-                  </button>
-                </div>
-              </div>
-              <pre><code class="language-${normalizedLang}">${escaped}</code></pre>
-            </div>`
+          result = await parseCode(visibleCode, normalizedLang)
         }
 
-        if (active) setRenderedHtml(result)
+        if (active && result) setRenderedHtml(result)
       } catch (err) {
-        console.error('Markdown parsing error:', err)
-      } finally {
-        if (active) setIsParsing(false)
+        console.error('Offloaded parsing error:', err)
       }
     }
-    parse()
+
+    // --- DEBOUNCE LOGIC ---
+    // For large files, we use a longer debounce to keep typing butter-smooth
+    const debounceMs = (code || '').length > 100000 ? 500 : 150
+    timeoutId = setTimeout(parse, debounceMs)
+
     return () => {
       active = false
+      if (timeoutId) clearTimeout(timeoutId)
     }
-  }, [code, language, showHeader, existingTitles, disabled])
+  }, [code, language, showHeader, existingTitles, disabled, parseMarkdown, parseCode])
+
+  // Sync isParsing state from worker hook
+  useEffect(() => {
+    setIsParsing(isWorkerParsing)
+  }, [isWorkerParsing])
 
   // --- 2. Style Merging (DRY Token Engine) ---
   const combinedStyles = useMemo(() => {

@@ -21,6 +21,7 @@ import { useUniversalModal } from '../universal/useUniversalModal'
 import PinPopover from './sidebar/PinPopover'
 import DiagramEditorModal from '../mermaid/modal/DiagramEditorModal'
 import TableEditorModal from '../table/TableEditorModal'
+import PerformanceBarrier from '../universal/PerformanceBarrier/PerformanceBarrier'
 import '../universal/universalStyle.css'
 
 const SnippetEditor = ({
@@ -337,7 +338,9 @@ const SnippetEditor = ({
   }, [title, code.substring(0, 20)]) // Re-detect if title or start of code changes
 
   useEffect(() => {
-    const wait = code.length > 50000 ? 1000 : code.length > 10000 ? 500 : 300
+    // TWEAK: Slightly more aggressive update for better "Live" feel
+    // while still protecting the thread for massive documents.
+    const wait = code.length > 150000 ? 1200 : code.length > 50000 ? 600 : 300
     const timer = setTimeout(() => {
       setDebouncedCode(code)
       // Broadcast live code to Ghost Preview only after debounce
@@ -346,21 +349,21 @@ const SnippetEditor = ({
           detail: { code, language: detectedLang }
         })
       )
-
-      // SILENT DRAFT SYNC: Ensures "Modified" (Yellow Dot) appears in the sidebar.
-      // This is a P1 Evolution feature. We write to the draft column silently
-      // so the database-level diffing engine can report the snippet as modified.
-      if (initialSnippet?.id && isDirty && window.api?.saveSnippetDraft) {
-        window.api
-          .saveSnippetDraft({
-            id: initialSnippet.id,
-            code_draft: code,
-            language: detectedLang
-          })
-          .catch(() => {})
-      }
     }, wait)
     return () => clearTimeout(timer)
+  }, [code, detectedLang, initialSnippet?.id, isDirty])
+
+  // SILENT DRAFT SYNC: Ensures "Modified" (Yellow Dot) appears in the sidebar.
+  useEffect(() => {
+    if (initialSnippet?.id && isDirty && window.api?.saveSnippetDraft) {
+      window.api
+        .saveSnippetDraft({
+          id: initialSnippet.id,
+          code_draft: code,
+          language: detectedLang
+        })
+        .catch(() => {})
+    }
   }, [code, detectedLang, initialSnippet?.id, isDirty])
 
   // Unified AutoSave Hook - Source of Truth
@@ -462,7 +465,7 @@ const SnippetEditor = ({
     }
   }, [initialSnippet?.id])
 
-  const isInitialMount = useRef(true)
+  const [isInitialMount, setIsInitialMount] = useState(true)
   const lastSnippetId = useRef(initialSnippet?.id)
 
   useEffect(() => {
@@ -471,7 +474,7 @@ const SnippetEditor = ({
       setCode(initialSnippet.code || '')
       setTitle(initialSnippet.title || '')
       setIsDirty(false)
-      isInitialMount.current = true
+      setIsInitialMount(true)
       lastSnippetId.current = initialSnippet.id
       return
     }
@@ -482,10 +485,15 @@ const SnippetEditor = ({
 
   const [namePrompt, setNamePrompt] = useState({ isOpen: false, initialName: '' })
 
-  // Word count is computationally expensive for large files, so we debounce it
+  // Word count is computationally expensive for large files, so we compute it against debouncedCode
   const words = useMemo(() => {
     const text = debouncedCode || ''
     const len = text.length
+    if (len === 0) return 0
+    // Fast path for massive files: Use regex for word count if over 50k chars
+    if (len > 50000) {
+      return (text.match(/\S+/g) || []).length
+    }
     let count = 0
     let inWord = false
     for (let i = 0; i < len; i++) {
@@ -502,23 +510,90 @@ const SnippetEditor = ({
     return count
   }, [debouncedCode])
 
-  // Chars are O(1) and safe to compute live
+  // Chars/Stats are stabilized to prevent Status Bar flickering on every keystroke
   const stats = useMemo(
     () => ({
-      chars: (code || '').length,
+      chars: (debouncedCode || '').length,
       words: words
     }),
-    [code.length, words]
+    [debouncedCode.length, words]
   )
 
+  const isSplitting = useRef(false)
+  const handleSplitSnippet = useCallback(() => {
+    if (!title || !code || isSplitting.current) return
+    isSplitting.current = true
+
+    try {
+      // 1. Suggest the next part name: 'large' -> 'large continue' -> 'large continue 2'
+      const nameWithoutExt = title.replace(/\.md$/, '')
+      let nextBase = ''
+
+      if (!nameWithoutExt.includes('continue')) {
+        nextBase = `${nameWithoutExt} continue`
+      } else {
+        const match = nameWithoutExt.match(/(.*? continue)\s?(\d+)?$/)
+        nextBase = match ? match[1] : nameWithoutExt
+      }
+
+      // Check current folder for existing titles to match library logic exactly
+      const folderSnippets = (snippets || []).filter(
+        (s) => (s.folder_id || null) === (initialSnippet?.folder_id || null)
+      )
+      const normalize = (t) => (t || '').toLowerCase().trim().replace(/\.md$/, '')
+
+      let counter = 1
+      let nextPartName = nextBase
+
+      while (folderSnippets.some((s) => normalize(s.title) === normalize(nextPartName))) {
+        counter++
+        nextPartName = `${nextBase} ${counter}`
+      }
+
+      // 2. Update CURRENT snippet with the bridge link
+      const splitLink = `\n\n---\n[[${nextPartName}]]`
+      const updatedCode = code + splitLink
+
+      setCode(updatedCode)
+      setIsDirty(true)
+
+      // Force an immediate save of the OLD snippet without a selection jump
+      onSave({
+        ...(initialSnippet || {}),
+        code: updatedCode,
+        timestamp: Date.now(),
+        _skipSelectionSwitch: true
+      })
+
+      // 3. Create and Navigate to NEW snippet
+      const initialPartCode = `[[${title}]]\n\n# ${nextPartName}\n\n`
+
+      if (onNew) {
+        onNew(nextPartName, initialSnippet?.folder_id || null, {
+          initialCode: initialPartCode
+        })
+      }
+
+      if (showToast) {
+        setTimeout(() => {
+          showToast(`Split complete: Continuing in ${nextPartName}`, 'success')
+        }, 100)
+      }
+    } finally {
+      setTimeout(() => {
+        isSplitting.current = false
+      }, 1000)
+    }
+  }, [title, code, snippets, initialSnippet, onSave, showToast, onNew])
+
   useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false
+    if (isInitialMount) {
+      setIsInitialMount(false)
       return
     }
     if (!isDirty || !autoSaveEnabled) return
     scheduleSave()
-  }, [code, title, isDirty, autoSaveEnabled, scheduleSave])
+  }, [code, title, isDirty, autoSaveEnabled, scheduleSave, isInitialMount])
 
   // Helper to generate the complete HTML for external/mini previews
   const generateFullHtml = useCallback(
@@ -1015,6 +1090,7 @@ const SnippetEditor = ({
                       autoFocus={true}
                       snippetId={initialSnippet?.id}
                       onChange={handleCodeChange}
+                      onLargeFileChange={setIsLargeFile}
                       onKeyDown={(e) => {
                         if (e.key === 'Escape') onCancel?.()
                         if ((e.ctrlKey || e.metaKey) && e.key === ',') {
@@ -1245,12 +1321,17 @@ const SnippetEditor = ({
           <StatusBar
             title={title}
             isFavorited={initialSnippet?.is_favorite === 1}
-            isLargeFile={code.length > 50000}
-            snippets={snippets}
+            isLargeFile={isLargeFile || code.length > 120000}
             stats={stats}
             line={cursorPos.line}
             col={cursorPos.col}
             minimal={isFlow || settings?.ui?.showFlowMode}
+          />
+
+          <PerformanceBarrier
+            words={words}
+            onSplit={handleSplitSnippet}
+            triggerReset={debouncedCode}
           />
 
           <Prompt
