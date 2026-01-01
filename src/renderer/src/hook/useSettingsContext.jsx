@@ -1,6 +1,8 @@
 import React, { useState, useEffect, createContext, useContext } from 'react'
 import settingsManager from '../config/settingsManager.js'
 import { DEFAULT_SETTINGS } from '../config/defaultSettings.js'
+import { MIN_ZOOM, MAX_ZOOM } from './useZoomLevel.js' // Integrated constants
+import { clamp, roundTo } from './useRoundedClamp.js' // Utility helpers
 
 // Settings Context
 const SettingsContext = createContext()
@@ -31,53 +33,76 @@ export const SettingsProvider = ({ children }) => {
     }
   }, [])
 
-  // LIVE ZOOM STATE - For smooth, immediate interface updates
-  // LIVE ZOOM STATE - For smooth, immediate interface updates
+  // --- ZOOM MANAGEMENT ---
+
+  // 1. Live state for Global UI Zoom
   const [zoom, setZoomInternal] = useState(() => {
-    // Pre-calculate to avoid FOUC or 10% issue on first render
     const initial = settingsManager.get('editor.zoomLevel') ?? 1.0
-    return Math.max(0.5, Number(initial))
+    return clamp(Number(initial), MIN_ZOOM, MAX_ZOOM)
   })
 
-  // Sync live zoom with settings on load
+  // 2. Live state for Editor-Only Font Zoom
+  const [editorZoom, setEditorZoomInternal] = useState(() => {
+    return settingsManager.get('editor.fontZoom') ?? 1.0
+  })
+
+  // NEW: Sync local zoom states with external setting changes (e.g. file edits)
   useEffect(() => {
-    const savedZoom = settings.editor?.zoomLevel ?? 1.0
-    // FORCED FLOOR of 0.5 (50%) to prevent "tiny UI" issues.
-    // This ensures Ctrl+0 never results in 10%.
-    const cleanSaved = Math.max(0.5, Number(savedZoom))
-    if (Math.abs(cleanSaved - zoom) > 0.01) {
-      setZoomInternal(cleanSaved)
+    if (settings?.editor) {
+      const externalZoom = settings.editor.zoomLevel
+      if (externalZoom !== undefined && Math.abs(Number(externalZoom) - zoom) > 0.01) {
+        setZoomInternal(clamp(Number(externalZoom), MIN_ZOOM, MAX_ZOOM))
+      }
+      const externalFontZoom = settings.editor.fontZoom
+      if (
+        externalFontZoom !== undefined &&
+        Math.abs(Number(externalFontZoom) - editorZoom) > 0.01
+      ) {
+        setEditorZoomInternal(clamp(Number(externalFontZoom), MIN_ZOOM, MAX_ZOOM))
+      }
     }
-  }, [settings.editor?.zoomLevel])
+  }, [settings])
 
-  // Apply Live Zoom factor to the native window and CSS
+  // 3. Apply UI Zoom to the native window and CSS
   useEffect(() => {
-    // 1. CSS Variable for components that need it
-    document.documentElement.style.setProperty('--zoom-level', zoom)
-
-    // 2. Native Electron Zoom (The professional way)
     if (window.api?.setZoom) {
       window.api.setZoom(zoom).catch(() => {})
     }
-
-    // 3. Debounced persist to settings.json
-    const timer = setTimeout(() => {
-      const currentSaved = settings.editor?.zoomLevel ?? 1.0
-      if (Math.abs(zoom - currentSaved) > 0.01) {
-        settingsManager.set('editor.zoomLevel', zoom)
-      }
-    }, 500)
-
-    return () => clearTimeout(timer)
+    document.documentElement.style.setProperty('--zoom-level', zoom)
   }, [zoom])
+
+  // 4. Consolidated Debounced Persistence
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const currentZoom = settingsManager.get('editor.zoomLevel') ?? 1.0
+      const currentFontZoom = settingsManager.get('editor.fontZoom') ?? 1.0
+
+      const needsZoomWrite = Math.abs(zoom - currentZoom) > 0.01
+      const needsFontWrite = Math.abs(editorZoom - currentFontZoom) > 0.01
+
+      if (needsZoomWrite || needsFontWrite) {
+        if (needsZoomWrite) settingsManager.set('editor.zoomLevel', zoom)
+        if (needsFontWrite) settingsManager.set('editor.fontZoom', editorZoom)
+      }
+    }, 1000)
+    return () => clearTimeout(timer)
+  }, [zoom, editorZoom])
 
   const setZoom = (value) => {
     setZoomInternal((prev) => {
-      const next = typeof value === 'function' ? value(prev) : value
-      // Step: 0.1, Floor: 0.5, Ceiling: 5.0
-      // Round to nearest 0.1 (one decimal place)
-      const target = Math.max(0.5, Math.min(5.0, Math.round(next * 10) / 10))
-      return target
+      let next = typeof value === 'function' ? value(prev) : value
+      // Magnetic Snap to 100% (1.0)
+      if (prev !== 1.0 && next >= 0.95 && next <= 1.05) next = 1.0
+      return clamp(roundTo(next, 2), MIN_ZOOM, MAX_ZOOM)
+    })
+  }
+
+  const setEditorZoom = (value) => {
+    setEditorZoomInternal((prev) => {
+      let next = typeof value === 'function' ? value(prev) : value
+      // Magnetic Snap to 100% (1.0)
+      if (prev !== 1.0 && next >= 0.95 && next <= 1.05) next = 1.0
+      return clamp(roundTo(next, 2), MIN_ZOOM, MAX_ZOOM)
     })
   }
 
@@ -85,15 +110,22 @@ export const SettingsProvider = ({ children }) => {
   useEffect(() => {
     if (settings.editor) {
       const root = document.documentElement
-      const fontSize = settings.editor.fontSize || 14
-      const fontFamily = settings.editor.fontFamily || 'JetBrains Mono'
+      const baseFontSize = settings.editor.fontSize || 12
+      const fontFamily = settings.editor.fontFamily || "'Outfit', 'Inter', sans-serif"
 
-      const sizeVal = typeof fontSize === 'number' ? `${fontSize / 16}rem` : fontSize
+      // Cumulative result: (Setting Size * Editor Local Zoom)
+      const finalFontSize = baseFontSize * editorZoom
+      const sizeVal = `${finalFontSize / 16}rem`
 
       root.style.setProperty('--editor-font-size', sizeVal)
       root.style.setProperty('--editor-font-family', fontFamily)
+
+      // Apply Editor Background Color from settings
+      if (settings.editor.editorBgColor) {
+        root.style.setProperty('--editor-bg', settings.editor.editorBgColor)
+      }
     }
-  }, [settings])
+  }, [settings, editorZoom])
 
   // Get a specific setting by path (e.g., 'editor.zoomLevel')
   const getSetting = (path) => {
@@ -111,19 +143,18 @@ export const SettingsProvider = ({ children }) => {
     await settingsManager.set(path, value)
   }
 
-  // Update multiple settings at once
+  // Update multiple settings at once (e.g. from JSON editor)
   const updateSettings = async (newSettings) => {
-    // Update each setting individually to ensure proper persistence
-    for (const [key, value] of Object.entries(newSettings)) {
-      if (typeof value === 'object' && !Array.isArray(value)) {
-        // Handle nested objects
-        for (const [nestedKey, nestedValue] of Object.entries(value)) {
-          await settingsManager.set(`${key}.${nestedKey}`, nestedValue)
-        }
-      } else {
-        await settingsManager.set(key, value)
-      }
-    }
+    await settingsManager.replace(newSettings)
+  }
+
+  // Reset to defaults
+  const resetSettings = async () => {
+    await settingsManager.reset()
+    // Explicitly reset local zoom states
+    setZoomInternal(1.0)
+    setEditorZoomInternal(1.0)
+    // settingsManager will notify listeners, causing this component to update via subscription
   }
 
   return (
@@ -133,8 +164,11 @@ export const SettingsProvider = ({ children }) => {
         getSetting,
         updateSetting,
         updateSettings,
+        resetSettings,
         zoom,
-        setZoom
+        setZoom,
+        editorZoom,
+        setEditorZoom
       }}
     >
       {children}
@@ -153,7 +187,8 @@ export const useSettings = () => {
 
 export const useAutoSave = () => {
   const { getSetting, updateSetting } = useSettings()
-  const autoSave = getSetting('behavior.autoSave') || true
+  const setting = getSetting('behavior.autoSave')
+  const autoSave = setting === undefined || setting === null ? true : setting
 
   const setAutoSave = (enabled) => {
     updateSetting('behavior.autoSave', enabled)
@@ -168,6 +203,14 @@ export const useZoomLevel = () => {
 
   const { zoom, setZoom } = context
   return [zoom, setZoom]
+}
+
+export const useEditorZoomLevel = () => {
+  const context = useContext(SettingsContext)
+  if (!context) throw new Error('useEditorZoomLevel must be used within a SettingsProvider')
+
+  const { editorZoom, setEditorZoom } = context
+  return [editorZoom, setEditorZoom]
 }
 
 export const useCompactMode = () => {

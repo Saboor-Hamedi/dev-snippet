@@ -1,0 +1,222 @@
+:root {
+  --q-bg: var(--color-bg-primary, rgba(13, 17, 23, 0.98));
+  --q-border: var(--color-border, rgba(255, 255, 255, 0.1));
+  --q-accent: var(--color-accent-primary, #6366f1);
+  --q-text: var(--color-text-primary, #f8fafc);
+  --q-text-dim: var(--color-text-secondary, rgba(248, 250, 252, 0.5));
+  --q-bg-header: var(--color-bg-secondary, rgba(0, 0, 0, 0.2));
+  --qc-font-family: 'JetBrains Mono', SFMono-Regular, Consolas, monospace;
+  --qc-font-size: 15px;
+  --qc-line-height: 1.6;
+}
+
+.qc-full-wrapper {
+  width: 100vw;
+  height: 100vh;
+  background: transparent !important;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 15px;
+  overflow: hidden;
+  font-family: var(--qc-font-family);
+  -webkit-font-smoothing: antialiased;
+}
+
+.qc-window-container {
+  position: relative;
+  width: 650px;
+  padding: 0;
+}
+
+.qc-card {
+  position: relative;
+  background: var(--q-bg);
+  border: 1px solid var(--q-border);
+  border-radius: 12px;
+  /* Subtle, professional shadow */
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  backdrop-filter: blur(30px);
+  width: 650px;
+  height: 350px;
+  display: flex;
+  flex-direction: column;
+  transition: none !important;
+}
+
+.qc-header {
+  height: 54px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--q-bg-header);
+  border-bottom: 1px solid var(--q-border);
+  flex-shrink: 0;
+}
+
+.qc-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.qc-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--q-accent);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--q-accent);
+}
+
+.qc-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--q-text);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  opacity: 0.6;
+}
+
+.qc-shortcuts {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.qc-kbd-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qc-kbd {
+  font-family: var(--qc-font-family);
+  font-size: calc(var(--qc-font-size) - 5px);
+  color: var(--q-text);
+  background: rgba(255, 255, 255, 0.03);
+  /* Removed all borders for a cleaner "Cyber-Obsidian" look */
+  border: none;
+  padding: 4px 7px;
+  border-radius: 4px;
+  font-weight: 500;
+  line-height: 1;
+  min-width: 24px;
+  text-align: center;
+  opacity: 0.8;
+}
+
+.qc-kbd-text {
+  font-size: 10px;
+  color: var(--q-text-dim);
+  font-weight: 500;
+  opacity: 0.4;
+}
+
+.qc-body {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.qc-textarea {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  outline: none !important;
+  color: var(--q-text);
+  font-family: var(--qc-font-family);
+  font-size: var(--qc-font-size);
+  line-height: var(--qc-line-height);
+  padding: 24px;
+  resize: none;
+  display: block;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -webkit-font-smoothing: antialiased;
+  transition: none !important;
+}
+
+.qc-textarea::placeholder {
+  color: var(--q-text-dim);
+  opacity: 0.2;
+}
+
+.qc-textarea::-webkit-scrollbar {
+  display: none;
+}
+
+.qc-footer {
+  height: 44px;
+  padding: 0 24px 12px 24px; /* More bottom padding to prevent clipping */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: transparent;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.qc-footer-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--q-text-dim);
+  white-space: nowrap;
+}
+
+.qc-footer-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+.qc-lang-slot {
+  width: 140px;
+}
+
+.qc-char-slot {
+  flex: 1;
+  justify-content: flex-end;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.qc-success {
+  position: absolute;
+  inset: 0;
+  background: var(--q-bg);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  animation: qc-fade-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes qc-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.qc-success-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #22c55e;
+  margin-top: 16px;
+  letter-spacing: -0.01em;
+}

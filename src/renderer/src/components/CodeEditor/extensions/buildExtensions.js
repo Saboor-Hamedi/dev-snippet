@@ -1,7 +1,16 @@
+import { forceSelection } from './forceSelection'
 import buildTheme from './buildTheme'
 import { premiumTypingBundle } from './premiumFeatures'
+import { zenFocusExtension } from './zenFocus'
+import { linkPreviewTooltip } from './linkPreview'
+import './linkPreview.css'
+import { tags as t } from '@lezer/highlight'
+import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
+import { richMarkdownExtension } from '../engine'
 
-// Pre-load or cache language data to avoid micro-lag during extension rebuilds
+/**
+ * Lazy-load language names to keep the main bundle light.
+ */
 let cachedLanguages = null
 const getLanguages = async () => {
   if (cachedLanguages) return cachedLanguages
@@ -14,6 +23,9 @@ const getLanguages = async () => {
   }
 }
 
+/**
+ * coreExtensions: Standard CodeMirror configurations for a premium editor.
+ */
 const buildExtensions = async (options, handlers = {}) => {
   const {
     EditorView,
@@ -22,228 +34,263 @@ const buildExtensions = async (options, handlers = {}) => {
     fontSize = '14px',
     wordWrap = 'on',
     language = 'markdown',
-    isLargeFile = false, // NEW: Flag for large files,
+    isLargeFile = false,
     cursorBlinking = true,
     cursorBlinkingSpeed = 500,
     cursorWidth = 2,
-    cursorShape = 'bar'
+    cursorShape = 'bar',
+    cursorSelectionBg,
+    snippetTitles = [],
+    zenFocus = false
   } = options
-  const { liveZoomRef, applyZoomToDOM, debouncedSaveZoom, setStoredZoomLevel } = handlers
+  const { debouncedSaveZoom } = handlers
 
   const exts = []
 
-  // Debug flag: set `localStorage.disableComplexCM = '1'` in renderer DevTools
-  // to run a minimal extension set which avoids DOM-touching optional
-  // extensions (drawSelection, dropCursor, imageHandler, etc.). This helps
-  // isolate crashes caused by extensions that interact with CodeMirror's DOM
-  // lifecycle during rapid updates (paste/scroll).
-  const disableComplex =
-    typeof window !== 'undefined' &&
-    window.localStorage &&
-    window.localStorage.getItem('disableComplexCM') === '1'
-  if (disableComplex) {
-    // Minimal set: theme + basic line numbers + wrapping
-    exts.push(buildTheme(EditorView, { isDark, caretColor, fontSize }))
-    try {
-      const { lineNumbers } = await import('@codemirror/view')
-      exts.push(
-        lineNumbers({
-          formatNumber: (n) => n.toString()
-        })
-      )
-    } catch (e) {}
-    if (wordWrap === 'on') exts.push(EditorView.lineWrapping)
+  // 1. THEME & VISUALS (Always first)
+  exts.push(
+    buildTheme(EditorView, {
+      isDark,
+      caretColor,
+      fontSize,
+      cursorWidth,
+      cursorShape,
+      cursorSelectionBg
+    })
+  )
 
-    // Allow selectively enabling optional extension groups via localStorage
-    // Example: `localStorage.setItem('cmExtras','draw,richMarkdown,image')`
-    const extrasStr =
-      (typeof window !== 'undefined' &&
-        window.localStorage &&
-        window.localStorage.getItem('cmExtras')) ||
-      ''
-    const extras = extrasStr
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean)
+  const { tooltips } = await import('@codemirror/view')
+  exts.push(
+    tooltips({
+      position: 'fixed'
+    })
+  )
 
-    const shouldLoad = (name) => extras.includes(name)
+  // 2.5 LINK PREVIEW (WikiLinks) - Premium Feature
+  exts.push(linkPreviewTooltip)
 
-    // Helper loaders for known groups (safe, logged)
-    if (shouldLoad('draw')) {
-      try {
-        const { drawSelection, dropCursor, highlightActiveLine } = await import('@codemirror/view')
-        exts.push(drawSelection())
-        exts.push(dropCursor())
-        exts.push(highlightActiveLine())
-        console.info('[CM DEBUG] Loaded draw group')
-      } catch (e) {
-        console.warn('[CM DEBUG] Failed to load draw group', e)
-      }
-    }
+  // 2.5.1 ZEN FOCUS - Immersive Writing Feature
+  exts.push(zenFocusExtension(zenFocus))
 
-    if (shouldLoad('history')) {
-      try {
-        const { history } = await import('@codemirror/commands')
-        exts.push(history())
-        console.info('[CM DEBUG] Loaded history')
-      } catch (e) {
-        console.warn('[CM DEBUG] Failed to load history', e)
-      }
-    }
-
-    if (shouldLoad('bracket')) {
-      try {
-        const { bracketMatching } = await import('@codemirror/language')
-        exts.push(bracketMatching())
-        console.info('[CM DEBUG] Loaded bracketMatching')
-      } catch (e) {
-        console.warn('[CM DEBUG] Failed to load bracketMatching', e)
-      }
-    }
-
-    if (shouldLoad('markdown') || shouldLoad('richMarkdown')) {
-      try {
-        if (shouldLoad('richMarkdown')) {
-          const { richMarkdownExtension } = await import('./richMarkdown.js')
-          exts.push(richMarkdownExtension)
-          console.info('[CM DEBUG] Loaded richMarkdown')
-        }
-        if (shouldLoad('markdown')) {
-          const { markdown } = await import('@codemirror/lang-markdown')
-          exts.push(markdown({ addKeymap: false }))
-          console.info('[CM DEBUG] Loaded markdown')
-        }
-      } catch (e) {
-        console.warn('[CM DEBUG] Failed to load markdown group', e)
-      }
-    }
-
-    if (shouldLoad('zoom')) {
-      try {
-        const { keymap } = await import('@codemirror/view')
-        const { MIN_ZOOM, MAX_ZOOM } = await import('../../../hook/useZoomLevel.js')
-        // Re-use the zoom logic from below (simplified)
-        let rafId = null
-        const safeApplyZoom = (newZoom) => {
-          newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom))
-          liveZoomRef.current = newZoom
-          if (rafId) cancelAnimationFrame(rafId)
-          rafId = requestAnimationFrame(() => applyZoomToDOM(newZoom))
-          if (debouncedSaveZoom) debouncedSaveZoom(newZoom)
-          if (setStoredZoomLevel) setStoredZoomLevel(newZoom)
-        }
-        const zoomHandler = (change) => {
-          safeApplyZoom(liveZoomRef.current + change)
-          return true
-        }
-        const resetZoom = () => {
-          safeApplyZoom(1.0)
-          return true
-        }
-        const zoomKeymap = keymap.of([
-          { key: 'Ctrl-=', run: () => zoomHandler(0.1) },
-          { key: 'Ctrl-+', run: () => zoomHandler(0.1) },
-          { key: 'Ctrl-Minus', run: () => zoomHandler(-0.1) },
-          { key: 'Ctrl-_', run: () => zoomHandler(-0.1) },
-          { key: 'Ctrl-0', run: resetZoom }
-        ])
-        exts.push(zoomKeymap)
-        // console.info('[CM DEBUG] Loaded zoom')
-      } catch (e) {
-        // console.warn('[CM DEBUG] Failed to load zoom', e)
-      }
-    }
-
-    return exts
-  }
-
-  // THEME & PREMIUM FEEL
-  exts.push(buildTheme(EditorView, { isDark, caretColor, fontSize, cursorWidth, cursorShape }))
-
-  // High-performance typing animations (skip for large files)
+  // 2.6 DOUBLE-CLICK WARP - Navigation Speed Feature
+  const { wikiLinkWarp } = await import('./linkPreview')
+  exts.push(wikiLinkWarp)
+  const completionSources = []
   if (!isLargeFile) {
-    exts.push(...premiumTypingBundle)
+    try {
+      const { wikiLinkCompletionSource } = await import('./wikiLinkCompletion.js')
+      if (wikiLinkCompletionSource) {
+        completionSources.push(wikiLinkCompletionSource(snippetTitles))
+      }
+    } catch (e) {
+      console.warn('[Editor] Failed to load wiki link completion', e)
+    }
+
+    // 3. SLASH COMMANDS
+    try {
+      const { slashCommandCompletionSource } = await import('./slashCommandCompletion.js')
+      if (slashCommandCompletionSource) {
+        completionSources.push(slashCommandCompletionSource)
+      }
+    } catch (e) {
+      console.warn('[Editor] Failed to load slash commands', e)
+    }
   }
 
-  // CORE UI EXTENSIONS (Critical for stability)
+  // 3. CORE EDITOR FUNCTIONALITY (Try-Catch to prevent complete engine failure)
   try {
-    const { drawSelection, dropCursor, highlightActiveLine } = await import('@codemirror/view')
-    // Uses custom drawn selection (better for mixed font sizes/rich text)
-    exts.push(
-      drawSelection({
-        cursorBlinkRate: 0 // Disable internal blinking to use CSS animation
-      })
-    )
-    exts.push(dropCursor())
-    // highlightActiveLine helps visual context
-    exts.push(highlightActiveLine())
-  } catch (e) {}
+    const { dropCursor, drawSelection, keymap, highlightActiveLine } =
+      await import('@codemirror/view')
+    const { indentOnInput, bracketMatching, defaultHighlightStyle } =
+      await import('@codemirror/language')
+    const { defaultKeymap, historyKeymap, history } = await import('@codemirror/commands')
+    const {
+      closeBrackets,
+      closeBracketsKeymap,
+      completionKeymap,
+      closeCompletion,
+      autocompletion
+    } = await import('@codemirror/autocomplete')
 
-  // HISTORY (Undo/Redo)
-  try {
-    const { history } = await import('@codemirror/commands')
+    // Define premium syntax highlighting style
+    // NOTE: Font sizes are controlled by buildTheme.js (.cm-h1, .cm-h2, etc.)
+    // This HighlightStyle only handles COLORS and STYLES, not sizes
+    const premiumHighlightStyle = HighlightStyle.define([
+      { tag: t.keyword, color: 'var(--color-syntax-keyword, #ff7b72)', fontWeight: 'bold' },
+      {
+        tag: [t.variableName, t.definition(t.variableName), t.propertyName],
+        color: 'var(--color-syntax-variable, #79c0ff)'
+      },
+      {
+        tag: [t.function(t.variableName), t.function(t.propertyName)],
+        color: 'var(--color-syntax-variable, #79c0ff)',
+        fontStyle: 'italic'
+      },
+      { tag: t.string, color: 'var(--color-syntax-string, #a5d6ff)' },
+      { tag: t.number, color: 'var(--color-syntax-number, #d19a66)' },
+      { tag: t.bool, color: 'var(--color-syntax-boolean, #ff7b72)' },
+      { tag: t.null, color: 'var(--color-syntax-null, #79c0ff)' },
+      { tag: t.comment, color: 'var(--color-syntax-comment, #8b949e)', fontStyle: 'italic' },
+      {
+        tag: [t.punctuation, t.separator, t.bracket],
+        color: 'var(--color-syntax-punctuation, #8b949e)'
+      },
+      { tag: t.heading, color: 'var(--color-accent-primary, #58a6ff)', fontWeight: 'bold' },
+      // REMOVED fontSize from headings - controlled by buildTheme.js instead
+      { tag: t.heading1 },
+      { tag: t.heading2 },
+      { tag: t.heading3 },
+      { tag: t.heading4 },
+      { tag: t.heading5 },
+      { tag: t.heading6 },
+      { tag: t.link, color: 'var(--color-accent-secondary, #58a6ff)', textDecoration: 'underline' },
+      { tag: t.strong, fontWeight: 'bold' },
+      { tag: t.emphasis, fontStyle: 'italic' },
+      { tag: t.strikethrough, textDecoration: 'line-through' },
+      {
+        tag: t.monospace,
+        color: 'var(--color-accent-primary, #58a6ff)',
+        backgroundColor: 'rgba(88, 166, 255, 0.1)',
+        padding: '1px 4px',
+        borderRadius: '4px'
+      }
+    ])
+
+    // ========================================================================
+    // HYBRID SELECTION SYSTEM (Custom Cursor + Text-Only Selection)
+    // ========================================================================
+    //
+    // THE CHALLENGE:
+    // - CodeMirror's 'drawSelection' is REQUIRED for custom cursor shapes (block, underline).
+    // - BUT 'drawSelection' creates full-width selection backgrounds (ugly on headers).
+    // - Disabling 'drawSelection' gives clean selection but kills custom cursors.
+    // - Hiding CM's selection layer while forcing native ::selection fails (transparent).
+    //
+    // THE SOLUTION (3-Part Hybrid):
+    // 1. Enable 'drawSelection' below → Provides custom cursor rendering
+    // 2. Add 'forceSelection()' extension → Decorates selected text with .cm-force-selection
+    // 3. CSS in CodeEditor.css:
+    //    - Hides .cm-selectionBackground (kills full-width blocks)
+    //    - Styles .cm-force-selection (provides visible text-only highlight)
+    //
+    // RESULT: Custom cursor shapes + Clean text-only selection highlighting
+    // ========================================================================
+    exts.push(drawSelection({ cursorBlinkRate: 0 }))
+    exts.push(forceSelection())
+
+    // Intentionally DO NOT add highlightActiveLine() to avoid aggressive
+    // full-line background highlighting on single click. Background
+    // indicator is managed via theme CSS instead.
+    exts.push(indentOnInput())
+    // Exclude backticks from auto-closing as per user request
+    exts.push(closeBrackets({ brackets: ['(', '[', '{', "'", '"'] }))
+    exts.push(bracketMatching())
+    exts.push(syntaxHighlighting(premiumHighlightStyle, { fallback: true }))
     exts.push(history())
-  } catch (e) {}
 
-  // BRACKET MATCHING (Skip for large files - expensive)
-  if (!isLargeFile) {
-    try {
-      const { bracketMatching } = await import('@codemirror/language')
-      exts.push(bracketMatching())
-    } catch (e) {}
+    // REGISTER UNIFIED AUTOCOMPLETION
+    // We use 'override' for markdown to prioritize WikiLinks
+    const autoConfig = {
+      activateOnTyping: true,
+      icons: true,
+      defaultKeymap: true
+    }
+
+    // Only use override if we are in markdown/text
+    const l = language.toLowerCase()
+    const isWikiEnabled =
+      l === 'markdown' ||
+      l === 'md' ||
+      l === 'plaintext' ||
+      l === 'text' ||
+      l === 'txt' ||
+      l === 'auto' // Add auto for safety
+
+    if (isWikiEnabled && completionSources.length > 0) {
+      autoConfig.override = completionSources
+    }
+
+    exts.push(autocompletion(autoConfig))
+
+    // Essential Keymaps
+    exts.push(
+      keymap.of([...defaultKeymap, ...historyKeymap, ...closeBracketsKeymap, ...completionKeymap])
+    )
+  } catch (e) {
+    console.error('[Editor] Failed to load core extensions', e)
   }
 
-  // Line numbers
+  // 3.5. SEARCH HIGHLIGHTING (Custom search panel with highlighting)
   try {
-    const { lineNumbers } = await import('@codemirror/view')
-    exts.push(
-      lineNumbers({
-        formatNumber: (lineNo) => lineNo.toString(),
-        domEventHandlers: {
-          mousedown: (view, line, event) => false
-        }
-      })
-    )
-  } catch (e) {}
+    const { searchHighlighter, searchHighlightTheme } =
+      await import('../search/searchHighlighter.js')
 
-  if (wordWrap === 'on') {
+    exts.push(searchHighlighter)
+    exts.push(searchHighlightTheme)
+  } catch (e) {
+    console.warn('[Editor] Failed to load search highlighting', e)
+  }
+
+  // 5. WORD WRAP
+  if (String(wordWrap) === 'on' || wordWrap === true) {
     exts.push(EditorView.lineWrapping)
   }
 
-  // Markdown Support (Skip rich decorations for large files)
-  if (language === 'markdown') {
-    try {
-      const { markdown } = await import('@codemirror/lang-markdown')
+  // 6. DYNAMIC LANGUAGE DETECTION & LOADING
+  try {
+    const allLangs = await getLanguages()
+    const normalizedLang = language.toLowerCase().replace(/^\./, '')
 
-      // Load languages safely for nested code blocks
-      let languages = []
-      if (!isLargeFile) {
-        try {
-          languages = (await getLanguages()) || []
-        } catch (err) {
-          console.warn('Failed to load code languages:', err)
-        }
+    const langDesc = allLangs.find(
+      (l) =>
+        l.name.toLowerCase() === normalizedLang ||
+        l.alias.some((a) => a.toLowerCase() === normalizedLang) ||
+        (l.extensions && l.extensions.some((e) => e.toLowerCase() === normalizedLang))
+    )
+    // Priority 1: Explicit JSON (Settings)
+    if (normalizedLang === 'json') {
+      const { json } = await import('@codemirror/lang-json')
+      exts.push(json())
+    }
+    // Priority 2: Markdown with extras
+    else if (normalizedLang === 'markdown' || normalizedLang === 'md') {
+      const { markdown, markdownLanguage } = await import('@codemirror/lang-markdown')
+      const { languages } = await import('@codemirror/language-data')
+
+      // Attempt to load GFM extensions for Tables/TaskLists - Critical for Live Preview
+      let mdExtensions = [markdownLanguage]
+      try {
+        const { GFM, Table, TaskList } = await import('@lezer/markdown')
+        mdExtensions = [GFM, Table, TaskList]
+      } catch (e) {
+        console.warn('[Editor] GFM extensions not found, falling back to CommonMark.', e)
       }
 
-      // 1. Official Markdown Extension
       exts.push(
         markdown({
-          addKeymap: false,
+          base: markdownLanguage,
+          extensions: mdExtensions,
           codeLanguages: languages,
-          defaultCodeLanguage: undefined // Let it guess or fallback
+          addKeymap: true
         })
       )
-
-      // 2. Load Custom Syntax Highlighting (Colors only) - Only for small files
-      if (!isLargeFile) {
-        const { richMarkdownExtension } = await import('./richMarkdown.js')
-        exts.push(richMarkdownExtension)
-      }
-    } catch (e) {
-      console.error('Failed to load markdown extensions', e)
-      // Fallback: Just load basic line wrapping if markdown fails
-      exts.push(EditorView.lineWrapping)
+      // Add Obsidian-style Live Preview
+      exts.push(richMarkdownExtension)
     }
+    // Priority 3: Plain text (no extensions needed)
+    else if (['plaintext', 'text', 'txt', ''].includes(normalizedLang)) {
+      // Logic for plain text: No specific language extension required.
+    }
+    // Priority 4: Dynamic discovery
+    else if (langDesc) {
+      const langSupport = await langDesc.load()
+      exts.push(langSupport)
+      console.info(`[Editor] Loaded language: ${langDesc.name}`)
+    } else {
+      console.warn('[Editor] No language support found for:', normalizedLang)
+    }
+  } catch (e) {
+    console.warn(`[Editor] Language loading failed for: ${language}`, e)
   }
 
   return exts

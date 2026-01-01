@@ -1,208 +1,205 @@
-# dev-snippet
+# Dev Snippet
+![Banner](./repo-banner.png)
 
-dev-snippet is a desktop application built with Electron and React for creating, editing, and managing code/text snippets. It features a CodeMirror-based editor with syntax highlighting, markdown preview, autosave functionality, and SQLite storage. The app provides a clean, frameless window with custom controls and supports building native installers for Windows, macOS, and Linux.
+DevSnippet is a local-first knowledge workstation that blends a snippet manager, a markdown notebook, and a cinematic Flow workspace. It delivers a zero-latency CodeMirror engine, live preview powered by a Shadow DOM surface, sqlite-backed search (sub-10ms FTS5), and premium UI touches such as Zen Focus, GPU-isolated blur surfaces, and instant Quick Capture.
 
-This README explains how the project works, how to develop and build it, the architecture behind it, useful keyboard shortcuts, and troubleshooting tips for common issues.
+## Table of Contents
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Feature Pillars](#feature-pillars)
+- [Getting Started](#getting-started)
+- [Development Commands](#development-commands)
+- [Keyboard Shortcuts](#keyboard-shortcuts)
+- [Flow Mode](#flow-mode)
+- [Data & Storage](#data--storage)
+- [Editor Engine](#editor-engine)
+- [Visual Design System](#visual-design-system)
+- [Icons & Packaging](#icons--packaging)
+- [Where to Make Common Changes](#where-to-make-common-changes)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [License](#license)
 
-**Friendly note:** this README is written to be published on a website. If you'd like shorter or localized versions, tell me which sections to trim or translate.
+## Overview
+- **Zero-Latency Live Preview**: Markdown, diagrams, tables, task lists, and math render via a Shadow DOM engine that never blocks typing.
+- **Local-First DNA**: All content (snippets, media, session state) sits in `app.getPath('userData')`; SQLite + WAL + mmap deliver near-memory performance.
+- **Instant Intelligence**: WikiLinks, slash commands, hash-tag autocomplete, ghosted markdown markers, Git status dots, and adaptive autosave cues keep focus high.
+- **Virtualization Everywhere**: Sidebars, Flow lists, and editor gutters only render what is visible—DevSnippet happily handles 10,000+ notes.
+- **Glass Aesthetic, Native Feel**: GPU layer promotion, motion-decoupled blur, and opacity-normalized tooltips keep the UI premium without stutter.
 
-**Table of contents**
-- **Getting started** (dev & build)
-- **Development Commands**
-- **How the app works (architecture)**
-- **Keyboard shortcuts**
-- **Icons & Packaging**
-- **Development workflow & tooling**
-- **Where to make common changes**
-- **Troubleshooting**
-- **File Locations**
+## Architecture
+### Process Topology
+- **Main Process (Electron)**: Boots the window via `src/main/index.js`, initializes SQLite through `src/main/database`, registers IPC handlers, and manages autosave/backups/updates.
+- **Renderer Process (React + Vite)**: Lives in `src/renderer/src`, hosts the Workbench UI, Flow Mode, and the CodeMirror engine.
+- **Preload Bridge**: `src/preload/index.js` exposes a safe API surface (database CRUD, filesystem helpers, quick capture toggle, backups, updates).
 
----
+### Communication Flow
+```mermaid
+flowchart TD
+    subgraph Main_Process [Main Process]
+        App[Lifecycle]
+        DB[(SQLite / FTS5)]
+        IPC_Main[IPC]
+        FS[File System]
+    end
 
-**Getting started**
+    subgraph Renderer [Renderer]
+        ReactUI[React Workbench]
+        Editor[CodeMirror 6]
+        Bridge[IPC Bridge]
+    end
 
-Prerequisites
-- Node.js 18+ (LTS recommended)
-- npm (or your package manager of choice)
-- On macOS: Xcode command line tools (for packaging)
-
-Install dependencies (this automatically runs `electron-rebuild` for better-sqlite3):
-
-```bash
-npm install
+    ReactUI --> Bridge
+    Bridge --> IPC_Main
+    IPC_Main --> DB
+    IPC_Main --> FS
+    DB --> IPC_Main
+    IPC_Main --> Bridge
 ```
 
-Run in development mode with hot reload:
+### Knowledge Inputs
+| Trigger | Feature | Notes |
+| --- | --- | --- |
+| `#` | Tags | Autocomplete across workspace taxonomies. |
+| `@` | Mentions | Reserved for future collaboration hooks. |
+| `[[` | WikiLinks | Hover previews with syntax-highlighted fragments. |
+| `/` | Slash Commands | Notion-style block inserter for tables, diagrams, callouts. |
+| Ghost Footprint | Markdown polish | Hidden syntax keeps layout stable when focusing other lines. |
 
+## Feature Pillars
+- **Command Palette + Hybrid Search**: Local fuzzy title filtering paired with sqlite FTS5 snippet search (<50 ms) inside `Cmd/Ctrl + P`.
+- **Pinned & Git-aware Sidebar**: Virtualized list with “Modified” (yellow) and “Draft” (green) dots derived from realtime sqlite diffs.
+- **Zen Focus / Glassmorphism Modes**: Dims secondary UI, hides noise, and enforces opaque tooltips to maintain readability across light/dark themes.
+- **Quick Capture**: Global `Shift + Alt + Space` summons a floating, transparent capture pad that routes notes directly to the Inbox folder.
+- **Flow Mode**: Dual-column floating workstation with viewport presets, click-through previews, kinetic scroll sync, and autosave telemetry.
+
+## Getting Started
+1. **Prerequisites**
+   - Node.js 18+ (LTS recommended)
+   - npm or compatible package manager
+   - macOS packaging requires Xcode Command Line Tools
+2. **Install**
+   ```bash
+   npm install
+   ```
+3. **Run in development**
+   ```bash
+   npm run dev
+   ```
+4. **Build for production (electron-vite + electron-builder)**
+   ```bash
+   npm run build
+   ```
+
+## Development Commands
+### Core
 ```bash
-npm run dev
+npm run dev      # Start renderer + Electron with hot reload
+npm run build    # Bundle renderer + main for distribution
 ```
 
-Build the application (compiles with electron-vite):
-
+### Testing & Quality
 ```bash
-npm run build
+npm test         # Vitest (headless)
+npm test:ui      # Vitest UI runner
+npm run lint     # ESLint
+npm run format   # Prettier
 ```
 
----
-
-**Development Commands**
-
-Core Development
+### Native Modules & Packaging
 ```bash
-# Run in development mode (hot reload enabled)
-npm run dev
-
-# Build the application (compiles with electron-vite)
-npm run build
-```
-
-Testing
-```bash
-# Run tests with Vitest
-npm test
-
-# Run tests with UI
-npm test:ui
-```
-
-Code Quality
-```bash
-# Lint code with ESLint
-npm run lint
-
-# Format code with Prettier
-npm run format
-```
-
-Native Module Rebuild
-```bash
-# Rebuild native modules (e.g., better-sqlite3) if installation fails
-npm run rebuild
-```
-
-Building Distributables
-```bash
-# Build for Windows (produces NSIS installer)
+npm run rebuild  # Rebuild better-sqlite3 if Node/Electron changes
 npm run build:win
-
-# Build for macOS (run on macOS only)
 npm run build:mac
-
-# Build for Linux (AppImage, snap, deb)
 npm run build:linux
-
-# Build unpacked (for testing)
 npm run build:unpack
-```
-
-Icon Generation
-```bash
-# Generate platform-specific icons from source PNG (requires 1024x1024 PNG)
 npm run make:icons
 ```
 
-Build notes: the build scripts run the Vite build for the renderer and then run `electron-builder` to produce platform installers. See `package.json` scripts.
+## Keyboard Shortcuts
+All shortcuts live in `src/renderer/src/features/keyboard/shortcuts.js` (consumed by the shared `useKeyboardShortcuts` hook) and purposely ignore focusable inputs (except Escape) to avoid hijacking typing.
 
----
+| Scope | Shortcut | Action |
+| --- | --- | --- |
+| Navigation | `Esc` | Dismiss open menus, modals, popovers without blurring the editor. |
+| Navigation | `Ctrl/Cmd + Shift + W` | Close the editor and return to the Snippet Library. |
+| Navigation | `Ctrl/Cmd + P` *(Shift enters Command Mode)* | Open the Command Palette / Raycast-like search. |
+| Navigation | `Ctrl/Cmd + B` | Toggle the sidebar. |
+| Navigation | `Ctrl/Cmd + ,` | Open Settings. |
+| Navigation | `Ctrl/Cmd + /` | Cycle reading / hybrid / editing layouts. |
+| Workspace | `Ctrl/Cmd + Shift + F` | Toggle Flow Mode. |
+| Workspace | `Shift + Alt + Space` | Toggle the global Quick Capture window. |
+| Editing | `Ctrl/Cmd + N` | Create a new snippet and focus the editor. |
+| Editing | `Ctrl/Cmd + S` / `Ctrl/Cmd + Shift + S` | Save the active snippet. |
+| Editing | `Ctrl/Cmd + R` | Rename the selected snippet. |
+| Editing | `Ctrl/Cmd + Shift + D` | Delete (Trash) the selected snippet. |
+| Editing | `Ctrl/Cmd + Shift + C` | Copy the selected snippet’s code to clipboard. |
+| Editing | `Alt + P` | Toggle pin state / open pin popover for the focused snippet. |
+| Editing | `Ctrl/Cmd + F` | Open the in-editor search panel (handled inside CodeMirror). |
+| Preview | `Ctrl/Cmd + \` · `Ctrl/Cmd + E` · `Alt + E` | Toggle Live Preview vs. source editing (Obsidian style). |
+| Zoom | `Ctrl/Cmd + =` or `Ctrl/Cmd + +` | Zoom in. |
+| Zoom | `Ctrl/Cmd + -` | Zoom out. |
+| Zoom | `Ctrl/Cmd + 0` | Reset zoom. |
+| Zoom | `Ctrl/Cmd + Mouse Wheel` | Smooth zoom (VS Code-style wheel gesture). |
 
-**Icons & Packaging**
+## Flow Mode
+- **Workspace Split**: Left = high-performance CodeMirror, Right = ghosted live preview with viewport presets (Mini/Mobile/Tablet/Desktop).
+- **WikiWarp**: Double-click `[[links]]` to jump immediately without keyboard modifiers.
+- **Mission Control Header**: Focus timers, autosave badges, preview toggles, click-through shield.
+- **Motion Decoupling**: During drag/resize the blur swaps for solid backdrops to keep 60fps.
+- **Scroll Sync**: requestAnimationFrame-based smoothing keeps preview perfectly aligned with the editor.
 
-- During development, the window uses a platform-appropriate icon (`resources/icon.ico` on Windows and `renderer/public/icon.png` on other platforms).
-- OS-level icons (Start menu, pinned shortcuts, installer exe, .app bundle) are embedded at packaging time.
-- `electron-builder` is configured to use resources from the `build/` folder (see `electron-builder.yml`).
+## Data & Storage
+- **Schema**: `SNIPPET`, `FOLDER`, and `SETTINGS` tables with normalized relationships plus a `snippets_fts` virtual table for search.
+- **FTS5 Strategy**: Weighted BM25 (Title 10, Tags 5, Code 1) with deferred `snippet()` extraction so only the top N matches render highlighted previews.
+- **Triggers**: INSERT/UPDATE/DELETE hooks keep the FTS shadow table synced automatically.
+- **Backups**: IPC handlers in `src/main/ipc/backup.js` snapshot the sqlite file and assets; restoration runs through the same channel.
 
-To generate icons from a high-resolution source PNG (recommended 1024×1024):
+## Editor Engine
+- **Single Pass Renderer**: Markdown → Unified AST → Shadow DOM in one viewport-aware pass.
+- **Ghost Footprint**: Hides markdown markers with `color: transparent` instead of removing them, preventing layout jitter.
+- **Widgets**: Mermaid, admonitions, tables, tasks, and custom headers render via CodeMirror `WidgetType`s with debounced updates and zombie guards.
+- **Unified Pipeline**: All preview/export (PDF/Word/Image) flows through `src/renderer/src/utils/markdownParser.js` for perfect parity.
+- **Performance Tricks**: Regex-based line counting, elevated wrap thresholds (50k lines / 2M chars), and virtualization keep typing instant even with massive snippets.
 
-```bash
-npm run make:icons
-```
+## Visual Design System
+- **Normalization Layer**: Floating elements detect `[data-theme]` and auto-switch between solid light surfaces and cinematic dark blur.
+- **Opaque Tooltips**: `--color-tooltip-bg` ensures full-contrast tooltips across Polaris (light) and Dark themes.
+- **Component-Scoped CSS**: Modals, tooltips, Flow controls, and pin popovers isolate their styles to avoid specificity wars.
+- **GPU Promotion**: `contain: layout paint` plus `translateZ(0)` move Flow windows and heavy panels onto dedicated compositor layers.
 
-This runs `npx electron-icon-maker --input src/renderer/public/icon.png --output build` and produces `build/icon.ico` and `build/icon.icns`. After packaging, the installers will show your custom icon.
+## Icons & Packaging
+- Dev window icons: `resources/icon.ico` on Windows, `src/renderer/public/icon.png` elsewhere.
+- Production packaging pulls assets from `build/` as configured in `electron-builder.yml`.
+- Generate platform icons from a 1024×1024 PNG:
+  ```bash
+  npm run make:icons
+  ```
+- Want the icon in dev immediately? Copy `build/icon.ico` → `resources/icon.ico` and restart `npm run dev`.
 
-If you want the dev BrowserWindow to display the custom Windows icon immediately, copy `build/icon.ico` to `resources/icon.ico` and restart `npm run dev`.
+## Where to Make Common Changes
+- **Database / migrations**: `src/main/index.js` + `src/main/database` (add guarded migrations in `initDB`).
+- **Keyboard Shortcuts**: `src/renderer/src/hook/useKeyboardShortcuts.js` (and mirrored in the Settings Shortcuts tab).
+- **Editor UX**: `src/renderer/src/components/SnippetEditor.jsx`.
+- **Workbench shell & routing**: `src/renderer/src/components/workbench/Workbench.jsx` + `SnippetLibrary.jsx`.
+- **Toasts & notifications**: `src/renderer/src/hook/useToast.js` + `src/renderer/src/utils/ToastNotification.jsx`.
 
----
+## Troubleshooting
+- **Electron icon still shows**: Packaging embeds icons; for dev copy `build/icon.ico` → `resources/icon.ico`.
+- **“The symbol 'join' has already been declared”**: Ensure `src/main/index.js` imports `join` only once.
+- **Native module errors**: Run `npm run rebuild` after upgrading Node/Electron.
+- **Vitest / module cache issues**: Delete `node_modules/.vite` and restart `npm run dev`.
+- **Modal stacking glitches**: Destructive prompts accept a `zIndex`; use it when adding new dialogs.
+- **Search returning nothing**: Verify tags are non-empty and query terms exceed two characters (SQLite FTS default).
+- **Mermaid dynamic import errors**: Clear `.vite` and restart to refresh the dependency graph.
 
-**Development workflow & tooling**
+## Contributing
+Pull requests are welcome—keep them focused and well-tested.
 
-- Linting & formatting: Prettier and ESLint are recommended in your editor.
-- Native modules: `better-sqlite3` is used in the main process. After `npm install`, we run `electron-rebuild` in `postinstall` (see `package.json`). If you encounter native build issues, run:
+1. Run `npm run lint` and `npm run format` before committing.
+2. Include screenshots / GIFs for UI changes.
+3. If you change the DB schema, include migrations and mention them in the PR description.
 
-```bash
-npm run rebuild
-```
-
----
-
-**How the app works (architecture)**
-
-- Main process: `src/main/index.js` — creates BrowserWindow, registers IPC handlers for file dialogs and database access, and initializes a small SQLite DB (`snippets.db`) stored in the user's appData (`app.getPath('userData')`). The window icon is chosen per-platform in `createWindow()`.
-- Preload: `src/preload/index.js` — exposes a small safe API to the renderer for IPC operations (open file, read/write, DB RPC).
-- Renderer: `src/renderer/src` — React app built with Vite. Key folders:
-	- `components/` — UI components (Workbench, SnippetEditor, SnippetLibrary, StatusBar, SettingsPanel, modal dialogs, etc.)
-	- `hook/` — custom hooks (`useSnippetData`, `useToast`, `useKeyboardShortcuts`, etc.)
-	- `utils/` — small utilities such as `ToastNotification`
-
-Data flow summary:
-- `SnippetLibrary` is the top-level view manager: it holds active view state (`snippets`, `editor`, `settings`, `welcome`) and orchestrates opening the editor, creating drafts, and showing modals.
-- `SnippetEditor` renders the editor and live preview. It contains an autosave timer, a `textareaRef` and focuses the editor reliably when a snippet is opened or created.
-- Database access (CRUD for snippets and settings) is performed in the main process via better-sqlite3 and exposed to the renderer by IPC handlers.
-
----
-
-**Keyboard shortcuts & focus behavior**
-
-The app provides global keyboard shortcuts that are intentionally conservative (they avoid interfering when typing in inputs):
-
-- Escape — close modals (rename/delete/command palette) or cancel editor
-- Ctrl/Cmd + N — Create a new snippet (opens editor in create mode). The editor `textarea` is focused by `SnippetEditor`'s `textareaRef` effects.
-- Ctrl/Cmd + R — Open Rename modal for the selected snippet
-- Ctrl/Cmd + Delete — Open Delete confirmation for selected snippet
-- Ctrl/Cmd + S — Save (opens save/name prompt when needed)
-- Ctrl/Cmd + P — Toggle Command Palette
-- Ctrl/Cmd + Shift + W — Go to Welcome page
-- Ctrl/Cmd + Shift + C — Copy selected snippet's code to clipboard
-
-Implementation notes:
-- Global shortcuts are implemented in `src/renderer/src/hook/useKeyboardShortcuts.js`. The hook ignores shortcuts while an editable field (input/textarea/contenteditable) has focus — except Escape which always works — so typing is never interrupted.
-- The editor focus is handled by React refs inside `SnippetEditor.jsx` rather than ad-hoc DOM queries; this makes Ctrl+N focus reliable.
-
----
-
-**Where to make common changes**
-
-- Change DB schema: `src/main/index.js` sets up the SQLite DB and runs simple migrations. Be careful when changing columns; add a migration block in `initDB()`.
-- Change keyboard shortcuts: `src/renderer/src/hook/useKeyboardShortcuts.js`.
-- Change editor UI or behavior: `src/renderer/src/components/SnippetEditor.jsx`.
-- Change top-level view flow (open/close settings): `src/renderer/src/components/SnippetLibrary.jsx` and `src/renderer/src/components/workbench/Workbench.jsx`.
-- Toasts: `src/renderer/src/hook/useToast.js` and `src/renderer/src/utils/ToastNotification.jsx`.
-
----
-
-**Troubleshooting & tips**
-
-- If the dev window still shows the Electron icon: packaging is required to replace OS-level icons; copy `build/icon.ico` → `resources/icon.ico` for immediate dev-window changes and restart `npm run dev`.
-- If you see `The symbol 'join' has already been declared` during build: there's a duplicate import in `src/main/index.js`. Keep a single `import { join } from 'path'` at the top of the file.
-- Native modules (e.g. better-sqlite3) may need rebuilding after Node or Electron version changes: run `npm run rebuild`.
-- If global shortcuts don't fire while typing: that is intentional — the shortcuts ignore editable elements to avoid interrupting input. If you want a shortcut to work inside an input, update the hook but be cautious.
-
----
-
-**Contributing**
-
-Pull requests are welcome. Keep changes small and focused. Follow these guidelines:
-- Run `npm run lint` and `npm run format` before committing.
-- If adding UI, include screenshots or a short GIF in the PR description.
-- If changing DB schema, include migration code in `initDB()`.
-
----
-
-**License & authorship**
-
-**License**
-
-- **License:** This project is licensed under the MIT License. See the `LICENSE` file for details.
-- **Badge:** [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-
-
+## License
+- **MIT License** — see `LICENSE` for details.
+- Badge: [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)

@@ -1,7 +1,6 @@
 import { useState, memo, lazy, Suspense } from 'react'
 import PropTypes from 'prop-types'
 import { Folder, Command, Plus, Settings, Github } from 'lucide-react'
-import SystemStatusFooter from './SystemStatusFooter'
 import useGeneralProp from '../hook/settings/useGeneralProp.js'
 
 // Lazy load GitHub components
@@ -19,7 +18,6 @@ const WelcomePage = ({
   const [showGitHubProfile, setShowGitHubProfile] = useState(false)
   const [showGitHubSettings, setShowGitHubSettings] = useState(false)
   const [showAllRecents, setShowAllRecents] = useState(false)
-  const { welcomeBg } = useGeneralProp() // Get welcome background color
 
   const [githubUsername, setGitHubUsername] = useState(() => {
     try {
@@ -49,7 +47,10 @@ const WelcomePage = ({
 
   return (
     <>
-      <div className="h-full overflow-y-auto" style={{ backgroundColor: welcomeBg }}>
+      <div
+        className="h-full overflow-y-auto"
+        style={{ backgroundColor: 'var(--welcome-bg, #232731)' }}
+      >
         <div className="h-full flex flex-col">
           {/* Clean Header Bar */}
           <div className="px-6 py-4">
@@ -119,14 +120,19 @@ const WelcomePage = ({
                   </h2>
                   <div className="space-y-1">
                     <button
-                      onClick={onNewSnippet}
-                      className="w-full flex items-center gap-3 px-0 py-2 text-left opacity-70 hover:opacity-100 transition-opacity bg-transparent hover:bg-transparent theme-exempt"
+                      onClick={() => onNewSnippet()}
+                      className="w-full flex items-center justify-between px-0 py-2 text-left opacity-70 hover:opacity-100 transition-opacity bg-transparent hover:bg-transparent theme-exempt group"
                     >
-                      <div className="text-[var(--color-accent)]">
-                        <Plus size={14} />
+                      <div className="flex items-center gap-3">
+                        <div className="text-[var(--color-accent)]">
+                          <Plus size={14} />
+                        </div>
+                        <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                          New Snippet
+                        </span>
                       </div>
-                      <span className="text-sm font-medium text-[var(--color-text-primary)]">
-                        New Snippet
+                      <span className="text-[10px] text-[var(--color-text-secondary)] opacity-0 group-hover:opacity-60 transition-opacity font-mono">
+                        Ctrl+N
                       </span>
                     </button>
 
@@ -138,16 +144,26 @@ const WelcomePage = ({
                         <Folder size={14} />
                       </div>
                       <span className="text-sm font-medium text-[var(--color-text-primary)]">
-                        Open Project
+                        Open Folder...
                       </span>
                     </button>
 
-                    <button className="w-full flex items-center gap-3 px-0 py-2 text-left opacity-70 hover:opacity-100 transition-opacity bg-transparent hover:bg-transparent theme-exempt">
-                      <div className="text-purple-500">
-                        <Command size={14} />
+                    <button
+                      onClick={() =>
+                        window.dispatchEvent(new CustomEvent('app:command-palette-open'))
+                      }
+                      className="w-full flex items-center justify-between px-0 py-2 text-left opacity-70 hover:opacity-100 transition-opacity bg-transparent hover:bg-transparent theme-exempt group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="text-purple-500">
+                          <Command size={14} />
+                        </div>
+                        <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                          Command Palette
+                        </span>
                       </div>
-                      <span className="text-sm font-medium text-[var(--color-text-primary)]">
-                        Command Palette
+                      <span className="text-[10px] text-[var(--color-text-secondary)] opacity-0 group-hover:opacity-60 transition-opacity font-mono">
+                        Ctrl+Shift+P
                       </span>
                     </button>
                   </div>
@@ -202,8 +218,6 @@ const WelcomePage = ({
               </div>
             </div>
           </div>
-
-          <SystemStatusFooter snippets={snippets} />
         </div>
       </div>
 

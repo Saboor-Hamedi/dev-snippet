@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import ToggleButton from '../../ToggleButton'
+import { ToggleButton } from '../../ToggleButton'
 import SettingRow from './SettingRow'
 
 /**

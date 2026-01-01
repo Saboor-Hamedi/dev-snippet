@@ -1,12 +1,26 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useToast } from './useToast'
+import { normalizeSnippet } from '../utils/snippetUtils'
+import { useFolderData } from './useSnippetData/useFolderData'
+import { useTrashData } from './useSnippetData/useTrashData'
+import { useSearchLogic } from './useSnippetData/useSearchLogic'
+
 export const useSnippetData = () => {
+  // 1. Centralized State
   const [snippets, setSnippets] = useState([])
+  const [hasLoadedSnippets, setHasLoadedSnippets] = useState(false)
+  const [folders, setFolders] = useState([])
+  const [trash, setTrash] = useState([])
   const [projects, setProjects] = useState([])
   const [selectedSnippet, setSelectedSnippetState] = useState(null)
   const { showToast } = useToast()
 
-  // lazy fetch full content only when selected
+  // 2. Logic Injection from Sub-hooks
+  const folderOps = useFolderData(showToast, folders, setFolders, setSnippets, setTrash)
+  const trashOps = useTrashData(showToast, trash, setTrash, setSnippets, setFolders)
+  const { searchSnippetList } = useSearchLogic(setSnippets)
+
+  // 3. Snippet-Specific Logic (Kept in main hook for now as it's the core focus)
   const setSelectedSnippet = async (item) => {
     if (!item) {
       setSelectedSnippetState(null)
@@ -14,16 +28,21 @@ export const useSnippetData = () => {
     }
 
     try {
-      // If code is already present (e.g. from a recent save), just use it
       if (item.code !== undefined && !item.is_draft) {
         setSelectedSnippetState(item)
         return
       }
 
-      // Otherwise fetch full content from DB
+      setSelectedSnippetState(item)
+
       if (window.api?.getSnippetById) {
         const fullSnippet = await window.api.getSnippetById(item.id)
-        setSelectedSnippetState(fullSnippet || item)
+        setSelectedSnippetState((current) => {
+          if (current && current.id === item.id) {
+            return fullSnippet || item
+          }
+          return current
+        })
       } else {
         setSelectedSnippetState(item)
       }
@@ -32,67 +51,93 @@ export const useSnippetData = () => {
     }
   }
 
-  // Load initial metadata only
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        if (window.api?.getSnippets) {
-          // Fetch only metadata for the sidebar/list - MUCH faster
-          const loadedSnippets = await window.api.getSnippets({ metadataOnly: true })
-          setSnippets(loadedSnippets || [])
-        }
-      } catch (error) {
-        showToast('❌ Failed to load data')
+  const loadSnippets = useCallback(async () => {
+    try {
+      if (window.api?.getSnippets) {
+        const loadedSnippets = await window.api.getSnippets({
+          metadataOnly: true,
+          limit: 500,
+          offset: 0
+        })
+        setSnippets(loadedSnippets || [])
+        setHasLoadedSnippets(true)
+      } else {
+        setHasLoadedSnippets(true)
       }
+    } catch (error) {
+      console.error('Data loading error:', error)
+      setHasLoadedSnippets(true)
     }
-
-    loadData()
   }, [])
 
-  // Save or update a snippet
+  const loadData = useCallback(() => {
+    loadSnippets()
+    folderOps.loadFolders()
+    trashOps.loadTrash()
+  }, [loadSnippets, folderOps.loadFolders, trashOps.loadTrash])
+
+  // Initial Load & Refresh Logic
+  useEffect(() => {
+    loadData()
+
+    let unsubscribe = null
+    if (window.api?.onDataChanged) {
+      unsubscribe = window.api.onDataChanged(() => {
+        loadData()
+      })
+    }
+
+    return () => {
+      if (unsubscribe) unsubscribe()
+    }
+  }, [loadData])
+
   const saveSnippet = async (snippet, options = {}) => {
     try {
-      const fullText = snippet?.code || ''
-
-      // Simple DB-only storage for all snippets
-      const payload = {
-        ...snippet,
-        type: 'snippet',
-        sort_index: snippet.sort_index ?? null,
-        code: fullText,
-        is_draft: false // Explicitly mark as saved (not draft)
+      let snippetToNormalize = { ...snippet }
+      if (
+        snippetToNormalize &&
+        snippetToNormalize.id &&
+        typeof snippetToNormalize.code === 'undefined'
+      ) {
+        try {
+          if (window.api?.getSnippetById) {
+            const existing = await window.api.getSnippetById(snippetToNormalize.id)
+            if (existing && typeof existing.code !== 'undefined') {
+              snippetToNormalize.code = existing.code
+            }
+          }
+        } catch (err) {}
       }
 
-      // Save to database
+      const payload = normalizeSnippet(snippetToNormalize)
       await window.api.saveSnippet(payload)
 
-      // Update local list in-place to avoid flicker
       setSnippets((prev) => {
-        const exists = prev.some((s) => s.id === snippet.id)
-        const updatedItem = { ...snippet, code: fullText, is_draft: false } // Keep full content in local state and mark as saved
+        const exists = prev.some((s) => s.id === payload.id)
+        // eslint-disable-next-line no-unused-vars
+        const { code, ...metadataOnly } = payload
         return exists
-          ? prev.map((s) => (s.id === snippet.id ? { ...s, ...updatedItem } : s))
-          : [updatedItem, ...prev]
+          ? prev.map((s) => (s.id === payload.id ? { ...s, ...metadataOnly } : s))
+          : [metadataOnly, ...prev]
       })
 
-      // Update the active view immediately to refresh snippet data for rename functionality
       if (!options.skipSelectedUpdate) {
-        if (selectedSnippet && selectedSnippet.id === snippet.id) {
-          // Force refresh the selected snippet with updated data
-          const refreshedSnippet = { ...snippet, code: fullText, is_draft: false }
-          setSelectedSnippetState(refreshedSnippet)
+        if (selectedSnippet && selectedSnippet.id === payload.id) {
+          setSelectedSnippetState(payload)
         }
       }
       showToast('✓ Snippet saved successfully')
     } catch (error) {
-      showToast('❌ Failed to save snippet')
+      if (!error.message?.includes('DUPLICATE')) {
+        showToast('❌ Failed to save snippet')
+      }
+      throw error
     }
   }
 
-  // Delete a snippet or project
   const deleteItem = async (id) => {
     try {
-      // Find if it's a snippet or project
       const isSnippet = snippets.find((s) => s.id === id)
       const isProject = projects.find((p) => p.id === id)
 
@@ -100,18 +145,18 @@ export const useSnippetData = () => {
         await window.api.deleteSnippet(id)
         const next = snippets.filter((s) => s.id !== id)
         setSnippets(next)
-        // Select next available snippet to keep editor open
+        setTrash((prev) => [{ ...isSnippet, deleted_at: Date.now() }, ...prev])
+
         if (selectedSnippet?.id === id) {
           setSelectedSnippet(next.length ? next[0] : null)
         }
-        showToast('✓ Snippet deleted')
+        showToast('✓ Snippet moved to trash')
       } else if (isProject && window.api?.deleteProject) {
         await window.api.deleteProject(id)
         const next = projects.filter((p) => p.id !== id)
         setProjects(next)
         showToast('✓ Project deleted')
 
-        // Select next available project to keep editor open
         if (selectedSnippet?.id === id) {
           setSelectedSnippet(next.length ? next[0] : null)
         }
@@ -121,14 +166,101 @@ export const useSnippetData = () => {
     }
   }
 
+  const deleteItems = async (ids) => {
+    try {
+      const snippetsToDelete = snippets.filter((s) => ids.includes(s.id))
+      if (snippetsToDelete.length === 0) return
+
+      for (const snippet of snippetsToDelete) {
+        if (window.api?.deleteSnippet) {
+          await window.api.deleteSnippet(snippet.id)
+        } else {
+          await window.api.invoke('db:deleteSnippet', snippet.id)
+        }
+      }
+
+      setSnippets((prev) => prev.filter((s) => !ids.includes(s.id)))
+      setTrash((prev) => [
+        ...snippetsToDelete.map((s) => ({ ...s, deleted_at: Date.now() })),
+        ...prev
+      ])
+
+      if (selectedSnippet && ids.includes(selectedSnippet.id)) {
+        setSelectedSnippet(null)
+      }
+      showToast(`✓ ${snippetsToDelete.length} items moved to trash`)
+    } catch (error) {
+      showToast('❌ Failed to delete items')
+    }
+  }
+
+  const moveSnippet = async (snippetId, folderId) => {
+    try {
+      const ids = Array.isArray(snippetId) ? snippetId : [snippetId]
+      const api = window.api
+
+      for (const id of ids) {
+        if (api?.moveSnippet) {
+          await api.moveSnippet(id, folderId)
+        } else {
+          await api.invoke('db:moveSnippet', id, folderId)
+        }
+      }
+
+      setSnippets((prev) =>
+        prev.map((s) => (ids.includes(s.id) ? { ...s, folder_id: folderId || null } : s))
+      )
+    } catch (error) {
+      showToast('❌ Failed to move snippet(s)')
+    }
+  }
+
+  const togglePinnedSnippet = async (id) => {
+    try {
+      const snippet = snippets.find((s) => s.id === id)
+      if (!snippet) return
+
+      const newPinned = snippet.is_pinned ? 0 : 1
+      const updated = { ...snippet, is_pinned: newPinned }
+
+      let fullSnippet = updated
+      if (window.api?.getSnippetById) {
+        const full = await window.api.getSnippetById(id)
+        if (full) fullSnippet = { ...full, is_pinned: newPinned }
+      }
+
+      await saveSnippet(fullSnippet, { skipSelectedUpdate: false })
+      showToast(newPinned ? '📌 Snippet pinned' : '📍 Snippet unpinned')
+    } catch (error) {
+      console.error('Failed to toggle pin:', error)
+      showToast('❌ Failed to update pin status')
+    }
+  }
+
   return {
     snippets,
     setSnippets,
+    folders,
+    setFolders,
+    trash,
+    loadTrash: trashOps.loadTrash,
     projects,
     setProjects,
     selectedSnippet,
     setSelectedSnippet,
     saveSnippet,
-    deleteItem
+    deleteItem,
+    deleteItems,
+    restoreItem: trashOps.restoreItem,
+    permanentDeleteItem: trashOps.permanentDeleteItem,
+    searchSnippetList,
+    saveFolder: folderOps.saveFolder,
+    deleteFolder: folderOps.deleteFolder,
+    deleteFolders: folderOps.deleteFolders,
+    toggleFolderCollapse: folderOps.toggleFolderCollapse,
+    moveSnippet,
+    moveFolder: folderOps.moveFolder,
+    togglePinnedSnippet,
+    hasLoadedSnippets
   }
 }

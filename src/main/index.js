@@ -3,17 +3,24 @@
  * Refactored for better organization and maintainability
  */
 
-// Set this to true for development, false for production
-// When true: DevTools can be opened manually with Ctrl+Shift+I or F12
-// When false: DevTools are completely disabled and cannot be opened
-const ENABLE_DEVTOOLS = false // <-- CHANGE THIS FOR YOUR NEEDS
-
-const { app, BrowserWindow } = require('electron')
-
-// Import modules
+import { app, BrowserWindow, globalShortcut, protocol } from 'electron'
+import path from 'path'
 import { initDB, getDB, getPreparedStatements } from './database'
 import { createWindow } from './window'
 import { registerAllHandlers } from './ipc'
+import { toggleQuickCapture } from './QuickCapture'
+// QuickCapture hook logic is frontend-only, we should not import it here in Main.
+// Instead, logic for toggling the window should be inside createWindow or handled via IPC if needed.
+// For now, we'll remove this incorrect import.
+
+// --- GLOBAL ERROR HANDLING (Prevent App Collapse) ---
+process.on('uncaughtException', (error) => {
+  console.error('CRITICAL MAIN PROCESS ERROR (Uncaught):', error)
+})
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('UNHANDLED PROMISE REJECTION in Main Process:', reason)
+})
 
 // Main window reference
 let mainWindow = null
@@ -27,8 +34,8 @@ app.whenReady().then(() => {
     app.setAppUserModelId('com.devsnippet.app')
   }
 
-  // App User Data Path verification
-  console.log('📂 User Data Path:', app.getPath('userData'))
+  // AUTO-DETECT: Enable DevTools in Dev, Disable in Production
+  const ENABLE_DEVTOOLS = !app.isPackaged
 
   // Initialize database
   const db = initDB(app)
@@ -37,14 +44,40 @@ app.whenReady().then(() => {
   // Create main window
   mainWindow = createWindow(app, ENABLE_DEVTOOLS)
 
+  // 🚀 Register Global Quick Capture (Shift + Alt + Space)
+  const shortcut = 'Shift+Alt+Space'
+  const ret = globalShortcut.register(shortcut, () => {
+    toggleQuickCapture(ENABLE_DEVTOOLS)
+  })
+  if (!ret) {
+    console.warn(`❌ Global shortcut [${shortcut}] registration failed.`)
+  } else {
+    console.log(`🚀 Global shortcut [${shortcut}] registered successfully.`)
+  }
+
+  // Register 'asset' protocol for local images
+  protocol.registerFileProtocol('asset', (request, callback) => {
+    const url = request.url.substr(8)
+    const decodedUrl = decodeURI(url) // Handle spaces etc
+    const assetsPath = path.join(app.getPath('userData'), 'assets')
+    // Configure strict path to avoid traversal attacks (basic check)
+    const filePath = path.join(assetsPath, decodedUrl)
+    callback({ path: filePath })
+  })
+
   // Register all IPC handlers
-  registerAllHandlers(app, mainWindow, db, preparedStatements, () => getDB(app))
+  registerAllHandlers(app, mainWindow, db, preparedStatements, () => getDB(app), ENABLE_DEVTOOLS)
 
   // macOS: Re-create window when dock icon is clicked
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) {
-      mainWindow = createWindow(app, ENABLE_DEVTOOLS)
+      mainWindow = createWindow(app, !app.isPackaged)
     }
+  })
+
+  // Cleanup shortcuts on quit
+  app.on('will-quit', () => {
+    globalShortcut.unregisterAll()
   })
 })
 

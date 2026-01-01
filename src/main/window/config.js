@@ -52,9 +52,9 @@ export const getWindowConfig = (app, ENABLE_DEVTOOLS) => {
 
   return {
     width: 800,
-    height: 600,
-    minWidth: 600,
-    minHeight: 400,
+    height: 900,
+    minWidth: 800,
+    minHeight: 600,
     icon: iconPath,
     show: false,
     frame: false,
@@ -73,6 +73,7 @@ export const getWindowConfig = (app, ENABLE_DEVTOOLS) => {
       sandbox: false,
       devTools: ENABLE_DEVTOOLS
     },
-    roundedCorners: false
+    roundedCorners: false,
+    backgroundColor: '#1f2937' // Use a dark grey that matches app theme to prevent white flash
   }
 }

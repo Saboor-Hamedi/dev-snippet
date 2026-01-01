@@ -4,48 +4,60 @@
   --caret-color: #fefeffff;
   --cursor-blinking-speed: 500ms;
   --cursor-blinking: true;
-  --editor-font-size: 14px; /* NOT 1rem — absolute units only */
+  --editor-font-size: 13px; /* Standardized size */
   --zoom-level: 1;
-  --gutter-bg-color: #232731;
-  --gutter-border-color: #232731;
+  --gutter-bg-color: var(--editor-bg, #ffffff);
+  --gutter-border-color: var(--editor-bg, #ffffff);
   --gutter-border-width: 1px;
-  --bg-color: #232731;
-  --border-color: #232731;
+  --bg-color: var(--editor-bg, #ffffff);
+  --border-color: var(--editor-bg, #ffffff);
   --border-width: 0;
   --border-round: 0;
-  --active-line-bg: rgba(88, 166, 255, 0.1);
+  /* --active-line-bg: rgba(88, 166, 255, 0.1); */
+  --active-line-bg: transparent;
   --shadow-box-color: #58a6ff;
+  --active-line-border-width: 0px;
+  --active-line-gutter-border-width: 0px;
 }
 
 @keyframes cm-cursor-blink {
   0%,
   100% {
     opacity: 1;
+    filter: brightness(1.2);
   }
   50% {
-    opacity: 0;
+    opacity: 0.1;
+    filter: brightness(0.8);
   }
 }
 
 /* Cursor Blinking Logic - GPU Optimized */
+/* Base cursor styling is handled by buildTheme.js to support dynamic shapes (Block/Line/Underline) */
+
+.cm-editor.cm-focused .cm-cursor,
 .cm-editor-container[data-cursor-blinking='true'] .cm-cursor {
-  animation: cm-cursor-blink var(--cursor-blinking-speed, 500ms) step-end infinite !important;
+  animation: cm-cursor-blink var(--cursor-blinking-speed, 500ms) steps(2, start) infinite;
 }
 
 /* Force Stop Blinking */
-.cm-editor-container[data-cursor-blinking='false'] .cm-cursor,
-.cm-editor-container[data-cursor-blinking='false'] .cm-cursor-primary,
-.cm-editor-container[data-cursor-blinking='false'] .cm-cursor-secondary {
+.cm-editor-container[data-cursor-blinking='false'] .cm-cursor {
+  /* This only works if drawSelection is enabled. For native cursor, we cannot stop blinking easily. */
   animation: none !important;
   opacity: 1 !important;
-  visibility: visible !important;
-}
-/* VS CODE STYLE: Active Line Background (Base) */
-.cm-editor .cm-activeLine {
-  background-color: var(--active-line-bg) !important;
 }
 
-/* VS CODE BEHAVIOR: Hide active line background and indicator when text is selected */
+/* VS CODE STYLE: Active Line Background (Base) */
+/* VS CODE STYLE: Active Line Background (Base) */
+/* VS CODE STYLE: Active Line Background (Base) */
+/* PREMIUM ACTIVE LINE: Subtle focal indicator */
+.cm-editor .cm-activeLine {
+  background-color: rgba(255, 255, 255, 0.02) !important;
+  border-left: 2px solid var(--caret-color, #ffffff) !important;
+  box-shadow: 4px 0 12px -4px var(--caret-color, rgba(255, 255, 255, 0.2));
+  transition: background-color 0.2s ease;
+}
+
 .cm-editor[data-has-selection='true'] .cm-activeLine {
   background-color: transparent !important;
   border-left-color: transparent !important;
@@ -69,6 +81,7 @@
 }
 
 .cm-editor {
+  font-family: var(--editor-font-family, 'JetBrains Mono', monospace) !important;
   font-size: calc(var(--editor-font-size) * var(--zoom-level));
   background-color: var(--color-bg-primary, transparent) !important;
   min-width: 100% !important;
@@ -77,6 +90,7 @@
 }
 
 .cm-content {
+  font-family: var(--editor-font-family, 'JetBrains Mono', monospace) !important;
   font-size: calc(var(--editor-font-size) * var(--zoom-level)) !important;
   line-height: 1.6 !important;
   min-height: 150vh !important;
@@ -98,50 +112,453 @@
 } */
 
 /* Layout Reset: Ensure no global CSS affects the editor internals */
-.cm-content,
-.cm-content *,
-.cm-line,
-.cm-line * {
+.cm-content {
   margin: 0 !important;
-  padding: 0 !important;
   line-height: 1.6 !important;
   box-sizing: border-box !important;
+  padding-bottom: 120px !important; /* Added space at bottom of editor */
 }
 
-/* Specific fix for the "huge space" caused by triple backticks */
-.cm-content pre,
-.cm-content code,
-.cm-codeBlock {
-  display: block !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  background: transparent !important;
-  font-family: inherit !important;
-  font-size: inherit !important;
-}
+/* Removed destructive display:block !important on .cm-content pre/code/cm-codeBlock - this breaks CM layout engine */
 
-/* Stabilize cursor rendering (GPU HARDWARE ACCELERATED) */
-/* This is the VS Code 'secret sauce' - offloading cursor moves to the GPU */
-.cm-cursor,
-.cm-cursor-primary,
-.cm-cursor-secondary {
-  will-change: transform, opacity !important;
-  transform: translateZ(0) !important; /* Move to GPU layer */
-  backface-visibility: hidden !important;
-  perspective: 1000 !important;
-}
-
-/* GPU Accelerated Active Line */
-/* Sliding a 'sticker' is faster than redrawing pixels on every keystroke */
-.cm-activeLine,
-.cm-activeLineGutter {
-  will-change: transform, background-color !important;
-  transform: translateZ(0) !important;
-  backface-visibility: hidden !important;
-}
+/* Removed empty cursor and activeLine rulesets */
 
 /* Smooth but stable scroller */
-.cm-scroller {
-  scroll-behavior: auto !important; /* Disable browser 'smooth scroll' which lags parser sync */
-  will-change: scroll-position !important;
+/* Autocompletion Tooltip */
+/* Tooltip Styling moved to UnifiedTooltip.css to prevent conflicts and ensure robust positioning */
+
+/* --- RICH MARKDOWN EDITOR STYLING --- */
+
+/* Heading Vertical Rhythm (Balanced Stability) */
+.cm-line-h1,
+.cm-line-h2,
+.cm-line-h3,
+.cm-line-h4,
+.cm-line-h5,
+.cm-line-h6 {
+  line-height: 1.6 !important;
+  vertical-align: baseline !important;
 }
+
+/* Standardized Header Text (Consistent across themes) */
+/* Standardized Header Text (Consistent across themes) */
+.cm-editor .cm-line-h1 {
+  padding-top: 0.8em !important;
+  padding-bottom: 0.3em !important;
+  line-height: 1.6 !important;
+}
+.cm-editor .cm-line-h2 {
+  padding-top: 0.6em !important;
+  padding-bottom: 0.2em !important;
+  line-height: 1.6 !important;
+}
+.cm-editor .cm-line-h3 {
+  padding-top: 0.5em !important;
+  padding-bottom: 0.2em !important;
+  line-height: 1.6 !important;
+}
+.cm-editor .cm-line-h4,
+.cm-editor .cm-line-h5,
+.cm-editor .cm-line-h6 {
+  padding-top: 0.4em !important;
+  padding-bottom: 0.1em !important;
+  line-height: 1.6 !important;
+}
+
+/* Active line background - Disabled for cleaner look */
+/* .cm-activeLine {
+  background-color: var(--color-active-line, rgba(88, 166, 255, 0.05)) !important;
+} */
+
+/* Force standard gutter width to prevent horizontal "jump" on mode switch */
+.cm-gutters {
+  min-width: 48px !important;
+  text-align: right !important;
+}
+
+/* Ensure ALL active line backgrounds are transparent to fix user issue */
+.cm-editor .cm-activeLine,
+.cm-editor.cm-focused .cm-activeLine,
+.cm-activeLineGutter,
+.cm-editor .cm-activeLineGutter {
+  background-color: transparent !important;
+  background: transparent !important;
+}
+
+/* Wiki Link Stying in Editor */
+.cm-wikilink {
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.cm-wikilink:hover {
+  background-color: rgba(88, 166, 255, 0.15);
+}
+
+/* Interactive Checkboxes (Task Lists) */
+.cm-md-checkbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  margin-right: 6px;
+  transform: translateY(-1px);
+  position: relative;
+  width: 16px;
+  height: 16px;
+}
+
+.cm-md-checkbox input[type='checkbox'] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--color-text-secondary, #8b949e);
+  border-radius: 4px;
+  background-color: transparent;
+  cursor: pointer;
+  margin: 0;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+.cm-md-checkbox input[type='checkbox']:checked {
+  background-color: var(--color-accent-primary, #58a6ff);
+  border-color: var(--color-accent-primary, #58a6ff);
+}
+
+.cm-checkbox-check {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.cm-md-checkbox input[type='checkbox']:hover {
+  border-color: var(--color-accent-primary, #58a6ff);
+  box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.1);
+}
+
+/* Horizontal Rule (HR) Styling in Editor */
+.cm-hr-wrapper {
+  padding: 12px 0;
+}
+.cm-hr-line {
+  height: 2px;
+  background-color: var(--color-border);
+  opacity: 0.3;
+  width: 100%;
+}
+
+/* Marker Stability (Ghost Footprint) */
+.cm-marker-hidden,
+.cm-taskMarker,
+.cm-listMark,
+.cm-delimiter,
+.cm-marker {
+  text-decoration: none !important;
+  border-bottom: none !important;
+  font-style: normal !important;
+}
+
+.cm-marker-hidden {
+  display: none !important;
+  opacity: 0 !important;
+  color: transparent !important;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* For Reading Mode where we don't care about cursor jumps, we can be more aggressive */
+.cm-editor-container[data-mode='READING'] .cm-marker-hidden {
+  display: none !important;
+}
+
+/* Premium Blockquote Accent Bar */
+.cm-blockquote-line {
+  border-left: 3px solid var(--color-accent-primary, #58a6ff) !important;
+  background-color: rgba(88, 166, 255, 0.03) !important;
+  padding-left: 12px !important;
+  transition: background-color 0.2s ease;
+}
+
+.cm-blockquote-line:hover {
+  background-color: rgba(88, 166, 255, 0.06) !important;
+}
+
+/* Inline Images in Editor (Widget) */
+.cm-md-image-container {
+  display: flex;
+  justify-content: center;
+  margin: 1rem 0;
+  width: 100%;
+}
+
+.cm-md-rendered-image {
+  max-width: 60%;
+  max-height: 350px;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Editor Layout: Centered Island mode */
+.cm-editor-container.is-centered .cm-editor {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+}
+
+.cm-editor-container.is-centered .cm-scroller {
+  display: flex !important;
+  justify-content: center !important;
+  width: 100% !important;
+}
+
+/* Constrain the actual text area to a readable width */
+/* Constrain the actual text area to a readable width with padding */
+.cm-editor-container.is-centered .cm-content {
+  max-width: 850px !important;
+  width: 100% !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding-left: 30px !important; /* Premium Obsidian-style breathing room */
+  padding-right: 30px !important;
+}
+
+.cm-editor-container.is-centered .cm-line {
+  /* Lines just fill the padded content area */
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Gutter alignment in centered mode */
+.cm-editor-container.is-centered .cm-gutters {
+  background-color: transparent !important;
+  border: none !important;
+  position: sticky !important;
+  left: 0;
+  z-index: 20;
+  padding-left: 10px !important; /* Space for the line numbers from edge */
+}
+
+/* Responsive Padding for Small Screens - Extra deep margins on tablets/mobile */
+@media (max-width: 1024px) {
+  .cm-content,
+  .cm-editor-container.is-centered .cm-content {
+    padding-left: 45px !important;
+    padding-right: 45px !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .cm-content,
+  .cm-editor-container.is-centered .cm-content {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+}
+
+/* 
+   FORCE SELECTION COLOR 
+   Overrides any native or theme-based selection clearing.
+   Uses CSS variable driven by settings/hooks.
+   Added 'html body' prefix to overpower CodeMirror's injected styles.
+*/
+html body .cm-editor ::selection,
+html body .cm-content ::selection,
+html body .cm-scroller ::selection,
+html body .cm-line ::selection,
+html body .cm-content *::selection {
+  background-color: var(--cursor-selection-bg, rgba(65, 206, 92, 0.5)) !important;
+  background: var(--cursor-selection-bg, rgba(65, 206, 92, 0.5)) !important;
+  color: var(--selection-text, #ffffff) !important;
+  -webkit-text-fill-color: var(--selection-text, #ffffff) !important;
+}
+
+/* ============================================================================
+   HYBRID SELECTION SYSTEM - CSS LAYER
+   ============================================================================
+   
+   This CSS is part of a 3-part solution to achieve:
+   - Custom cursor shapes (block, underline) from settings.json
+   - Text-only selection highlighting (no full-width blocks on headers)
+   
+   PART 1: Hide CodeMirror's default selection background
+   -------------------------------------------------------------------
+   CodeMirror's 'drawSelection' extension creates .cm-selectionBackground
+   elements that span the full width of lines. We hide these completely.
+*/
+.cm-selectionBackground {
+  display: none !important;
+}
+
+/* PART 2: Force native text selection capability
+   -------------------------------------------------------------------
+   Even though 'drawSelection' is enabled (for custom cursors), we need
+   to ensure the text remains selectable natively for our decoration-based
+   highlighting to work properly.
+*/
+.cm-content,
+.cm-line,
+.cm-editor {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  cursor: text !important;
+}
+
+/* PART 3: Style our custom selection decoration
+   -------------------------------------------------------------------
+   The forceSelection.js extension adds .cm-force-selection to selected text.
+   This provides the visible highlight using the user's configured color from
+   settings.json (via --cursor-selection-bg CSS variable).
+   
+   This decoration wraps only the selected text (not the full line width),
+   giving us the "text-only" selection behavior the user requested.
+*/
+.cm-force-selection {
+  background-color: var(--cursor-selection-bg, rgba(65, 206, 92, 0.5)) !important;
+  color: var(--selection-text, #ffffff) !important;
+
+  /* DYNAMIC SELECTION: Balanced padding to bridge gaps without oversized feel. */
+  padding-top: 4.5px;
+  padding-bottom: 4.5px;
+  padding-left: 0;
+  padding-right: 0;
+
+  /* Horizontal breath only - removing vertical bleed to fix 'double color' issues. */
+  box-shadow:
+    1.5px 0 0 0 var(--cursor-selection-bg, rgba(65, 206, 92, 0.5)),
+    -1.5px 0 0 0 var(--cursor-selection-bg, rgba(65, 206, 92, 0.5));
+
+  /* Ensure highlight flows continuously on wrap */
+  -webkit-box-decoration-break: slice;
+  box-decoration-break: slice;
+  border-radius: 2px !important;
+}
+
+/* 
+   TOTAL MASK: Prevent any other selection layers (native or CM) from leaking.
+   This fixes the 'Another color under selection' issue.
+*/
+.cm-editor ::selection,
+.cm-editor * ::selection,
+.cm-editor .cm-selectionBackground,
+.cm-editor .cm-selectionLayer {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: inherit !important;
+}
+
+/* ============================================================================ */
+/* Zen Focus Mode: High Performance Immersion */
+/* ============================================================================ */
+
+/* ======================================================================== */
+/* THE OBSIDIAN EFFECT: Stable Markdown Markers */
+/* ======================================================================== */
+
+/* 
+   The 'Inline Flow' Strategy:
+   We use 'display: inline' to ensure the selection highlight is one solid block.
+   We collapse the width using letter-spacing to prevent layout jumps.
+*/
+.cm-marker-hidden {
+  display: inline !important;
+  color: transparent !important;
+  opacity: 0 !important;
+  user-select: none !important;
+  pointer-events: none !important;
+  letter-spacing: -1ch !important;
+  white-space: nowrap;
+  vertical-align: baseline;
+  transition:
+    opacity 0.1s ease-out,
+    letter-spacing 0.1s ease-out;
+}
+
+/* Reveal markers only on the active line */
+.cm-activeLine .cm-marker-hidden {
+  opacity: 0.5 !important;
+  color: inherit !important;
+  /* Restore dimensions instantly */
+  font-size: inherit !important;
+  letter-spacing: normal !important;
+}
+
+/* 
+   HEADER SELECTION STABILIZATION
+   Ensure markers stay small to keep the selection block tight.
+*/
+.cm-line-h1 .cm-marker-hidden,
+.cm-line-h2 .cm-marker-hidden,
+.cm-line-h3 .cm-marker-hidden {
+  /* Markers inherit the header's font-size so the selection box stays uniform height */
+  font-size: inherit !important;
+  font-weight: 400 !important;
+  vertical-align: baseline;
+}
+
+/* Ensure the selection highlight covers markers cleanly when revealed */
+.cm-force-selection .cm-marker-hidden {
+  background-color: transparent !important;
+  /* Inherit selection color if they are partially visible */
+  color: var(--selection-text, #ffffff) !important;
+}
+
+/* Base dimming for all editor content children (lines and widgets) */
+body.zen-focus-active .cm-content > * {
+  opacity: 0.1 !important;
+  filter: grayscale(100%); /* High perf vs Blur */
+  transition:
+    opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    filter 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: opacity, filter;
+  /* Pointer events are kept auto to allow interaction even when dimmed */
+}
+
+/* Revelation: Active Writing Paragraph */
+body.zen-focus-active .cm-content > .cm-zen-active {
+  opacity: 1 !important;
+  filter: grayscale(0%);
+  pointer-events: auto;
+}
+
+/* Disclosure: Widgets touching the active paragraph (DRY & Robust) */
+/* This ensures Tables or Mermaid blocks attached to active text remain visible */
+body.zen-focus-active .cm-content > .cm-zen-active + .cm-widgetBlock,
+body.zen-focus-active .cm-content > .cm-widgetBlock:has(+ .cm-zen-active) {
+  opacity: 1 !important;
+  filter: grayscale(0%);
+  pointer-events: auto;
+}
+
+/* Internal components of active elements must be fully visible */
+body.zen-focus-active .cm-zen-active * {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+/* Clean UI: Hide focus rings/gutters for background lines */
+body.zen-focus-active .cm-line:not(.cm-zen-active) .cm-activeLine,
+body.zen-focus-active .cm-line:not(.cm-zen-active) .cm-activeLineGutter {
+  background-color: transparent !important;
+}
+
+/* Soft Hover: Allow quick clicks back to "reality" */
+body.zen-focus-active .cm-content:hover > * {
+  opacity: 0.15; /* Subtle hint */
+}
+
+/* ============================================================================ */
+/* THEME-SPECIFIC HEADER OVERRIDES */
+/* ============================================================================ */
+/* User Request: Make ALL themes match the larger "white theme" header sizes. 
+   Enforcing 1.4rem globally as requested. Added .cm-editor prefix for max specificity. */

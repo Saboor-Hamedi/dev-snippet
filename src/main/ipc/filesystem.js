@@ -2,10 +2,24 @@
  * Filesystem IPC Handlers
  */
 
-import { ipcMain, dialog } from 'electron'
+import { ipcMain, dialog, shell, app } from 'electron'
 import fs from 'fs/promises'
+import path from 'path'
 
 export const registerFilesystemHandlers = () => {
+  // Open in system browser (for perfect markdown preview)
+  ipcMain.handle('shell:previewInBrowser', async (event, htmlContent) => {
+    try {
+      const tempPath = path.join(app.getPath('temp'), 'dev-snippet-preview.html')
+      await fs.writeFile(tempPath, htmlContent, 'utf-8')
+      await shell.openPath(tempPath)
+      return true
+    } catch (err) {
+      console.error('Failed to open external preview:', err)
+      return false
+    }
+  })
+
   // Open file dialog
   ipcMain.handle('dialog:openFile', async () => {
     const result = await dialog.showOpenDialog({
@@ -37,28 +51,41 @@ export const registerFilesystemHandlers = () => {
     return result.canceled ? null : result.filePaths[0]
   })
 
-  // Read file
-  ipcMain.handle('fs:readFile', async (event, path) => {
-    if (typeof path !== 'string') throw new Error('Invalid path')
-    return await fs.readFile(path, 'utf-8')
-  })
+  // Save asset (Local Asset Management)
+  ipcMain.handle('fs:saveAsset', async (event, { fileName, buffer }) => {
+    try {
+      const userDataPath = app.getPath('userData')
+      const assetsPath = path.join(userDataPath, 'assets')
 
-  // Write file
-  ipcMain.handle('fs:writeFile', async (event, path, content) => {
-    if (typeof path !== 'string') throw new Error('Invalid path')
-    if (typeof content !== 'string') throw new Error('Invalid content')
-    await fs.writeFile(path, content, 'utf-8')
-    return true
-  })
+      // Ensure assets directory exists
+      try {
+        await fs.access(assetsPath)
+      } catch {
+        await fs.mkdir(assetsPath, { recursive: true })
+      }
 
-  // Read directory
-  ipcMain.handle('fs:readDirectory', async (event, path) => {
-    if (typeof path !== 'string') throw new Error('Invalid path')
-    const files = await fs.readdir(path, { withFileTypes: true })
-    return files.map((file) => ({
-      name: file.name,
-      isDirectory: file.isDirectory(),
-      isFile: file.isFile()
-    }))
+      let finalFileName = fileName
+      let filePath = path.join(assetsPath, finalFileName)
+
+      // Prevent Overwrite: Check if file exists, if so, rename
+      try {
+        await fs.access(filePath)
+        // File exists, generate unique name
+        const namePart = path.parse(fileName).name
+        const extPart = path.parse(fileName).ext
+        finalFileName = `${namePart}-${Date.now()}${extPart}`
+        filePath = path.join(assetsPath, finalFileName)
+      } catch {
+        // File does not exist, use original name
+      }
+
+      await fs.writeFile(filePath, Buffer.from(buffer))
+
+      // Return the custom protocol URL
+      return `asset://${finalFileName}`
+    } catch (err) {
+      console.error('Failed to save asset:', err)
+      return null
+    }
   })
 }

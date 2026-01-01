@@ -1,28 +1,82 @@
 /**
  * Database Migrations
- * Handles adding optional columns to existing tables
+ *
+ * In a local desktop app, we can't easily run SQL scripts for every update.
+ * This module implements a "Defensive Column Injection" strategy.
+ * On every boot, it checks the current schema and patches it with any
+ * newly required columns, ensuring the database evolves gracefully
+ * without losing user data.
  */
 
 export const runMigrations = (db) => {
   try {
-    // Drop old projects table if it exists
+    // Legacy Cleanup: Remove tables that are no longer part of the architecture.
     db.exec('DROP TABLE IF EXISTS projects')
   } catch {}
 
-  // Ensure optional columns exist
+  /**
+   * ensureCol - A robust helper to add a column only if it's missing.
+   * This prevents "duplicate column" errors if the app restarts multiple times.
+   */
   try {
-    const colsSnippets = db.prepare('PRAGMA table_info(snippets)').all()
-    const ensureCol = (name, ddl) => {
-      if (!colsSnippets.some((c) => c.name === name)) {
+    const ensureCol = (table, name, ddl) => {
+      // Query SQLite's internal schema metadata
+      const info = db.prepare(`PRAGMA table_info(${table})`).all()
+      const exists = info.some((c) => c.name === name)
+
+      if (!exists) {
+        console.log(`🔧 Migrating: Adding [${name}] to [${table}]`)
         db.exec(ddl)
       }
     }
 
-    ensureCol('tags', 'ALTER TABLE snippets ADD COLUMN tags TEXT')
-    ensureCol('code_draft', 'ALTER TABLE snippets ADD COLUMN code_draft TEXT')
-    ensureCol('is_draft', 'ALTER TABLE snippets ADD COLUMN is_draft INTEGER')
-    ensureCol('sort_index', 'ALTER TABLE snippets ADD COLUMN sort_index INTEGER')
+    // --- SNIPPET TABLE EVOLUTION ---
+    ensureCol('snippets', 'tags', 'ALTER TABLE snippets ADD COLUMN tags TEXT')
+    ensureCol('snippets', 'code_draft', 'ALTER TABLE snippets ADD COLUMN code_draft TEXT')
+    ensureCol('snippets', 'is_draft', 'ALTER TABLE snippets ADD COLUMN is_draft INTEGER DEFAULT 0')
+    ensureCol(
+      'snippets',
+      'sort_index',
+      'ALTER TABLE snippets ADD COLUMN sort_index INTEGER DEFAULT 0'
+    )
+    ensureCol(
+      'snippets',
+      'is_deleted',
+      'ALTER TABLE snippets ADD COLUMN is_deleted INTEGER DEFAULT 0'
+    )
+    ensureCol('snippets', 'deleted_at', 'ALTER TABLE snippets ADD COLUMN deleted_at INTEGER')
+    ensureCol('snippets', 'folder_id', 'ALTER TABLE snippets ADD COLUMN folder_id TEXT')
+    ensureCol(
+      'snippets',
+      'is_pinned',
+      'ALTER TABLE snippets ADD COLUMN is_pinned INTEGER DEFAULT 0'
+    )
+
+    // Feature: Favorites support
+    ensureCol(
+      'snippets',
+      'is_favorite',
+      'ALTER TABLE snippets ADD COLUMN is_favorite INTEGER DEFAULT 0'
+    )
+
+    // --- FOLDER TABLE EVOLUTION ---
+    ensureCol(
+      'folders',
+      'is_deleted',
+      'ALTER TABLE folders ADD COLUMN is_deleted INTEGER DEFAULT 0'
+    )
+    ensureCol('folders', 'deleted_at', 'ALTER TABLE folders ADD COLUMN deleted_at INTEGER')
+
+    // --- DATA SANITIZATION (Legacy Fixes) ---
+    // Ensure Boolean-like columns have actual integer values (0/1) instead of NULL
+    // for existing rows, ensuring our truthy checks in the UI work perfectly.
+    db.exec(`
+      UPDATE snippets SET is_draft = 0 WHERE is_draft IS NULL;
+      UPDATE snippets SET is_pinned = 0 WHERE is_pinned IS NULL;
+      UPDATE snippets SET is_favorite = 0 WHERE is_favorite IS NULL;
+      UPDATE snippets SET is_deleted = 0 WHERE is_deleted IS NULL;
+    `)
   } catch (e) {
-    console.warn('Migration warning:', e.message)
+    console.warn('⚠️ Migration warning (non-critical):', e.message)
   }
 }

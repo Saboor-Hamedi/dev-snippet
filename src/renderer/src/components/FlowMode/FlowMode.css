@@ -1,0 +1,297 @@
+/* ===== FLOW MODE (Formerly Focus Mode) ===== */
+.flow-mode-active {
+  background-color: transparent !important;
+}
+
+/* The background layer is now a non-blocking "Zen Overlay" */
+.flow-convas {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  z-index: -1 !important; /* Forces the background behind everything */
+  width: 100vw !important;
+  height: 100vh !important;
+  background-color: var(--color-bg-primary, rgba(0, 0, 0, 0.4)) !important;
+  opacity: 0.9 !important;
+  backdrop-filter: none !important;
+  pointer-events: none; /* Crucial: clicks go through to underlying UI */
+  transition: all 0.5s ease-in-out;
+  animation: flowConvasFade 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.flow-convas.is-snapped {
+  background-color: transparent !important;
+  backdrop-filter: none !important;
+}
+
+/* Hard-override for maximized state to ensure zero rounding */
+.universal-modal.maximized,
+.universal-modal.maximized .flow-convas,
+.universal-modal.maximized > div {
+  border-radius: 0 !important;
+  border: none !important;
+}
+
+@keyframes flowConvasFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* The editor container in Flow Mode becomes a Floating Hub */
+.flow-content {
+  /* No longer flex-centered in the canvas */
+  /* This will be handled by UniversalModal now */
+  display: contents !important;
+}
+
+/* Floating Editor specific styles */
+.universal-modal.flow-editor-modal,
+.universal-modal.flow-ghost-modal {
+  background-color: var(--color-tooltip-bg, #1e1e1e) !important;
+  background: var(--color-tooltip-bg, #1e1e1e) !important;
+  border-radius: 0 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  font-size: 0.85em; /* Global scale down for flow mode */
+  z-index: 100 !important;
+  backdrop-filter: none !important;
+}
+
+/* Premium Flow Ghost Theme */
+.universal-modal.flow-ghost-modal {
+  background: var(--color-tooltip-bg, #1e1e1e) !important;
+  backdrop-filter: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+  overflow: hidden;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.flow-ghost-modal .universal-modal-header {
+  background: var(--color-bg-secondary) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  padding: 8px 12px;
+}
+
+.flow-ghost-modal .universal-modal-content {
+  background: var(--color-tooltip-bg, #1e1e1e) !important;
+}
+
+/* High-performance background swap for Ghost windows during drag */
+.universal-modal.flow-ghost-modal.is-dragging {
+  background: rgba(20, 24, 30, 0.95) !important;
+}
+
+/* Light Theme Overrides for Ghost Modal */
+[data-theme='polaris'] .universal-modal.flow-ghost-modal,
+[data-theme='latte'] .universal-modal.flow-ghost-modal,
+[data-theme='solar-dawn'] .universal-modal.flow-ghost-modal,
+[data-theme='minimal-gray'] .universal-modal.flow-ghost-modal,
+[data-theme='quiet-light'] .universal-modal.flow-ghost-modal {
+  background: #ffffff !important;
+  border: 1px solid #d0d7de !important;
+  color: #1f2328 !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme='polaris'] .flow-ghost-modal .universal-modal-header,
+[data-theme='latte'] .flow-ghost-modal .universal-modal-header,
+[data-theme='solar-dawn'] .flow-ghost-modal .universal-modal-header,
+[data-theme='minimal-gray'] .flow-ghost-modal .universal-modal-header,
+[data-theme='quiet-light'] .flow-ghost-modal .universal-modal-header {
+  background: #f6f8fa !important;
+  border-bottom: 1px solid #d0d7de !important;
+}
+
+[data-theme='polaris'] .flow-ghost-modal .universal-modal-title,
+[data-theme='latte'] .flow-ghost-modal .universal-modal-title {
+  color: var(--color-text-secondary) !important;
+}
+
+/* Premium Unified Scrollbars for Flow Mode */
+.flow-ghost-modal *::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+}
+
+.flow-ghost-modal *::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.flow-ghost-modal *::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-radius: 10px !important;
+  border: 2px solid transparent !important;
+  background-clip: content-box !important;
+  transition: background 0.3s ease !important;
+}
+
+.flow-ghost-modal *:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15) !important;
+  background-clip: content-box !important;
+}
+
+.flow-ghost-modal *::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent-primary, #58a6ff) !important;
+  background-clip: content-box !important;
+}
+
+.flow-editor-modal .markdown-body,
+.flow-ghost-modal .markdown-body {
+  font-size: 0.9em !important; /* Specific override for markdown content */
+}
+
+.flow-editor-modal .universal-modal-content {
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Ensure editor fills the flow content island */
+.flow-content > div {
+  height: 100%;
+}
+
+/* Zen Atmosphere - Bubbling Glow Orbs */
+.zen-atmosphere {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 2s ease-in-out;
+  z-index: -1;
+}
+
+.flow-convas:not(.is-snapped) .zen-atmosphere {
+  opacity: 0.6;
+}
+
+.zen-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  background: var(--color-accent-primary, #3b82f6);
+  opacity: 0.03; /* Reduced from 0.1 for less "blue" glow */
+  animation: orbFloat 20s infinite ease-in-out;
+}
+
+.zen-orb:nth-child(1) {
+  width: 300px;
+  height: 300px;
+  top: -100px;
+  left: -100px;
+  animation-duration: 25s;
+}
+.zen-orb:nth-child(2) {
+  width: 400px;
+  height: 400px;
+  bottom: -150px;
+  right: -150px;
+  animation-duration: 35s;
+  animation-delay: -5s;
+}
+.zen-orb:nth-child(3) {
+  width: 250px;
+  height: 250px;
+  bottom: 20%;
+  left: 10%;
+  animation-duration: 30s;
+  animation-delay: -2s;
+  opacity: 0.03;
+}
+
+@keyframes orbFloat {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(10%, 15%) scale(1.1);
+  }
+  66% {
+    transform: translate(-5%, -10%) scale(0.9);
+  }
+}
+
+/* Cyber-Grid System */
+.cyber-grid {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background-image:
+    linear-gradient(rgba(var(--color-accent-primary-rgb, 59, 130, 246), 0.05) 1px, transparent 1px),
+    linear-gradient(
+      90deg,
+      rgba(var(--color-accent-primary-rgb, 59, 130, 246), 0.05) 1px,
+      transparent 1px
+    );
+  background-size: 50px 50px;
+  transform: perspective(1000px) rotateX(60deg) translate3d(0, 0, 0);
+  animation: gridSync 120s linear infinite;
+  opacity: 0;
+  transition: opacity 2s ease-in-out;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.flow-convas:not(.is-snapped) .cyber-grid {
+  opacity: 1;
+}
+
+@keyframes gridSync {
+  from {
+    transform: perspective(1000px) rotateX(60deg) translate3d(0, 0, 0);
+  }
+  to {
+    transform: perspective(1000px) rotateX(60deg) translate3d(0, 500px, 0);
+  }
+}
+
+/* Data Scanning Laser */
+.scanning-laser {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-accent-primary, #3b82f6),
+    transparent
+  );
+  box-shadow: 0 0 15px var(--color-accent-primary, #3b82f6);
+  opacity: 0.15;
+  animation: laserScan 6s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 10;
+  will-change: transform;
+}
+
+@keyframes laserScan {
+  0% {
+    transform: translate3d(0, -10vh, 0);
+  }
+  100% {
+    transform: translate3d(0, 110vh, 0);
+  }
+}
+
+/* MOBILE FLOW MODE */
+@media (max-width: 768px) {
+  .flow-convas {
+    pointer-events: auto; /* Trap interaction on mobile */
+  }
+}

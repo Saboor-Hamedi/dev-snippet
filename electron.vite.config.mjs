@@ -1,6 +1,7 @@
 import { resolve } from 'path'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import react from '@vitejs/plugin-react'
+import { visualizer } from 'rollup-plugin-visualizer'
 
 export default defineConfig({
   main: {
@@ -20,7 +21,15 @@ export default defineConfig({
         '@renderer': resolve('src/renderer/src')
       }
     },
-    plugins: [react()],
+    plugins: [
+      react(),
+      visualizer({
+        open: true,
+        filename: 'stats.html',
+        gzipSize: true,
+        brotliSize: true
+      })
+    ],
     css: {
       postcss: './postcss.config.js'
     },
@@ -34,7 +43,6 @@ export default defineConfig({
             // Split vendor libraries into separate chunks
             'react-vendor': ['react', 'react-dom'],
             'codemirror-vendor': ['@uiw/react-codemirror', '@codemirror/state', '@codemirror/view'],
-            'markdown-vendor': ['react-markdown', 'remark-gfm', 'react-syntax-highlighter'],
             'ui-vendor': ['lucide-react']
           }
         }

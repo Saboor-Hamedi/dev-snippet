@@ -18,17 +18,16 @@
       http-equiv="Content-Security-Policy"
       content="
     default-src 'self';
-    script-src 'self' https://cdn.jsdelivr.net;
+    script-src 'self' 'sha256-2yxB3sSRjNMm0JdTRmF5JThhLEQZ+p4HMP1exl9aR34=' https://cdn.jsdelivr.net;
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net;
-    img-src 'self' data: snippet: https: http:;
+    img-src 'self' data: snippet: asset: https: http:;
     font-src 'self' https://fonts.gstatic.com;
     connect-src 'self' https://cdn.jsdelivr.net;
     worker-src 'self' blob:;
   "
     />
   </head>
-
-  <body>
+  <body style="background-color: #0d1117;">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

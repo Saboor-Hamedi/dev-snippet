@@ -1,0 +1,305 @@
+.pin-popover-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20000;
+  background: transparent;
+  pointer-events: none; /* Allow typing/scrolling through the overlay */
+}
+
+.pin-popover-overlay.is-centered {
+  position: absolute;
+  background: transparent; /* Remove the dimmed background */
+  backdrop-filter: none; /* Remove blur */
+  border-radius: 8px;
+  animation: none; /* remove animation from overlay itself */
+}
+
+.pin-popover {
+  position: fixed;
+  background-color: var(--color-tooltip-bg, #1e1e1e) !important;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+  min-width: 180px;
+  overflow: hidden;
+  z-index: 21000;
+  animation: pin-pop-in 0.15s cubic-bezier(0.1, 0.9, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Centered pin popover */
+.pin-popover-overlay.is-centered .pin-popover {
+  position: absolute;
+}
+
+.pin-popover-header {
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pin-popover-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pin-popover-close {
+  background: none;
+  border: none;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.pin-popover-close:hover {
+  opacity: 1;
+}
+
+.pin-popover-body {
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+.pin-popover-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+}
+
+.pin-popover-item:hover {
+  background: var(--color-accent-primary, #58a6ff);
+  color: white;
+}
+
+.pin-popover-item:hover .pin-icon {
+  color: white;
+}
+
+.pin-popover-item .pin-icon {
+  width: 14px;
+  height: 14px;
+  opacity: 0.8;
+  color: var(--color-accent-primary);
+}
+
+.pin-popover-divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 4px 8px;
+}
+
+@keyframes pin-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Premium micro-animations */
+.pin-popover-item:active {
+  transform: scale(0.98);
+}
+
+/* Light Theme Overrides for Pin Popover */
+[data-theme='polaris'] .pin-popover,
+[data-theme='latte'] .pin-popover,
+[data-theme='solar-dawn'] .pin-popover,
+[data-theme='minimal-gray'] .pin-popover,
+[data-theme='quiet-light'] .pin-popover {
+  background: #ffffff !important;
+  border-color: #d0d7de !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme='polaris'] .pin-popover-header,
+[data-theme='latte'] .pin-popover-header,
+[data-theme='solar-dawn'] .pin-popover-header,
+[data-theme='minimal-gray'] .pin-popover-header,
+[data-theme='quiet-light'] .pin-popover-header {
+  background: #f6f8fa !important;
+  border-bottom-color: #d0d7de !important;
+}
+
+[data-theme='polaris'] .pin-popover-item:hover,
+[data-theme='latte'] .pin-popover-item:hover,
+[data-theme='solar-dawn'] .pin-popover-item:hover,
+[data-theme='minimal-gray'] .pin-popover-item:hover,
+[data-theme='quiet-light'] .pin-popover-item:hover {
+  background: #f0f7ff !important;
+  color: #0366d6 !important;
+}
+
+[data-theme='polaris'] .pin-popover-item:hover .pin-icon,
+[data-theme='latte'] .pin-popover-item:hover .pin-icon,
+[data-theme='solar-dawn'] .pin-popover-item:hover .pin-icon,
+[data-theme='minimal-gray'] .pin-popover-item:hover .pin-icon,
+[data-theme='quiet-light'] .pin-popover-item:hover .pin-icon {
+  color: #0366d6 !important;
+}
+
+/* --- Mode Switcher (Floating Flow) --- */
+.cm-editor-mode-switcher {
+  position: absolute;
+  bottom: 12px;
+  right: 20px;
+  display: flex !important;
+  background: rgb(var(--color-bg-secondary-rgb)) !important;
+  background-color: rgb(var(--color-bg-secondary-rgb)) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 5px;
+  padding: 2px;
+  gap: 2px;
+  z-index: 1000;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  backdrop-filter: none;
+  user-select: none;
+  transition: box-shadow 0.2s ease;
+}
+
+/* Consolidated Light Theme Overrides for Mode Switcher */
+[data-theme='polaris'] .cm-editor-mode-switcher,
+[data-theme='latte'] .cm-editor-mode-switcher,
+[data-theme='solar-dawn'] .cm-editor-mode-switcher,
+[data-theme='minimal-gray'] .cm-editor-mode-switcher,
+[data-theme='quiet-light'] .cm-editor-mode-switcher {
+  background: #ffffff !important;
+  border-color: #d0d7de !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
+  backdrop-filter: none !important;
+}
+
+[data-theme='polaris'] .cm-mode-btn.is-active,
+[data-theme='latte'] .cm-mode-btn.is-active,
+[data-theme='solar-dawn'] .cm-mode-btn.is-active,
+[data-theme='minimal-gray'] .cm-mode-btn.is-active,
+[data-theme='quiet-light'] .cm-mode-btn.is-active {
+  background: #0366d6 !important;
+  color: #fff !important;
+}
+
+.cm-editor-mode-switcher.is-floating {
+  border-color: var(--color-accent-primary) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+}
+
+.cm-editor-mode-switcher.is-dragging {
+  opacity: 0.9;
+  cursor: move !important;
+}
+
+.cm-mode-item {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 4px;
+  border: none !important;
+  background: transparent !important;
+  color: var(--color-text-tertiary) !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cm-mode-item:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: var(--color-text-secondary) !important;
+}
+
+.cm-mode-toggle-float {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: none !important;
+  background: transparent !important;
+  color: var(--color-text-tertiary) !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cm-mode-toggle-float:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: var(--color-text-secondary) !important;
+}
+
+.cm-mode-toggle-float.is-active {
+  color: var(--color-accent-primary) !important;
+}
+
+.cm-mode-divider {
+  width: 1px;
+  height: 18px;
+  background: var(--color-border);
+  margin: 0 4px;
+  align-self: center;
+}
+
+.cm-mode-btn {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 75px;
+  height: 28px;
+  border-radius: 4px;
+  border: none !important;
+  background: transparent !important;
+  color: var(--color-text-secondary) !important;
+  font-size: 10.5px !important;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cm-mode-btn span {
+  display: inline;
+  opacity: 1;
+}
+
+.cm-mode-btn:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: var(--color-text-primary) !important;
+}
+
+.cm-mode-btn.is-active {
+  background: var(--color-accent-primary) !important;
+  color: #fff !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}

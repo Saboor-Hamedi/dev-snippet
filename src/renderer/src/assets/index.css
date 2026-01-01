@@ -1,6 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 :root {
   /* Layout dimensions */
   --activity-bar-width: 60px;
@@ -39,14 +40,16 @@
   --surface: var(--color-bg-secondary);
 
   /* Live font preview variables */
-  --editor-font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', monospace;
-  --editor-font-size: 0.875rem;
+  /* Base editor font setup - explicitly standardized */
+  --editor-font-family: 'Inter', system-ui, sans-serif; /* Default to UI font, user can override */
+  --editor-font-size: 13px; /* Explicit pixel value, not rem */
   --preview-font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', monospace;
   --preview-font-size: 0.875rem;
   --caret-width: 3px;
   --current-line-bg: rgba(88, 166, 255, 0.12);
   --editor-line-height: 1.6;
   --caret-style: bar;
+
   /* custom Tailwind font sizes → CSS variables */
   --font-size-xtiny: 0.625rem; /* 10px  */
   --font-size-tiny: 0.75rem; /* 12px  */
@@ -55,16 +58,16 @@
   --font-size-base: 1rem; /* 16px  */
   --font-size-lg: 1.125rem; /* 18px  */
   --font-size-xl: 1.25rem; /* 20px  */
-  --font-size-2xl: 1.5rem; /* 24px  */
-  --font-size-3xl: 1.875rem; /* 30px  */
-  --font-size-4xl: 2.25rem; /* 36px  */
+  --font-size-2xl: 1.75rem; /* 24px -> 28px */
+  --font-size-3xl: 2.25rem; /* 30px -> 36px */
+  --font-size-4xl: 3rem; /* 36px -> 48px */
   --font-size-5xl: 3rem; /* 48px  */
   --font-size-6xl: 3.75rem; /* 60px  */
   --font-size-7xl: 4.5rem; /* 72px  */
   --font-size-8xl: 6rem; /* 96px  */
-  --font-size-9xl: 8rem; /* 128px
+  --font-size-9xl: 8rem; /* 128px */
 
---font-size-2xs   : 0.6875rem;  /* 11px  */
+  --font-size-2xs: 0.6875rem; /* 11px  */
   --font-size-3xs: 0.625rem; /* 10px  */
 
   /* Bonus: line-height variables too */
@@ -86,6 +89,7 @@
   --line-height-2xs: 1rem;
   --line-height-3xs: 1rem;
 }
+
 /* Comprehensive Theme System - All components use these variables */
 
 /* Prevent Monaco from overriding line padding */
@@ -150,6 +154,19 @@ html,
     color 0.3s ease;
 }
 
+/*
+   Solid foundations for glass themes to prevent the underlying
+   Electron window background (usually black) from showing through.
+*/
+[data-theme='polaris'] body,
+[data-theme='polaris'] html,
+[data-theme='polaris'] #root,
+[data-theme='minimal-gray'] body,
+[data-theme='minimal-gray'] html,
+[data-theme='minimal-gray'] #root {
+  background-color: #ffffff !important;
+}
+
 /* All modals, dialogs, and overlays */
 .modal,
 .dialog,
@@ -196,6 +213,7 @@ select:not(.theme-exempt):focus {
 }
 
 /* Refined Scrollbar Styles */
+/* Refined Scrollbar Styles */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -206,14 +224,18 @@ select:not(.theme-exempt):focus {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: var(--color-border);
+  background: var(--color-border);
   border: 3px solid transparent;
   background-clip: content-box;
   border-radius: 99px;
+  background-clip: content-box;
+  opacity: 0.8;
+  transition: background-color 0.2s;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background-color: var(--color-text-secondary);
+  border: 2px solid transparent; /* Slightly larger on hover */
 }
 
 ::-webkit-scrollbar-corner {
@@ -270,11 +292,7 @@ select:not(.theme-exempt):focus {
 /* ===== SETTINGS PANEL SPECIFIC OVERRIDES ===== */
 
 /* Force SettingsPanel to use theme colors */
-.settings-panel,
-.settings-panel * {
-}
-
-/* Settings Panel main container */
+/* Settings cards and sections */
 .settings-panel .bg-white {
   background-color: var(--color-bg-primary) !important;
 }
@@ -329,13 +347,6 @@ select:not(.theme-exempt):focus {
 }
 
 /* settings-panel input:focus overrides removed to allow component control */
-.settings-panel input:focus,
-.settings-panel select:focus,
-.settings-panel textarea:focus {
-  /* background-color: var(--color-bg-tertiary) !important; */
-  /* border-color: var(--color-accent-primary) !important; */
-}
-
 /* Settings cards and sections */
 .settings-panel .bg-slate-800,
 .settings-panel .bg-slate-900 {
@@ -362,17 +373,9 @@ select:not(.theme-exempt):focus {
   border: none !important;
 }
 
-.settings-panel select:hover {
-  /* No hover effect */
-}
-
 /* Smooth input styling */
 .settings-panel input[type='number'] {
   border: none !important;
-}
-
-.settings-panel input[type='number']:hover {
-  /* No hover effect */
 }
 
 /* Remove focus outline completely */
@@ -391,11 +394,30 @@ h4,
 h5,
 h6 {
   color: var(--color-text-primary) !important;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+h1 {
+  font-size: var(--font-size-4xl);
+}
+h2 {
+  font-size: var(--font-size-3xl);
+}
+h3 {
+  font-size: var(--font-size-2xl);
+}
+h4 {
+  font-size: var(--font-size-xl);
+}
+h5 {
+  font-size: var(--font-size-lg);
+}
+h6 {
+  font-size: var(--font-size-base);
 }
 
 /* Activity bar and sidebar headers */
-.activity-bar,
-.sidebar,
 .sidebar-header,
 .header {
   background-color: var(--color-bg-secondary) !important;
@@ -417,6 +439,10 @@ h6 {
 }
 
 /* Workbench and layout components */
+.activity-bar {
+  background-color: var(--activity-bar-bg) !important;
+}
+
 .workbench,
 .layout,
 .main-content {
@@ -425,67 +451,11 @@ h6 {
 }
 
 /* Status bar and toolbar */
-.status-bar,
 .toolbar,
 .header-toolbar {
   background-color: var(--color-bg-secondary) !important;
   color: var(--color-text-primary) !important;
   border-color: var(--color-border) !important;
-}
-
-/* Force white theme specific fixes */
-[data-theme='polaris'] h1,
-[data-theme='polaris'] h2,
-[data-theme='polaris'] h3,
-[data-theme='polaris'] h4,
-[data-theme='polaris'] h5,
-[data-theme='polaris'] h6 {
-  color: var(--color-text-primary, #0f172a) !important;
-}
-
-[data-theme='polaris'] .sidebar,
-[data-theme='polaris'] .nav,
-[data-theme='polaris'] .header {
-  color: var(--sidebar-text, #334155) !important;
-}
-
-/* Override any remaining white text in light theme */
-[data-theme='polaris'] .text-white,
-[data-theme='polaris'] .text-slate-50,
-[data-theme='polaris'] .text-slate-100,
-[data-theme='polaris'] .text-gray-50,
-[data-theme='polaris'] .text-neutral-50 {
-  color: var(--color-text-primary, #0f172a) !important;
-}
-
-/* Force sidebar header text to be dark in light theme */
-[data-theme='polaris'] * {
-  --sidebar-header-text: #475569 !important;
-  --color-text-primary: #0f172a !important;
-  --color-text-secondary: #475569 !important;
-  --color-text-tertiary: #64748b !important;
-}
-
-/* Ensure all elements that might have light text get dark text in light theme */
-[data-theme='polaris'] h1,
-[data-theme='polaris'] h2,
-[data-theme='polaris'] h3,
-[data-theme='polaris'] h4,
-[data-theme='polaris'] h5,
-[data-theme='polaris'] h6,
-[data-theme='polaris'] p,
-[data-theme='polaris'] span,
-[data-theme='polaris'] div,
-[data-theme='polaris'] button,
-[data-theme='polaris'] label {
-  color: var(--color-text-primary, #0f172a) !important;
-}
-
-/* Specific sidebar header fix */
-[data-theme='polaris'] .sidebar-header h1,
-[data-theme='polaris'] .sidebar-header p,
-[data-theme='polaris'] .sidebar-header span {
-  color: #475569 !important;
 }
 
 /* Ensure buttons and interactive elements work in all themes */
@@ -496,6 +466,17 @@ button:not(.theme-exempt) {
 button:not(.theme-exempt):hover {
   background-color: var(--hover-bg) !important;
   color: var(--hover-text) !important;
+}
+
+/* Sidebar and Header - Let themes control glassmorphism */
+.sidebar {
+  background-color: var(--sidebar-bg) !important;
+  border-right: 1px solid var(--sidebar-border);
+}
+
+.header {
+  background-color: var(--header-bg) !important;
+  border-bottom: 1px solid var(--header-border);
 }
 
 /* Midnight Theme (neutralized to black scheme) */
@@ -548,6 +529,23 @@ button:not(.theme-exempt):hover {
   --hover-text: #f0f6fc;
 }
 
+/* Global Drag Performance Engine */
+body.dragging-active * {
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+body.dragging-active .universal-modal-header,
+body.dragging-active .universal-modal-header * {
+  pointer-events: auto !important;
+}
+
+/* Force stability on all icons during movement to prevent flickering */
+body.dragging-active svg {
+  transition: none !important;
+  animation: none !important;
+  transform: translateZ(0);
+}
 /* Base Styles */
 *,
 *::before,
@@ -584,6 +582,34 @@ body {
 .text-primary {
   color: var(--primary);
 }
+
+/* Polished Fade Effect */
+.fade-in {
+  animation: fadeIn 0.15s ease-out forwards;
+}
+
+/* 
+   STABILITY PATCH: Disable all transitions for the editor root.
+   Transitions on layout elements cause CodeMirror 6 measurement crashes.
+*/
+.cm-editor,
+.cm-scroller,
+.cm-content,
+.cm-gutters {
+  transition: none !important;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0.9;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 #root {
   width: 100%;
   height: 100vh;
@@ -609,59 +635,6 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--ev-c-gray-3);
-}
-
-/* Activity Bar */
-.activity-bar {
-  position: fixed;
-  left: 0;
-  top: 0;
-  height: 100%;
-  width: var(--activity-bar-width);
-  background-color: var(--ev-c-black-soft);
-  border-right: 1px solid var(--ev-c-black-mute);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 1.5rem 0;
-  gap: 1rem;
-  z-index: 50;
-}
-
-.activity-bar-item {
-  width: 3rem;
-  height: 3rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0.75rem;
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-  color: var(--ev-c-gray-2);
-  position: relative;
-}
-
-.activity-bar-item:hover {
-  color: var(--ev-c-white);
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
-.activity-bar-item.active {
-  color: #ffffff;
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
-.activity-bar-item.active::before {
-  content: '';
-  position: absolute;
-  left: -4px; /* Slightly outside to look like a border */
-  top: 50%;
-  transform: translateY(-50%);
-  width: 4px;
-  height: 1.5rem;
-  background-color: var(--ev-c-black-mute);
-  border-radius: 0 4px 4px 0;
-  box-shadow: none;
 }
 
 /* Sidebar */
@@ -790,7 +763,7 @@ body {
 }
 
 /* Code Editor Area */
-.code-editor-container {
+.cm-editor-container {
   font-family: var(--editor-font-family);
 }
 
@@ -916,10 +889,6 @@ code,
   pointer-events: auto;
 }
 
-.mention-pill {
-  cursor: pointer !important;
-}
-
 /* Enhanced text selection in preview */
 .preview-container ::selection,
 .preview-content ::selection,
@@ -937,13 +906,6 @@ code ::selection,
   -webkit-user-select: text !important;
   -moz-user-select: text !important;
   cursor: text !important;
-}
-
-/* Make mentions clickable but preserve text selection around them */
-.md-mention {
-  cursor: pointer;
-  user-select: none;
-  -webkit-user-select: none;
 }
 
 /* Better cursor indication for code preview */
@@ -1005,31 +967,370 @@ textarea {
   scrollbar-width: none;
 }
 
-/* CodeMirror 6 Selection Override - Aggressive */
-.cm-editor ::selection,
-.cm-editor *::selection,
-.cm-content ::selection,
-.cm-content *::selection,
-.cm-line ::selection {
-  background-color: rgba(0, 0, 0, 0) !important;
-  background: rgba(0, 0, 0, 0) !important;
-  color: inherit !important;
-  text-shadow: none !important;
-  -webkit-text-fill-color: inherit !important;
+/* CodeMirror 6 Selection Override - Aggressive (Force Visible Selection) */
+html body ::selection {
+  background-color: var(--cursor-selection-bg, rgba(65, 206, 92, 0.5)) !important;
+  color: var(--selection-text, #ffffff) !important;
+  -webkit-text-fill-color: var(--selection-text, #ffffff) !important;
 }
 
-/* Firefox Support */
-.cm-editor ::-moz-selection,
-.cm-editor *::-moz-selection,
-.cm-content ::-moz-selection {
-  background-color: rgba(0, 0, 0, 0) !important;
-  background: rgba(0, 0, 0, 0) !important;
-  color: inherit !important;
-  text-shadow: none !important;
+/* Specific overrides for Editor to ensure it wins against any JS injection */
+html body .cm-editor ::selection,
+html body .cm-content ::selection,
+html body .cm-line ::selection,
+html body .cm-content *::selection {
+  background-color: var(--cursor-selection-bg, rgba(65, 206, 92, 0.5)) !important;
+  background: var(--cursor-selection-bg, rgba(65, 206, 92, 0.5)) !important;
 }
 
-/* Fallback for native selection in other areas if needed */
-::selection {
-  background-color: var(--selected-bg, rgba(147, 185, 246, 0.3));
-  color: var(--selected-text, inherit);
+/* ==========================================================================
+   MOBILE RESPONSIVENESS (GLOBAL)
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  /* Sidebar Overlay Strategy */
+  aside {
+    position: absolute !important;
+    top: 0;
+    left: 40px; /* Stay right of Activity Bar */
+    bottom: 0;
+    z-index: 50 !important;
+    box-shadow: 20px 0 50px rgba(0, 0, 0, 0.3);
+    background: var(--color-bg-primary) !important;
+  }
+
+  /* Activity Bar Tweak */
+  .activity-bar {
+    width: 40px !important;
+    flex-shrink: 0;
+  }
+
+  /* Split Pane Stacking */
+  .flex.h-full.w-full.overflow-hidden {
+    flex-direction: column !important;
+  }
+
+  /* Side-by-side to Stacked */
+  div[style*='width:'][style*='flex: 0 0 auto'] {
+    width: 100% !important;
+    height: 50% !important;
+    flex: 1 1 auto !important;
+  }
+
+  /* Splitter bar (Grip) hide or horizontal */
+  div.shrink-0.relative.flex.items-center.justify-center.w-1.z-50 {
+    width: 100% !important;
+    height: 8px !important;
+    cursor: row-resize !important;
+    background: var(--color-bg-tertiary);
+  }
+
+  div.absolute.top-0.bottom-0.w-4.-left-1\.5 {
+    width: 100% !important;
+    height: 20px !important;
+    top: -6px !important;
+    left: 0 !important;
+    cursor: row-resize !important;
+  }
+
+  /* Content area scrollable */
+  .flex-1.min-h-0.h-full.overflow-auto {
+    width: 100% !important;
+    height: 50% !important;
+    flex: 1 1 auto !important;
+  }
+
+  /* Hide non-essential header items */
+  .header-actions .btn-label {
+    display: none !important;
+  }
+
+  /* Compact Footer */
+  .status-bar-info {
+    font-size: 10px !important;
+  }
+}
+
+/* MOBILE ADJUSTMENTS FOR SLASH MENU */
+
+/* ============================================
+   GLASS BLUE THEME - Minimal Clean Version
+   ============================================ */
+
+/* Subtle hover effect */
+[data-theme='glass-blue'] .snippet-item:hover,
+[data-theme='glass-blue'] .folder-item:hover,
+[data-theme='glass-blue'] button:hover,
+[data-theme='glass-blue'] a:hover {
+  background: rgba(59, 130, 246, 0.1) !important;
+}
+
+[data-theme='obsidian'] .snippet-item:hover,
+[data-theme='obsidian'] .folder-item:hover,
+[data-theme='obsidian'] button:hover,
+[data-theme='obsidian'] a:hover {
+  background: rgba(124, 58, 237, 0.1) !important;
+}
+
+[data-theme='magma'] .snippet-item:hover,
+[data-theme='magma'] .folder-item:hover,
+[data-theme='magma'] button:hover,
+[data-theme='magma'] a:hover {
+  background: rgba(249, 115, 22, 0.1) !important;
+}
+
+[data-theme='oceanic'] .snippet-item:hover,
+[data-theme='oceanic'] .folder-item:hover,
+[data-theme='oceanic'] button:hover,
+[data-theme='oceanic'] a:hover {
+  background: rgba(56, 189, 248, 0.1) !important;
+}
+
+[data-theme='forest'] .snippet-item:hover,
+[data-theme='forest'] .folder-item:hover,
+[data-theme='forest'] button:hover,
+[data-theme='forest'] a:hover {
+  background: rgba(34, 197, 94, 0.1) !important;
+}
+
+[data-theme='nebula'] .snippet-item:hover,
+[data-theme='nebula'] .folder-item:hover,
+[data-theme='nebula'] button:hover,
+[data-theme='nebula'] a:hover {
+  background: rgba(217, 70, 239, 0.1) !important;
+}
+
+[data-theme='polaris'] .snippet-item:hover,
+[data-theme='polaris'] .folder-item:hover,
+[data-theme='polaris'] button:hover,
+[data-theme='polaris'] a:hover {
+  background: rgba(3, 102, 214, 0.1) !important;
+}
+
+/* Subtle selected effect */
+[data-theme='glass-blue'] .snippet-item.selected,
+[data-theme='glass-blue'] .folder-item.selected,
+[data-theme='glass-blue'] [aria-selected='true'] {
+  background: rgba(59, 130, 246, 0.2) !important;
+}
+
+[data-theme='obsidian'] .snippet-item.selected,
+[data-theme='obsidian'] .folder-item.selected,
+[data-theme='obsidian'] [aria-selected='true'] {
+  background: rgba(124, 58, 237, 0.25) !important;
+}
+
+[data-theme='magma'] .snippet-item.selected,
+[data-theme='magma'] .folder-item.selected,
+[data-theme='magma'] [aria-selected='true'] {
+  background: rgba(249, 115, 22, 0.25) !important;
+}
+
+[data-theme='oceanic'] .snippet-item.selected,
+[data-theme='oceanic'] .folder-item.selected,
+[data-theme='oceanic'] [aria-selected='true'] {
+  background: rgba(56, 189, 248, 0.25) !important;
+}
+
+[data-theme='forest'] .snippet-item.selected,
+[data-theme='forest'] .folder-item.selected,
+[data-theme='forest'] [aria-selected='true'] {
+  background: rgba(34, 197, 94, 0.25) !important;
+}
+
+[data-theme='nebula'] .snippet-item.selected,
+[data-theme='nebula'] .folder-item.selected,
+[data-theme='nebula'] [aria-selected='true'] {
+  background: rgba(217, 70, 239, 0.25) !important;
+}
+
+[data-theme='polaris'] .snippet-item.selected,
+[data-theme='polaris'] .folder-item.selected,
+[data-theme='polaris'] [aria-selected='true'] {
+  background: rgba(3, 102, 214, 0.15) !important;
+}
+
+/* Ensure glassmorphism works for Glass Blue and Obsidian */
+[data-theme='glass-blue'] .sidebar,
+[data-theme='glass-blue'] .activity-bar,
+[data-theme='obsidian'] .sidebar,
+[data-theme='obsidian'] .activity-bar,
+[data-theme='magma'] .sidebar,
+[data-theme='magma'] .activity-bar,
+[data-theme='oceanic'] .sidebar,
+[data-theme='oceanic'] .activity-bar,
+[data-theme='forest'] .sidebar,
+[data-theme='forest'] .activity-bar,
+[data-theme='nebula'] .sidebar,
+[data-theme='nebula'] .activity-bar,
+[data-theme='royal-gold'] .sidebar,
+[data-theme='royal-gold'] .activity-bar,
+[data-theme='midnight-pro'] .sidebar,
+[data-theme='midnight-pro'] .activity-bar,
+[data-theme='polaris'] .sidebar,
+[data-theme='polaris'] .activity-bar,
+[data-theme='minimal-gray'] .sidebar,
+[data-theme='minimal-gray'] .activity-bar {
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+}
+
+/* Atomic theme sync for ALL themes */
+[data-theme] .cm-editor-container,
+[data-theme] .panel-container,
+[data-theme] .SnippetEditor_root {
+  background-color: var(--editor-bg) !important;
+}
+
+[data-theme='polaris'] .cm-editor-container,
+[data-theme='polaris'] .SnippetEditor_root {
+  background-color: #ffffff !important;
+}
+
+[data-theme='minimal-gray'] .cm-editor-container {
+  background-color: #f3f4f6 !important;
+}
+
+/* --- PREMIUM OBSIDIAN-STYLE HEADER --- */
+.editor-premium-header {
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background-color: rgba(var(--editor-bg-rgb, 13, 17, 23), 0.82);
+  z-index: 50;
+  transition: all 0.2s ease;
+}
+
+.editor-premium-header input {
+  font-family: var(--editor-font-family);
+  width: auto;
+  min-width: 150px;
+}
+
+.mode-indicator-group {
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+.mode-indicator-group button {
+  color: var(--color-text-tertiary);
+  position: relative;
+  overflow: hidden;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.mode-indicator-group button:hover {
+  color: var(--color-text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.mode-indicator-group button.is-active {
+  background: rgba(88, 166, 255, 0.15) !important;
+  color: var(--color-accent-primary) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.mode-indicator-group button.is-active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 20%;
+  right: 20%;
+  height: 2px;
+  background: var(--color-accent-primary);
+  border-radius: 2px 2px 0 0;
+  box-shadow: 0 0 10px var(--color-accent-primary);
+}
+
+/* --- Source Modal (Floating Editor) --- */
+.cm-md-source-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: cm-modal-fade 0.2s ease;
+}
+
+.cm-md-source-modal {
+  width: 550px;
+  max-width: 90vw;
+  max-height: 75vh;
+  background: var(--color-bg-tertiary, #1e1e1e);
+  border: 1px solid var(--color-border);
+  border-radius: 5px; /* Precision 5px radius */
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+.cm-md-source-modal-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.cm-md-modal-close {
+  background: none !important;
+  border: none !important;
+  color: var(--color-text-tertiary) !important;
+  font-size: 20px !important;
+  cursor: pointer;
+  padding: 0 4px !important;
+}
+
+.cm-md-source-modal-input {
+  flex: 1;
+  padding: 16px;
+  background: transparent !important;
+  border: none !important;
+  color: var(--color-text-primary) !important;
+  font-family: var(--editor-font-family, monospace) !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  resize: none !important;
+  outline: none !important;
+  min-height: 200px;
+}
+
+.cm-md-source-modal-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.cm-md-modal-save {
+  padding: 6px 16px !important;
+  background: var(--color-accent-primary) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+}
+
+@keyframes cm-modal-fade {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }

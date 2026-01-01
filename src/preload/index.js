@@ -11,6 +11,8 @@ const api = {
   readFile: (path) => electronAPI.ipcRenderer.invoke('fs:readFile', path),
   writeFile: (path, content) => electronAPI.ipcRenderer.invoke('fs:writeFile', path, content),
   readDirectory: (path) => electronAPI.ipcRenderer.invoke('fs:readDirectory', path),
+  saveAsset: (fileName, buffer) =>
+    electronAPI.ipcRenderer.invoke('fs:saveAsset', { fileName, buffer }),
 
   // Settings JSON file
   //  This take are of life watch setttings.json file changes from outside the app
@@ -33,29 +35,70 @@ const api = {
   searchSnippets: (query) => electronAPI.ipcRenderer.invoke('db:searchSnippets', query),
   saveSnippet: (snippet) => electronAPI.ipcRenderer.invoke('db:saveSnippet', snippet),
   deleteSnippet: (id) => electronAPI.ipcRenderer.invoke('db:deleteSnippet', id),
+  restoreSnippet: (id) => electronAPI.ipcRenderer.invoke('db:restoreSnippet', id),
+  permanentDeleteSnippet: (id) => electronAPI.ipcRenderer.invoke('db:permanentDeleteSnippet', id),
+  getTrash: () => electronAPI.ipcRenderer.invoke('db:getTrash'),
   getSetting: (key) => electronAPI.ipcRenderer.invoke('db:getSetting', key),
   saveSetting: (key, value) => electronAPI.ipcRenderer.invoke('db:saveSetting', key, value),
   // Drafts
   saveSnippetDraft: (payload) => electronAPI.ipcRenderer.invoke('db:saveSnippetDraft', payload),
   commitSnippetDraft: (id) => electronAPI.ipcRenderer.invoke('db:commitSnippetDraft', id),
+  onDataChanged: (callback) => {
+    const sub = () => callback()
+    electronAPI.ipcRenderer.on('db:data-changed', sub)
+    return () => electronAPI.ipcRenderer.removeListener('db:data-changed', sub)
+  },
+  onResetCapture: (callback) => {
+    const sub = () => callback()
+    electronAPI.ipcRenderer.on('qc:reset', sub)
+    return () => electronAPI.ipcRenderer.removeListener('qc:reset', sub)
+  },
+
+  // Folders
+  getFolders: () => electronAPI.ipcRenderer.invoke('db:getFolders'),
+  saveFolder: (folder) => electronAPI.ipcRenderer.invoke('db:saveFolder', folder),
+  deleteFolder: (id) => electronAPI.ipcRenderer.invoke('db:deleteFolder', id),
+  moveSnippet: (snippetId, folderId) =>
+    electronAPI.ipcRenderer.invoke('db:moveSnippet', snippetId, folderId),
+  moveFolder: (folderId, parentId) =>
+    electronAPI.ipcRenderer.invoke('db:moveFolder', folderId, parentId),
+  toggleFolderCollapse: (id, collapsed) =>
+    electronAPI.ipcRenderer.invoke('db:toggleFolderCollapse', id, collapsed),
+
   // Window controls
   minimize: () => electronAPI.ipcRenderer.invoke('window:minimize'),
   maximize: () => electronAPI.ipcRenderer.invoke('window:maximize'),
   unmaximize: () => electronAPI.ipcRenderer.invoke('window:unmaximize'),
   toggleMaximize: () => electronAPI.ipcRenderer.invoke('window:toggle-maximize'),
   closeWindow: () => electronAPI.ipcRenderer.invoke('window:close'),
+  reloadWindow: () => electronAPI.ipcRenderer.invoke('window:reload'),
   relaunch: () => electronAPI.ipcRenderer.invoke('window:relaunch'),
   getVersion: () => electronAPI.ipcRenderer.invoke('app:getVersion'),
   // Bounds helpers for custom resize handles (renderer will call these)
   getWindowBounds: () => electronAPI.ipcRenderer.invoke('window:getBounds'),
   setWindowBounds: (bounds) => electronAPI.ipcRenderer.invoke('window:setBounds', bounds),
   restoreDefaultSize: () => electronAPI.ipcRenderer.invoke('window:restore-default-size'),
+  setFlowSize: () => electronAPI.ipcRenderer.invoke('window:set-flow-size'),
   setZoom: (factor) => electronAPI.ipcRenderer.invoke('window:setZoom', factor),
   getZoom: () => electronAPI.ipcRenderer.invoke('window:getZoom'),
+  openMiniBrowser: (htmlContent) =>
+    electronAPI.ipcRenderer.invoke('window:openMiniBrowser', htmlContent),
+  resetWindow: () => electronAPI.ipcRenderer.invoke('window:reset'),
+  toggleQuickCapture: () => electronAPI.ipcRenderer.invoke('quickCapture:toggle'),
   // Backup Management
   listBackups: () => electronAPI.ipcRenderer.invoke('backup:list'),
   restoreBackup: (backupPath) => electronAPI.ipcRenderer.invoke('backup:restore', backupPath),
   createBackup: () => electronAPI.ipcRenderer.invoke('backup:create'),
+  // New Secure Export
+  exportJSON: (data) => electronAPI.ipcRenderer.invoke('export:json', data),
+
+  // GitHub Sync
+  syncSetToken: (token) => electronAPI.ipcRenderer.invoke('sync:setToken', token),
+  syncHasToken: () => electronAPI.ipcRenderer.invoke('sync:hasToken'),
+  syncGetToken: () => electronAPI.ipcRenderer.invoke('sync:getToken'),
+  syncGetStatus: () => electronAPI.ipcRenderer.invoke('sync:getStatus'),
+  syncBackup: () => electronAPI.ipcRenderer.invoke('sync:backup'),
+  syncRestore: () => electronAPI.ipcRenderer.invoke('sync:restore'),
 
   // Auto-Update
   checkForUpdates: () => electronAPI.ipcRenderer.invoke('updates:check'),
@@ -85,7 +128,9 @@ const api = {
     const sub = (e, message) => callback(message)
     electronAPI.ipcRenderer.on('updates:error', sub)
     return () => electronAPI.ipcRenderer.removeListener('updates:error', sub)
-  }
+  },
+  // Generic invoke for non-wrapped IPC channels
+  invoke: (channel, ...args) => electronAPI.ipcRenderer.invoke(channel, ...args)
 }
 
 if (process.contextIsolated) {

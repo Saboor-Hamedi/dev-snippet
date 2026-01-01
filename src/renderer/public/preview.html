@@ -1,0 +1,354 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Preview Sandbox</title>
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: asset: https: http:;"
+    />
+    <!-- We will inject styles via message to keep them dynamic, or use standard assets -->
+    <style id="base-styles">
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden !important;
+        background-color: transparent !important;
+        height: 100vh !important;
+        min-height: 100vh !important;
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        /* Premium smoothness */
+        scroll-behavior: smooth !important;
+      }
+      body {
+        overflow-y: auto !important;
+      }
+      .preview-container {
+        width: 100%;
+        max-width: 1200px;
+        box-sizing: border-box;
+        padding: 0px 15px 150px 15px !important;
+        margin: 0 auto !important;
+        background-color: transparent;
+        min-height: 100%;
+        transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .preview-container.is-live {
+        padding: 0px 15px 150px 15px !important;
+      }
+      .markdown-body {
+        padding: 0px !important;
+        margin-top: 0px !important;
+        background-color: transparent !important;
+      }
+      /* Force first element to be flush */
+      .markdown-body > *:first-child {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+      }
+
+      /* Premium Scrollbars */
+      ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(139, 148, 158, 0.2);
+        border-radius: 10px;
+        border: 2px solid transparent;
+        background-clip: content-box;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(139, 148, 158, 0.4);
+      }
+    </style>
+
+    <!-- Dependencies (Allowed by CSP) -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+  </head>
+  <body class="markdown-body">
+    <div class="preview-container">
+      <div id="content"></div>
+    </div>
+
+    <script type="module">
+      /**
+       * This module script is part of 'self' (static asset),
+       * so it won't violate CSP.
+       */
+
+      let currentConfig = {}
+
+      // Tab Switching Logic (Global)
+      window.switchTab = (id, index) => {
+        const container = document.querySelector(`[data-id="${id}"]`)
+        if (!container) return
+        container.querySelectorAll('.tab-btn').forEach((btn, i) => {
+          btn.classList.toggle('active', i === index)
+        })
+        container.querySelectorAll('.tab-pane').forEach((pane, i) => {
+          pane.classList.toggle('active', i === index)
+        })
+      }
+
+      // Handle content updates from parent
+      window.addEventListener('message', (event) => {
+        const { type } = event.data
+
+        if (type === 'styles') {
+          const { theme, isDark, styles, mermaidConfig, mermaidEngine, editorZoom = 1.0, baseFontSize } = event.data
+          
+          // Update zoom-aware font size
+          const baseSize = baseFontSize || 14
+          document.documentElement.style.fontSize = `${baseSize * editorZoom}px`
+          document.body.style.fontSize = `${baseSize * editorZoom}px`
+          document.documentElement.setAttribute('data-theme', theme)
+          document.documentElement.className = theme + (isDark ? ' dark' : '')
+
+          if (styles) {
+            let styleTag = document.getElementById('dynamic-styles')
+            if (!styleTag) {
+              styleTag = document.createElement('style')
+              styleTag.id = 'dynamic-styles'
+              document.head.appendChild(styleTag)
+            }
+            if (styleTag.textContent !== styles) styleTag.textContent = styles
+          }
+
+          if (mermaidEngine && !window.diagramEngine) {
+            const script = document.createElement('script')
+            script.textContent = mermaidEngine
+            document.body.appendChild(script)
+          }
+
+          window._mermaidConfig = mermaidConfig
+        }
+
+        if (type === 'render') {
+          const {
+            html,
+            initialScrollPercentage
+          } = event.data
+
+          // 3. Update Content
+          const contentDiv = document.getElementById('content')
+          if (contentDiv && contentDiv.innerHTML !== html) {
+            contentDiv.innerHTML = html
+
+            // Restore/Apply Scroll Position on next frame for perfect layout sync
+            requestAnimationFrame(() => {
+              if (typeof initialScrollPercentage === 'number') {
+                const body = document.body
+                const docHtml = document.documentElement
+                const height = Math.max(
+                  body.scrollHeight,
+                  body.offsetHeight,
+                  docHtml.clientHeight,
+                  docHtml.scrollHeight,
+                  docHtml.offsetHeight
+                )
+                const windowHeight = window.innerHeight
+                const scrollTarget = (height - windowHeight) * initialScrollPercentage
+
+                window.scrollTo({ top: scrollTarget, behavior: 'instant' })
+                document.body.scrollTop = scrollTarget
+                document.documentElement.scrollTop = scrollTarget
+              }
+            })
+          }
+
+          // 4. Process Logic via specialized Diagram Engine
+          const runLogic = async () => {
+             if (window.diagramEngine) {
+                const isDark = document.documentElement.classList.contains('dark')
+                const themeStr = isDark ? 'dark' : 'neutral'
+                window.diagramEngine.init({
+                   theme: themeStr,
+                   ...(window._mermaidConfig || {})
+                })
+                await window.diagramEngine.run()
+             }
+          }
+
+          runLogic()
+          setTimeout(runLogic, 1000)
+        }
+
+        if (type === 'scroll') {
+          const { percentage } = event.data
+          if (typeof percentage === 'number') {
+            const body = document.body
+            const html = document.documentElement
+            const height = Math.max(
+              body.scrollHeight,
+              body.offsetHeight,
+              html.clientHeight,
+              html.scrollHeight,
+              html.offsetHeight
+            )
+            const windowHeight = window.innerHeight
+            const scrollTarget = (height - windowHeight) * percentage
+
+            // Smooth Interpolation Engine
+            if (window._scrollRaf) cancelAnimationFrame(window._scrollRaf)
+            
+            const smoothScroll = () => {
+              const current = window.scrollY || document.documentElement.scrollTop
+              const diff = scrollTarget - current
+              if (Math.abs(diff) < 1) {
+                 window.scrollTo(0, scrollTarget)
+                 return
+              }
+              // Rapid convergence (0.3 step) for high-responsiveness
+              window.scrollTo(0, current + diff * 0.3)
+              window._scrollRaf = requestAnimationFrame(smoothScroll)
+            }
+            window._scrollRaf = requestAnimationFrame(smoothScroll)
+          }
+        }
+      })
+
+      // Handle Clicks
+      document.addEventListener('click', (e) => {
+        // 1. Copy Code Button
+        const btn = e.target.closest('.copy-code-btn')
+        if (btn) {
+          let raw = ''
+          try {
+            raw = decodeURIComponent(btn.dataset.code)
+          } catch (e) {
+            // Fallback for legacy/unencoded content (if any remains cached)
+            raw = btn.dataset.code
+              .replace(/&amp;/g, '&')
+              .replace(/&lt;/g, '<')
+              .replace(/&gt;/g, '>')
+              .replace(/&quot;/g, '"')
+          }
+          
+          window.parent.postMessage({ type: 'app:copy-text', text: raw }, '*')
+          
+          const old = btn.innerHTML
+          btn.classList.add('success')
+          btn.innerHTML =
+            '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>'
+          setTimeout(() => {
+            btn.classList.remove('success')
+            btn.innerHTML = old
+          }, 2000)
+          return
+        }
+
+        // 1.5 Copy Image Button
+        const imgBtn = e.target.closest('.copy-image-btn')
+        if (imgBtn) {
+          let raw = ''
+          try {
+             raw = decodeURIComponent(imgBtn.dataset.code)
+          } catch (e) {
+             raw = imgBtn.dataset.code
+               .replace(/&amp;/g, '&')
+               .replace(/&lt;/g, '<')
+               .replace(/&gt;/g, '>')
+               .replace(/&quot;/g, '"')
+          }
+
+          const lang = imgBtn.dataset.lang || 'text'
+          window.parent.postMessage({ type: 'app:copy-as-image', code: raw, language: lang }, '*')
+          
+          // Add visual feedback
+          const old = imgBtn.innerHTML
+          imgBtn.classList.add('success')
+          imgBtn.innerHTML =
+            '<svg xmlns="http://www.getbootstrap.com/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>'
+          setTimeout(() => {
+            imgBtn.classList.remove('success')
+            imgBtn.innerHTML = old
+          }, 2000)
+          return
+        }
+
+        // 2. Quick Links (Internal Wiki Links)
+        const quickLink = e.target.closest('.preview-quicklink')
+        if (quickLink) {
+          window.parent.postMessage(
+            { type: 'app:open-snippet', title: quickLink.dataset.title },
+            '*'
+          )
+          return
+        }
+
+        // 3. Standard Anchor Links
+        const link = e.target.closest('a')
+        if (link) {
+          e.preventDefault()
+          const href = link.getAttribute('href')
+
+          if (!href) return
+
+          // Hash Link (Scroll to ID)
+          if (href.startsWith('#')) {
+            const targetId = href.substring(1)
+            // Decode URI in case ID has special chars
+            try {
+              const element = document.getElementById(decodeURIComponent(targetId))
+              if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              }
+            } catch (err) {
+              console.warn('Scroll failed', err)
+            }
+          }
+          // External Link (http/https)
+          else if (href.startsWith('http') || href.startsWith('mailto:')) {
+            window.parent.postMessage({ type: 'app:open-external', url: href }, '*')
+          }
+        }
+      })
+
+      // Forward keydown events to parent for shortcuts
+      document.addEventListener('keydown', (e) => {
+        window.parent.postMessage(
+          {
+            type: 'app:keydown',
+            key: e.key,
+            code: e.code,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            shiftKey: e.shiftKey,
+            altKey: e.altKey
+          },
+          '*'
+        )
+      })
+      // Forward wheel events to parent for zoom
+      document.addEventListener(
+        'wheel',
+        (e) => {
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault()
+            window.parent.postMessage(
+              {
+                type: 'app:wheel',
+                deltaY: e.deltaY,
+                ctrlKey: e.ctrlKey,
+                metaKey: e.metaKey
+              },
+              '*'
+            )
+          }
+        },
+        { passive: false }
+      )
+      // Notify parent that we are ready
+      window.parent.postMessage({ type: 'app:ready' }, '*')
+    </script>
+  </body>
+</html>

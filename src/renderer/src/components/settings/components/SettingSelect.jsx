@@ -18,11 +18,13 @@ const useOnClickOutside = (ref, handler) => {
   }, [ref, handler])
 }
 
+import SettingRow from './SettingRow'
+
 /**
  * Dropdown select setting with label and description
  * Replaces native <select> with custom UI for consistent styling.
  */
-const SettingSelect = ({ label, description, value, onChange, options = [] }) => {
+const SettingSelect = ({ label, description, value, onChange, options = [], noBorder = false }) => {
   const [isOpen, setIsOpen] = useState(false)
   const ref = useRef()
   useOnClickOutside(ref, () => setIsOpen(false))
@@ -36,25 +38,14 @@ const SettingSelect = ({ label, description, value, onChange, options = [] }) =>
     selectedOption?.label || (typeof selectedOption === 'string' ? selectedOption : value)
 
   return (
-    <div className="flex items-center justify-between p-3 gap-4">
-      <div className="flex flex-col">
-        <label className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
-          {label}
-        </label>
-        {description && (
-          <p className="text-xs mt-0.5 max-w-sm" style={{ color: 'var(--color-text-tertiary)' }}>
-            {description}
-          </p>
-        )}
-      </div>
-
+    <SettingRow label={label} description={description} noBorder={noBorder}>
       <div className="relative" ref={ref}>
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className="w-36 flex items-center justify-between rounded-[5px] px-2 py-1.5 text-xs border outline-none transition-none"
+          className="w-32 sm:w-36 flex items-center justify-between rounded-[5px] px-2 py-1.5 text-xs border outline-none transition-none"
           style={{
-            backgroundColor: isOpen ? '#1a1d29' : 'var(--color-bg-secondary)',
+            backgroundColor: isOpen ? 'var(--color-bg-primary)' : 'var(--color-bg-secondary)',
             color: 'var(--color-text-primary)',
             borderColor: isOpen ? 'var(--color-accent-primary)' : 'var(--color-border)'
           }}
@@ -65,9 +56,9 @@ const SettingSelect = ({ label, description, value, onChange, options = [] }) =>
 
         {isOpen && (
           <div
-            className="absolute right-0 top-full mt-1 w-full rounded-[5px] border shadow-xl z-50 overflow-hidden"
+            className="absolute right-0 top-full mt-1 w-28 sm:w-full rounded-[5px] border shadow-xl z-50 overflow-hidden"
             style={{
-              backgroundColor: '#1a1d29',
+              backgroundColor: 'var(--color-bg-primary)',
               borderColor: 'var(--color-border)'
             }}
           >
@@ -101,7 +92,7 @@ const SettingSelect = ({ label, description, value, onChange, options = [] }) =>
           </div>
         )}
       </div>
-    </div>
+    </SettingRow>
   )
 }
 

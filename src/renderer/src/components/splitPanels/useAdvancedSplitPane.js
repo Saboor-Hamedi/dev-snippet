@@ -63,6 +63,14 @@ const useAdvancedSplitPane = () => {
     [updateSetting]
   )
 
+  const overlayMode = settings?.livePreview?.overlayMode ?? false
+  const setOverlayMode = useCallback(
+    async (value) => {
+      await updateSetting('livePreview.overlayMode', value)
+    },
+    [updateSetting]
+  )
+
   /* Return all relevant values and setters */
 
   return {
@@ -73,7 +81,9 @@ const useAdvancedSplitPane = () => {
     borderColor,
     setBorderColor,
     borderRound,
-    setBorderRound
+    setBorderRound,
+    overlayMode,
+    setOverlayMode
   }
 }
 

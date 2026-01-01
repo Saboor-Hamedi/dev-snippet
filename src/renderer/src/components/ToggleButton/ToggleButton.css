@@ -1,0 +1,50 @@
+.toggle-root {
+  width: var(--toggle-width, 36px);
+  height: var(--toggle-height, 20px);
+  flex-shrink: 0;
+  border-radius: 9999px;
+  position: relative;
+  cursor: pointer;
+  border: none;
+  outline: none !important;
+  box-shadow: none !important;
+  background-color: #e4e4e7; /* zinc-200 */
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Dark mode fallback if not using Tailwind's .dark class on parent, 
+   but usually .dark is on html. We use :global(.dark) or just .dark 
+   depending on setup. Assuming standard CSS import. */
+.dark .toggle-root {
+  background-color: #3f3f46; /* zinc-700 */
+}
+
+/* Checked State overrides background */
+.toggle-root[aria-checked='true'] {
+  background-color: var(--color-accent-primary, #10b981);
+}
+
+.toggle-root:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toggle-thumb {
+  display: block;
+  width: var(--thumb-size, 14px);
+  height: var(--thumb-size, 14px);
+  background-color: white;
+  border-radius: 50%;
+  position: absolute;
+  top: var(--toggle-padding, 3px);
+  left: var(--toggle-padding, 3px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  /* Smooth spring-like transition */
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  will-change: transform;
+}
+
+.toggle-root[aria-checked='true'] .toggle-thumb {
+  transform: translateX(var(--thumb-translate, 16px));
+}

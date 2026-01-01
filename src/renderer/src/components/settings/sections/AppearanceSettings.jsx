@@ -8,6 +8,7 @@ import {
   SettingToggle
 } from '../components'
 
+import { useToast } from '../../../hook/useToast'
 import useFontSettings from '../../../hook/settings/useFontSettings'
 import useCursorProp from '../../../hook/settings/useCursorProp'
 
@@ -16,6 +17,15 @@ import useCursorProp from '../../../hook/settings/useCursorProp'
  * Handles theme, fonts, and cursor settings
  */
 const AppearanceSettings = () => {
+  const { showToast } = useToast()
+
+  /* Helper to wrap setters with toast */
+  const onSettingChange = (setter) => (val) => {
+    setter(val)
+    // Debounce notification for smoother UX or just notify
+    showToast('✓ Settings updated')
+  }
+
   const {
     editorFontFamily,
     updateEditorFontFamily: onEditorFontFamilyChange,
@@ -29,23 +39,23 @@ const AppearanceSettings = () => {
 
   const {
     cursorWidth,
-    setCursorWidth: onCursorWidthChange,
+    setCursorWidth,
     cursorShape,
-    setCursorShape: onCursorShapeChange,
+    setCursorShape,
     cursorBlinking,
-    setCursorBlinking: onCursorBlinkingChange,
+    setCursorBlinking,
     cursorBlinkingSpeed,
-    setCursorBlinkingSpeed: onCursorBlinkingSpeedChange,
+    setCursorBlinkingSpeed,
     cursorSelectionBg,
-    setCursorSelectionBg: onCursorSelectionBgChange,
+    setCursorSelectionBg,
     cursorActiveLineBorder,
-    setCursorActiveLineBorder: onCursorActiveLineBorderChange,
+    setCursorActiveLineBorder,
     cursorActiveLineGutterBorder,
-    setCursorActiveLineGutterBorder: onCursorActiveLineGutterBorderChange,
+    setCursorActiveLineGutterBorder,
     cursorActiveLineBg,
-    setCursorActiveLineBg: onCursorActiveLineBgChange,
+    setCursorActiveLineBg,
     cursorShadowBoxColor,
-    setCursorShadowBoxColor: onCursorShadowBoxColorChange
+    setCursorShadowBoxColor
   } = useCursorProp()
 
   const fontOptions = ['JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', 'Courier New']
@@ -63,7 +73,7 @@ const AppearanceSettings = () => {
         label="Editor Font Family"
         description="Monospace fonts recommended."
         value={editorFontFamily}
-        onChange={onEditorFontFamilyChange}
+        onChange={onSettingChange(onEditorFontFamilyChange)}
         options={fontOptions}
       />
 
@@ -73,7 +83,7 @@ const AppearanceSettings = () => {
         description="Controls the editor font size."
         type="text"
         value={editorFontSize}
-        onChange={onEditorFontSizeChange}
+        onChange={onSettingChange(onEditorFontSizeChange)}
       />
 
       {/* Preview Font Family */}
@@ -81,7 +91,7 @@ const AppearanceSettings = () => {
         label="Preview Font Family"
         description="Applies to code preview blocks."
         value={previewFontFamily}
-        onChange={onPreviewFontFamilyChange}
+        onChange={onSettingChange(onPreviewFontFamilyChange)}
         options={fontOptions}
       />
 
@@ -91,7 +101,7 @@ const AppearanceSettings = () => {
         description="Controls code preview size."
         type="text"
         value={previewFontSize}
-        onChange={onPreviewFontSizeChange}
+        onChange={onSettingChange(onPreviewFontSizeChange)}
       />
 
       {/* Cursor Width */}
@@ -100,7 +110,7 @@ const AppearanceSettings = () => {
         description="Thickness of the text cursor."
         type="text"
         value={cursorWidth}
-        onChange={onCursorWidthChange}
+        onChange={onSettingChange(setCursorWidth)}
       />
 
       {/* Cursor Shape */}
@@ -108,7 +118,7 @@ const AppearanceSettings = () => {
         label="Cursor Shape"
         description="Choose bar, block, or underline."
         value={cursorShape}
-        onChange={onCursorShapeChange}
+        onChange={onSettingChange(setCursorShape)}
         options={cursorShapeOptions}
       />
 
@@ -117,7 +127,7 @@ const AppearanceSettings = () => {
         label="Cursor Blinking"
         description="Toggle text cursor blinking animation."
         checked={cursorBlinking}
-        onChange={onCursorBlinkingChange}
+        onChange={onSettingChange(setCursorBlinking)}
       />
 
       {/* Cursor Blinking Speed */}
@@ -126,7 +136,7 @@ const AppearanceSettings = () => {
         description="Controls how fast the cursor blinks (ms)."
         type="text"
         value={cursorBlinkingSpeed}
-        onChange={onCursorBlinkingSpeedChange}
+        onChange={onSettingChange(setCursorBlinkingSpeed)}
       />
 
       {/* Selection Background */}
@@ -134,7 +144,7 @@ const AppearanceSettings = () => {
         label="Selection Highlighting"
         description="Background color for selected text."
         value={cursorSelectionBg}
-        onChange={onCursorSelectionBgChange}
+        onChange={onSettingChange(setCursorSelectionBg)}
         type="text"
         placeholder="#58a6ff33"
         noBorder
@@ -144,7 +154,7 @@ const AppearanceSettings = () => {
         label="Active Line Border"
         description="Left border width for the active line (0-10px)"
         value={cursorActiveLineBorder}
-        onChange={onCursorActiveLineBorderChange}
+        onChange={onSettingChange(setCursorActiveLineBorder)}
         type="text"
         placeholder="0"
       />
@@ -153,7 +163,7 @@ const AppearanceSettings = () => {
         label="Gutter Border"
         description="Left border width for the active line gutter (0-10px)"
         value={cursorActiveLineGutterBorder}
-        onChange={onCursorActiveLineGutterBorderChange}
+        onChange={onSettingChange(setCursorActiveLineGutterBorder)}
         type="text"
         placeholder="2"
       />
@@ -162,7 +172,7 @@ const AppearanceSettings = () => {
         label="Active Line Background"
         description="Background color for the current active line."
         value={cursorActiveLineBg}
-        onChange={onCursorActiveLineBgChange}
+        onChange={onSettingChange(setCursorActiveLineBg)}
         type="text"
         placeholder="rgba(88, 166, 255, 0.1)"
         noBorder
@@ -171,7 +181,7 @@ const AppearanceSettings = () => {
         label="Shadow Box Background"
         description="Glow color (shadow) for the active line."
         value={cursorShadowBoxColor}
-        onChange={onCursorShadowBoxColorChange}
+        onChange={onSettingChange(setCursorShadowBoxColor)}
         type="text"
         placeholder="#58a6ff"
         noBorder

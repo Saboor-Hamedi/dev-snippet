@@ -41,12 +41,6 @@ export const useCursorProp = () => {
   )
   const cursorSelectionBg = getSetting('cursor.cursorSelectionBg') ?? '#58a6ff33'
   const cursorActiveLineBg = getSetting('cursor.cursorActiveLineBg') ?? DEFAULT_ACTIVE_LINE_BG
-  const rawActiveLineBorder =
-    getSetting('cursor.cursorActiveLineBorder') ?? DEFAULT_ACTIVE_LINE_BORDER
-  const cursorActiveLineBorder = clamp(rawActiveLineBorder, 0, 10)
-  const rawActiveLineGutterBorder =
-    getSetting('cursor.cursorActiveLineGutterBorder') ?? DEFAULT_ACTIVE_LINE_GUTTER_BORDER
-  const cursorActiveLineGutterBorder = clamp(rawActiveLineGutterBorder, 0, 10)
   const cursorShadowBoxColor = getSetting('cursor.cursorShadowBoxColor') ?? DEFAULT_SHADOW_BOX_COLOR
 
   // 2. Setters
@@ -57,9 +51,6 @@ export const useCursorProp = () => {
   const setCursorBlinkingSpeed = (value) => updateSetting('cursor.cursorBlinkingSpeed', value)
   const setCursorSelectionBg = (value) => updateSetting('cursor.cursorSelectionBg', value)
   const setCursorActiveLineBg = (value) => updateSetting('cursor.cursorActiveLineBg', value)
-  const setCursorActiveLineBorder = (value) => updateSetting('cursor.cursorActiveLineBorder', value)
-  const setCursorActiveLineGutterBorder = (value) =>
-    updateSetting('cursor.cursorActiveLineGutterBorder', value)
   const setCursorShadowBoxColor = (value) => updateSetting('cursor.cursorShadowBoxColor', value)
 
   // 3. GLOBAL APPLICATION (SOLID)
@@ -72,12 +63,8 @@ export const useCursorProp = () => {
       root.style.setProperty('--caret-shape', cursorShape)
       root.style.setProperty('--cursor-blinking', cursorBlinking ? 'true' : 'false')
       root.style.setProperty('--cursor-blinking-speed', `${cursorBlinkingSpeed}ms`)
-      root.style.setProperty('--selection-background', cursorSelectionBg)
-      root.style.setProperty('--active-line-border-width', `${cursorActiveLineBorder}px`)
-      root.style.setProperty(
-        '--active-line-gutter-border-width',
-        `${cursorActiveLineGutterBorder}px`
-      )
+      root.style.setProperty('--cursor-selection-bg', cursorSelectionBg)
+      // Map new keys to existing CSS variables
       root.style.setProperty('--active-line-bg', cursorActiveLineBg)
       root.style.setProperty('--shadow-box-bg', cursorShadowBoxColor)
     }
@@ -88,8 +75,6 @@ export const useCursorProp = () => {
     cursorBlinking,
     cursorBlinkingSpeed,
     cursorSelectionBg,
-    cursorActiveLineBorder,
-    cursorActiveLineGutterBorder,
     cursorActiveLineBg,
     cursorShadowBoxColor
   ])
@@ -107,10 +92,6 @@ export const useCursorProp = () => {
     setCursorBlinkingSpeed,
     cursorSelectionBg,
     setCursorSelectionBg,
-    cursorActiveLineBorder,
-    setCursorActiveLineBorder,
-    cursorActiveLineGutterBorder,
-    setCursorActiveLineGutterBorder,
     cursorActiveLineBg,
     setCursorActiveLineBg,
     cursorShadowBoxColor,

@@ -1,109 +1,358 @@
 /* ===== MARKDOWN PREVIEW THEME ===== */
 @import './variables.css';
-/* Code block wrapper - Clean, borderless design */
+/* Code block wrapper - Premium Mac-style design */
 .code-block-wrapper {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  /* margin: 1.5rem 0 !important; */
   width: 100%;
   box-sizing: border-box;
-  background-color: #0d1117;
+  background-color: var(--color-bg-tertiary, #161b22) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 12px !important;
+  margin: 0.75rem 0 !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Plaintext: Invisible wrapper for clean text display */
+.code-block-wrapper.is-plaintext {
+  background-color: transparent !important;
   border: none !important;
-  border-radius: 0 !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+}
+.code-block-wrapper.is-plaintext .code-block-header {
+  display: none !important;
+}
+.code-block-wrapper.is-plaintext pre {
+  padding: 0.5rem !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+.code-block-wrapper.is-plaintext pre code {
+  font-family: inherit !important; /* Use UI/Markdown font, not Mono */
+  color: inherit !important;
+  padding: 0 !important;
+}
+
+.code-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 18px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.code-language {
+  font-family: 'Outfit', sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--color-accent-primary, #58a6ff) !important;
+  opacity: 0.9;
+}
+
+.code-block-wrapper:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+  border-color: var(--color-accent-primary) !important;
 }
 
 /* GitHub markdown theme override - Authentic markdown feel */
 .markdown-body {
   background-color: transparent !important;
-  color: var(--text-main) !important;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
-  line-height: 1.7 !important;
-  letter-spacing: 0;
+  color: var(--color-text-primary) !important;
+  font-family: var(
+    --preview-font-family,
+    var(
+      --editor-font-family,
+      'Outfit',
+      'Inter',
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      Roboto,
+      Helvetica,
+      Arial,
+      sans-serif
+    )
+  ) !important;
+  line-height: 1.6 !important;
+  letter-spacing: -0.01em;
   max-width: 100%;
   overflow-wrap: break-word;
-  padding: 0 0 20px 0 !important; /* Added 100px bottom padding to prevent cutoff */
   border: none !important;
   outline: none !important;
   box-shadow: none !important;
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+  box-sizing: border-box;
+  min-width: 200px;
+  max-width: 980px;
+  margin: 0 auto;
+  background-color: transparent !important;
+  font-size: var(--editor-font-size, 14px) !important;
+}
+
+/* Force pure black scrollbar for Minimal Gray */
+html[data-theme='minimal-gray'] ::-webkit-scrollbar-thumb {
+  background-color: #000000 !important;
+  border-radius: 0 !important;
+  border: none !important;
+}
+
+html[data-theme='minimal-gray'] ::-webkit-scrollbar-track {
+  background-color: transparent !important;
+}
+
+.markdown-body ::selection {
+  background-color: rgba(var(--color-accent-primary-rgb, 88, 166, 255), 0.3) !important;
+  color: inherit !important;
+}
+
+/* Force full opacity on text elements to ensure "Pitch Dark" rendering in ALL themes */
+.markdown-body p,
+.markdown-body li,
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6,
+.markdown-body td,
+.markdown-body th {
+  color: var(--color-text-primary, #000000) !important;
+  opacity: 1 !important;
+  mix-blend-mode: normal !important;
+}
+
+.markdown-body > *:first-child {
+  margin-top: 0 !important;
+}
+
+/* GitHub Alerts - Premium Admonitions */
+.markdown-alert {
+  padding: 16px 20px !important;
+  margin: 24px 0 !important;
+  color: inherit !important;
+  border-left: 4px solid var(--color-border);
+  border-radius: 8px;
+  background-color: rgba(139, 148, 158, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.markdown-alert:hover {
+  transform: translateX(2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.markdown-alert-title {
+  display: flex;
+  align-items: center;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  margin-bottom: 12px !important;
+  font-size: 13px !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.markdown-alert-note {
+  border-left-color: #58a6ff !important;
+  background: linear-gradient(to right, rgba(88, 166, 255, 0.1), transparent);
+}
+.markdown-alert-note .markdown-alert-title {
+  color: #58a6ff !important;
+}
+
+.markdown-alert-tip {
+  border-left-color: #3fb950 !important;
+  background: linear-gradient(to right, rgba(63, 185, 80, 0.1), transparent);
+}
+.markdown-alert-tip .markdown-alert-title {
+  color: #3fb950 !important;
+}
+
+.markdown-alert-important {
+  border-left-color: #ab7df8 !important;
+  background: linear-gradient(to right, rgba(171, 125, 248, 0.1), transparent);
+}
+.markdown-alert-important .markdown-alert-title {
+  color: #ab7df8 !important;
+}
+
+.markdown-alert-warning {
+  border-left-color: #d29922 !important;
+  background: linear-gradient(to right, rgba(210, 153, 34, 0.1), transparent);
+}
+.markdown-alert-warning .markdown-alert-title {
+  color: #d29922 !important;
+}
+
+.markdown-alert-caution {
+  border-left-color: #f85149 !important;
+  background: linear-gradient(to right, rgba(248, 81, 73, 0.1), transparent);
+}
+.markdown-alert-caution .markdown-alert-title {
+  color: #f85149 !important;
 }
 
 /* Typography - Clean, readable headers */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--color-text-primary, #e6edf3) !important;
+  border: none !important;
+  margin-top: 1.5rem !important;
+  margin-bottom: 1rem !important;
+  font-weight: 600 !important;
+  line-height: 1.25 !important;
+  position: relative;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+}
+
+.markdown-body h1 {
+  font-size: 1.8em !important;
+  padding-bottom: 0.3em !important;
+  border-bottom: 1px solid var(--color-border, #30363d) !important;
+  margin-top: 0 !important; /* Top header should be flush */
+}
+
+.markdown-body h2 {
+  font-size: 1.4em !important;
+  padding-bottom: 0.3em !important;
+  border-bottom: 1px solid var(--color-border, #30363d) !important;
+}
+.markdown-body h3 {
+  font-size: 1.2em !important;
+}
+.markdown-body h4 {
+  font-size: 1.1em !important;
+}
+.markdown-body h5 {
+  font-size: 1em !important;
+}
+.markdown-body h6 {
+  font-size: 0.9em !important;
+  color: var(--color-text-secondary, #8b949e) !important;
+}
+
+/* Paragraphs and lists */
+.markdown-body p {
+  margin: 0.5rem 0 !important; /* Reduced from 1.25rem for tighter spacing */
+  color: var(--color-text-primary, #e6edf3) !important;
+  line-height: 1.8 !important; /* Slightly tighter line height */
+  text-align: justify !important;
+}
+
+.markdown-body p,
+.markdown-body li {
+  line-height: 1.8 !important;
+  margin-bottom: 1.25em !important;
+  text-align: justify !important;
+}
 .markdown-body h1,
 .markdown-body h2,
 .markdown-body h3,
 .markdown-body h4,
 .markdown-body h5,
 .markdown-body h6 {
-  color: var(--text-main) !important;
-  border: none !important;
-  margin-top: 0 !important;
-  margin-bottom: 8px !important;
-  font-weight: 500 !important;
-  line-height: 1.25 !important;
-  position: relative;
+  text-align: left !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
 }
-
-.markdown-body h1 {
-  font-size: 30px !important;
-  padding-bottom: 0.3em !important;
-  border-bottom: 1px solid var(--color-border, #30363d) !important;
-  margin-top: 16px !important;
-  margin-bottom: 8px !important;
-}
-
-.markdown-body h2 {
-  font-size: 24px !important;
-  padding-bottom: 0.3em !important;
-  border-bottom: 1px solid var(--color-border, #30363d) !important;
-  margin-top: 16px !important;
-  margin-bottom: 8px !important;
-}
-
-.markdown-body h3 {
-  font-size: 22px !important;
-}
-.markdown-body h4 {
-  font-size: 18px !important;
-}
-.markdown-body h5 {
-  font-size: 16px !important;
-}
-.markdown-body h6 {
-  font-size: 14px !important;
-  color: var(--text-secondary) !important;
-}
-
-/* Paragraphs and lists */
-.markdown-body p {
-  margin: 4px 0 !important;
-  color: var(--text-main) !important;
-  line-height: 1.6 !important;
-  white-space: pre-wrap !important; /* Keep for internal paragraph spacing only */
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 2em !important;
+  margin: 1rem 0 !important;
+  color: var(--color-text-primary, #e6edf3) !important;
 }
 
 .markdown-body li {
-  margin: 2px 0 !important;
-  color: var(--text-main) !important;
+  margin: 0.4rem 0 !important;
+  line-height: 1.6 !important;
 }
 
-.markdown-body ul,
-.markdown-body ol {
-  padding-left: 24px !important;
-  margin: 8px 0 !important;
+.markdown-body li::marker {
+  color: var(--color-accent-primary, #58a6ff) !important;
+  font-weight: 600 !important;
 }
 
 .markdown-body ul {
   list-style-type: disc !important;
 }
-
 .markdown-body ol {
   list-style-type: decimal !important;
 }
 
+.preview-quicklink {
+  color: var(--color-accent-primary, #58a6ff) !important;
+  cursor: pointer !important;
+  font-weight: 600 !important;
+  padding: 1px 4px !important;
+  margin: 0 1px !important;
+  border-radius: 4px !important;
+  background-color: rgba(var(--color-accent-primary-rgb, 88, 166, 255), 0.1) !important;
+  transition: all 0.2s ease !important;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.preview-quicklink:hover {
+  background-color: rgba(var(--color-accent-primary-rgb, 88, 166, 255), 0.2) !important;
+  text-decoration: underline !important;
+}
+
+.preview-quicklink.is-ghost {
+  color: var(--color-text-tertiary, #8b949e) !important;
+  font-style: italic !important;
+}
+
+/* Horizontal Rules - Subtle & Elegant */
+.markdown-body hr {
+  height: 1px !important;
+  padding: 0 !important;
+  margin: 2.5rem 0 !important;
+  background-color: var(--color-border) !important;
+  border: 0 !important;
+  opacity: 0.5;
+}
+
+/* Images - Premium framing */
+.markdown-body img {
+  max-width: 60% !important;
+  max-height: 350px !important;
+  object-fit: contain;
+  box-sizing: content-box;
+  background-color: transparent;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  margin: 1.5rem auto !important;
+  display: block;
+}
+
+/* Checkboxes (Task Lists) */
+.markdown-body input[type='checkbox'] {
+  margin: 0 0.4em 0.25em 0 !important;
+  vertical-align: middle !important;
+  accent-color: var(--color-accent-primary);
+  cursor: pointer;
+}
+
 /* Blockquotes - Subtle, elegant design */
 .markdown-body blockquote {
-  color: var(--text-main) !important;
+  color: var(--color-text-primary) !important;
   border-left: 4px solid var(--color-accent-primary, #58a6ff) !important;
   background: rgba(88, 166, 255, 0.05) !important;
   padding: 8px 24px !important;
@@ -116,27 +365,147 @@
   margin: 12px 0 !important;
 }
 
-/* Inline code - Clean, minimal */
+/* Inline code - Clean, high-fidelity highlight */
 .markdown-body code {
-  background-color: rgba(0, 0, 0, 0.05) !important;
-  color: rgb(161, 145, 161) !important;
-  font-size: 14px !important;
-  font-weight: 500 !important;
-  padding: 2px 5px !important;
-  border-radius: 0 !important;
-  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
-  letter-spacing: -0.2px;
+  background-color: var(--color-bg-tertiary, rgba(139, 148, 158, 0.3)) !important;
+  color: var(--color-accent-primary, #58a6ff) !important;
+  font-size: 0.9em !important;
+  padding: 0.2em 0.45em !important;
+  border-radius: 6px !important;
+  border: 1px solid rgba(88, 166, 255, 0.15) !important;
+  font-family: var(--editor-font-family, 'JetBrains Mono', monospace) !important;
+  letter-spacing: -0.01em;
+  white-space: break-spaces;
 }
 
-/* Code blocks - Modern, borderless design */
+.markdown-body strong {
+  font-weight: 700 !important;
+  color: var(--color-text-primary, #ffffff) !important;
+}
+
+/* Code blocks - Refined, modern look */
 .markdown-body pre {
-  background-color: var(--bg-secondary) !important;
-  border: none !important;
-  border-radius: 0 !important;
-  padding: 16px 0 !important;
-  margin: 0 !important;
+  background-color: var(--color-bg-tertiary, #161b22) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 10px !important;
+  padding: 20px !important;
+  margin: 1.5rem 0 !important;
   overflow: auto;
   position: relative;
+  line-height: 1.6;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.markdown-body pre:hover {
+  border-color: rgba(88, 166, 255, 0.4) !important;
+  box-shadow: 0 4px 20px rgba(88, 166, 255, 0.1);
+}
+
+/* Syntax Highlighting Colors - Theme Aware */
+.hljs-comment,
+.hljs-quote {
+  color: var(--color-syntax-comment, #5c6370) !important;
+  font-style: italic !important;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-doctag {
+  color: var(--color-syntax-keyword, #c678dd) !important;
+  font-weight: 600 !important;
+}
+
+.preview-tag,
+.preview-mention {
+  color: var(--color-accent-secondary, #a371f7) !important;
+  background-color: rgba(163, 113, 247, 0.1) !important;
+  padding: 1px 5px !important;
+  margin: 0 2px !important;
+  border-radius: 6px !important;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.9em;
+  font-weight: 600 !important;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.preview-tag:hover,
+.preview-mention:hover {
+  background-color: rgba(163, 113, 247, 0.2) !important;
+  transform: translateY(-1px);
+}
+
+.preview-mention {
+  color: var(--color-accent-primary, #58a6ff) !important;
+  background-color: rgba(88, 166, 255, 0.1) !important;
+}
+
+.hljs-string,
+.hljs-type,
+.hljs-built_in,
+.hljs-bullet,
+.hljs-addition {
+  color: var(--color-syntax-string, #98c379) !important;
+}
+
+.hljs-title,
+.hljs-section,
+.hljs-function,
+.hljs-selector-id,
+.hljs-selector-class {
+  color: var(--color-syntax-variable, #61afef) !important;
+}
+
+.hljs-variable,
+.hljs-template-variable,
+.hljs-attribute,
+.hljs-tag,
+.hljs-name,
+.hljs-regexp,
+.hljs-link,
+.hljs-name,
+.hljs-selector-attr,
+.hljs-selector-pseudo {
+  color: var(--color-syntax-variable, #e06c75) !important;
+}
+
+.hljs-number,
+.hljs-literal,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-meta {
+  color: var(--color-syntax-number, #d19a66) !important;
+}
+
+.hljs-params {
+  color: var(--color-text-primary, #abb2bf) !important;
+}
+
+.hljs-operator {
+  color: var(--color-syntax-punctuation, #56b6c2) !important;
+}
+
+.hljs-emphasis {
+  font-style: italic !important;
+}
+.hljs-strong {
+  font-weight: bold !important;
+}
+
+/* Remove double layer when inside wrapper */
+.code-block-wrapper pre {
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  padding: 14px 24px !important; /* Balanced padding: reduced vertical, added horizontal */
+  border-left: 3px solid rgba(88, 166, 255, 0.3); /* Subtle left accent */
 }
 
 .markdown-body pre code {
@@ -144,41 +513,106 @@
   padding: 0 !important;
   border-radius: 0 !important;
   border: none !important;
-  color: purple !important;
-  font-size: 14px !important;
-  line-height: 1.5 !important;
+  color: var(--color-text-primary);
+  font-size: 13.5px !important;
+  line-height: 1.8 !important;
   display: block;
-  font-family: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', 'SFMono-Regular', monospace;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-variant-ligatures: contextual;
   outline: none !important;
   box-shadow: none !important;
 }
 
-/* Tables - Full Width ('Full Screen') */
+/* Copy button styling in preview - Matches CopyButton.jsx */
+.copy-code-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 4px !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 4px !important;
+  color: #94a3b8 !important; /* slate-400 */
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.copy-code-btn:hover {
+  color: #e2e8f0 !important; /* slate-200 */
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.copy-code-btn.success {
+  background: rgba(52, 211, 153, 0.1) !important; /* emerald-400/10 */
+  color: #34d399 !important; /* emerald-400 */
+}
+
+/* Mermaid Diagrams - Explicit theme overrides (DISABLED by user request for independent styling) */
+/*
+.mermaid {
+  background: transparent !important;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 2.5rem 0 !important;
+  padding: 1.5rem !important;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  background-color: rgba(var(--color-bg-secondary-rgb), 0.3) !important;
+  transition: all 0.3s ease;
+}
+
+.mermaid:hover {
+  background-color: rgba(var(--color-bg-secondary-rgb), 0.5) !important;
+  border-color: var(--color-accent-primary);
+}
+
+.mermaid g.node rect,
+.mermaid g.node polygon,
+.mermaid g.node circle,
+.mermaid g.node ellipse,
+.mermaid g.node path {
+  fill: var(--color-bg-tertiary) !important;
+  stroke: var(--color-border) !important;
+}
+
+.mermaid .node label,
+.mermaid .edgeLabel,
+.mermaid .cluster-label {
+  color: var(--text-main) !important;
+  fill: var(--text-main) !important;
+}
+*/
+
+/* Tables - Refined GFM design */
 .markdown-body table {
-  display: table !important; /* Force full table layout behavior */
-  width: 100% !important; /* Force full width */
-  margin: 24px 0 !important;
-  border-collapse: collapse;
-  border-spacing: 0;
+  display: table !important;
+  width: 100% !important;
+  margin: 1.5rem 0 !important;
+  border-collapse: collapse !important;
+  border-spacing: 0 !important;
+  background-color: transparent !important;
+  border: 1px solid var(--color-border, #30363d) !important;
+  border-radius: 6px;
+  overflow: hidden;
 }
 
 .markdown-body table th,
 .markdown-body table td {
-  padding: 12px 16px !important;
-  /* Use CSS variable */
-  border: 1px solid var(--border-color) !important;
+  padding: 10px 14px !important;
+  border: 1px solid var(--color-border, #30363d) !important;
   text-align: left;
-  color: var(--text-main) !important;
+  color: var(--color-text-primary, #c9d1d9) !important;
 }
 
 .markdown-body table th {
   font-weight: 600 !important;
-  background: var(--bg-secondary) !important;
+  background-color: var(--color-bg-secondary, #161b22) !important;
 }
 
 .markdown-body table tr {
   background-color: transparent !important;
-  border-top: none !important;
+  border-top: 1px solid var(--color-border, #30363d) !important;
 }
 
 .markdown-body table tr:nth-child(2n) {
@@ -211,13 +645,72 @@
   text-decoration: underline !important;
 }
 
-/* Images - Responsive */
-.markdown-body img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 4px;
-  margin: 16px 0;
+/* WikiLinks [[link]] */
+.markdown-body .wikilink,
+.markdown-body a[href*='[['],
+.markdown-body .preview-quicklink {
+  color: var(--color-accent-primary, #58a6ff) !important;
+  background-color: transparent !important;
+  padding: 2px 6px !important;
+  border-radius: 6px !important;
+  text-decoration: none !important;
+  font-weight: 500 !important;
+  border: none !important;
+  transition: all 0.2s ease !important;
+  font-size: inherit !important;
 }
+
+.markdown-body .preview-quicklink:hover {
+  background-color: rgba(88, 166, 255, 0.15) !important;
+  text-decoration: none !important;
+  transform: translateY(-1px);
+}
+
+/* @mentions */
+.markdown-body .mention,
+.markdown-body a[href^='@'],
+.markdown-body span[data-mention],
+.markdown-body .preview-mention {
+  color: #d2a8ff !important;
+  background-color: transparent !important;
+  padding: 0 !important; /* Removed padding */
+  text-decoration: none !important;
+  font-weight: 700 !important;
+  border: none !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
+  transition: opacity 0.2s ease;
+  display: inline !important; /* Ensure inline/flat flow */
+}
+
+.markdown-body .preview-mention:hover,
+.markdown-body .mention:hover {
+  opacity: 0.8;
+  text-decoration: underline !important;
+}
+
+/* #hashtags (not headings) */
+.markdown-body .hashtag,
+.markdown-body a[href^='#']:not([href='#']),
+.markdown-body span[data-hashtag],
+.markdown-body .preview-tag {
+  color: #79c0ff !important;
+  background-color: transparent !important;
+  padding: 0 !important; /* Removed padding */
+  text-decoration: none !important;
+  font-weight: 700 !important;
+  border: none !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
+  display: inline !important; /* Ensure inline/flat flow */
+}
+
+.markdown-body .preview-tag:hover,
+.markdown-body .hashtag:hover {
+  text-decoration: underline !important;
+}
+
+/* Images - Responsive (Removed: Handled by premium framing above) */
 
 /* Task lists - Custom styled checkboxes */
 .markdown-body .task-list-item {
@@ -239,6 +732,8 @@
   cursor: pointer;
   position: relative;
   margin-top: 5px !important;
+  margin-left: 0 !important;
+  margin-right: 8px !important;
   flex-shrink: 0;
   transition: all 0.2s ease;
 }
@@ -249,14 +744,15 @@
 }
 
 .markdown-body .task-list-item input[type='checkbox']:checked::after {
-  content: '✓';
+  content: '';
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: white;
-  font-size: 10px;
-  font-weight: bold;
+  top: 1.5px;
+  left: 4.5px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2.5px 2.5px 0;
+  transform: rotate(45deg);
 }
 
 /* ===== CODE BLOCK HEADER ===== */
@@ -265,29 +761,27 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1px 8px;
-  border-bottom: none !important;
-  background-color: #161b22;
-  transition: all 0.2s ease;
-  border-radius: 0 !important;
+  padding: 10px 16px;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-family: 'Inter', sans-serif;
 }
 
 .code-block-body {
-  background-color: #0d1117;
+  background-color: transparent;
   overflow: auto;
 }
 
 .code-block-footer {
   display: flex;
   justify-content: flex-end;
-  padding: 4px 12px;
-  background-color: #161b22;
-  border-top: none !important;
+  padding: 6px 16px;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-top: 1px solid rgba(255, 255, 255, 0.03);
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
-  color: var(--color-text-primary);
-  opacity: 0.9;
-  border-radius: 0 !important;
+  color: var(--text-secondary);
+  opacity: 0.8;
 }
 
 .footer-meta {
@@ -400,13 +894,25 @@
   line-height: 1.7;
 }
 
+/* Dark Theme Code Blocks - Force White Text */
+[data-theme='midnight-pro'] .markdown-preview-container code,
+[data-theme='midnight-pro'] .markdown-preview-container pre code,
+[data-theme='forest'] .markdown-preview-container code,
+[data-theme='forest'] .markdown-preview-container pre code,
+[data-theme='nebula'] .markdown-preview-container code,
+[data-theme='nebula'] .markdown-preview-container pre code,
+.dark .markdown-preview-container code,
+.dark .markdown-preview-container pre code {
+  color: #ffffff !important;
+}
+
 .markdown-preview-container code {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(var(--color-text-primary-rgb, 0, 0, 0), 0.1);
   padding: 3px 6px;
   border-radius: 4px;
   font-family: 'SFMono-Regular', Consolas, monospace;
   font-size: 14px;
-  color: purple;
+  color: var(--color-text-primary);
 }
 
 .markdown-preview-container pre {
@@ -422,7 +928,7 @@
   padding: 0;
   border-radius: 0;
   font-size: 14px;
-  color: purple;
+  color: inherit;
 }
 
 .markdown-preview-container blockquote {
@@ -501,9 +1007,9 @@
   }
 
   /* Dark theme adjustments */
-  .markdown-body code {
+  /* .markdown-body code {
     background-color: var(--bg-secondary) !important;
-  }
+  } */
 
   .markdown-body blockquote {
     color: var(--text-main) !important;
@@ -532,6 +1038,22 @@
   .markdown-body a:hover {
     border-bottom-color: #58a6ff !important;
   }
+
+  /* Force full opacity on text elements to ensure "Pitch Dark" rendering */
+  .markdown-body p,
+  .markdown-body li,
+  .markdown-body h1,
+  .markdown-body h2,
+  .markdown-body h3,
+  .markdown-body h4,
+  .markdown-body h5,
+  .markdown-body h6,
+  .markdown-body td,
+  .markdown-body th {
+    color: var(--color-text-primary, #24292f) !important;
+    opacity: 1 !important;
+    mix-blend-mode: normal !important;
+  }
 }
 
 /* ===== RESPONSIVE ADJUSTMENTS ===== */
@@ -555,13 +1077,13 @@
   }
 
   .markdown-body pre {
-    padding: 14px 0 !important;
-    margin: 16px 0 !important;
+    padding: 2px 0 !important;
+    margin: 16px 10px !important;
   }
 
   .code-block-header {
     padding: 10px 14px;
-    font-size: 11px;
+    font-size: 10px;
   }
 
   .copy-code-btn {
@@ -584,6 +1106,78 @@
   animation: fadeIn 0.3s ease;
 }
 
+.markdown-body .preview-tag,
+.markdown-body .preview-mention {
+  display: inline-block !important;
+  padding: 0 5px !important;
+  background-color: var(--color-bg-tertiary, rgba(139, 148, 158, 0.2)) !important;
+  color: var(--color-text-primary, #e6edf3) !important;
+  border: 1px solid transparent !important; /* Reserve space for border */
+  border-radius: 2px !important; /* Slightly softer */
+  font-size: inherit !important;
+  font-weight: 500 !important;
+  margin: 0 2px !important;
+  cursor: default !important;
+  transition: all 0.15s ease !important;
+  user-select: none !important;
+  font-family: inherit !important;
+  vertical-align: baseline !important;
+  line-height: inherit !important;
+}
+
+.markdown-body .preview-tag:hover,
+.markdown-body .preview-mention:hover {
+  background-color: var(--color-accent-primary, #58a6ff) !important;
+  color: #ffffff !important;
+  border-color: var(--color-accent-primary, #58a6ff) !important;
+  padding: 0 5px !important;
+}
+
+/* Specific style for mentions - keep it subtle */
+.markdown-body .preview-mention {
+  border-style: none !important; /* Remove dashed border */
+  background-color: rgba(88, 166, 255, 0.03) !important;
+}
+
+/* QuickLinks [[Link]] styling - Human readable, sleek design */
+.markdown-body .preview-quicklink {
+  color: #58a6ff !important;
+  text-decoration: none !important;
+  background-color: rgba(88, 166, 255, 0.08) !important;
+  padding: 1px 6px !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  font-weight: 400 !important;
+  font-size: 11px !important;
+  border: 1px solid rgba(88, 166, 255, 0.15) !important;
+  transition: all 0.15s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  vertical-align: middle !important;
+  margin: 0 1px !important;
+}
+
+.markdown-body .preview-quicklink:hover {
+  background-color: rgba(88, 166, 255, 0.2) !important;
+  color: #79c0ff !important;
+  border-color: #58a6ff !important;
+  transform: translateY(-0.5px);
+}
+
+/* Ghost Link - When the target doesn't exist yet */
+.markdown-body .preview-quicklink.is-ghost {
+  color: #8b949e !important;
+  background-color: rgba(139, 148, 158, 0.05) !important;
+  border: 1px dashed rgba(139, 148, 158, 0.3) !important;
+  opacity: 0.8 !important;
+}
+
+.markdown-body .preview-quicklink.is-ghost:hover {
+  color: #c9d1d9 !important;
+  background-color: rgba(139, 148, 158, 0.15) !important;
+  border-color: rgba(139, 148, 158, 0.5) !important;
+}
+
 /* ===== FOCUS STATES ===== */
 .markdown-body :focus-visible {
   outline: 2px solid #0366d6;
@@ -604,31 +1198,172 @@
 
 /* Remove extra top margin on the first rendered element so preview aligns
    with the editor's internal padding (editor uses 16px padding). */
-/* Custom Slim Scrollbars for Code Blocks */
-.code-block-body::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* Custom Premium Scrollbars */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
 }
 
-.code-block-body::-webkit-scrollbar-track {
+::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.code-block-body::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+::-webkit-scrollbar-thumb {
+  background: rgba(139, 148, 158, 0.2);
   border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+  transition: all 0.2s ease;
 }
 
-.code-block-body::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(139, 148, 158, 0.4);
 }
 
-/* Fix for standard scrollbars in preview */
-.markdown-body::-webkit-scrollbar {
-  width: 8px;
+/* Specific Fix for Code Block Scrollbars */
+.code-block-body {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  /* Ensure the scrollbar doesn't create extra vertical space */
+  padding-bottom: 0 !important;
 }
 
-.markdown-body::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 4px;
+.code-block-body::-webkit-scrollbar {
+  height: 8px;
+}
+
+.code-block-body::-webkit-scrollbar-thumb {
+  background-color: rgba(139, 148, 158, 0.1);
+}
+
+.code-block-body:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(139, 148, 158, 0.3);
+}
+
+/* Ensure markdown-body itself doesn't have a double scrollbar if parent has one */
+.markdown-body {
+  overflow-x: hidden !important;
+}
+
+/* FORCE WHITE TEXT FOR DARK THEMES (Forest, Midnight, Nebula) */
+html[data-theme='forest'] body,
+html[data-theme='forest'] .markdown-body,
+html[data-theme='forest'] .markdown-preview-container,
+html[data-theme='midnight-pro'] body,
+html[data-theme='midnight-pro'] .markdown-body,
+html[data-theme='midnight-pro'] .markdown-preview-container,
+html[data-theme='nebula'] body,
+html[data-theme='nebula'] .markdown-body,
+html[data-theme='nebula'] .markdown-preview-container {
+  color: #ffffff !important;
+}
+
+/* Force specific elements to inherit or be white */
+html[data-theme='forest'] .markdown-body *,
+html[data-theme='forest'] .markdown-preview-container *,
+html[data-theme='midnight-pro'] .markdown-body *,
+html[data-theme='midnight-pro'] .markdown-preview-container *,
+html[data-theme='nebula'] .markdown-body *,
+html[data-theme='nebula'] .markdown-preview-container * {
+  color: inherit; /* This lets the parent white cascade down effectively */
+}
+
+/* Explicit overrides for stubborn elements */
+html[data-theme='forest'] h1,
+html[data-theme='forest'] h2,
+html[data-theme='forest'] h3,
+html[data-theme='forest'] h4,
+html[data-theme='forest'] h5,
+html[data-theme='forest'] h6,
+html[data-theme='forest'] p,
+html[data-theme='forest'] li,
+html[data-theme='forest'] code,
+html[data-theme='forest'] pre,
+html[data-theme='forest'] span,
+html[data-theme='forest'] strong,
+html[data-theme='forest'] em,
+html[data-theme='midnight-pro'] h1,
+html[data-theme='midnight-pro'] h2,
+html[data-theme='midnight-pro'] h3,
+html[data-theme='midnight-pro'] h4,
+html[data-theme='midnight-pro'] h5,
+html[data-theme='midnight-pro'] h6,
+html[data-theme='midnight-pro'] p,
+html[data-theme='midnight-pro'] li,
+html[data-theme='midnight-pro'] code,
+html[data-theme='midnight-pro'] pre,
+html[data-theme='midnight-pro'] span,
+html[data-theme='midnight-pro'] strong,
+html[data-theme='midnight-pro'] em,
+html[data-theme='nebula'] h1,
+html[data-theme='nebula'] h2,
+html[data-theme='nebula'] h3,
+html[data-theme='nebula'] h4,
+html[data-theme='nebula'] h5,
+html[data-theme='nebula'] h6,
+html[data-theme='nebula'] p,
+html[data-theme='nebula'] li,
+html[data-theme='nebula'] code,
+html[data-theme='nebula'] pre,
+html[data-theme='nebula'] span,
+html[data-theme='nebula'] strong,
+html[data-theme='nebula'] em {
+  color: #ffffff !important;
+}
+
+/* ===== ZEN FOCUS IMMERSION ===== */
+/* When Zen Focus is active, we dim all content except the one being hovered/focused */
+:host-context(.zen-focus-active) .markdown-body > *,
+.markdown-body.zen-focus-active > * {
+  opacity: 0.25 !important;
+  transition:
+    opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    filter 0.4s ease !important;
+  filter: blur(1px) grayscale(20%);
+}
+
+:host-context(.zen-focus-active) .markdown-body > *:hover,
+:host-context(.zen-focus-active) .markdown-body > *:focus-within,
+.markdown-body.zen-focus-active > *:hover,
+.markdown-body.zen-focus-active > *:focus-within {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+/* Specific overrides for elements the user mentioned: diagrams, images, tables, admonitions */
+:host-context(.zen-focus-active) .markdown-body img,
+:host-context(.zen-focus-active) .markdown-body table,
+:host-context(.zen-focus-active) .markdown-body .cm-md-table-rendered-wrapper,
+:host-context(.zen-focus-active) .markdown-body .mermaid,
+:host-context(.zen-focus-active) .markdown-body .mermaid-diagram-wrapper,
+:host-context(.zen-focus-active) .markdown-body pre,
+:host-context(.zen-focus-active) .markdown-body .cm-admonition,
+.markdown-body.zen-focus-active img,
+.markdown-body.zen-focus-active table,
+.markdown-body.zen-focus-active .cm-md-table-rendered-wrapper,
+.markdown-body.zen-focus-active .mermaid,
+.markdown-body.zen-focus-active .mermaid-diagram-wrapper,
+.markdown-body.zen-focus-active pre,
+.markdown-body.zen-focus-active .cm-admonition {
+  opacity: 0.25 !important;
+  filter: blur(2px) grayscale(50%) !important;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+:host-context(.zen-focus-active) .markdown-body img:hover,
+:host-context(.zen-focus-active) .markdown-body table:hover,
+:host-context(.zen-focus-active) .markdown-body .cm-md-table-rendered-wrapper:hover,
+:host-context(.zen-focus-active) .markdown-body .mermaid:hover,
+:host-context(.zen-focus-active) .markdown-body .mermaid-diagram-wrapper:hover,
+:host-context(.zen-focus-active) .markdown-body pre:hover,
+:host-context(.zen-focus-active) .markdown-body .cm-admonition:hover,
+.markdown-body.zen-focus-active img:hover,
+.markdown-body.zen-focus-active table:hover,
+.markdown-body.zen-focus-active .cm-md-table-rendered-wrapper:hover,
+.markdown-body.zen-focus-active .mermaid:hover,
+.markdown-body.zen-focus-active .mermaid-diagram-wrapper:hover,
+.markdown-body.zen-focus-active pre:hover,
+.markdown-body.zen-focus-active .cm-admonition:hover {
+  opacity: 1 !important;
+  filter: none !important;
 }

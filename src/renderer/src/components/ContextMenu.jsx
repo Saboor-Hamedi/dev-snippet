@@ -1,7 +1,8 @@
 import React from 'react'
+import PropTypes from 'prop-types'
 import { Scissors, Copy, Clipboard, MousePointer, Trash2 } from 'lucide-react'
 
-const ContextMenu = ({ x, y, onClose, onCut, onCopy, onPaste, onSelectAll, onDelete }) => {
+const ContextMenu = ({ x, y, onClose, items = [] }) => {
   return (
     <div className="fixed inset-0 z-[200]" onClick={onClose}>
       <div
@@ -9,39 +10,49 @@ const ContextMenu = ({ x, y, onClose, onCut, onCopy, onPaste, onSelectAll, onDel
         style={{ left: x, top: y, minWidth: 180 }}
         onClick={(e) => e.stopPropagation()}
       >
-        <button
-          className="w-full flex items-center gap-2 text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800"
-          onClick={onCut}
-        >
-          <Scissors size={12} /> Cut
-        </button>
-        <button
-          className="w-full flex items-center gap-2 text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800"
-          onClick={onCopy}
-        >
-          <Copy size={12} /> Copy
-        </button>
-        <button
-          className="w-full flex items-center gap-2 text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800"
-          onClick={onPaste}
-        >
-          <Clipboard size={12} /> Paste
-        </button>
-        <button
-          className="w-full flex items-center gap-2 text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800"
-          onClick={onSelectAll}
-        >
-          <MousePointer size={12} /> Select All
-        </button>
-        <div className="border-t border-slate-200 dark:border-slate-700" />
-        <button
-          className="w-full flex items-center gap-2 text-left px-3 py-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400"
-          onClick={onDelete}
-        >
-          <Trash2 size={12} /> Delete Snippet
-        </button>
+        {items.map((item, index) => {
+          if (item.label === 'separator') {
+            return <div key={index} className="border-t border-slate-200 dark:border-slate-700" />
+          }
+
+          const IconComponent = typeof item.icon === 'string' ? null : item.icon
+          const isEmoji = typeof item.icon === 'string'
+
+          return (
+            <button
+              key={index}
+              className={`w-full flex items-center gap-2 text-left px-3 py-2 ${
+                item.danger
+                  ? 'hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400'
+                  : 'hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+              onClick={item.onClick}
+            >
+              {isEmoji ? (
+                <span className="text-sm">{item.icon}</span>
+              ) : IconComponent ? (
+                <IconComponent size={12} />
+              ) : null}
+              {item.label}
+            </button>
+          )
+        })}
       </div>
     </div>
+  )
+}
+
+ContextMenu.propTypes = {
+  x: PropTypes.number,
+  y: PropTypes.number,
+  onClose: PropTypes.func,
+  items: PropTypes.arrayOf(
+    PropTypes.shape({
+      label: PropTypes.string.isRequired,
+      icon: PropTypes.oneOfType([PropTypes.string, PropTypes.elementType]),
+      onClick: PropTypes.func,
+      danger: PropTypes.bool
+    })
   )
 }
 
