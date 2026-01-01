@@ -163,44 +163,44 @@ const buildTheme = (EditorView, options = {}) => {
 
       // Header Lines (Layout/Spacing) - Use PADDING instead of MARGIN to ensure correct line height measurement
       '.cm-line-h1': {
-        fontSize: `calc(${fontSize} * 2.5) !important`,
+        lineHeight: '1.4 !important',
         paddingTop: '0 !important',
-        paddingBottom: '0 !important',
-        lineHeight: '1.4 !important'
+        paddingBottom: '0 !important'
       },
       '.cm-line-h2': {
-        fontSize: `calc(${fontSize} * 2.0) !important`,
+        lineHeight: '1.4 !important',
         paddingTop: '0 !important',
-        paddingBottom: '0 !important',
-        lineHeight: '1.4 !important'
+        paddingBottom: '0 !important'
       },
       '.cm-line-h3': {
-        fontSize: `calc(${fontSize} * 1.7) !important`,
+        lineHeight: '1.4 !important',
         paddingTop: '0 !important',
-        paddingBottom: '0 !important',
-        lineHeight: '1.4 !important'
+        paddingBottom: '0 !important'
       },
       '.cm-line-h4': {
-        fontSize: `calc(${fontSize} * 1.4) !important`,
+        lineHeight: '1.4 !important',
         paddingTop: '0 !important',
-        paddingBottom: '0 !important',
-        lineHeight: '1.4 !important'
+        paddingBottom: '0 !important'
       },
       '.cm-line-h5': {
-        fontSize: `calc(${fontSize} * 1.2) !important`,
+        lineHeight: '1.4 !important',
         paddingTop: '0 !important',
-        paddingBottom: '0 !important',
-        lineHeight: '1.4 !important'
+        paddingBottom: '0 !important'
       },
       '.cm-line-h6': {
-        fontSize: `calc(${fontSize} * 1.0) !important`,
+        lineHeight: '1.4 !important',
         paddingTop: '0 !important',
-        paddingBottom: '0 !important',
-        lineHeight: '1.4 !important'
+        paddingBottom: '0 !important'
       },
 
-      // Header Text (Font/Color) - Inline decorations only
-      // ALL THEMES USE GLOBAL SIZES FROM CodeEditor.css
+      /* Header Text (Font/Color) - Apply size only to text spans, EXCLUDING markers */
+      '.cm-line-h1 span:not(.cm-marker-hidden)': { fontSize: `calc(${fontSize} * 2.5) !important` },
+      '.cm-line-h2 span:not(.cm-marker-hidden)': { fontSize: `calc(${fontSize} * 2.0) !important` },
+      '.cm-line-h3 span:not(.cm-marker-hidden)': { fontSize: `calc(${fontSize} * 1.7) !important` },
+      '.cm-line-h4 span:not(.cm-marker-hidden)': { fontSize: `calc(${fontSize} * 1.4) !important` },
+      '.cm-line-h5 span:not(.cm-marker-hidden)': { fontSize: `calc(${fontSize} * 1.2) !important` },
+      '.cm-line-h6 span:not(.cm-marker-hidden)': { fontSize: `calc(${fontSize} * 1.0) !important` },
+
       '.cm-content .cm-h1': {
         fontWeight: '700',
         color: 'var(--color-text-primary) !important'
@@ -579,7 +579,7 @@ const buildTheme = (EditorView, options = {}) => {
         borderRadius: '6px',
         border: '3px solid transparent',
         backgroundClip: 'content-box',
-        transition: 'none !important'
+        transition: 'background-color 0.2s ease !important'
       },
 
       '.cm-cursor': {
@@ -594,13 +594,13 @@ const buildTheme = (EditorView, options = {}) => {
         backgroundColor: cursorShape === 'block' ? `${caretColor} !important` : 'transparent',
         width: cursorShape === 'block' || cursorShape === 'underline' ? '1ch !important' : '0px', // Bar relies on border-left
         opacity: cursorShape === 'block' ? '0.6 !important' : '1',
-        // Override any default styling
+        // DYNAMIC CARET: Restored native scaling
         display: 'block',
         boxShadow:
           disableComplexCM || cursorShape === 'block' || cursorShape === 'underline'
             ? 'none'
-            : `0 0 10px 2px ${cursorShadowBoxColor || 'var(--caret-color)'} !important`,
-        transition: 'none !important'
+            : `0 0 12px 1px ${cursorShadowBoxColor || 'var(--caret-color)'} !important`,
+        transition: 'opacity 0.15s ease-in-out !important'
       },
 
       '.cm-gutters': {
@@ -681,20 +681,19 @@ const buildTheme = (EditorView, options = {}) => {
         userSelect: 'text !important'
         // WebkitUserSelect: 'text !important'
       },
-      // Re-enable CodeMirror's custom selection background.
-      // We must use this because native selection is suppressed by drawSelection.
-      // This causes full-width blocks on headers, but ensures selection is VISIBLE.
+      // HIDE Default CodeMirror selection background.
+      // We use our custom hybrid selection system (CodeEditor.css + forceSelection.js)
+      // for a seamless 'Obsidian' look that doesn't create blocky gaps on headers.
       '.cm-selectionBackground': {
-        backgroundColor: `${cursorSelectionBg} !important`,
-        background: `${cursorSelectionBg} !important`,
-        borderRadius: '2px'
+        display: 'none !important'
       },
 
-      // Pleasant selection color for both modes (no transitions)
+      // MASK Native browser selection.
+      // Since we use forceSelection.js to draw a custom highlight, we make the
+      // native selection transparent to prevent a 'doubling' or '2-layer' effect.
       '& ::selection, .cm-content ::selection': {
-        backgroundColor: `${cursorSelectionBg} !important`,
-        background: `${cursorSelectionBg} !important`,
-        color: 'var(--selection-text, #ffffff) !important'
+        backgroundColor: 'transparent !important',
+        background: 'transparent !important'
       },
       // Prevent full-block background selection on large headings and some
       // rendered block widgets. Clicking wrapped lines inside these elements

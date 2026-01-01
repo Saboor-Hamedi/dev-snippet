@@ -363,10 +363,9 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
         {/* Editor Column */}
         <div
           className={`flex-1 min-w-[320px] flex flex-col ${isMobile ? 'border-b border-white/5' : 'border-r border-white/5'}`}
-          style={{ 
+          style={{
             backgroundColor: 'var(--editor-bg)',
-            backdropFilter: 'none',
-            paddingBottom: '10px'
+            backdropFilter: 'none'
           }}
         >
           {renderEditor()}

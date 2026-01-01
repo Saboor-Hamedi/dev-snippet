@@ -31,25 +31,31 @@ const CursorDisplay = memo(({ line, col, show }) => {
  * StatsDisplay - Specialized for debounced document statistics.
  */
 const StatsDisplay = memo(({ words, chars, showWords, showChars }) => {
-  const hasContent = (showWords && words !== undefined) || (showChars && chars !== undefined)
   return (
-    <div
-      className={`status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer flex gap-2 sm:gap-3 ${!hasContent ? 'opacity-0 invisible pointer-events-none' : ''}`}
-      title={`Words: ${words} | Characters: ${chars}`}
-    >
-      {showWords && (
-        <span className="font-sans tabular-nums flex items-center gap-1">
-          <span className="sm:hidden">{words}w</span>
-          <span className="hidden sm:inline">{words} words</span>
-        </span>
+    <>
+      {showWords && words !== undefined && (
+        <div
+          className="status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer"
+          title={`Word Count: ${words}`}
+        >
+          <span className="font-sans tabular-nums flex items-center gap-1">
+            <span className="sm:hidden">{words}w</span>
+            <span className="hidden sm:inline">{words} words</span>
+          </span>
+        </div>
       )}
-      {showChars && (
-        <span className="font-sans tabular-nums flex items-center gap-1 opacity-80">
-          <span className="sm:hidden">{chars}c</span>
-          <span className="hidden sm:inline">{chars} characters</span>
-        </span>
+      {showChars && chars !== undefined && (
+        <div
+          className="status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer opacity-80"
+          title={`Character Count: ${chars}`}
+        >
+          <span className="font-sans tabular-nums flex items-center gap-1">
+            <span className="sm:hidden">{chars}c</span>
+            <span className="hidden sm:inline">{chars} characters</span>
+          </span>
+        </div>
       )}
-    </div>
+    </>
   )
 })
 

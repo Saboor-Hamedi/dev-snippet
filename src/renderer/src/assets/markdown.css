@@ -1316,7 +1316,9 @@ html[data-theme='nebula'] em {
 :host-context(.zen-focus-active) .markdown-body > *,
 .markdown-body.zen-focus-active > * {
   opacity: 0.25 !important;
-  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), filter 0.4s ease !important;
+  transition:
+    opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    filter 0.4s ease !important;
   filter: blur(1px) grayscale(20%);
 }
 

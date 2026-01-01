@@ -11,7 +11,7 @@ export const getMermaidConfig = (
   // COLORS ALIGNED WITH index.css
   const primary = isDark ? '#58a6ff' : '#0969da'
   const text = isDark ? '#c9d1d9' : '#24292f'
-  const bg = isDark ? '#161b22' : '#ffffff'
+  const bg = isDark ? '#0d1117' : '#ffffff' // Deep dark for diagrams
   const border = isDark ? 'rgba(88, 166, 255, 0.4)' : 'rgba(9, 105, 218, 0.25)'
   const edge = isDark ? '#8b949e' : '#6b7280'
 
@@ -25,12 +25,12 @@ export const getMermaidConfig = (
       primaryTextColor: isDark ? '#ffffff' : '#1e3a8a',
       primaryBorderColor: primary,
       lineColor: edge,
-      secondaryColor: isDark ? '#238636' : '#f9fafb',
-      tertiaryColor: isDark ? '#161b22' : '#ffffff',
+      secondaryColor: isDark ? '#161b22' : '#f9fafb',
+      tertiaryColor: isDark ? '#0d1117' : '#ffffff',
 
       // Node styling - Balanced for all diagram types
       nodeBorder: border,
-      clusterBkg: isDark ? 'rgba(22, 27, 34, 0.9)' : '#f3f4f6',
+      clusterBkg: isDark ? 'rgba(255, 255, 255, 0.03)' : '#f3f4f6',
       clusterBorder: border,
       defaultLinkColor: edge,
 
@@ -40,7 +40,7 @@ export const getMermaidConfig = (
       mindmapLineColor: edge,
 
       // Sequence & General Labels
-      actorBkg: isDark ? '#0d1117' : '#ffffff',
+      actorBkg: isDark ? '#161b22' : '#ffffff',
       actorTextColor: text,
       actorBorder: primary,
       actorLineColor: edge,

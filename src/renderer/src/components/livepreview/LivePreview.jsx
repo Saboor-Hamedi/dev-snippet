@@ -26,7 +26,7 @@ const LivePreview = ({
   code = '',
   language = 'markdown',
   snippets = [],
-  theme = 'midnight-syntax',
+  theme = 'midnight-pro',
   disabled = false,
   fontFamily = "'Outfit', 'Inter', sans-serif",
   onOpenExternal,
@@ -56,7 +56,7 @@ const LivePreview = ({
   }, [snippets])
 
   const isDark = useMemo(() => {
-    return !['polaris', 'minimal-gray'].includes(theme)
+    return !['polaris', 'minimal-gray', 'latte', 'solar-dawn', 'quiet-light'].includes(theme)
   }, [theme])
 
   // --- Specialized Hooks ---
@@ -293,7 +293,7 @@ const LivePreview = ({
                 securityLevel: 'loose'
               })
 
-              const currentConfig = `${isDark}-${fontFamily}`
+              const currentConfig = `${theme}-${fontFamily}`
               const forceReRender = lastRenderedConfig.current !== currentConfig
               lastRenderedConfig.current = currentConfig
 
@@ -344,7 +344,7 @@ const LivePreview = ({
         }
       }
     },
-    [renderedHtml, isDark, fontFamily]
+    [renderedHtml, isDark, fontFamily, theme]
   )
 
   // --- 4. Scroll Synchronization Logic ---

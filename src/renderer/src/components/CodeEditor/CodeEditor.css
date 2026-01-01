@@ -24,9 +24,11 @@
   0%,
   100% {
     opacity: 1;
+    filter: brightness(1.2);
   }
   50% {
-    opacity: 0;
+    opacity: 0.1;
+    filter: brightness(0.8);
   }
 }
 
@@ -48,16 +50,14 @@
 /* VS CODE STYLE: Active Line Background (Base) */
 /* VS CODE STYLE: Active Line Background (Base) */
 /* VS CODE STYLE: Active Line Background (Base) */
+/* PREMIUM ACTIVE LINE: Subtle focal indicator */
 .cm-editor .cm-activeLine {
-  /* background-color: var(--active-line-bg) !important; */
-  background-color: transparent !important;
-  border-left: var(--active-line-border-width, 0px) solid var(--caret-color, #ffffff) !important;
-  box-shadow: inset var(--active-line-border-width, 0px) 0;
+  background-color: rgba(255, 255, 255, 0.02) !important;
+  border-left: 2px solid var(--caret-color, #ffffff) !important;
+  box-shadow: 4px 0 12px -4px var(--caret-color, rgba(255, 255, 255, 0.2));
+  transition: background-color 0.2s ease;
 }
 
-/* VS CODE BEHAVIOR: Hide active line background and indicator when text is selected */
-
-/* VS CODE BEHAVIOR: Hide active line background and indicator when text is selected */
 .cm-editor[data-has-selection='true'] .cm-activeLine {
   background-color: transparent !important;
   border-left-color: transparent !important;
@@ -426,24 +426,92 @@ html body .cm-content *::selection {
 .cm-force-selection {
   background-color: var(--cursor-selection-bg, rgba(65, 206, 92, 0.5)) !important;
   color: var(--selection-text, #ffffff) !important;
-  /* Exactly match caret height by removing vertical padding */
-  padding-top: 0;
-  padding-bottom: 0;
-  /* Horizontal padding */
-  padding-left: 4px;
-  padding-right: 4px;
-  /* Ensure background wraps cleanly */
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
-  border-radius: 0 !important;
+
+  /* DYNAMIC SELECTION: Balanced padding to bridge gaps without oversized feel. */
+  padding-top: 4.5px;
+  padding-bottom: 4.5px;
+  padding-left: 0;
+  padding-right: 0;
+
+  /* Horizontal breath only - removing vertical bleed to fix 'double color' issues. */
+  box-shadow:
+    1.5px 0 0 0 var(--cursor-selection-bg, rgba(65, 206, 92, 0.5)),
+    -1.5px 0 0 0 var(--cursor-selection-bg, rgba(65, 206, 92, 0.5));
+
+  /* Ensure highlight flows continuously on wrap */
+  -webkit-box-decoration-break: slice;
+  box-decoration-break: slice;
+  border-radius: 2px !important;
 }
 
-/* The selection padding is now managed by the base .cm-force-selection style 
-   to ensure it stays tight to the text and matches the caret height across all headers. */
+/* 
+   TOTAL MASK: Prevent any other selection layers (native or CM) from leaking.
+   This fixes the 'Another color under selection' issue.
+*/
+.cm-editor ::selection,
+.cm-editor * ::selection,
+.cm-editor .cm-selectionBackground,
+.cm-editor .cm-selectionLayer {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: inherit !important;
+}
 
 /* ============================================================================ */
 /* Zen Focus Mode: High Performance Immersion */
 /* ============================================================================ */
+
+/* ======================================================================== */
+/* THE OBSIDIAN EFFECT: Stable Markdown Markers */
+/* ======================================================================== */
+
+/* 
+   The 'Inline Flow' Strategy:
+   We use 'display: inline' to ensure the selection highlight is one solid block.
+   We collapse the width using letter-spacing to prevent layout jumps.
+*/
+.cm-marker-hidden {
+  display: inline !important;
+  color: transparent !important;
+  opacity: 0 !important;
+  user-select: none !important;
+  pointer-events: none !important;
+  letter-spacing: -1ch !important;
+  white-space: nowrap;
+  vertical-align: baseline;
+  transition:
+    opacity 0.1s ease-out,
+    letter-spacing 0.1s ease-out;
+}
+
+/* Reveal markers only on the active line */
+.cm-activeLine .cm-marker-hidden {
+  opacity: 0.5 !important;
+  color: inherit !important;
+  /* Restore dimensions instantly */
+  font-size: inherit !important;
+  letter-spacing: normal !important;
+}
+
+/* 
+   HEADER SELECTION STABILIZATION
+   Ensure markers stay small to keep the selection block tight.
+*/
+.cm-line-h1 .cm-marker-hidden,
+.cm-line-h2 .cm-marker-hidden,
+.cm-line-h3 .cm-marker-hidden {
+  /* Markers inherit the header's font-size so the selection box stays uniform height */
+  font-size: inherit !important;
+  font-weight: 400 !important;
+  vertical-align: baseline;
+}
+
+/* Ensure the selection highlight covers markers cleanly when revealed */
+.cm-force-selection .cm-marker-hidden {
+  background-color: transparent !important;
+  /* Inherit selection color if they are partially visible */
+  color: var(--selection-text, #ffffff) !important;
+}
 
 /* Base dimming for all editor content children (lines and widgets) */
 body.zen-focus-active .cm-content > * {
