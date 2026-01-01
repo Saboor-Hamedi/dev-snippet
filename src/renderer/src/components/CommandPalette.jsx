@@ -25,7 +25,9 @@ import {
   CloudDownload,
   FileText,
   Star,
-  Zap
+  Zap,
+  CloudCog,
+  RefreshCw
 } from 'lucide-react'
 
 /**
@@ -95,7 +97,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
         action: async () => {
           try {
             await window.api.syncBackup()
-            // No notification on success
+            showToast('✅ Backup completed successfully', 'success')
           } catch (err) {
             console.error('Backup failed:', err)
             const errorMsg = err.message || 'Unknown error'
@@ -131,7 +133,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
           }
           try {
             await window.api.syncRestore()
-            // No notification on success
+            showToast('✅ Restore completed successfully', 'success')
           } catch (err) {
             console.error('Restore failed:', err)
             const errorMsg = err.message || 'Unknown error'
@@ -154,6 +156,13 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
             }, 200)
           }
         }
+      },
+      {
+        id: 'cmd-sync-center',
+        title: 'Open Sync Control Center',
+        icon: CloudCog,
+        description: 'Inspect status, backups, and restores in one place',
+        action: () => window.dispatchEvent(new CustomEvent('app:open-sync-center'))
       },
       {
         id: 'cmd-theme',
@@ -231,6 +240,23 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
         icon: Layout,
         description: 'Show or hide the leftmost navigation rail',
         action: () => window.dispatchEvent(new CustomEvent('app:toggle-activity-bar'))
+      },
+      {
+        id: 'cmd-reload-window',
+        title: 'Reload Window',
+        icon: RefreshCw,
+        description: 'Hard refresh the UI (same as VS Code Reload Window)',
+        action: async () => {
+          try {
+            showToast('♻️ Reloading window...', 'info')
+            await window.api.reloadWindow()
+          } catch (err) {
+            console.error('Reload failed:', err)
+            showToast('❌ Reload failed. See console for details.', 'error')
+          } finally {
+            onClose()
+          }
+        }
       },
       {
         id: 'cmd-close-window',
@@ -368,8 +394,8 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
       // If opened in command mode, pre-fill '>'
       const initialText = initialMode === 'command' ? '>' : ''
       setSearch(initialText)
-      // Give a slight delay for the modal animation to settle before focusing
-      const timer = setTimeout(() => {
+
+      const focusInput = () => {
         if (inputRef.current) {
           inputRef.current.focus()
           // Move cursor to end if text exists
@@ -377,16 +403,17 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
             inputRef.current.selectionStart = inputRef.current.selectionEnd = initialText.length
           }
         }
-      }, 50) // Slightly faster focus
+      }
 
-      // Double-check focus
-      const timer2 = setTimeout(() => {
-        if (inputRef.current && document.activeElement !== inputRef.current) {
-          inputRef.current.focus()
-        }
-      }, 150)
+      // Use multiple strategies to ensure focus sticks across different browsers/states
+      const raf1 = requestAnimationFrame(focusInput)
+      const raf2 = requestAnimationFrame(() => requestAnimationFrame(focusInput))
+      const timer = setTimeout(focusInput, 50)
+      const timer2 = setTimeout(focusInput, 150)
 
       return () => {
+        cancelAnimationFrame(raf1)
+        cancelAnimationFrame(raf2)
         clearTimeout(timer)
         clearTimeout(timer2)
       }
@@ -452,19 +479,20 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[10000] flex items-start justify-center pt-[15vh] px-4 overflow-hidden"
+      className="fixed inset-0 z-[200000] flex items-start justify-center pt-[15vh] px-4 overflow-hidden"
       onMouseDown={onClose}
     >
-      {/* Background with blur (User loves this) */}
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[12px] animate-in fade-in duration-500" />
+      {/* Background with solid overlay (Scientist Mode) */}
+      <div className="absolute inset-0 bg-slate-900/95 animate-in fade-in duration-500" />
 
       {/* Main UI Container (Refined & Professional) */}
       <div
         onMouseDown={(e) => e.stopPropagation()}
-        className="relative w-full max-w-xl bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-[var(--color-border)] overflow-hidden flex flex-col animate-in zoom-in-95 slide-in-from-top-4 duration-200 outline-none ring-0"
+        className="relative w-full max-w-xl rounded-[5px] shadow-2xl border border-[var(--color-border)] overflow-hidden flex flex-col animate-in zoom-in-95 slide-in-from-top-4 duration-200 outline-none ring-0"
+        style={{ backgroundColor: 'rgb(var(--color-bg-primary-rgb))' }}
       >
         {/* Search Header Area */}
-        <div className="flex items-center px-4 py-4 bg-slate-50 dark:bg-slate-800 border-b border-[var(--color-border)]">
+        <div className="flex items-center px-4 py-4 bg-[var(--color-bg-secondary)] border-b border-[var(--color-border)]">
           {isCommandMode ? (
             <Command size={18} className="text-[var(--color-accent-primary)] mr-3.5 stroke-[2]" />
           ) : (
@@ -476,6 +504,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
 
           <input
             ref={inputRef}
+            autoFocus
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -488,7 +517,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
             spellCheck={false}
           />
           <div className="hidden sm:flex items-center gap-1.5 ml-3">
-            <kbd className="px-1.5 py-0.5 text-[9px] font-bold text-slate-400 bg-transparent rounded border border-slate-200/50 dark:border-slate-800/50">
+            <kbd className="px-1.5 py-0.5 text-[9px] font-bold text-slate-400 bg-transparent rounded-[3px] border border-slate-200/50 dark:border-slate-800/50">
               ESC
             </kbd>
           </div>
@@ -521,14 +550,14 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
                         await item.action()
                         onClose()
                       }}
-                      className={`group relative px-4 py-3 rounded-lg flex items-center gap-3 cursor-pointer transition-all duration-200 ease-in-out outline-none border border-transparent ${
+                      className={`group relative px-4 py-3 rounded-[4px] flex items-center gap-3 cursor-pointer transition-all duration-200 ease-in-out outline-none border border-transparent ${
                         isSelected
                           ? 'bg-blue-500/10 dark:bg-blue-400/10 ring-1 ring-blue-500/10'
-                          : 'hover:bg-slate-100 dark:hover:bg-slate-800'
+                          : 'hover:bg-[var(--color-bg-secondary)]'
                       }`}
                     >
                       <div
-                        className={`p-2 rounded-xl transition-all duration-200 ${
+                        className={`p-2 rounded-none transition-all duration-200 ${
                           isSelected
                             ? 'text-[var(--selected-text)]'
                             : 'text-[var(--color-text-secondary)]'
@@ -571,15 +600,15 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
                       onSelect(item)
                       onClose()
                     }}
-                    className={`group relative px-4 py-3 rounded-lg flex items-center gap-3 cursor-pointer transition-all duration-200 ease-in-out outline-none border border-transparent ${
+                    className={`group relative px-4 py-3 rounded-[4px] flex items-center gap-3 cursor-pointer transition-all duration-200 ease-in-out outline-none border border-transparent ${
                       isSelected
                         ? 'bg-blue-500/10 dark:bg-blue-400/10 ring-1 ring-blue-500/10'
-                        : 'hover:bg-slate-100 dark:hover:bg-slate-800'
+                        : 'hover:bg-[var(--color-bg-secondary)]'
                     }`}
                   >
                     {/* Visual Icon Stack */}
                     <div
-                      className={`p-2 rounded-xl transition-all duration-200 ${
+                      className={`p-2 rounded-none transition-all duration-200 ${
                         isSelected
                           ? 'text-[var(--selected-text)] scale-105'
                           : 'text-[var(--color-text-secondary)] group-hover:text-[var(--hover-text)]'
@@ -634,7 +663,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
                           </div>
                         )}
                         {item.match_context ? (
-                          <div className="mt-1.5 text-[11px] font-mono text-[var(--color-text-tertiary)] bg-[var(--bg-tertiary)]/50 px-1.5 py-0.5 rounded w-full truncate">
+                          <div className="mt-1.5 text-[11px] font-mono text-[var(--color-text-tertiary)] bg-[var(--color-bg-tertiary)] px-1.5 py-0.5 rounded-none w-full truncate">
                             <span className="opacity-60">...</span>
                             {item.match_context
                               .split(/(__MARK__|__\/MARK__)/)
@@ -644,7 +673,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
                                 return isHighlight ? (
                                   <span
                                     key={i}
-                                    className="text-[var(--color-accent-primary)] font-bold bg-[var(--bg-secondary)] px-0.5 rounded-[1px]"
+                                    className="text-[var(--color-accent-primary)] font-bold bg-[var(--color-bg-secondary)] px-0.5 rounded-none"
                                   >
                                     {part}
                                   </span>
@@ -670,10 +699,10 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
                     {/* Right-side Badge & Arrow */}
                     <div className="flex items-center gap-3 shrink-0">
                       <span
-                        className={`px-1.5 py-0.5 rounded text-[8px] font-extrabold transition-colors tracking-widest ${
+                        className={`px-1.5 py-0.5 rounded-none text-[8px] font-extrabold transition-colors tracking-widest ${
                           isSelected
                             ? 'bg-[var(--color-accent-primary)] text-white'
-                            : 'bg-[var(--bg-tertiary)] text-[var(--color-text-secondary)]'
+                            : 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)]'
                         }`}
                       >
                         {lang}
@@ -691,7 +720,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
             </div>
           ) : (
             <div className="py-12 text-center animate-in fade-in zoom-in-95 duration-500">
-              <div className="inline-flex p-3 rounded-2xl bg-[var(--bg-tertiary)] mb-3">
+              <div className="inline-flex p-3 rounded-none bg-[var(--color-bg-tertiary)] mb-3">
                 <ShieldCheck size={24} className="text-[var(--color-text-tertiary)]" />
               </div>
               <h3 className="text-[var(--color-text-primary)] font-bold text-[14px] tracking-tight">
@@ -707,16 +736,16 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
         </div>
 
         {/* Premium Footer */}
-        <div className="px-6 py-4 bg-[var(--bg-tertiary)] border-t border-[var(--color-border)] flex justify-between items-center text-[10px] font-bold text-[var(--color-text-secondary)] uppercase tracking-widest">
+        <div className="px-6 py-4 bg-[var(--color-bg-tertiary)] border-t border-[var(--color-border)] flex justify-between items-center text-[10px] font-bold text-[var(--color-text-secondary)] uppercase tracking-widest">
           <div className="flex gap-6">
             <span className="flex items-center gap-2">
-              <kbd className="px-1.5 py-0.5 bg-[var(--bg-primary)] rounded-md border border-[var(--color-border)] shadow-sm text-[var(--color-text-secondary)] font-mono">
+              <kbd className="px-1.5 py-0.5 bg-[var(--color-bg-primary)] rounded-[3px] border border-[var(--color-border)] shadow-sm text-[var(--color-text-secondary)] font-mono">
                 ↑↓
               </kbd>
               Move
             </span>
             <span className="flex items-center gap-2">
-              <kbd className="px-1.5 py-0.5 bg-[var(--bg-primary)] rounded-md border border-[var(--color-border)] shadow-sm text-[var(--color-text-secondary)] font-mono">
+              <kbd className="px-1.5 py-0.5 bg-[var(--color-bg-primary)] rounded-[3px] border border-[var(--color-border)] shadow-sm text-[var(--color-text-secondary)] font-mono">
                 ↵
               </kbd>
               {isCommandMode ? 'Execute' : 'Open'}

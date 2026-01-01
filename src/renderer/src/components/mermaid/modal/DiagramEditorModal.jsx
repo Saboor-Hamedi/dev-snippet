@@ -312,13 +312,6 @@ const DiagramEditorModal = ({ initialCode, onSave, onCancel }) => {
               >
                 <Palette size={12} />
               </button>
-              <button
-                className={`small icon-only ${isTransparent ? 'active' : ''}`}
-                onClick={() => setIsTransparent(!isTransparent)}
-                title="Transparency"
-              >
-                <Ghost size={12} />
-              </button>
             </div>
           </PaneHeader>
 

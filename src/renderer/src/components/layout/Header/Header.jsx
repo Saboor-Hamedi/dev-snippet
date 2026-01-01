@@ -56,8 +56,8 @@ const Header = ({
     <header
       className="relative flex items-end h-[38px] select-none transition-colors duration-200"
       style={{
-        backgroundColor: 'var(--color-bg-secondary)', // Header matches app frame (darker)
-        borderBottom: '1px solid var(--color-border)', // Subtle separation from editor
+        backgroundColor: 'var(--header-bg)', // Use themeable header-bg
+        borderBottom: '1px solid var(--header-border)', // Use themeable header-border
         gap: 0,
         color: 'var(--header-text)',
         boxSizing: 'border-box'
@@ -69,7 +69,7 @@ const Header = ({
         style={{
           width: sidebarAreaWidth,
           backgroundColor: 'transparent',
-          borderRight: '1px solid var(--color-border)', // Match border
+          borderRight: '1px solid var(--header-border)', // Use themeable header-border
           WebkitAppRegion: 'drag'
         }}
       >
@@ -77,7 +77,7 @@ const Header = ({
           <button
             onClick={onToggleSidebar}
             className="theme-exempt bg-transparent flex items-center focus:outline-none justify-center p-1 rounded-md transition-colors cursor-pointer opacity-60 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)]"
-            style={{ color: 'var(--header-text)' }}
+            style={{ color: 'var(--header-icon-color, var(--header-text))' }}
             title={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'}
           >
             {isSidebarOpen ? <PanelLeftClose size={16} /> : <PanelLeft size={16} />}
@@ -119,7 +119,7 @@ const Header = ({
                   />
                   <span
                     className="text-[13px] truncate font-medium opacity-90 block normal-case"
-                    style={{ color: 'var(--color-text-primary)' }}
+                    style={{ color: 'var(--header-text, var(--color-text-primary))' }}
                   >
                     {typeof displayTitle === 'string'
                       ? displayTitle.replace(/\.[^/.]+$/, '')
@@ -145,7 +145,7 @@ const Header = ({
                     ml-1 p-0.5 rounded-md
                     opacity-0 group-hover:opacity-100
                     hover:bg-[var(--color-bg-tertiary)]
-                    text-[var(--color-text-primary)]
+                    text-[var(--header-text, var(--color-text-primary))]
                     transition-all
                     flex items-center justify-center
                   "
@@ -184,7 +184,7 @@ const Header = ({
               } catch (e) {}
             }}
             className="theme-exempt bg-transparent h-full w-10 flex items-center justify-center transition-colors opacity-60 hover:opacity-100 hover:bg-white/5"
-            style={{ color: 'var(--header-text)' }}
+            style={{ color: 'var(--header-icon-color, var(--header-text))' }}
             title="Minimize"
           >
             <Minus size={14} />
@@ -193,7 +193,7 @@ const Header = ({
           <button
             onClick={() => window.api?.toggleMaximize?.()}
             className="theme-exempt bg-transparent h-full w-10 flex items-center justify-center transition-colors opacity-60 hover:opacity-100 hover:bg-white/5"
-            style={{ color: 'var(--header-text)' }}
+            style={{ color: 'var(--header-icon-color, var(--header-text))' }}
             title="Maximize"
           >
             <Minimize size={14} />
@@ -202,7 +202,7 @@ const Header = ({
           <button
             onClick={() => window.api?.closeWindow?.()}
             className="theme-exempt bg-transparent h-full w-12 flex items-center justify-center transition-colors opacity-60 hover:opacity-100 hover:bg-red-500 hover:text-white"
-            style={{ color: 'var(--header-text)' }}
+            style={{ color: 'var(--header-icon-color, var(--header-text))' }}
             title="Close"
           >
             <X size={14} />

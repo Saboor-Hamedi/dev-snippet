@@ -78,12 +78,12 @@ const FlowPreview = ({ selectedSnippet, snippets, fontFamily, show }) => {
 
   const header = (
     <div
-      className="flex items-center justify-between w-full pr-1 h-full"
+      className="flex items-center justify-between w-full pr-1"
       style={{ pointerEvents: 'auto' }}
     >
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
-          <Activity size={12} className="text-blue-500/60 animate-pulse" />
+          <Activity size={12} className="text-blue-500/60" />
           <span className="text-[9px] font-bold text-white/20 tracking-widest uppercase">
             Scientist Station
           </span>
@@ -100,7 +100,7 @@ const FlowPreview = ({ selectedSnippet, snippets, fontFamily, show }) => {
                 e.stopPropagation()
                 setIsLocked(!isLocked)
               }}
-              className={`p-1.5 rounded-md border transition-all ${isLocked ? 'bg-blue-500/20 border-blue-500/40 text-blue-400' : 'bg-white/5 border-white/10 text-white/30 hover:text-white'}`}
+              className={`p-1.5 rounded-none-none border ${isLocked ? 'bg-blue-500/20 border-blue-500/40 text-blue-400' : 'bg-white/5 border-white/10 text-white/30 hover:text-white'}`}
               title={isLocked ? 'Disable Click-Through' : 'Enable Click-Through'}
             >
               <Ghost size={12} />
@@ -112,14 +112,14 @@ const FlowPreview = ({ selectedSnippet, snippets, fontFamily, show }) => {
                 e.stopPropagation()
                 setShowStats(!showStats)
               }}
-              className={`p-1.5 rounded-md border transition-all ${showStats ? 'bg-white/10 border-white/20 text-white' : 'bg-white/5 border-white/10 text-white/20'}`}
+              className={`p-1.5 rounded-none-none border ${showStats ? 'bg-white/10 border-white/20 text-white' : 'bg-white/5 border-white/10 text-white/20'}`}
               title="Toggle Statistics"
             >
               <Hash size={12} />
             </button>
 
             {/* Device Size Selectors - 4 Working Buttons */}
-            <div className="flex items-center gap-0.5 bg-black/40 rounded-md p-1 border border-white/5">
+            <div className="flex items-center gap-0.5 bg-black/40 rounded-none-none p-1 border border-white/5">
               {[
                 { id: 'mini', icon: Layout, size: 10, label: 'Mini' },
                 { id: 'mobile', icon: Smartphone, size: 12, label: 'Mobile' },
@@ -132,7 +132,7 @@ const FlowPreview = ({ selectedSnippet, snippets, fontFamily, show }) => {
                     e.stopPropagation()
                     setDevice(v.id)
                   }}
-                  className={`p-1.5 rounded-md transition-all ${device === v.id ? 'bg-blue-600 text-white shadow-lg' : 'text-white/30 hover:text-white hover:bg-white/5'}`}
+                  className={`p-1.5 rounded-none-none ${device === v.id ? 'bg-blue-600 text-white shadow-lg' : 'text-white/30 hover:text-white hover:bg-white/5'}`}
                   title={v.label}
                 >
                   <v.icon size={v.size} />
@@ -147,7 +147,7 @@ const FlowPreview = ({ selectedSnippet, snippets, fontFamily, show }) => {
             e.stopPropagation()
             setIsMinimized(!isMinimized)
           }}
-          className="p-2 rounded-md bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all ml-1 border border-white/5"
+          className="p-2 rounded-none-none bg-white/5 hover:bg-white/10 text-white/60 hover:text-white ml-1 border border-white/5"
           title={isMinimized ? 'Expand' : 'Collapse'}
         >
           {isMinimized ? <Maximize2 size={13} /> : <Minimize2 size={13} />}
@@ -168,11 +168,11 @@ const FlowPreview = ({ selectedSnippet, snippets, fontFamily, show }) => {
       className={`flow-ghost-modal no-padding ${isLocked && !isMinimized ? 'click-through' : ''}`}
     >
       <div
-        className="w-full h-full flex flex-col relative overflow-hidden transition-all duration-300"
+        className="w-full h-full flex flex-col relative overflow-hidden"
         style={{ opacity: isMinimized ? 0.3 : opacity }}
       >
         <div
-          className={`flex-1 w-full bg-[#0d1117]/60 backdrop-blur-3xl transition-all duration-500 ${isMinimized ? 'opacity-0 scale-95' : 'opacity-100'}`}
+          className={`flex-1 w-full bg-[#0d1117]/60 backdrop-blur-3xl ${isMinimized ? 'opacity-0 scale-95' : 'opacity-100'}`}
         >
           <LivePreview
             code={liveCode}
@@ -188,7 +188,7 @@ const FlowPreview = ({ selectedSnippet, snippets, fontFamily, show }) => {
 
         {/* Technical HUD Overlay */}
         {showStats && !isMinimized && (
-          <div className="absolute bottom-2 left-2 right-2 p-2 bg-black/60 backdrop-blur-md rounded border border-white/10 pointer-events-none flex items-center justify-between font-mono text-[9px] text-blue-400">
+          <div className="absolute bottom-2 left-2 right-2 p-2 bg-black/60 backdrop-blur-md rounded-none border border-white/10 pointer-events-none flex items-center justify-between font-mono text-[9px] text-blue-400">
             <div className="flex gap-4">
               <span>CHARS: {stats.chars}</span>
               <span>WORDS: {stats.words}</span>

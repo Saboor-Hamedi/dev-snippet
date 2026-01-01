@@ -7,21 +7,21 @@ export const themes = [
     icon: '☀️',
     description: '',
     colors: {
-      '--color-bg-primary': 'rgba(255, 255, 255, 0.7)', // Frosty White Glass
+      '--color-bg-primary': 'rgb(255, 255, 255)', // Frosty White Glass
       '--color-tooltip-bg': '#ffffff',
-      '--color-bg-secondary': 'rgba(246, 248, 250, 0.6)',
-      '--color-bg-tertiary': 'rgba(241, 243, 244, 0.5)',
-      '--color-text-primary': '#000000',
-      '--color-text-secondary': '#000000',
-      '--color-text-tertiary': '#404040',
+      '--color-bg-secondary': 'rgb(246, 248, 250)',
+      '--color-bg-tertiary': 'rgb(241, 243, 244)',
+      '--color-text-primary': '#24292f',
+      '--color-text-secondary': '#586069',
+      '--color-text-tertiary': '#6a737d',
       '--color-accent-primary': '#0366d6',
-      '--color-border': 'rgba(3, 102, 214, 0.2)',
-      '--hover-bg': 'rgba(3, 102, 214, 0.1)',
+      '--color-border': 'rgb(3, 102, 214)',
+      '--hover-bg': 'rgb(3, 102, 214)',
       '--hover-text': '#0366d6',
-      '--selected-bg': 'rgba(3, 102, 214, 0.15)',
+      '--selected-bg': 'rgb(3, 102, 214)',
       '--selected-text': '#0969da',
-      '--sidebar-text': '#000000',
-      '--sidebar-header-text': '#000000',
+      '--sidebar-text': '#24292f',
+      '--sidebar-header-text': '#586069',
       // Syntax Highlighting (Light Mode)
       '--color-syntax-string': '#404040',
       '--color-syntax-variable': '#171717',
@@ -32,34 +32,34 @@ export const themes = [
       '--color-syntax-comment': '#737373',
       '--color-syntax-punctuation': '#404040',
       // Component-specific variables
-      '--editor-bg': 'rgba(255, 255, 255, 0.7)',
+      '--editor-bg': 'rgb(255, 255, 255)',
       '--editor-text': '#000000',
       '--gutter-text-color': '#000000',
-      '--statusbar-bg': 'rgba(246, 248, 250, 0.85)',
+      '--statusbar-bg': 'rgb(246, 248, 250)',
       '--statusbar-text': '#000000',
-      '--header-bg': 'rgba(255, 255, 255, 0.8)',
+      '--header-bg': 'rgb(255, 255, 255)',
       '--header-text': '#000000',
-      '--sidebar-bg': 'rgba(246, 248, 250, 0.65)',
-      '--sidebar-border': 'rgba(209, 217, 224, 0.3)',
-      '--welcome-bg': 'rgba(255, 255, 255, 0.7)',
+      '--sidebar-bg': 'rgb(246, 248, 250)',
+      '--sidebar-border': 'rgb(209, 217, 224)',
+      '--welcome-bg': 'rgb(255, 255, 255)',
       '--welcome-text': '#000000',
 
-      '--gutter-bg-color': 'rgba(246, 248, 250, 0.05)',
-      '--gutter-border-color': 'rgba(3, 102, 214, 0.05)',
-      '--activity-bar-bg': 'rgba(246, 248, 250, 0.6)',
+      '--gutter-bg-color': 'rgb(246, 248, 250)',
+      '--gutter-border-color': 'rgb(3, 102, 214)',
+      '--activity-bar-bg': 'rgb(246, 248, 250)',
       '--activity-bar-active-fg': '#000000',
-      '--activity-bar-inactive-fg': 'rgba(0, 0, 0, 0.4)',
+      '--activity-bar-inactive-fg': 'rgb(0, 0, 0)',
       '--activity-bar-active-border': '#0969da',
       '--activity-bar-badge-bg': '#0969da',
       '--activity-bar-badge-fg': '#ffffff',
-      background: 'rgba(255, 255, 255, 0.7)',
-      sidebar: 'rgba(246, 248, 250, 0.65)',
+      background: 'rgb(255, 255, 255)',
+      sidebar: 'rgb(246, 248, 250)',
       text: '#000000',
       accent: '#0366d6',
-      border: 'rgba(3, 102, 214, 0.2)',
+      border: 'rgb(3, 102, 214)',
       // ENABLING GLASS BLUR
       backdropFilter: 'blur(16px) saturate(180%)',
-      boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.1)'
+      boxShadow: '0 8px 32px 0 rgb(31, 38, 135)'
     },
     // Settings presets that get applied to settings.json
     settings: {
@@ -86,7 +86,7 @@ export const themes = [
       activityBar: {
         bgColor: '#f6f8fa',
         activeFg: '#24292f',
-        inactiveFg: 'rgba(36, 41, 47, 0.4)',
+        inactiveFg: 'rgb(36, 41, 47)',
         activeBorder: '#0969da',
         badgeBg: '#0969da',
         badgeFg: '#ffffff'
@@ -113,18 +113,18 @@ export const themes = [
     icon: '🌙',
     description: 'Deep Cosmic Glass',
     colors: {
-      '--color-bg-primary': 'rgba(13, 17, 23, 0.55)', // Glassy Midnight Void
+      '--color-bg-primary': 'rgb(13, 17, 23)', // Glassy Midnight Void
       '--color-tooltip-bg': '#0d1117',
-      '--color-bg-secondary': 'rgba(13, 17, 23, 0.45)',
-      '--color-bg-tertiary': 'rgba(22, 27, 34, 0.45)',
+      '--color-bg-secondary': 'rgb(13, 17, 23)',
+      '--color-bg-tertiary': 'rgb(22, 27, 34)',
       '--color-text-primary': '#c9d1d9',
       '--color-text-secondary': '#8b949e',
       '--color-text-tertiary': '#6e7681',
       '--color-accent-primary': '#58a6ff',
-      '--color-border': 'rgba(88, 166, 255, 0.3)',
-      '--hover-bg': 'rgba(88, 166, 255, 0.15)',
+      '--color-border': 'rgb(88, 166, 255)',
+      '--hover-bg': 'rgb(88, 166, 255)',
       '--hover-text': '#79c0ff',
-      '--selected-bg': 'rgba(88, 166, 255, 0.25)',
+      '--selected-bg': 'rgb(88, 166, 255)',
       '--selected-text': '#a5d6ff',
       '--sidebar-text': '#c9d1d9',
       '--sidebar-header-text': '#8b949e',
@@ -138,34 +138,34 @@ export const themes = [
       '--color-syntax-comment': '#71717a',
       '--color-syntax-punctuation': '#a1a1aa',
       // Component-specific variables
-      '--editor-bg': 'rgba(13, 17, 23, 0.55)',
+      '--editor-bg': 'rgb(13, 17, 23)',
       '--editor-text': '#c9d1d9',
       '--gutter-text-color': '#8b949e',
-      '--statusbar-bg': 'rgba(13, 17, 23, 0.8)',
+      '--statusbar-bg': 'rgb(13, 17, 23)',
       '--statusbar-text': '#8b949e',
-      '--header-bg': 'rgba(13, 17, 23, 0.7)',
+      '--header-bg': 'rgb(13, 17, 23)',
       '--header-text': '#c9d1d9',
-      '--sidebar-bg': 'rgba(13, 17, 23, 0.45)',
-      '--sidebar-border': 'rgba(88, 166, 255, 0.2)',
-      '--welcome-bg': 'rgba(13, 17, 23, 0.55)',
+      '--sidebar-bg': 'rgb(13, 17, 23)',
+      '--sidebar-border': 'rgb(88, 166, 255)',
+      '--welcome-bg': 'rgb(13, 17, 23)',
       '--welcome-text': '#c9d1d9',
 
-      '--gutter-bg-color': 'rgba(13, 17, 23, 0.05)',
-      '--gutter-border-color': 'rgba(88, 166, 255, 0.1)',
-      '--activity-bar-bg': 'rgba(13, 17, 23, 0.5)',
+      '--gutter-bg-color': 'rgb(13, 17, 23)',
+      '--gutter-border-color': 'rgb(88, 166, 255)',
+      '--activity-bar-bg': 'rgb(13, 17, 23)',
       '--activity-bar-active-fg': '#58a6ff',
       '--activity-bar-inactive-fg': '#404040',
       '--activity-bar-active-border': '#58a6ff',
       '--activity-bar-badge-bg': '#58a6ff',
       '--activity-bar-badge-fg': '#ffffff',
-      background: 'rgba(13, 17, 23, 0.55)',
-      sidebar: 'rgba(13, 17, 23, 0.45)',
+      background: 'rgb(13, 17, 23)',
+      sidebar: 'rgb(13, 17, 23)',
       text: '#c9d1d9',
       accent: '#58a6ff',
-      border: 'rgba(88, 166, 255, 0.3)',
+      border: 'rgb(88, 166, 255)',
       // ENABLING GLASS BLUR
       backdropFilter: 'blur(16px) saturate(180%)',
-      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.5)'
+      boxShadow: '0 8px 32px 0 rgb(0, 0, 0)'
     },
     settings: {
       welcome: { welcomePage: '#161b22' },
@@ -176,7 +176,7 @@ export const themes = [
       activityBar: {
         bgColor: '#161b22',
         activeFg: '#c9d1d9',
-        inactiveFg: 'rgba(201, 209, 217, 0.4)',
+        inactiveFg: 'rgb(201, 209, 217)',
         activeBorder: '#58a6ff',
         badgeBg: '#58a6ff',
         badgeFg: '#ffffff'
@@ -203,18 +203,18 @@ export const themes = [
     icon: '🪐',
     description: '',
     colors: {
-      '--color-bg-primary': 'rgba(9, 9, 11, 0.55)', // Glassy Cosmic Void
+      '--color-bg-primary': 'rgb(9, 9, 11)', // Glassy Cosmic Void
       '--color-tooltip-bg': '#09090b',
-      '--color-bg-secondary': 'rgba(9, 9, 11, 0.45)',
-      '--color-bg-tertiary': 'rgba(24, 24, 27, 0.45)',
+      '--color-bg-secondary': 'rgb(9, 9, 11)',
+      '--color-bg-tertiary': 'rgb(24, 24, 27)',
       '--color-text-primary': '#ffffff',
       '--color-text-secondary': '#e2e8f0',
       '--color-text-tertiary': '#94a3b8',
       '--color-accent-primary': '#d946ef', // Nebula Fuchsia
-      '--color-border': 'rgba(217, 70, 239, 0.3)',
-      '--hover-bg': 'rgba(217, 70, 239, 0.15)',
+      '--color-border': 'rgb(217, 70, 239)',
+      '--hover-bg': 'rgb(217, 70, 239)',
       '--hover-text': '#f0abfc',
-      '--selected-bg': 'rgba(139, 92, 246, 0.4)', // Deep Violet Highlight (Fixed white issue)
+      '--selected-bg': 'rgb(139, 92, 246)', // Deep Violet Highlight (Fixed white issue)
       '--selected-text': '#ffffff',
       '--sidebar-text': '#ffffff',
       '--sidebar-header-text': '#e2e8f0',
@@ -228,34 +228,34 @@ export const themes = [
       '--color-syntax-comment': '#64748b',
       '--color-syntax-punctuation': '#94a3b8',
       // Component-specific variables
-      '--editor-bg': 'rgba(9, 9, 11, 0.55)',
+      '--editor-bg': 'rgb(9, 9, 11)',
       '--editor-text': '#ffffff',
       '--gutter-text-color': '#ffffff',
-      '--statusbar-bg': 'rgba(9, 9, 11, 0.8)',
+      '--statusbar-bg': 'rgb(9, 9, 11)',
       '--statusbar-text': '#ffffff',
-      '--header-bg': 'rgba(9, 9, 11, 0.7)',
+      '--header-bg': 'rgb(9, 9, 11)',
       '--header-text': '#ffffff',
-      '--sidebar-bg': 'rgba(9, 9, 11, 0.45)',
-      '--sidebar-border': 'rgba(217, 70, 239, 0.2)',
-      '--welcome-bg': 'rgba(9, 9, 11, 0.55)',
+      '--sidebar-bg': 'rgb(9, 9, 11)',
+      '--sidebar-border': 'rgb(217, 70, 239)',
+      '--welcome-bg': 'rgb(9, 9, 11)',
       '--welcome-text': '#ffffff',
 
-      '--gutter-bg-color': 'rgba(9, 9, 11, 0.05)',
-      '--gutter-border-color': 'rgba(217, 70, 239, 0.1)',
-      '--activity-bar-bg': 'rgba(9, 9, 11, 0.5)',
+      '--gutter-bg-color': 'rgb(9, 9, 11)',
+      '--gutter-border-color': 'rgb(217, 70, 239)',
+      '--activity-bar-bg': 'rgb(9, 9, 11)',
       '--activity-bar-active-fg': '#d946ef',
       '--activity-bar-inactive-fg': '#404040',
       '--activity-bar-active-border': '#d946ef',
       '--activity-bar-badge-bg': '#d946ef',
       '--activity-bar-badge-fg': '#ffffff',
-      background: 'rgba(9, 9, 11, 0.55)',
-      sidebar: 'rgba(9, 9, 11, 0.45)',
+      background: 'rgb(9, 9, 11)',
+      sidebar: 'rgb(9, 9, 11)',
       text: '#ffffff',
       accent: '#d946ef',
-      border: 'rgba(217, 70, 239, 0.3)',
+      border: 'rgb(217, 70, 239)',
       // ENABLING GLASS BLUR
       backdropFilter: 'blur(16px) saturate(180%)',
-      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.5)'
+      boxShadow: '0 8px 32px 0 rgb(0, 0, 0)'
     },
     // Settings presets that get applied to settings.json
     settings: {
@@ -282,7 +282,7 @@ export const themes = [
       activityBar: {
         bgColor: '#18181b',
         activeFg: '#d946ef',
-        inactiveFg: 'rgba(255, 255, 255, 0.4)',
+        inactiveFg: 'rgb(255, 255, 255)',
         activeBorder: '#d946ef',
         badgeBg: '#d946ef',
         badgeFg: '#ffffff'
@@ -309,18 +309,18 @@ export const themes = [
     icon: '🌲',
     description: '',
     colors: {
-      '--color-bg-primary': 'rgba(23, 28, 25, 0.55)', // Glassy Forest Void
+      '--color-bg-primary': 'rgb(23, 28, 25)', // Glassy Forest Void
       '--color-tooltip-bg': '#1c1917',
-      '--color-bg-secondary': 'rgba(23, 28, 25, 0.45)',
-      '--color-bg-tertiary': 'rgba(34, 42, 38, 0.45)',
+      '--color-bg-secondary': 'rgb(23, 28, 25)',
+      '--color-bg-tertiary': 'rgb(34, 42, 38)',
       '--color-text-primary': '#ffffff',
       '--color-text-secondary': '#ffffff',
       '--color-text-tertiary': '#ffffff',
       '--color-accent-primary': '#22c55e', // Forest Green
-      '--color-border': 'rgba(34, 197, 94, 0.3)',
-      '--hover-bg': 'rgba(34, 197, 94, 0.15)',
+      '--color-border': 'rgb(34, 197, 94)',
+      '--hover-bg': 'rgb(34, 197, 94)',
       '--hover-text': '#4ade80',
-      '--selected-bg': 'rgba(34, 197, 94, 0.25)',
+      '--selected-bg': 'rgb(34, 197, 94)',
       '--selected-text': '#86efac',
       '--sidebar-text': '#ffffff',
       '--sidebar-header-text': '#ffffff',
@@ -334,34 +334,34 @@ export const themes = [
       '--color-syntax-comment': '#737373',
       '--color-syntax-punctuation': '#a3a3a3',
       // Component-specific variables
-      '--editor-bg': 'rgba(23, 28, 25, 0.55)',
+      '--editor-bg': 'rgb(23, 28, 25)',
       '--editor-text': '#ffffff',
       '--gutter-text-color': '#ffffff',
-      '--statusbar-bg': 'rgba(23, 28, 25, 0.8)',
+      '--statusbar-bg': 'rgb(23, 28, 25)',
       '--statusbar-text': '#ffffff',
-      '--header-bg': 'rgba(23, 28, 25, 0.7)',
+      '--header-bg': 'rgb(23, 28, 25)',
       '--header-text': '#ffffff',
-      '--sidebar-bg': 'rgba(23, 28, 25, 0.45)',
-      '--sidebar-border': 'rgba(34, 197, 94, 0.2)',
-      '--welcome-bg': 'rgba(23, 28, 25, 0.55)',
+      '--sidebar-bg': 'rgb(23, 28, 25)',
+      '--sidebar-border': 'rgb(34, 197, 94)',
+      '--welcome-bg': 'rgb(23, 28, 25)',
       '--welcome-text': '#ffffff',
 
-      '--gutter-bg-color': 'rgba(23, 28, 25, 0.05)',
-      '--gutter-border-color': 'rgba(34, 197, 94, 0.1)',
-      '--activity-bar-bg': 'rgba(23, 28, 25, 0.5)',
+      '--gutter-bg-color': 'rgb(23, 28, 25)',
+      '--gutter-border-color': 'rgb(34, 197, 94)',
+      '--activity-bar-bg': 'rgb(23, 28, 25)',
       '--activity-bar-active-fg': '#4ade80',
       '--activity-bar-inactive-fg': '#404040',
       '--activity-bar-active-border': '#22c55e',
       '--activity-bar-badge-bg': '#22c55e',
       '--activity-bar-badge-fg': '#ffffff',
-      background: 'rgba(23, 28, 25, 0.55)',
-      sidebar: 'rgba(23, 28, 25, 0.45)',
+      background: 'rgb(23, 28, 25)',
+      sidebar: 'rgb(23, 28, 25)',
       text: '#ffffff',
       accent: '#22c55e',
-      border: 'rgba(34, 197, 94, 0.3)',
+      border: 'rgb(34, 197, 94)',
       // ENABLING GLASS BLUR
       backdropFilter: 'blur(16px) saturate(180%)',
-      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.5)'
+      boxShadow: '0 8px 32px 0 rgb(0, 0, 0)'
     },
     // Settings presets that get applied to settings.json
     settings: {
@@ -388,7 +388,7 @@ export const themes = [
       activityBar: {
         bgColor: '#292524',
         activeFg: '#4ade80',
-        inactiveFg: 'rgba(255, 255, 255, 0.4)',
+        inactiveFg: 'rgb(255, 255, 255)',
         activeBorder: '#22c55e',
         badgeBg: '#22c55e',
         badgeFg: '#ffffff'
@@ -415,18 +415,18 @@ export const themes = [
     icon: '👑',
     description: 'Luxurious Gold Glass',
     colors: {
-      '--color-bg-primary': 'rgba(24, 24, 27, 0.55)', // Glassy Zinc Void
+      '--color-bg-primary': 'rgb(24, 24, 27)', // Glassy Zinc Void
       '--color-tooltip-bg': '#18181b',
-      '--color-bg-secondary': 'rgba(24, 24, 27, 0.45)',
-      '--color-bg-tertiary': 'rgba(39, 39, 42, 0.45)',
+      '--color-bg-secondary': 'rgb(24, 24, 27)',
+      '--color-bg-tertiary': 'rgb(39, 39, 42)',
       '--color-text-primary': '#ffffff',
       '--color-text-secondary': '#a1a1aa',
       '--color-text-tertiary': '#71717a',
       '--color-accent-primary': '#f1be36', // Royal Gold
-      '--color-border': 'rgba(241, 190, 54, 0.3)',
-      '--hover-bg': 'rgba(241, 190, 54, 0.15)',
+      '--color-border': 'rgb(241, 190, 54)',
+      '--hover-bg': 'rgb(241, 190, 54)',
       '--hover-text': '#fbd24e',
-      '--selected-bg': 'rgba(241, 190, 54, 0.25)',
+      '--selected-bg': 'rgb(241, 190, 54)',
       '--selected-text': '#ffffff',
       '--sidebar-text': '#ffffff',
       '--sidebar-header-text': '#ffffff',
@@ -440,34 +440,34 @@ export const themes = [
       '--color-syntax-comment': '#71717a',
       '--color-syntax-punctuation': '#a1a1aa',
       // Component-specific variables
-      '--editor-bg': 'rgba(24, 24, 27, 0.55)',
+      '--editor-bg': 'rgb(24, 24, 27)',
       '--editor-text': '#ffffff',
       '--gutter-text-color': '#71717a',
-      '--statusbar-bg': 'rgba(24, 24, 27, 0.8)',
+      '--statusbar-bg': 'rgb(24, 24, 27)',
       '--statusbar-text': '#f1be36',
-      '--header-bg': 'rgba(24, 24, 27, 0.7)',
+      '--header-bg': 'rgb(24, 24, 27)',
       '--header-text': '#ffffff',
-      '--sidebar-bg': 'rgba(24, 24, 27, 0.45)',
-      '--sidebar-border': 'rgba(241, 190, 54, 0.2)',
-      '--welcome-bg': 'rgba(24, 24, 27, 0.55)',
+      '--sidebar-bg': 'rgb(24, 24, 27)',
+      '--sidebar-border': 'rgb(241, 190, 54)',
+      '--welcome-bg': 'rgb(24, 24, 27)',
       '--welcome-text': '#ffffff',
 
-      '--gutter-bg-color': 'rgba(24, 24, 27, 0.05)',
-      '--gutter-border-color': 'rgba(241, 190, 54, 0.1)',
-      '--activity-bar-bg': 'rgba(24, 24, 27, 0.5)',
+      '--gutter-bg-color': 'rgb(24, 24, 27)',
+      '--gutter-border-color': 'rgb(241, 190, 54)',
+      '--activity-bar-bg': 'rgb(24, 24, 27)',
       '--activity-bar-active-fg': '#f1be36',
       '--activity-bar-inactive-fg': '#404040',
       '--activity-bar-active-border': '#f1be36',
       '--activity-bar-badge-bg': '#f1be36',
       '--activity-bar-badge-fg': '#18181b',
-      background: 'rgba(24, 24, 27, 0.55)',
-      sidebar: 'rgba(24, 24, 27, 0.45)',
+      background: 'rgb(24, 24, 27)',
+      sidebar: 'rgb(24, 24, 27)',
       text: '#ffffff',
       accent: '#f1be36',
-      border: 'rgba(241, 190, 54, 0.3)',
+      border: 'rgb(241, 190, 54)',
       // ENABLING GLASS BLUR
       backdropFilter: 'blur(16px) saturate(180%)',
-      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.5)'
+      boxShadow: '0 8px 32px 0 rgb(0, 0, 0)'
     },
     settings: {
       welcome: { welcomePage: '#18181b' },
@@ -478,7 +478,7 @@ export const themes = [
       activityBar: {
         bgColor: '#18181b',
         activeFg: '#f1be36',
-        inactiveFg: 'rgba(241, 190, 54, 0.6)',
+        inactiveFg: 'rgb(241, 190, 54)',
         activeBorder: '#f1be36',
         badgeBg: '#f1be36',
         badgeFg: '#18181b'
@@ -505,18 +505,18 @@ export const themes = [
     icon: '🌊',
     description: 'Deep Blue & Cyan',
     colors: {
-      '--color-bg-primary': 'rgba(15, 23, 42, 0.55)', // Deep Sea Glass Void
+      '--color-bg-primary': 'rgb(15, 23, 42)', // Deep Sea Glass Void
       '--color-tooltip-bg': '#0f172a',
-      '--color-bg-secondary': 'rgba(15, 23, 42, 0.45)',
-      '--color-bg-tertiary': 'rgba(30, 41, 59, 0.45)',
+      '--color-bg-secondary': 'rgb(15, 23, 42)',
+      '--color-bg-tertiary': 'rgb(30, 41, 59)',
       '--color-text-primary': '#f8fafc',
       '--color-text-secondary': '#94a3b8',
       '--color-text-tertiary': '#64748b',
       '--color-accent-primary': '#38bdf8', // Oceanic Cyan
-      '--color-border': 'rgba(56, 189, 248, 0.3)',
-      '--hover-bg': 'rgba(56, 189, 248, 0.15)',
+      '--color-border': 'rgb(56, 189, 248)',
+      '--hover-bg': 'rgb(56, 189, 248)',
       '--hover-text': '#7dd3fc',
-      '--selected-bg': 'rgba(56, 189, 248, 0.25)',
+      '--selected-bg': 'rgb(56, 189, 248)',
       '--selected-text': '#bae6fd',
       '--sidebar-text': '#f8fafc',
       '--sidebar-header-text': '#94a3b8',
@@ -530,33 +530,33 @@ export const themes = [
       '--color-syntax-comment': '#64748b',
       '--color-syntax-punctuation': '#94a3b8',
       // Components
-      '--editor-bg': 'rgba(15, 23, 42, 0.55)',
+      '--editor-bg': 'rgb(15, 23, 42)',
       '--editor-text': '#f8fafc',
       '--gutter-text-color': '#64748b',
-      '--statusbar-bg': 'rgba(15, 23, 42, 0.8)',
+      '--statusbar-bg': 'rgb(15, 23, 42)',
       '--statusbar-text': '#f8fafc',
-      '--header-bg': 'rgba(15, 23, 42, 0.7)',
+      '--header-bg': 'rgb(15, 23, 42)',
       '--header-text': '#f8fafc',
-      '--sidebar-bg': 'rgba(15, 23, 42, 0.45)',
-      '--sidebar-border': 'rgba(56, 189, 248, 0.2)',
-      '--welcome-bg': 'rgba(15, 23, 42, 0.55)',
+      '--sidebar-bg': 'rgb(15, 23, 42)',
+      '--sidebar-border': 'rgb(56, 189, 248)',
+      '--welcome-bg': 'rgb(15, 23, 42)',
       '--welcome-text': '#f8fafc',
-      '--gutter-bg-color': 'rgba(15, 23, 42, 0.05)',
-      '--gutter-border-color': 'rgba(56, 189, 248, 0.1)',
-      '--activity-bar-bg': 'rgba(15, 23, 42, 0.5)',
+      '--gutter-bg-color': 'rgb(15, 23, 42)',
+      '--gutter-border-color': 'rgb(56, 189, 248)',
+      '--activity-bar-bg': 'rgb(15, 23, 42)',
       '--activity-bar-active-fg': '#38bdf8',
       '--activity-bar-inactive-fg': '#404040',
       '--activity-bar-active-border': '#38bdf8',
       '--activity-bar-badge-bg': '#38bdf8',
       '--activity-bar-badge-fg': '#ffffff',
-      background: 'rgba(15, 23, 42, 0.55)',
-      sidebar: 'rgba(15, 23, 42, 0.45)',
+      background: 'rgb(15, 23, 42)',
+      sidebar: 'rgb(15, 23, 42)',
       text: '#f8fafc',
       accent: '#38bdf8',
-      border: 'rgba(56, 189, 248, 0.3)',
+      border: 'rgb(56, 189, 248)',
       // ENABLING GLASS BLUR
       backdropFilter: 'blur(16px) saturate(180%)',
-      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.5)'
+      boxShadow: '0 8px 32px 0 rgb(0, 0, 0)'
     },
     settings: {
       welcome: { welcomePage: '#1e293b' },
@@ -567,7 +567,7 @@ export const themes = [
       activityBar: {
         bgColor: '#1e293b',
         activeFg: '#38bdf8',
-        inactiveFg: 'rgba(255, 255, 255, 0.4)',
+        inactiveFg: 'rgb(255, 255, 255)',
         activeBorder: '#38bdf8',
         badgeBg: '#38bdf8',
         badgeFg: '#0f172a'
@@ -594,18 +594,18 @@ export const themes = [
     icon: '🌋',
     description: 'Fiery Red & Dark',
     colors: {
-      '--color-bg-primary': 'rgba(28, 25, 23, 0.55)', // Glassy Ember Void
+      '--color-bg-primary': 'rgb(28, 25, 23)', // Glassy Ember Void
       '--color-tooltip-bg': '#171717',
-      '--color-bg-secondary': 'rgba(28, 25, 23, 0.45)',
-      '--color-bg-tertiary': 'rgba(45, 38, 32, 0.45)',
+      '--color-bg-secondary': 'rgb(28, 25, 23)',
+      '--color-bg-tertiary': 'rgb(45, 38, 32)',
       '--color-text-primary': '#fafafa',
       '--color-text-secondary': '#a3a3a3',
       '--color-text-tertiary': '#737373',
       '--color-accent-primary': '#f97316', // Magma Orange
-      '--color-border': 'rgba(249, 115, 22, 0.3)',
-      '--hover-bg': 'rgba(249, 115, 22, 0.15)',
+      '--color-border': 'rgb(249, 115, 22)',
+      '--hover-bg': 'rgb(249, 115, 22)',
       '--hover-text': '#fb923c',
-      '--selected-bg': 'rgba(249, 115, 22, 0.25)',
+      '--selected-bg': 'rgb(249, 115, 22)',
       '--selected-text': '#fdba74',
       '--sidebar-text': '#fafafa',
       '--sidebar-header-text': '#a3a3a3',
@@ -619,34 +619,34 @@ export const themes = [
       '--color-syntax-comment': '#737373',
       '--color-syntax-punctuation': '#a3a3a3',
       // Components
-      '--editor-bg': 'rgba(28, 25, 23, 0.55)',
+      '--editor-bg': 'rgb(28, 25, 23)',
       '--editor-text': '#fafafa',
       '--gutter-text-color': '#737373',
-      '--statusbar-bg': 'rgba(28, 25, 23, 0.8)',
+      '--statusbar-bg': 'rgb(28, 25, 23)',
       '--statusbar-text': '#fafafa',
-      '--header-bg': 'rgba(28, 25, 23, 0.7)',
+      '--header-bg': 'rgb(28, 25, 23)',
       '--header-text': '#fafafa',
-      '--sidebar-bg': 'rgba(28, 25, 23, 0.45)',
-      '--sidebar-border': 'rgba(249, 115, 22, 0.2)',
-      '--welcome-bg': 'rgba(28, 25, 23, 0.55)',
+      '--sidebar-bg': 'rgb(28, 25, 23)',
+      '--sidebar-border': 'rgb(249, 115, 22)',
+      '--welcome-bg': 'rgb(28, 25, 23)',
       '--welcome-text': '#fafafa',
 
-      '--gutter-bg-color': 'rgba(28, 25, 23, 0.05)',
-      '--gutter-border-color': 'rgba(249, 115, 22, 0.1)',
-      '--activity-bar-bg': 'rgba(28, 25, 23, 0.5)',
+      '--gutter-bg-color': 'rgb(28, 25, 23)',
+      '--gutter-border-color': 'rgb(249, 115, 22)',
+      '--activity-bar-bg': 'rgb(28, 25, 23)',
       '--activity-bar-active-fg': '#f97316',
       '--activity-bar-inactive-fg': '#404040',
       '--activity-bar-active-border': '#ef4444',
       '--activity-bar-badge-bg': '#ef4444',
       '--activity-bar-badge-fg': '#ffffff',
-      background: 'rgba(28, 25, 23, 0.55)',
-      sidebar: 'rgba(28, 25, 23, 0.45)',
+      background: 'rgb(28, 25, 23)',
+      sidebar: 'rgb(28, 25, 23)',
       text: '#fafafa',
       accent: '#f97316',
-      border: 'rgba(249, 115, 22, 0.3)',
+      border: 'rgb(249, 115, 22)',
       // ENABLING GLASS BLUR
       backdropFilter: 'blur(16px) saturate(180%)',
-      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.5)'
+      boxShadow: '0 8px 32px 0 rgb(0, 0, 0)'
     },
     settings: {
       welcome: { welcomePage: '#262626' },
@@ -657,7 +657,7 @@ export const themes = [
       activityBar: {
         bgColor: '#262626',
         activeFg: '#f97316',
-        inactiveFg: 'rgba(255, 255, 255, 0.4)',
+        inactiveFg: 'rgb(255, 255, 255)',
         activeBorder: '#ef4444',
         badgeBg: '#ef4444',
         badgeFg: '#ffffff'
@@ -684,18 +684,18 @@ export const themes = [
     icon: '☁️',
     description: 'Clean & minimal',
     colors: {
-      '--color-bg-primary': 'rgba(255, 255, 255, 0.7)', // Steel Glass Void
+      '--color-bg-primary': 'rgb(255, 255, 255)', // Steel Glass Void
       '--color-tooltip-bg': '#ffffff',
-      '--color-bg-secondary': 'rgba(246, 246, 246, 0.6)',
-      '--color-bg-tertiary': 'rgba(237, 237, 237, 0.5)',
+      '--color-bg-secondary': 'rgb(246, 246, 246)',
+      '--color-bg-tertiary': 'rgb(237, 237, 237)',
       '--color-text-primary': '#000000',
       '--color-text-secondary': '#404040',
       '--color-text-tertiary': '#737373',
       '--color-accent-primary': '#000000',
-      '--color-border': 'rgba(0, 0, 0, 0.1)',
-      '--hover-bg': 'rgba(0, 0, 0, 0.05)',
+      '--color-border': 'rgb(0, 0, 0)',
+      '--hover-bg': 'rgb(0, 0, 0)',
       '--hover-text': '#000000',
-      '--selected-bg': 'rgba(0, 0, 0, 0.1)',
+      '--selected-bg': 'rgb(0, 0, 0)',
       '--selected-text': '#000000',
       '--sidebar-text': '#000000',
       '--sidebar-header-text': '#000000',
@@ -709,34 +709,34 @@ export const themes = [
       '--color-syntax-comment': '#737373',
       '--color-syntax-punctuation': '#404040',
       // Component-specific variables
-      '--editor-bg': 'rgba(255, 255, 255, 0.7)',
+      '--editor-bg': 'rgb(255, 255, 255)',
       '--editor-text': '#000000',
       '--gutter-text-color': '#000000',
-      '--statusbar-bg': 'rgba(246, 246, 246, 0.8)',
+      '--statusbar-bg': 'rgb(246, 246, 246)',
       '--statusbar-text': '#000000',
-      '--header-bg': 'rgba(246, 246, 246, 0.7)',
+      '--header-bg': 'rgb(246, 246, 246)',
       '--header-text': '#000000',
-      '--sidebar-bg': 'rgba(246, 246, 246, 0.6)',
-      '--sidebar-border': 'rgba(0, 0, 0, 0.05)',
-      '--welcome-bg': 'rgba(255, 255, 255, 0.7)',
+      '--sidebar-bg': 'rgb(246, 246, 246)',
+      '--sidebar-border': 'rgb(0, 0, 0)',
+      '--welcome-bg': 'rgb(255, 255, 255)',
       '--welcome-text': '#000000',
 
-      '--gutter-bg-color': 'rgba(246, 246, 246, 0.05)',
-      '--gutter-border-color': 'rgba(0, 0, 0, 0.05)',
-      '--activity-bar-bg': 'rgba(246, 246, 246, 0.6)',
+      '--gutter-bg-color': 'rgb(246, 246, 246)',
+      '--gutter-border-color': 'rgb(0, 0, 0)',
+      '--activity-bar-bg': 'rgb(246, 246, 246)',
       '--activity-bar-active-fg': '#000000',
       '--activity-bar-inactive-fg': '#737373',
       '--activity-bar-active-border': '#000000',
       '--activity-bar-badge-bg': '#000000',
       '--activity-bar-badge-fg': '#ffffff',
-      background: 'rgba(255, 255, 255, 0.7)',
-      sidebar: 'rgba(246, 246, 246, 0.6)',
+      background: 'rgb(255, 255, 255)',
+      sidebar: 'rgb(246, 246, 246)',
       text: '#000000',
       accent: '#000000',
-      border: 'rgba(0, 0, 0, 0.1)',
+      border: 'rgb(0, 0, 0)',
       // ENABLING GLASS BLUR
       backdropFilter: 'blur(16px) saturate(180%)',
-      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.05)'
+      boxShadow: '0 8px 32px 0 rgb(0, 0, 0)'
     },
     settings: {
       welcome: {
@@ -762,7 +762,7 @@ export const themes = [
       activityBar: {
         bgColor: '#f6f6f6',
         activeFg: '#000000',
-        inactiveFg: 'rgba(0, 0, 0, 0.4)',
+        inactiveFg: 'rgb(0, 0, 0)',
         activeBorder: '#000000',
         badgeBg: '#000000',
         badgeFg: '#ffffff'
@@ -789,18 +789,18 @@ export const themes = [
     icon: '🔮',
     description: 'Glassmorphism with Purple Glow',
     colors: {
-      '--color-bg-primary': 'rgba(34, 30, 42, 0.5)', // Purple-tinted Void
+      '--color-bg-primary': 'rgb(34, 30, 42)', // Purple-tinted Void
       '--color-tooltip-bg': '#1e1e2e',
-      '--color-bg-secondary': 'rgba(34, 30, 42, 0.4)',
-      '--color-bg-tertiary': 'rgba(48, 44, 62, 0.45)',
+      '--color-bg-secondary': 'rgb(34, 30, 42)',
+      '--color-bg-tertiary': 'rgb(48, 44, 62)',
       '--color-text-primary': '#dcddde',
       '--color-text-secondary': '#999999',
       '--color-text-tertiary': '#666666',
       '--color-accent-primary': '#7c3aed', // Obsidian Purple
-      '--color-border': 'rgba(124, 58, 237, 0.3)',
-      '--hover-bg': 'rgba(124, 58, 237, 0.15)',
+      '--color-border': 'rgb(124, 58, 237)',
+      '--hover-bg': 'rgb(124, 58, 237)',
       '--hover-text': '#a78bfa',
-      '--selected-bg': 'rgba(124, 58, 237, 0.25)',
+      '--selected-bg': 'rgb(124, 58, 237)',
       '--selected-text': '#c4b5fd',
       '--sidebar-text': '#dcddde',
       '--sidebar-header-text': '#999999',
@@ -814,54 +814,53 @@ export const themes = [
       '--color-syntax-comment': '#6a9955',
       '--color-syntax-punctuation': '#d4d4d4',
       // Component Variables
-      '--editor-bg': 'rgba(34, 30, 42, 0.5)',
+      '--editor-bg': 'rgb(34, 30, 42)',
       '--editor-text': '#dcddde',
       '--gutter-text-color': '#4a4a4a',
-      '--statusbar-bg': 'rgba(34, 30, 42, 0.8)',
+      '--statusbar-bg': 'rgb(34, 30, 42)',
       '--statusbar-text': '#666666',
-      '--header-bg': 'rgba(34, 30, 42, 0.7)',
+      '--header-bg': 'rgb(34, 30, 42)',
       '--header-text': '#dcddde',
-      '--sidebar-bg': 'rgba(34, 30, 42, 0.4)',
-      '--sidebar-border': 'rgba(124, 58, 237, 0.2)',
-      '--welcome-bg': 'rgba(34, 30, 42, 0.5)',
+      '--sidebar-bg': 'rgb(34, 30, 42)',
+      '--sidebar-border': 'rgb(124, 58, 237)',
+      '--welcome-bg': 'rgb(34, 30, 42)',
       '--welcome-text': '#dcddde',
-      '--gutter-bg-color': 'rgba(34, 30, 42, 0.05)',
-      '--gutter-border-color': 'rgba(124, 58, 237, 0.1)',
-      '--activity-bar-bg': 'rgba(34, 30, 42, 0.5)',
+      '--gutter-bg-color': 'rgb(34, 30, 42)',
+      '--gutter-border-color': 'rgb(124, 58, 237)',
+      '--activity-bar-bg': 'rgb(34, 30, 42)',
       '--activity-bar-active-fg': '#7c3aed',
       '--activity-bar-inactive-fg': '#404040',
       '--activity-bar-active-border': '#7c3aed',
       '--activity-bar-badge-bg': '#7c3aed',
       '--activity-bar-badge-fg': '#ffffff',
-      background: 'rgba(34, 30, 42, 0.5)',
-      sidebar: 'rgba(34, 30, 42, 0.4)',
+      background: 'rgb(34, 30, 42)',
+      sidebar: 'rgb(34, 30, 42)',
       text: '#dcddde',
       accent: '#7c3aed',
-      border: 'rgba(124, 58, 237, 0.3)',
+      border: 'rgb(124, 58, 237)',
       // ENABLING GLASS BLUR
       backdropFilter: 'blur(16px) saturate(180%)',
-      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.5)'
+      boxShadow: '0 8px 32px 0 rgb(0, 0, 0)'
     },
     settings: {
-      welcome: { welcomePage: 'rgba(22, 22, 22, 0.85)' },
+      welcome: { welcomePage: 'rgb(22, 22, 22)' },
       editor: {
-        editorBgColor: 'rgba(22, 22, 22, 0.85)',
-        fontFamily: 'JetBrains Mono'
+        editorBgColor: 'rgb(22, 22, 22)'
       },
       gutter: {
-        gutterBgColor: 'rgba(22, 22, 22, 0.85)',
-        gutterBorderColor: 'rgba(124, 58, 237, 0.2)',
+        gutterBgColor: 'rgb(22, 22, 22)',
+        gutterBorderColor: 'rgb(124, 58, 237)',
         gutterBorderWidth: 1
       },
       cursor: { color: '#7c3aed' },
       livePreview: {
-        bgColor: 'rgba(22, 22, 22, 0.85)',
-        borderColor: 'rgba(124, 58, 237, 0.3)',
+        bgColor: 'rgb(22, 22, 22)',
+        borderColor: 'rgb(124, 58, 237)',
         borderWidth: 1,
         borderRound: 8
       },
       activityBar: {
-        bgColor: 'rgba(32, 32, 32, 0.75)',
+        bgColor: 'rgb(32, 32, 32)',
         activeFg: '#7c3aed',
         inactiveFg: '#404040',
         activeBorder: '#7c3aed',
@@ -869,18 +868,18 @@ export const themes = [
         badgeFg: '#ffffff'
       },
       header: {
-        bgColor: 'rgba(32, 32, 32, 0.85)',
+        bgColor: 'rgb(32, 32, 32)',
         textColor: '#dcddde',
         iconColor: '#9f67ff',
-        borderColor: 'rgba(124, 58, 237, 0.2)'
+        borderColor: 'rgb(124, 58, 237)'
       },
       ui: {
-        sidebarBg: 'rgba(32, 32, 32, 0.75)',
+        sidebarBg: 'rgb(32, 32, 32)',
         sidebarIconColor: '#7c3aed',
-        statusBarBg: 'rgba(32, 32, 32, 0.75)',
-        footerBg: 'rgba(32, 32, 32, 0.75)',
-        headerBg: 'rgba(32, 32, 32, 0.85)',
-        commandPaletteBg: 'rgba(22, 22, 22, 0.95)'
+        statusBarBg: 'rgb(32, 32, 32)',
+        footerBg: 'rgb(32, 32, 32)',
+        headerBg: 'rgb(32, 32, 32)',
+        commandPaletteBg: 'rgb(22, 22, 22)'
       }
     },
     previewColors: ['bg-[#1a1a1a]', 'bg-[rgba(32,32,32,0.75)]', 'bg-purple-600']
@@ -891,26 +890,26 @@ export const themes = [
     icon: '💎',
     description: 'Glassmorphism with Blue Glow',
     colors: {
-      '--color-bg-primary': 'rgba(30, 41, 59, 0.75)', // Unified Glassy Cobalt
+      '--color-bg-primary': 'rgb(30, 41, 59)', // Unified Glassy Cobalt
       '--color-tooltip-bg': '#0f172a',
-      '--color-bg-secondary': 'rgba(30, 41, 59, 0.65)',
-      '--color-bg-tertiary': 'rgba(51, 65, 85, 0.5)',
+      '--color-bg-secondary': 'rgb(30, 41, 59)',
+      '--color-bg-tertiary': 'rgb(51, 65, 85)',
       '--color-text-primary': '#f1f5f9',
       '--color-text-secondary': '#94a3b8',
       '--color-text-tertiary': '#64748b',
       '--color-accent-primary': '#3b82f6',
-      '--color-border': 'rgba(59, 130, 246, 0.3)',
-      '--hover-bg': 'rgba(59, 130, 246, 0.15)',
+      '--color-border': 'rgb(59, 130, 246)',
+      '--hover-bg': 'rgb(59, 130, 246)',
       '--hover-text': '#60a5fa',
-      '--selected-bg': 'rgba(59, 130, 246, 0.3)',
+      '--selected-bg': 'rgb(59, 130, 246)',
       '--selected-text': '#93c5fd',
       '--sidebar-text': '#f1f5f9',
       '--sidebar-header-text': '#cbd5e1',
       // Search Highlighting
-      '--search-match-bg': 'rgba(59, 130, 246, 0.3)',
-      '--search-match-border': 'rgba(59, 130, 246, 0.5)',
-      '--search-match-current-bg': 'rgba(59, 130, 246, 0.5)',
-      '--search-match-current-border': 'rgba(147, 197, 253, 0.8)',
+      '--search-match-bg': 'rgb(59, 130, 246)',
+      '--search-match-border': 'rgb(59, 130, 246)',
+      '--search-match-current-bg': 'rgb(59, 130, 246)',
+      '--search-match-current-border': 'rgb(147, 197, 253)',
       // Livewire/Blade Syntax Highlighting
       '--color-syntax-string': '#38bdf8',
       '--color-syntax-variable': '#818cf8',
@@ -921,74 +920,73 @@ export const themes = [
       '--color-syntax-comment': '#475569',
       '--color-syntax-punctuation': '#cbd5e1',
       // Component-specific variables
-      '--editor-bg': 'rgba(30, 41, 59, 0.75)', // Matches primary background
+      '--editor-bg': 'rgb(30, 41, 59)', // Matches primary background
       '--editor-text': '#f1f5f9',
       '--gutter-text-color': '#475569',
-      '--statusbar-bg': 'rgba(30, 41, 59, 0.9)',
+      '--statusbar-bg': 'rgb(30, 41, 59)',
       '--statusbar-text': '#94a3b8',
-      '--header-bg': 'rgba(30, 41, 59, 0.8)',
+      '--header-bg': 'rgb(30, 41, 59)',
       '--header-text': '#f1f5f9',
-      '--sidebar-bg': 'rgba(30, 41, 59, 0.65)',
-      '--sidebar-border': 'rgba(59, 130, 246, 0.2)',
-      '--welcome-bg': 'rgba(30, 41, 59, 0.75)',
+      '--sidebar-bg': 'rgb(30, 41, 59)',
+      '--sidebar-border': 'rgb(59, 130, 246)',
+      '--welcome-bg': 'rgb(30, 41, 59)',
       '--welcome-text': '#f1f5f9',
       // Gutter variables
-      '--gutter-bg-color': 'rgba(30, 41, 59, 0.05)', // Very subtle gutter
-      '--gutter-border-color': 'rgba(59, 130, 246, 0.1)',
-      '--activity-bar-bg': 'rgba(30, 41, 59, 0.7)',
+      '--gutter-bg-color': 'rgb(30, 41, 59)', // Very subtle gutter
+      '--gutter-border-color': 'rgb(59, 130, 246)',
+      '--activity-bar-bg': 'rgb(30, 41, 59)',
       '--activity-bar-active-fg': '#3b82f6',
       '--activity-bar-inactive-fg': '#64748b',
       '--activity-bar-active-border': '#3b82f6',
       '--activity-bar-badge-bg': '#3b82f6',
       '--activity-bar-badge-fg': '#ffffff',
-      background: 'rgba(30, 41, 59, 0.75)',
-      sidebar: 'rgba(30, 41, 59, 0.65)',
+      background: 'rgb(30, 41, 59)',
+      sidebar: 'rgb(30, 41, 59)',
       text: '#f1f5f9',
       accent: '#3b82f6',
-      border: 'rgba(59, 130, 246, 0.3)',
+      border: 'rgb(59, 130, 246)',
       // ENABLING GLASS BLUR
       backdropFilter: 'blur(16px) saturate(180%)',
-      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)'
+      boxShadow: '0 8px 32px 0 rgb(0, 0, 0)'
     },
     settings: {
-      welcome: { welcomePage: 'rgba(30, 41, 59, 0.75)' },
+      welcome: { welcomePage: 'rgb(30, 41, 59)' },
       editor: {
-        editorBgColor: 'rgba(15, 23, 42, 0.85)',
-        fontFamily: 'JetBrains Mono'
+        editorBgColor: 'rgb(15, 23, 42)'
       },
       gutter: {
-        gutterBgColor: 'rgba(30, 41, 59, 0.75)',
-        gutterBorderColor: 'rgba(59, 130, 246, 0.2)',
+        gutterBgColor: 'rgb(30, 41, 59)',
+        gutterBorderColor: 'rgb(59, 130, 246)',
         gutterBorderWidth: 1
       },
       cursor: { color: '#3b82f6' },
       livePreview: {
-        bgColor: 'rgba(15, 23, 42, 0.85)',
-        borderColor: 'rgba(59, 130, 246, 0.3)',
+        bgColor: 'rgb(15, 23, 42)',
+        borderColor: 'rgb(59, 130, 246)',
         borderWidth: 1,
         borderRound: 8
       },
       activityBar: {
-        bgColor: 'rgba(30, 41, 59, 0.75)',
+        bgColor: 'rgb(30, 41, 59)',
         activeFg: '#3b82f6',
-        inactiveFg: 'rgba(241, 245, 249, 0.4)',
+        inactiveFg: 'rgb(241, 245, 249)',
         activeBorder: '#3b82f6',
         badgeBg: '#3b82f6',
         badgeFg: '#ffffff'
       },
       header: {
-        bgColor: 'rgba(15, 23, 42, 0.85)',
+        bgColor: 'rgb(15, 23, 42)',
         textColor: '#f1f5f9',
         iconColor: '#60a5fa',
-        borderColor: 'rgba(59, 130, 246, 0.2)'
+        borderColor: 'rgb(59, 130, 246)'
       },
       ui: {
-        sidebarBg: 'rgba(30, 41, 59, 0.75)',
+        sidebarBg: 'rgb(30, 41, 59)',
         sidebarIconColor: '#3b82f6',
-        statusBarBg: 'rgba(30, 41, 59, 0.75)',
-        footerBg: 'rgba(30, 41, 59, 0.75)',
-        headerBg: 'rgba(15, 23, 42, 0.85)',
-        commandPaletteBg: 'rgba(15, 23, 42, 0.95)' // More opaque for readability
+        statusBarBg: 'rgb(30, 41, 59)',
+        footerBg: 'rgb(30, 41, 59)',
+        headerBg: 'rgb(15, 23, 42)',
+        commandPaletteBg: 'rgb(15, 23, 42)' // More opaque for readability
       }
     },
     previewColors: ['bg-[rgba(15,23,42,0.85)]', 'bg-[rgba(30,41,59,0.75)]', 'bg-blue-500']
@@ -1049,10 +1047,18 @@ export const themeStyles = {
     sidebarText: '#000000',
     sidebarHeaderText: '#000000'
   },
+  obsidian: {
+    hoverBg: '#2b2640',
+    hoverText: '#a78bfa',
+    selectedBg: '#4c1d95',
+    selectedText: '#c4b5fd',
+    sidebarText: '#dcddde',
+    sidebarHeaderText: '#999999'
+  },
   'glass-blue': {
-    hoverBg: 'rgba(59, 130, 246, 0.15)',
+    hoverBg: 'rgb(59, 130, 246)',
     hoverText: '#60a5fa',
-    selectedBg: 'rgba(59, 130, 246, 0.25)',
+    selectedBg: 'rgb(59, 130, 246)',
     selectedText: '#93c5fd',
     sidebarText: '#f1f5f9',
     sidebarHeaderText: '#cbd5e1'

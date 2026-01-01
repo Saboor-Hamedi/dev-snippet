@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { Save, Code, Sliders, RotateCcw } from 'lucide-react'
+import { Save, RotateCcw } from 'lucide-react'
 import { useSettings } from '../../hook/useSettingsContext'
 import { useToast } from '../../hook/useToast'
 import CodeEditor from '../CodeEditor/CodeEditor'
 import SettingsForm from '../settings/SettingsForm'
 import cleanErrorJson from '../../hook/useCleanErrorJson.js'
 import ToastNotification from '../../utils/ToastNotification'
+import KeyboardShortcuts, { MODE_CONFIG } from '../../features/keyboard/KeyboardShortcutsSection'
 
 const UserSettings = () => {
   const { settings, updateSettings, resetSettings: contextResetSettings } = useSettings()
   const { toast, showToast } = useToast()
 
-  // 'ui' or 'json'
+  // 'ui', 'shortcuts', or 'json'
   const [mode, setMode] = useState('ui')
 
   // Local state for the JSON editor string
@@ -24,6 +25,9 @@ const UserSettings = () => {
       setJsonText(JSON.stringify(settings, null, 2))
     }
   }, [settings, mode])
+
+  const isMac = typeof navigator !== 'undefined' && /mac|iphone|ipod|ipad/i.test(navigator.platform)
+  const modKey = isMac ? '⌘' : 'Ctrl'
 
   const handleJsonSave = () => {
     try {
@@ -47,7 +51,10 @@ const UserSettings = () => {
   const headerPortalTarget = document.getElementById('settings-header-right')
 
   return (
-    <div className="flex flex-col h-full bg-transparent text-slate-900 dark:text-slate-100 transition-colors duration-300 overflow-hidden relative">
+    <div
+      className="flex flex-col h-full text-slate-900 dark:text-slate-100 transition-colors duration-300 overflow-hidden relative"
+      style={{ backgroundColor: 'rgb(var(--color-bg-primary-rgb))' }}
+    >
       <ToastNotification toast={toast} />
 
       {/* Mode Switcher & Controls - Portaled to Header */}
@@ -55,24 +62,22 @@ const UserSettings = () => {
         createPortal(
           <div className="flex items-center gap-2 sm:gap-4 ml-2">
             {/* Mode Switcher */}
-            <div className="flex items-center">
-              <button
-                onClick={() => setMode(mode === 'ui' ? 'json' : 'ui')}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded-md text-[10px] font-medium transition-all"
-                title={mode === 'ui' ? 'Switch to Source Code' : 'Switch to Visual Editor'}
-              >
-                {mode === 'ui' ? (
-                  <>
-                    <Code size={12} className="opacity-70" />
-                    <span className="hidden sm:inline">View Source</span>
-                  </>
-                ) : (
-                  <>
-                    <Sliders size={12} className="opacity-70" />
-                    <span className="hidden sm:inline">Visual Editor</span>
-                  </>
-                )}
-              </button>
+            <div className="flex items-center bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-md overflow-hidden">
+              {MODE_CONFIG.map(({ id, label, tooltip, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setMode(id)}
+                  title={tooltip}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-medium transition-all ${
+                    mode === id
+                      ? 'bg-[var(--color-accent-bg, var(--color-bg-tertiary))] text-[var(--color-text-primary)]'
+                      : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)]'
+                  } ${id !== MODE_CONFIG[MODE_CONFIG.length - 1].id ? 'border-r border-[var(--color-border)]' : ''}`}
+                >
+                  <Icon size={12} className="opacity-70" />
+                  <span className="hidden sm:inline">{label}</span>
+                </button>
+              ))}
             </div>
 
             {/* Actions */}
@@ -105,7 +110,9 @@ const UserSettings = () => {
           <div className="max-w-3xl mx-auto py-6 px-4 sm:px-6 overflow-y-auto h-full custom-scrollbar flex-1">
             <SettingsForm key="visual-settings" />
           </div>
-        ) : (
+        ) : null}
+
+        {mode === 'json' ? (
           <div className="flex-1 flex flex-col min-w-0" key="json-settings">
             <div className="flex-1 relative min-h-0 border-t border-[var(--color-border)] overflow-hidden">
               <CodeEditor
@@ -118,7 +125,18 @@ const UserSettings = () => {
               />
             </div>
           </div>
-        )}
+        ) : null}
+
+        {mode === 'shortcuts' ? (
+          <div
+            className="flex-1 overflow-y-auto custom-scrollbar px-4 sm:px-6 py-6"
+            key="shortcuts"
+          >
+            <div className="max-w-3xl mx-auto w-full">
+              <KeyboardShortcuts modKey={modKey} />
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   )

@@ -22,8 +22,8 @@ export const DEFAULT_SETTINGS = {
     cursorShape: 'bar',
     cursorBlinking: true,
     cursorBlinkingSpeed: 500,
-    cursorSelectionBg: '#58a6ff33',
-    cursorActiveLineBg: 'rgba(88, 166, 255, 0.1)',
+    cursorSelectionBg: 'rgb(var(--color-accent-primary-rgb))',
+    cursorActiveLineBg: 'transparent',
     cursorShadowBoxColor: '#58a6ff'
   },
   gutter: {
@@ -40,7 +40,7 @@ export const DEFAULT_SETTINGS = {
     overlayMode: false
   },
   header: {
-    bgColor: '#232731',
+    bgColor: '#0d1117',
     textColor: '#c9d1d9',
     iconColor: '#c9d1d9',
     borderColor: '#30363d'
@@ -85,7 +85,7 @@ export const DEFAULT_SETTINGS = {
   activityBar: {
     bgColor: '#18181b',
     activeFg: '#f1be36',
-    inactiveFg: 'rgba(255, 255, 255, 0.4)',
+    inactiveFg: 'rgb(255, 255, 255)',
     activeBorder: '#d946ef',
     badgeBg: '#d946ef',
     badgeFg: '#ffffff'

@@ -18,6 +18,7 @@ import { useFlowMode } from '../FlowMode/useFlowMode'
 import { getBaseTitle } from '../../utils/snippetUtils'
 import { useSessionRestore } from '../../hook/session/useSessionRestore'
 
+// #file:SnippetLibraryInner.jsx orchestrates the entire workbench experience.
 // The Core Logic Component
 const SnippetLibraryInner = ({ snippetData }) => {
   const {
@@ -41,7 +42,8 @@ const SnippetLibraryInner = ({ snippetData }) => {
     trash,
     loadTrash,
     restoreItem,
-    permanentDeleteItem
+    permanentDeleteItem,
+    hasLoadedSnippets
   } = snippetData
 
   const { activeView, showPreview, togglePreview, navigateTo } = useView()
@@ -50,6 +52,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
     openDeleteModal,
     openImageExportModal,
     openSettingsModal,
+    openSyncModal,
     isSettingsOpen
   } = useModal()
 
@@ -164,7 +167,8 @@ const SnippetLibraryInner = ({ snippetData }) => {
     activeView,
     setSelectedSnippet, // Reverted to stable setter to prevent loop
     setSelectedFolderId,
-    navigateTo
+    navigateTo,
+    hasLoadedSnippets
   })
 
   const focusEditor = useCallback(() => {
@@ -251,17 +255,19 @@ const SnippetLibraryInner = ({ snippetData }) => {
 
     const draft = createDraftSnippet(dateTitle, folderId, {
       initialCode,
-      skipNavigation: false
+      skipNavigation: false,
+      isPinned: 0,
+      isDraft: false
     })
 
-    // Save immediately with Auto-Pin enabled
+    // Save immediately
     await saveSnippet({
       ...draft,
       is_draft: false,
-      is_pinned: 1
+      is_pinned: 0
     })
 
-    showToast(`Journal entry "${dateTitle}" Pinned!`, 'success')
+    showToast(`Journal entry "${dateTitle}" created`, 'success')
   }
 
   const createDraftSnippet = (initialTitle = '', folderId = null, options = {}) => {
@@ -298,7 +304,8 @@ const SnippetLibraryInner = ({ snippetData }) => {
       code: options.initialCode || '',
       timestamp: Date.now(),
       type: 'snippet',
-      is_draft: true,
+      is_draft: options.isDraft !== undefined ? options.isDraft : true,
+      is_pinned: options.isPinned !== undefined ? options.isPinned : 0,
       folder_id: folderId
     }
     setSnippets((prev) => [draft, ...prev])
@@ -417,6 +424,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
     const onCommandSidebar = () => handleToggleSidebar()
     const onCommandPreview = () => togglePreview()
     const onCommandSettings = () => openSettingsModal()
+    const onCommandSyncCenter = () => openSyncModal()
     const onCommandActivityBar = () => {
       const current = settings?.ui?.showActivityBar !== false
       updateSetting('ui.showActivityBar', !current)
@@ -433,18 +441,6 @@ const SnippetLibraryInner = ({ snippetData }) => {
       const current = settings?.ui?.zenFocus === true
       const next = !current
       updateSetting('ui.zenFocus', next)
-      // When enabling Zen Focus, we also hide sidebars for maximum immersion
-      if (next) {
-        updateSetting('ui.showActivityBar', false)
-        updateSetting('ui.showSidebar', false)
-        updateSetting('ui.showHeader', false)
-        updateSetting('ui.showStatusBar', false)
-      } else {
-        updateSetting('ui.showActivityBar', true)
-        updateSetting('ui.showSidebar', true)
-        updateSetting('ui.showHeader', true)
-        updateSetting('ui.showStatusBar', true)
-      }
       showToast(next ? 'Zen Focus Enabled' : 'Zen Focus Disabled', 'info')
     }
     const onCommandReset = () => {
@@ -508,6 +504,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
     window.addEventListener('app:toggle-sidebar', onCommandSidebar)
     window.addEventListener('app:toggle-preview', onCommandPreview)
     window.addEventListener('app:open-settings', onCommandSettings)
+    window.addEventListener('app:open-sync-center', onCommandSyncCenter)
     window.addEventListener('app:toggle-activity-bar', onCommandActivityBar)
     window.addEventListener('app:toggle-zen', onCommandZen)
     window.addEventListener('app:toggle-zen-focus', onCommandZenFocus)
@@ -528,6 +525,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
       window.removeEventListener('app:toggle-sidebar', onCommandSidebar)
       window.removeEventListener('app:toggle-preview', onCommandPreview)
       window.removeEventListener('app:open-settings', onCommandSettings)
+      window.removeEventListener('app:open-sync-center', onCommandSyncCenter)
       window.removeEventListener('app:toggle-activity-bar', onCommandActivityBar)
       window.removeEventListener('app:toggle-zen', onCommandZen)
       window.removeEventListener('app:toggle-zen-focus', onCommandZenFocus)
@@ -560,6 +558,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
     settings?.ui?.showFlowMode,
     updateSetting,
     openSettingsModal,
+    openSyncModal,
     openImageExportModal
   ])
 

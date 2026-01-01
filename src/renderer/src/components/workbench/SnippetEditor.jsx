@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import PropTypes from 'prop-types'
 import { GripVertical } from 'lucide-react'
-import { useKeyboardShortcuts } from '../../hook/useKeyboardShortcuts.js'
+import { useKeyboardShortcuts } from '../../features/keyboard/useKeyboardShortcuts'
 import { useEditorFocus } from '../../hook/useEditorFocus.js'
 import { useZoomLevel, useEditorZoomLevel } from '../../hook/useSettingsContext'
 import { ZOOM_STEP } from '../../hook/useZoomLevel.js'
@@ -41,7 +41,8 @@ const SnippetEditor = ({
   pinPopover,
   setPinPopover,
   onPing,
-  onFavorite
+  onFavorite,
+  isFlow = false
 }) => {
   const [code, setCode] = useState(initialSnippet?.code || '')
   const handleCodeChange = useCallback((val) => {
@@ -993,7 +994,10 @@ const SnippetEditor = ({
       {!isCreateMode && (!initialSnippet || !initialSnippet.id) && !hideWelcomePage ? (
         <WelcomePage onNewSnippet={onNew} />
       ) : (
-        <div className="h-full overflow-hidden flex flex-col items-stretch relative fade-in">
+        <div
+          className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative SnippetEditor_root"
+          style={{ backgroundColor: 'var(--editor-bg)' }}
+        >
           <div className="flex-1 min-h-0 overflow-hidden editor-container relative flex">
             <AdvancedSplitPane
               rightHidden={!showPreview}
@@ -1027,7 +1031,7 @@ const SnippetEditor = ({
                       className="h-full"
                       textareaRef={textareaRef}
                       snippets={snippets}
-                      zenFocus={getSetting('ui.zenFocus')}
+                      zenFocus={settings?.ui?.zenFocus}
                       onCursorChange={handleCursorChange}
                     />
                   </div>
@@ -1070,6 +1074,7 @@ const SnippetEditor = ({
                             onOpenExternal={handleOpenExternalPreview}
                             onOpenMiniPreview={handleOpenMiniPreview}
                             onExportPDF={handleExportPDF}
+                            zenFocus={settings?.ui?.zenFocus}
                           />
                         </div>
                       )
@@ -1245,7 +1250,7 @@ const SnippetEditor = ({
             stats={stats}
             line={cursorPos.line}
             col={cursorPos.col}
-            minimal={settings?.ui?.showFlowMode}
+            minimal={isFlow || settings?.ui?.showFlowMode}
           />
 
           <Prompt

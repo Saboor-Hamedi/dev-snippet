@@ -16,7 +16,7 @@ const Prompt = ({
   onInputChange,
   placeholder = 'Type here...',
   icon: CustomIcon,
-  zIndex = 10001
+  zIndex = 200000
 }) => {
   const [isProcessing, setIsProcessing] = React.useState(false)
   const inputRef = useRef(null)
@@ -109,16 +109,17 @@ const Prompt = ({
       onMouseDown={onClose}
     >
       {/* Background Overlay */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-300" />
+      <div className="absolute inset-0 bg-black/90 animate-in fade-in duration-300" />
 
       {/* Modal Container */}
       <div
         onMouseDown={(e) => e.stopPropagation()}
-        className="relative w-full max-w-sm bg-[var(--color-bg-primary)] bg-opacity-80 backdrop-blur-2xl rounded-2xl shadow-[0_30px_90px_-20px_rgba(0,0,0,0.8)] border border-white/10 overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 ring-1 ring-white/5"
+        className="relative w-full max-w-sm bg-[var(--color-bg-primary)] rounded-2xl shadow-[0_30px_90px_-20px_rgba(0,0,0,0.8)] border border-[var(--color-border)] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 ring-1 ring-white/5"
+        style={{ backgroundColor: 'rgb(var(--color-bg-primary-rgb))' }}
       >
-        <div className="p-7 text-left">
+        <div className="p-5 text-left">
           {/* Header */}
-          <div className="flex items-center gap-4 mb-5">
+          <div className="flex items-center gap-4 mb-3">
             <div
               className={`w-10 h-10 rounded-xl ${config.iconBg} flex items-center justify-center ${config.iconColor} shadow-inner bg-opacity-20`}
             >
@@ -131,7 +132,7 @@ const Prompt = ({
 
           {/* Message */}
           {message && (
-            <div className="text-[13px] text-[var(--color-text-secondary)] mb-6 leading-relaxed opacity-90">
+            <div className="text-[13px] text-[var(--color-text-secondary)] mb-4 leading-relaxed opacity-90">
               {message}
             </div>
           )}
@@ -153,7 +154,7 @@ const Prompt = ({
           )}
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 mt-7">
+          <div className="flex justify-end gap-3 mt-4">
             <button
               onClick={(e) => {
                 e.currentTarget.blur()

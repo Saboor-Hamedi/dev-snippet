@@ -10,8 +10,6 @@ import SnippetSidebar from './SnippetSidebar'
 import ActivityBar from '../layout/activityBar/ActivityBar'
 import { StatusBar, SystemStatusFooter } from '../layout/StatusBar/useStatusBar'
 import { useModal } from './manager/ModalContext'
-import FlowStatusBadge from '../FlowMode/FlowStatusBadge'
-import FlowPreview from '../FlowMode/FlowPreview'
 import UniversalModal from '../universal/UniversalModal'
 import FlowWorkspace from '../FlowMode/FlowWorkspace'
 import '../FlowMode/FlowMode.css'
@@ -138,7 +136,7 @@ const Workbench = ({
     }
   }
 
-  const renderContent = () => {
+  const renderContent = (isFlow = false) => {
     if (activeView === 'settings') {
       return <SettingsPanel onClose={onCloseSettings} />
     }
@@ -158,11 +156,12 @@ const Workbench = ({
           onToggleCompact={onToggleCompact}
           onAutosave={onAutosave}
           showToast={showToast}
-          showPreview={showPreview}
+          showPreview={isFlow ? false : showPreview}
           pinPopover={pinPopover}
           setPinPopover={setPinPopover}
           onPing={onPing}
           onFavorite={onFavorite}
+          isFlow={isFlow}
         />
       )
     }
@@ -181,11 +180,12 @@ const Workbench = ({
           onToggleCompact={onToggleCompact}
           onAutosave={onAutosave}
           showToast={showToast}
-          showPreview={showPreview}
+          showPreview={isFlow ? false : showPreview}
           pinPopover={pinPopover}
           setPinPopover={setPinPopover}
           onPing={onPing}
           onFavorite={onFavorite}
+          isFlow={isFlow}
         />
       )
     }
@@ -229,9 +229,7 @@ const Workbench = ({
 
   return (
     <div
-      className={`h-full flex flex-col overflow-hidden transition-colors duration-300 ${
-        showFlowMode ? 'flow-mode-active' : ''
-      }`}
+      className={`h-full flex flex-col overflow-hidden ${showFlowMode ? 'flow-mode-active' : ''}`}
     >
       {/* Header */}
       {settings?.ui?.showHeader !== false && !showFlowMode && (
@@ -268,8 +266,7 @@ const Workbench = ({
             style={{
               width: showFlowMode ? 0 : 40,
               opacity: showFlowMode ? 0 : 1,
-              overflow: 'hidden',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+              overflow: 'hidden'
             }}
           >
             <ActivityBar
@@ -287,12 +284,12 @@ const Workbench = ({
 
         {/* Sidebar */}
         <aside
-          className="flex flex-col overflow-hidden h-full z-10 relative bg-[var(--sidebar-bg)] border-[var(--color-border)]"
+          className="flex flex-col overflow-hidden h-full z-10 relative border-[var(--color-border)] sidebar-container"
           style={{
             width: isSidebarOpen && !showFlowMode ? sidebarWidth : 0,
             opacity: isSidebarOpen && !showFlowMode ? 1 : 0,
             borderRightWidth: isSidebarOpen && !showFlowMode ? 1 : 0,
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+            backgroundColor: 'var(--sidebar-bg)'
           }}
         >
           <div
@@ -352,10 +349,9 @@ const Workbench = ({
 
         {/* Content Area */}
         <div
-          className="flex-1 flex flex-col min-w-0 overflow-hidden transition-all duration-300 relative"
+          className="flex-1 flex flex-col min-w-0 overflow-hidden relative"
           style={{
-            backgroundColor: showFlowMode ? 'transparent' : 'var(--editor-bg)',
-            transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
+            backgroundColor: showFlowMode ? 'transparent' : 'var(--editor-bg)'
           }}
         >
           {showFlowMode && (
@@ -374,11 +370,11 @@ const Workbench = ({
               selectedSnippet={selectedSnippet}
               snippets={snippets}
               fontFamily={settings?.editor?.fontFamily}
-              renderEditor={renderContent}
+              renderEditor={() => renderContent(true)}
               onExit={() => window.dispatchEvent(new CustomEvent('app:toggle-flow'))}
             />
           ) : (
-            <div className="flex-1 flex flex-col overflow-hidden">{renderContent()}</div>
+            <div className="flex-1 flex flex-col overflow-hidden">{renderContent(false)}</div>
           )}
           {/* Status Bar - Only show SystemStatusFooter when NOT in editor mode (SnippetEditor has its own StatusBar) */}
           {settings?.ui?.showStatusBar !== false &&
@@ -391,10 +387,6 @@ const Workbench = ({
             )}
         </div>
       </div>
-
-      {showFlowMode && (
-        <div style={{ display: 'none' }}>{/* Flow session managed by FlowWorkspace header */}</div>
-      )}
     </div>
   )
 }

@@ -189,6 +189,36 @@ class GitHubService {
       throw e
     }
   }
+
+  /**
+   * Fetches the raw contents of a gist file, required when GitHub flags files as truncated
+   */
+  async fetchRawFile(rawUrl, { cacheBust = true } = {}) {
+    if (!rawUrl) {
+      throw new Error('Missing raw_url for gist file')
+    }
+
+    try {
+      const url = cacheBust ? `${rawUrl}${rawUrl.includes('?') ? '&' : '?'}ts=${Date.now()}` : rawUrl
+      const headers = { ...this.getHeaders(), Accept: 'text/plain; charset=utf-8' }
+      const response = await fetch(url, { headers })
+
+      if (!response.ok) {
+        let errText = ''
+        try {
+          errText = await response.text()
+        } catch (_) {}
+        throw new Error(
+          `Failed to fetch raw gist file: ${response.status} ${response.statusText} - ${errText}`
+        )
+      }
+
+      return await response.text()
+    } catch (e) {
+      console.error('GitHubService: fetchRawFile failed', e)
+      throw e
+    }
+  }
 }
 
 export default new GitHubService()

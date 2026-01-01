@@ -33,10 +33,7 @@ const HighlightText = ({ text, highlight }) => {
     <span className="opacity-100">
       {parts.map((part, i) =>
         regex.test(part) ? (
-          <span
-            key={`match-${i}`}
-            className="text-[var(--color-accent-primary)] font-bold decoration-[var(--color-accent-primary)]/30"
-          >
+          <span key={`match-${i}`} className="text-white/60 font-bold">
             {part}
           </span>
         ) : (
@@ -65,7 +62,7 @@ const getFileIcon = (lang, title = '') => {
   const extension = cleanTitle.split('.').pop() || ''
 
   // Daily Note Detection (ISO or String dates)
-  if (isDateTitle(cleanTitle)) return { icon: Calendar, color: '#818cf8' } // Indigo for journals
+  if (isDateTitle(cleanTitle)) return { icon: Calendar, color: '#818cf8' } // Classic Journal Color
 
   if (lang === 'javascript' || lang === 'js' || extension === 'js')
     return { icon: FileCode, color: '#f7df1e' }
@@ -460,13 +457,13 @@ const SnippetSidebarRow = ({ index, style, data }) => {
           isCompact ? 'text-[11px]' : 'text-[12px]'
         } ${
           isSelected
-            ? 'bg-[var(--selected-bg)]'
+            ? 'bg-black/[0.04] dark:bg-white/[0.06]'
             : isSearchMatch
-              ? 'bg-[var(--color-accent-primary)]/10'
-              : 'hover:bg-white/[0.02]'
+              ? 'bg-black/[0.02] dark:bg-white/[0.04]'
+              : 'hover:bg-black/[0.02] dark:hover:bg-white/[0.04]'
         } rounded-[4px]`}
         style={{
-          color: isSelected ? 'var(--selected-text)' : 'var(--sidebar-text)',
+          color: isSelected ? 'var(--color-text-primary)' : 'var(--sidebar-text)',
           paddingLeft: `${depth * 16 + 24}px`,
           width: 'calc(100% - 8px)',
           margin: '0 4px'
@@ -483,7 +480,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         <span className="flex-1 truncate opacity-80 group-hover/row:opacity-100 pl-1 text-left flex items-center gap-2">
           <HighlightText text={safeTitle || 'Untitled'} highlight={searchQuery} />
           {isTodayLog && (
-            <span className="text-[8px] px-1 py-0 rounded bg-[var(--color-accent-primary)]/10 text-[var(--color-accent-primary)] font-bold uppercase tracking-tighter animate-pulse">
+            <span className="text-[8px] px-1 py-0 rounded bg-[var(--color-accent-primary)]/10 text-[var(--color-accent-primary)] font-bold uppercase tracking-tighter">
               Today
             </span>
           )}

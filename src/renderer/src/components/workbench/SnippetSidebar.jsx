@@ -346,7 +346,7 @@ const SnippetSidebar = ({
             onClick={() => handleSmartCreation('snippet')}
             className="p-1 rounded opacity-60 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all"
             title="New Snippet"
-            style={{ color: 'var(--sidebar-text)' }}
+            style={{ color: 'var(--sidebar-icon-color, var(--sidebar-text))' }}
           >
             <FilePlus size={16} strokeWidth={2} />
           </button>
@@ -354,7 +354,7 @@ const SnippetSidebar = ({
             onClick={() => handleSmartCreation('folder')}
             className="p-1 rounded opacity-60 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all"
             title="New Folder"
-            style={{ color: 'var(--sidebar-text)' }}
+            style={{ color: 'var(--sidebar-icon-color, var(--sidebar-text))' }}
           >
             <FolderPlus size={16} strokeWidth={2} />
           </button>
@@ -366,7 +366,7 @@ const SnippetSidebar = ({
             }}
             className="p-1 rounded opacity-60 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all"
             title="Collapse / Deselect All"
-            style={{ color: 'var(--sidebar-text)' }}
+            style={{ color: 'var(--sidebar-icon-color, var(--sidebar-text))' }}
           >
             <ChevronsUp size={16} strokeWidth={2} />
           </button>

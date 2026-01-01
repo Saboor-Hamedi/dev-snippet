@@ -113,6 +113,8 @@ const buildExtensions = async (options, handlers = {}) => {
     } = await import('@codemirror/autocomplete')
 
     // Define premium syntax highlighting style
+    // NOTE: Font sizes are controlled by buildTheme.js (.cm-h1, .cm-h2, etc.)
+    // This HighlightStyle only handles COLORS and STYLES, not sizes
     const premiumHighlightStyle = HighlightStyle.define([
       { tag: t.keyword, color: 'var(--color-syntax-keyword, #ff7b72)', fontWeight: 'bold' },
       {
@@ -134,12 +136,13 @@ const buildExtensions = async (options, handlers = {}) => {
         color: 'var(--color-syntax-punctuation, #8b949e)'
       },
       { tag: t.heading, color: 'var(--color-accent-primary, #58a6ff)', fontWeight: 'bold' },
-      { tag: t.heading1, fontSize: '1.8em' },
-      { tag: t.heading2, fontSize: '1.4em' },
-      { tag: t.heading3, fontSize: '1.2em' },
-      { tag: t.heading4, fontSize: '1.1em' },
-      { tag: t.heading5, fontSize: '1em' },
-      { tag: t.heading6, fontSize: '0.9em' },
+      // REMOVED fontSize from headings - controlled by buildTheme.js instead
+      { tag: t.heading1 },
+      { tag: t.heading2 },
+      { tag: t.heading3 },
+      { tag: t.heading4 },
+      { tag: t.heading5 },
+      { tag: t.heading6 },
       { tag: t.link, color: 'var(--color-accent-secondary, #58a6ff)', textDecoration: 'underline' },
       { tag: t.strong, fontWeight: 'bold' },
       { tag: t.emphasis, fontStyle: 'italic' },

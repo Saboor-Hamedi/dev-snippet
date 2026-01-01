@@ -18,14 +18,14 @@ const Row = ({ index, style, data }) => {
   return (
     <div style={style} className="group">
       <div
-        className="flex items-center gap-3 px-3 w-full text-left h-full text-sm select-none rounded-xl hover:bg-white/5 transition-all relative border border-transparent hover:border-white/5"
+        className="flex items-center gap-3 px-3 w-full text-left h-full text-sm select-none rounded-xl hover:bg-[var(--color-bg-tertiary)] transition-all relative border border-transparent hover:border-[var(--color-border)]"
         onContextMenu={(e) => {
           e.preventDefault()
           onContextMenu(e, item)
         }}
       >
         <div
-          className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 transition-all group-hover:bg-white/10"
+          className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center bg-[var(--color-bg-tertiary)] transition-all group-hover:bg-[var(--color-bg-secondary)]"
           style={{ color }}
         >
           <Icon size={16} strokeWidth={2} />
@@ -125,20 +125,20 @@ const TrashModal = ({
 
   return (
     <div
-      className="fixed inset-0 z-[10001] flex items-center justify-center px-4 overflow-hidden"
+      className="fixed inset-0 z-[200000] flex items-center justify-center px-4 overflow-hidden"
       onMouseDown={onClose}
     >
       {/* Background Overlay */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-300" />
+      <div className="absolute inset-0 bg-black/90 animate-in fade-in duration-300" />
 
       {/* Modal Container */}
       <div
         onMouseDown={(e) => e.stopPropagation()}
-        className="relative w-full max-w-md bg-[var(--color-bg-primary)] bg-opacity-80 backdrop-blur-2xl rounded-2xl shadow-[0_30px_90px_-20px_rgba(0,0,0,0.8)] border border-white/10 overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 ring-1 ring-white/5"
-        style={{ height: '50vh' }}
+        className="relative w-full max-w-md bg-[var(--color-bg-primary)] rounded-2xl shadow-[0_30px_90px_-20px_rgba(0,0,0,0.8)] border border-[var(--color-border)] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 ring-1 ring-white/5"
+        style={{ height: '50vh', backgroundColor: 'rgb(var(--color-bg-primary-rgb))' }}
       >
         {/* Header - Seamless Compact Design */}
-        <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between bg-white/5">
+        <div className="px-5 py-3 border-b border-[var(--color-border)] flex items-center justify-between bg-[var(--color-bg-secondary)]">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-xl bg-[var(--color-error)]/10 flex items-center justify-center text-[var(--color-error)] flex-shrink-0 cursor-default shadow-inner">
               <Trash size={18} strokeWidth={2.5} />
@@ -179,7 +179,7 @@ const TrashModal = ({
         </div>
 
         {/* Search - Compact */}
-        <div className="px-6 py-3 bg-black/20 border-b border-white/5">
+        <div className="px-6 py-3 bg-[var(--color-bg-primary)] border-b border-[var(--color-border)]">
           <div className="relative group">
             <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-tertiary)] group-focus-within:text-[var(--color-accent-primary)] transition-colors" />
             <input
@@ -187,7 +187,7 @@ const TrashModal = ({
               placeholder="Search deleted items..."
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="w-full h-9 rounded-xl pl-10 pr-4 text-[13px] outline-none border border-white/5 focus:border-[var(--color-accent-primary)] bg-black/20 text-[var(--color-text-primary)] transition-all placeholder:text-[var(--color-text-tertiary)] shadow-inner"
+              className="w-full h-9 rounded-xl pl-10 pr-4 text-[13px] outline-none border border-[var(--color-border)] focus:border-[var(--color-accent-primary)] bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] transition-all placeholder:text-[var(--color-text-tertiary)] shadow-inner"
             />
           </div>
         </div>

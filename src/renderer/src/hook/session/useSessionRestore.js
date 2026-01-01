@@ -22,7 +22,8 @@ export const useSessionRestore = ({
   activeView,
   setSelectedSnippet,
   setSelectedFolderId,
-  navigateTo
+  navigateTo,
+  hasLoadedSnippets
 }) => {
   const [isRestoring, setIsRestoring] = useState(true)
 
@@ -50,15 +51,14 @@ export const useSessionRestore = ({
     // Only run once when snippets are actually loaded
     if (!isRestoring) return
 
+    if (!hasLoadedSnippets) return
+
     // Safety check: if there is no session stored, we are done immediately
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) {
       setIsRestoring(false)
       return
     }
-
-    // If session exists, we MUST wait for snippets to be available to validate
-    if (!snippets || snippets.length === 0) return
 
     try {
       const session = JSON.parse(raw)
@@ -96,7 +96,14 @@ export const useSessionRestore = ({
       console.error('[Session] Failed to restore:', e)
       setIsRestoring(false)
     }
-  }, [snippets, setSelectedSnippet, setSelectedFolderId, navigateTo, isRestoring])
+  }, [
+    snippets,
+    setSelectedSnippet,
+    setSelectedFolderId,
+    navigateTo,
+    isRestoring,
+    hasLoadedSnippets
+  ])
 
   return { isRestoring }
 }

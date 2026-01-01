@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react'
-import { SettingSection, SettingInput, SettingRow } from '../components'
+import React, { useState, useEffect, useCallback } from 'react'
+import PropTypes from 'prop-types'
+import { SettingSection, SettingInput } from '../components'
 import {
   Cloud,
   UploadCloud,
@@ -8,21 +9,47 @@ import {
   AlertTriangle,
   ExternalLink,
   Eye,
-  EyeOff
+  EyeOff,
+  RefreshCw
 } from 'lucide-react'
 
-const SyncSettings = () => {
+const formatDateTime = (value) => {
+  if (!value && value !== 0) return '—'
+  const date = new Date(Number(value))
+  if (Number.isNaN(date.getTime())) return '—'
+  return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`
+}
+
+const SyncSettings = ({ onOpenControlCenter }) => {
   const [token, setToken] = useState('')
   const [hasToken, setHasToken] = useState(false)
   const [showToken, setShowToken] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
-  const [lastSync, setLastSync] = useState(null)
   const [statusMsg, setStatusMsg] = useState('')
   const [statusType, setStatusType] = useState('info') // info, success, error
+  const [statusSnapshot, setStatusSnapshot] = useState(null)
+  const [isStatusLoading, setIsStatusLoading] = useState(false)
+  const [statusError, setStatusError] = useState(null)
+
+  const refreshStatus = useCallback(async () => {
+    if (!window.api?.syncGetStatus) return
+    setIsStatusLoading(true)
+    try {
+      const snapshot = await window.api.syncGetStatus()
+      setStatusSnapshot(snapshot)
+      setStatusError(null)
+    } catch (err) {
+      console.error('[SyncSettings] Failed to load sync status', err)
+      setStatusError(err.message || 'Failed to load status')
+    } finally {
+      setIsStatusLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
     loadToken()
-  }, [])
+    refreshStatus()
+  }, [refreshStatus])
 
   const loadToken = async () => {
     if (window.api?.syncGetToken) {
@@ -62,10 +89,10 @@ const SyncSettings = () => {
     setStatusMsg('Backing up to GitHub Gist...')
     setStatusType('info')
     try {
-      const result = await window.api.syncBackup()
-      setLastSync(new Date(result.timestamp).toLocaleString())
+      await window.api.syncBackup()
       setStatusMsg('Backup successful!')
       setStatusType('success')
+      await refreshStatus()
     } catch (err) {
       console.error(err)
       const msg = err.message || 'Unknown error'
@@ -84,10 +111,10 @@ const SyncSettings = () => {
     setStatusMsg('Restoring from GitHub Gist...')
     setStatusType('info')
     try {
-      const result = await window.api.syncRestore()
-      setLastSync(new Date(result.timestamp).toLocaleString())
+      await window.api.syncRestore()
       setStatusMsg('Restore successful! Please restart app.')
       setStatusType('success')
+      await refreshStatus()
       // Optional: trigger a window reload or data refetch
     } catch (err) {
       console.error(err)
@@ -99,19 +126,70 @@ const SyncSettings = () => {
     }
   }
 
+  const openSyncControlCenter = () => {
+    if (typeof onOpenControlCenter === 'function') {
+      onOpenControlCenter()
+      return
+    }
+    window.dispatchEvent(new CustomEvent('app:open-sync-center'))
+  }
+
   return (
     <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
       <SettingSection title="GitHub Sync" icon={Cloud}>
+        <div className="p-4 mb-4 rounded-none-none border border-[var(--color-border)] bg-[var(--color-bg-secondary)]/70">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-[var(--color-text-tertiary)]">Sync Control Center</p>
+              <p className="text-sm text-[var(--color-text-primary)]">View detailed history, gist status, and logs in one place.</p>
+              <div className="mt-2 grid gap-1 text-[11px] text-[var(--color-text-secondary)] sm:grid-cols-2">
+                <div>
+                  <span className="font-semibold text-[var(--color-text-primary)]">Last backup:</span> {formatDateTime(statusSnapshot?.lastBackupAt)}
+                </div>
+                <div>
+                  <span className="font-semibold text-[var(--color-text-primary)]">Last restore:</span> {formatDateTime(statusSnapshot?.lastRestoreAt)}
+                </div>
+                {statusSnapshot?.gist?.url && (
+                  <div className="sm:col-span-2">
+                    <span className="font-semibold text-[var(--color-text-primary)]">Gist:</span> {statusSnapshot.gist.id}
+                  </div>
+                )}
+                {statusError && (
+                  <div className="sm:col-span-2 text-red-400">Status error: {statusError}</div>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={refreshStatus}
+                disabled={isStatusLoading}
+                className="inline-flex items-center gap-1 rounded-none-none border border-[var(--color-border)] px-3 py-1.5 text-[11px] font-semibold text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-primary)] disabled:opacity-50"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${isStatusLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
+              <button
+                type="button"
+                onClick={openSyncControlCenter}
+                className="inline-flex items-center gap-2 rounded-none-none bg-[var(--color-accent-primary)] px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-[var(--color-accent-hover)]"
+              >
+                Open Control Center
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Token Input */}
-        <div className="p-4 rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border)] mb-4">
+        <div className="p-4 rounded-none-none bg-[var(--color-bg-secondary)] border border-[var(--color-border)] mb-4">
           <div className="flex items-center justify-between mb-4 ">
             <h3 className="text-sm font-medium">Authentication</h3>
             {hasToken ? (
-              <span className="flex items-center gap-1.5 text-xs text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full">
+              <span className="flex items-center gap-1.5 text-xs text-green-400 bg-green-400/10 px-2 py-0.5 rounded-none-full">
                 <Check size={10} /> Connected
               </span>
             ) : (
-              <span className="flex items-center gap-1.5 text-xs text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full">
+              <span className="flex items-center gap-1.5 text-xs text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-none-full">
                 <AlertTriangle size={10} /> Disconnected
               </span>
             )}
@@ -137,7 +215,7 @@ const SyncSettings = () => {
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
                 placeholder="Paste GitHub Token (ghp_...)"
-                className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded px-3 py-1.5 text-sm outline-none focus:border-[var(--color-accent-primary)] transition-colors pr-10"
+                className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-none px-3 py-1.5 text-sm outline-none focus:border-[var(--color-accent-primary)] transition-colors pr-10"
               />
               <button
                 type="button"
@@ -150,7 +228,7 @@ const SyncSettings = () => {
             <button
               onClick={handleSaveToken}
               disabled={!token}
-              className="px-4 py-1.5 bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-hover)] text-white text-xs font-medium rounded transition-colors disabled:opacity-50"
+              className="px-4 py-1.5 bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-hover)] text-white text-xs font-medium rounded-none transition-colors disabled:opacity-50"
             >
               Save
             </button>
@@ -160,7 +238,7 @@ const SyncSettings = () => {
         {/* Status Message */}
         {statusMsg && (
           <div
-            className={`text-xs px-3 py-2 rounded mb-4  ${
+            className={`text-xs px-3 py-2 rounded-none mb-4  ${
               statusType === 'error'
                 ? 'bg-red-500/10 text-red-400 border border-red-500/20'
                 : statusType === 'success'
@@ -177,9 +255,9 @@ const SyncSettings = () => {
           <button
             onClick={handleBackup}
             disabled={!hasToken || isSyncing}
-            className="flex items-center gap-2 p-2 rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-bg-secondary)] hover:border-[var(--color-accent-primary)] transition-all group disabled:opacity-50 disabled:cursor-not-allowed text-left"
+            className="flex items-center gap-2 p-2 rounded-none-none border border-[var(--color-border)] hover:bg-[var(--color-bg-secondary)] hover:border-[var(--color-accent-primary)] transition-all group disabled:opacity-50 disabled:cursor-not-allowed text-left"
           >
-            <div className="p-1.5 rounded bg-[var(--color-bg-primary)] group-hover:bg-[var(--color-accent-primary)]/10 transition-colors">
+            <div className="p-1.5 rounded-none bg-[var(--color-bg-primary)] group-hover:bg-[var(--color-accent-primary)]/10 transition-colors">
               <UploadCloud
                 size={16}
                 className="text-[var(--color-text-secondary)] group-hover:text-[var(--color-accent-primary)] transition-colors"
@@ -196,9 +274,9 @@ const SyncSettings = () => {
           <button
             onClick={handleRestore}
             disabled={!hasToken || isSyncing}
-            className="flex items-center gap-2 p-2 rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-bg-secondary)] hover:border-red-400/50 transition-all group disabled:opacity-50 disabled:cursor-not-allowed text-left"
+            className="flex items-center gap-2 p-2 rounded-none-none border border-[var(--color-border)] hover:bg-[var(--color-bg-secondary)] hover:border-red-400/50 transition-all group disabled:opacity-50 disabled:cursor-not-allowed text-left"
           >
-            <div className="p-1.5 rounded bg-[var(--color-bg-primary)] group-hover:bg-red-400/10 transition-colors">
+            <div className="p-1.5 rounded-none bg-[var(--color-bg-primary)] group-hover:bg-red-400/10 transition-colors">
               <DownloadCloud
                 size={16}
                 className="text-[var(--color-text-secondary)] group-hover:text-red-400 transition-colors"
@@ -213,26 +291,20 @@ const SyncSettings = () => {
           </button>
         </div>
 
-        {lastSync && (
-          <div className="mt-3 text-center text-[10px] text-[var(--color-text-tertiary)]">
-            Last operation: {lastSync}
-          </div>
-        )}
-
         {/* Troubleshooting Hints */}
-        <div className="mt-4 p-2 rounded-md bg-[var(--color-bg-secondary)] border border-[var(--color-border)/50]">
+        <div className="mt-4 p-2 rounded-none-none bg-[var(--color-bg-secondary)] border border-[var(--color-border)/50]">
           <h4 className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-secondary)] mb-1 opacity-70">
             <AlertTriangle size={10} /> Troubleshooting
           </h4>
           <ul className="grid grid-cols-1 gap-1 text-[10px] text-[var(--color-text-tertiary)]">
             <li className="flex items-start gap-2">
-              <span className="font-mono text-[var(--color-accent-primary)] bg-[var(--color-accent-primary)]/10 px-1 rounded">
+              <span className="font-mono text-[var(--color-accent-primary)] bg-[var(--color-accent-primary)]/10 px-1 rounded-none">
                 401
               </span>
               <span>Token is invalid or expired.</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="font-mono text-[var(--color-accent-primary)] bg-[var(--color-accent-primary)]/10 px-1 rounded">
+              <span className="font-mono text-[var(--color-accent-primary)] bg-[var(--color-accent-primary)]/10 px-1 rounded-none">
                 403
               </span>
               <span>
@@ -240,7 +312,7 @@ const SyncSettings = () => {
               </span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="font-mono text-[var(--color-accent-primary)] bg-[var(--color-accent-primary)]/10 px-1 rounded">
+              <span className="font-mono text-[var(--color-accent-primary)] bg-[var(--color-accent-primary)]/10 px-1 rounded-none">
                 404
               </span>
               <span>No previous backup found on GitHub.</span>
@@ -250,6 +322,14 @@ const SyncSettings = () => {
       </SettingSection>
     </div>
   )
+}
+
+SyncSettings.propTypes = {
+  onOpenControlCenter: PropTypes.func
+}
+
+SyncSettings.defaultProps = {
+  onOpenControlCenter: null
 }
 
 export default SyncSettings

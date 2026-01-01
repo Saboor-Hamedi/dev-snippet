@@ -29,7 +29,7 @@ const AutosaveIndicator = ({ status, noBorder = false }) => {
 
   return (
     <div
-      className="flex items-center ml-2 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 transition-all duration-500 animate-in fade-in slide-in-from-right-2"
+      className="flex items-center ml-2 px-2 py-0.5 rounded-none transition-all duration-500 animate-in fade-in slide-in-from-right-2"
       style={{
         minWidth: '70px',
         justifyContent: 'center',

@@ -179,7 +179,7 @@
   font-family: var(--font-mono);
   font-size: 12px;
   z-index: 100;
-  backdrop-filter: blur(8px);
+  backdrop-filter: none;
   border: 1px solid rgba(248, 81, 73, 0.3);
   border-radius: 8px;
   animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;

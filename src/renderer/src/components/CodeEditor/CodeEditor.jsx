@@ -92,11 +92,17 @@ const CodeEditor = ({
     }
 
     if (typeof document === 'undefined') return
-
+    // check theme is dark or light
     const updateTheme = () => {
-      const dark =
-        document.documentElement.classList.contains('dark') ||
-        document.documentElement.getAttribute('data-theme') === 'dark'
+      // Light themes list (must match themeProps.js)
+      const lightThemes = ['polaris', 'minimal-gray']
+      const currentTheme = document.documentElement.getAttribute('data-theme')
+
+      // Theme is LIGHT if it's in the lightThemes list, otherwise it's DARK
+      const dark = currentTheme
+        ? !lightThemes.includes(currentTheme)
+        : document.documentElement.classList.contains('dark')
+
       setIsDark((prevIsDark) => {
         if (prevIsDark !== dark) {
           return dark
@@ -224,8 +230,10 @@ const CodeEditor = ({
           if (view?.scrollDOM) {
             const { scrollTop, scrollHeight, clientHeight } = view.scrollDOM
             const maxScroll = scrollHeight - clientHeight
-            const percentage = maxScroll > 0 ? scrollTop / maxScroll : 0
-            window.dispatchEvent(new CustomEvent('app:editor-scroll', { detail: { percentage } }))
+            if (maxScroll > 0) {
+              const percentage = scrollTop / maxScroll
+              window.dispatchEvent(new CustomEvent('app:editor-scroll', { detail: { percentage } }))
+            }
           }
           // Track cursor
           if (update.selectionSet) {
@@ -405,10 +413,7 @@ const CodeEditor = ({
         const isBlinking = Boolean(cursorBlinking) // Explicit cast
         const options = {
           EditorView,
-          isDark:
-            (typeof document !== 'undefined' &&
-              document.documentElement.classList.contains('dark')) ||
-            false,
+          isDark, // Use the state variable that's already properly detecting light/dark themes
           caretColor: cursorColor,
           cursorWidth,
           cursorShape,
@@ -472,7 +477,8 @@ const CodeEditor = ({
         '--shadow-box-bg': cursorShadowBoxColor,
         '--gutter-bg-color': gutterBgColor,
         '--gutter-border-color': gutterBorderColor,
-        '--gutter-border-width': `${gutterBorderWidth}px`
+        '--gutter-border-width': `${gutterBorderWidth}px`,
+        backgroundColor: 'var(--editor-bg)'
       }}
       ref={editorDomRef}
     >
@@ -508,19 +514,27 @@ const CodeEditor = ({
             }
           }
 
-          // SCROLL SYNC: Dispatch scroll events to LivePreview
-          if (view?.scrollDOM) {
-            view.scrollDOM.addEventListener('scroll', () => {
-              const { scrollTop, scrollHeight, clientHeight } = view.scrollDOM
-              const percentage = scrollTop / (scrollHeight - clientHeight)
-              // Dispatch with high precision but use requestAnimationFrame if possible in receiver
-              window.dispatchEvent(new CustomEvent('app:editor-scroll', { detail: { percentage } }))
-            })
-          }
-
           // Pass view to parent if callback provided
           if (onEditorReady) {
             onEditorReady(view)
+          }
+
+          // NATIVE SCROLL SYNC (More reliable for high-frequency scroll events)
+          if (view.scrollDOM) {
+            view.scrollDOM.addEventListener(
+              'scroll',
+              () => {
+                const { scrollTop, scrollHeight, clientHeight } = view.scrollDOM
+                const maxScroll = scrollHeight - clientHeight
+                if (maxScroll > 0) {
+                  const percentage = scrollTop / maxScroll
+                  window.dispatchEvent(
+                    new CustomEvent('app:editor-scroll', { detail: { percentage } })
+                  )
+                }
+              },
+              { passive: true }
+            )
           }
         }}
         autoFocus={autoFocus}

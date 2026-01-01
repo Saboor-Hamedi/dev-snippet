@@ -19,10 +19,10 @@ const buildTheme = (EditorView, options = {}) => {
   return EditorView.theme(
     {
       '&': {
-        backgroundColor: 'transparent !important', // Removed hard background
-        color: 'var(--color-text-primary, #0f172a)',
+        backgroundColor: 'var(--editor-bg, transparent) !important',
+        color: 'var(--editor-text, var(--color-text-primary, #0f172a))',
         fontFamily: fontFamily,
-        fontSize: 'inherit',
+        fontSize: fontSize, // Use the explicit font size option
         lineHeight: '1.6',
         height: '100%',
         paddingLeft: '0',
@@ -163,53 +163,63 @@ const buildTheme = (EditorView, options = {}) => {
 
       // Header Lines (Layout/Spacing) - Use PADDING instead of MARGIN to ensure correct line height measurement
       '.cm-line-h1': {
-        paddingTop: '1.2em !important',
-        paddingBottom: '0.4em !important',
-        lineHeight: '1.3 !important'
+        fontSize: `calc(${fontSize} * 2.5) !important`,
+        paddingTop: '0 !important',
+        paddingBottom: '0 !important',
+        lineHeight: '1.4 !important'
       },
       '.cm-line-h2': {
-        paddingTop: '1em !important',
-        paddingBottom: '0.3em !important',
-        lineHeight: '1.35 !important'
+        fontSize: `calc(${fontSize} * 2.0) !important`,
+        paddingTop: '0 !important',
+        paddingBottom: '0 !important',
+        lineHeight: '1.4 !important'
       },
       '.cm-line-h3': {
-        paddingTop: '0.8em !important',
-        paddingBottom: '0.2em !important',
+        fontSize: `calc(${fontSize} * 1.7) !important`,
+        paddingTop: '0 !important',
+        paddingBottom: '0 !important',
         lineHeight: '1.4 !important'
       },
       '.cm-line-h4': {
-        paddingTop: '0.6em !important',
-        lineHeight: '1.5 !important'
+        fontSize: `calc(${fontSize} * 1.4) !important`,
+        paddingTop: '0 !important',
+        paddingBottom: '0 !important',
+        lineHeight: '1.4 !important'
       },
-      '.cm-line-h5': { paddingTop: '0.4em !important' },
-      '.cm-line-h6': { paddingTop: '0.4em !important' },
+      '.cm-line-h5': {
+        fontSize: `calc(${fontSize} * 1.2) !important`,
+        paddingTop: '0 !important',
+        paddingBottom: '0 !important',
+        lineHeight: '1.4 !important'
+      },
+      '.cm-line-h6': {
+        fontSize: `calc(${fontSize} * 1.0) !important`,
+        paddingTop: '0 !important',
+        paddingBottom: '0 !important',
+        lineHeight: '1.4 !important'
+      },
 
       // Header Text (Font/Color) - Inline decorations only
-      '.cm-h1': {
-        fontSize: '1.8em !important',
+      // ALL THEMES USE GLOBAL SIZES FROM CodeEditor.css
+      '.cm-content .cm-h1': {
         fontWeight: '700',
         color: 'var(--color-text-primary) !important'
       },
-      '.cm-h2': {
-        fontSize: '1.4em !important',
+      '.cm-content .cm-h2': {
         fontWeight: '700',
         color: 'var(--color-text-primary) !important'
       },
-      '.cm-h3': {
-        fontSize: '1.2em !important',
+      '.cm-content .cm-h3': {
         fontWeight: '700',
         color: 'var(--color-text-primary) !important'
       },
-      '.cm-h4': {
-        fontSize: '1.1em !important',
+      '.cm-content .cm-h4': {
         fontWeight: '700'
       },
-      '.cm-h5': {
-        fontSize: '1em !important',
+      '.cm-content .cm-h5': {
         fontWeight: '600'
       },
-      '.cm-h6': {
-        fontSize: '0.9em !important',
+      '.cm-content .cm-h6': {
         fontWeight: '600'
       },
 
@@ -523,14 +533,19 @@ const buildTheme = (EditorView, options = {}) => {
       },
       /* Removed manual overrides for node/label colors to allow Mermaid 'default' theme to work strictly */
 
-      // Dark mode overrides for safety
+      // Dark mode overrides and theme variable sync
       '&.cm-editor.dark': {
         backgroundColor: 'var(--editor-bg, #0d1117) !important',
         color: 'var(--editor-text, #e6edf3)'
       },
 
+      '&.cm-editor.light': {
+        backgroundColor: 'var(--editor-bg, #ffffff) !important',
+        color: 'var(--editor-text, #0f172a)'
+      },
+
       '&.cm-editor.dark .cm-gutters': {
-        backgroundColor: 'transparent !important',
+        backgroundColor: 'var(--gutter-bg-color, transparent) !important',
         color: 'var(--gutter-text-color, #8b949e) !important',
         borderRightColor: 'var(--gutter-border-color, #30363d) !important'
       },

@@ -4,13 +4,13 @@
   --caret-color: #fefeffff;
   --cursor-blinking-speed: 500ms;
   --cursor-blinking: true;
-  --editor-font-size: 14px; /* NOT 1rem — absolute units only */
+  --editor-font-size: 13px; /* Standardized size */
   --zoom-level: 1;
-  --gutter-bg-color: #232731;
-  --gutter-border-color: #232731;
+  --gutter-bg-color: var(--editor-bg, #ffffff);
+  --gutter-border-color: var(--editor-bg, #ffffff);
   --gutter-border-width: 1px;
-  --bg-color: #232731;
-  --border-color: #232731;
+  --bg-color: var(--editor-bg, #ffffff);
+  --border-color: var(--editor-bg, #ffffff);
   --border-width: 0;
   --border-round: 0;
   /* --active-line-bg: rgba(88, 166, 255, 0.1); */
@@ -18,14 +18,6 @@
   --shadow-box-color: #58a6ff;
   --active-line-border-width: 0px;
   --active-line-gutter-border-width: 0px;
-
-  /* Activity Bar Defaults */
-  --activity-bar-bg: #161b22;
-  --activity-bar-active-fg: #ffffff;
-  --activity-bar-inactive-fg: rgba(255, 255, 255, 0.4);
-  --activity-bar-active-border: #007fd4;
-  --activity-bar-badge-bg: #ef4444;
-  --activity-bar-badge-fg: #ffffff;
 }
 
 @keyframes cm-cursor-blink {
@@ -148,26 +140,28 @@
   vertical-align: baseline !important;
 }
 
-.cm-line-h1 {
-  font-size: 1.4em;
-  padding: 0.15em 0 !important;
-  line-height: 1.6 !important; /* Seamless match to paragraphs */
-}
-.cm-line-h2 {
-  font-size: 1.25em;
-  padding: 0.12em 0 !important;
+/* Standardized Header Text (Consistent across themes) */
+/* Standardized Header Text (Consistent across themes) */
+.cm-editor .cm-line-h1 {
+  padding-top: 0.8em !important;
+  padding-bottom: 0.3em !important;
   line-height: 1.6 !important;
 }
-.cm-line-h3 {
-  font-size: 1.15em;
-  padding: 0.1em 0 !important;
+.cm-editor .cm-line-h2 {
+  padding-top: 0.6em !important;
+  padding-bottom: 0.2em !important;
   line-height: 1.6 !important;
 }
-.cm-line-h4,
-.cm-line-h5,
-.cm-line-h6 {
-  font-size: 1.1em;
-  padding: 0.08em 0 !important;
+.cm-editor .cm-line-h3 {
+  padding-top: 0.5em !important;
+  padding-bottom: 0.2em !important;
+  line-height: 1.6 !important;
+}
+.cm-editor .cm-line-h4,
+.cm-editor .cm-line-h5,
+.cm-editor .cm-line-h6 {
+  padding-top: 0.4em !important;
+  padding-bottom: 0.1em !important;
   line-height: 1.6 !important;
 }
 
@@ -432,9 +426,9 @@ html body .cm-content *::selection {
 .cm-force-selection {
   background-color: var(--cursor-selection-bg, rgba(65, 206, 92, 0.5)) !important;
   color: var(--selection-text, #ffffff) !important;
-  /* Exactly match 1.6 line-height: 0.3 (top) + 1.0 (text) + 0.3 (bottom) = 1.6 */
-  padding-top: 0.15em;
-  padding-bottom: 0.15em;
+  /* Exactly match caret height by removing vertical padding */
+  padding-top: 0;
+  padding-bottom: 0;
   /* Horizontal padding */
   padding-left: 4px;
   padding-right: 4px;
@@ -444,55 +438,59 @@ html body .cm-content *::selection {
   border-radius: 0 !important;
 }
 
-/* Precisely match the caret height by accounting for symmetric line padding */
-/* Adjusted asymmetrically based on audio feedback for perfect alignment */
-.cm-line-h1 .cm-force-selection {
-  padding-top: 0.8em; /* Increased to fix "smaller from top" issue */
-  padding-bottom: 0.3em; /* Balanced height */
-}
-.cm-line-h2 .cm-force-selection {
-  padding-top: 0.44em;
-  padding-bottom: 0.2em; /* Reduced to fix "bigger from bottom" issue */
-}
-.cm-line-h3 .cm-force-selection {
-  padding-top: 0.4em;
-  padding-bottom: 0.34em;
-}
-.cm-line-h4 .cm-force-selection,
-.cm-line-h5 .cm-force-selection,
-.cm-line-h6 .cm-force-selection {
-  padding-top: 0.35em;
-  padding-bottom: 0.3em;
-}
+/* The selection padding is now managed by the base .cm-force-selection style 
+   to ensure it stays tight to the text and matches the caret height across all headers. */
 
 /* ============================================================================ */
-/* Zen Focus Mode Styles */
-.cm-zen-dimmed {
+/* Zen Focus Mode: High Performance Immersion */
+/* ============================================================================ */
+
+/* Base dimming for all editor content children (lines and widgets) */
+body.zen-focus-active .cm-content > * {
   opacity: 0.1 !important;
+  filter: grayscale(100%); /* High perf vs Blur */
   transition:
-    opacity 0.5s ease,
-    filter 0.5s ease !important;
-  filter: blur(1.5px) grayscale(50%);
-  pointer-events: none; /* Avoid accidental clicks on dimmed content */
+    opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    filter 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: opacity, filter;
+  /* Pointer events are kept auto to allow interaction even when dimmed */
 }
 
-.cm-zen-active {
+/* Revelation: Active Writing Paragraph */
+body.zen-focus-active .cm-content > .cm-zen-active {
   opacity: 1 !important;
-  transition: opacity 0.2s ease !important;
+  filter: grayscale(0%);
+  pointer-events: auto;
+}
+
+/* Disclosure: Widgets touching the active paragraph (DRY & Robust) */
+/* This ensures Tables or Mermaid blocks attached to active text remain visible */
+body.zen-focus-active .cm-content > .cm-zen-active + .cm-widgetBlock,
+body.zen-focus-active .cm-content > .cm-widgetBlock:has(+ .cm-zen-active) {
+  opacity: 1 !important;
+  filter: grayscale(0%);
+  pointer-events: auto;
+}
+
+/* Internal components of active elements must be fully visible */
+body.zen-focus-active .cm-zen-active * {
+  opacity: 1 !important;
   filter: none !important;
 }
 
-/* Ensure widgets (images, diagrams) inside dimmed lines are translucent too */
-.cm-zen-dimmed .cm-widgetBuffer,
-.cm-zen-dimmed .cm-line-img-container,
-.cm-zen-dimmed .cm-checkbox-img,
-.cm-zen-dimmed .mermaid-diagram-wrapper {
-  opacity: 0.2 !important;
-  filter: blur(2px) !important;
-}
-
-/* Ensure no background overrides during Zen Focus */
-.cm-zen-dimmed .cm-activeLine,
-.cm-zen-dimmed .cm-activeLineGutter {
+/* Clean UI: Hide focus rings/gutters for background lines */
+body.zen-focus-active .cm-line:not(.cm-zen-active) .cm-activeLine,
+body.zen-focus-active .cm-line:not(.cm-zen-active) .cm-activeLineGutter {
   background-color: transparent !important;
 }
+
+/* Soft Hover: Allow quick clicks back to "reality" */
+body.zen-focus-active .cm-content:hover > * {
+  opacity: 0.15; /* Subtle hint */
+}
+
+/* ============================================================================ */
+/* THEME-SPECIFIC HEADER OVERRIDES */
+/* ============================================================================ */
+/* User Request: Make ALL themes match the larger "white theme" header sizes. 
+   Enforcing 1.4rem globally as requested. Added .cm-editor prefix for max specificity. */

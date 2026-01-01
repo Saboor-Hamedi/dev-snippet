@@ -1,17 +1,62 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Globe, Sparkles, ShieldCheck } from 'lucide-react'
 import { useThemeManager } from '../../hook/useThemeManager'
+import { useSettings } from '../../hook/useSettingsContext'
 import './QuickCapture.css'
 
 const QuickCapture = () => {
   // Sync with app-wide themes
   useThemeManager()
+  const { settings } = useSettings()
 
   const [code, setCode] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [success, setSuccess] = useState(false)
   const [chars, setChars] = useState(0)
   const inputRef = useRef(null)
+
+  const editorFontFamily = settings?.editor?.fontFamily || 'JetBrains Mono'
+  const editorFontSize = settings?.editor?.fontSize || 15
+  const editorLineHeight = settings?.editor?.lineHeight || 1.6
+
+  const resolvedFontStack = useMemo(() => {
+    const fallbackStack = "JetBrains Mono, SFMono-Regular, Consolas, 'Liberation Mono', monospace"
+    if (!editorFontFamily) return fallbackStack
+    return `${editorFontFamily}, ${fallbackStack}`
+  }, [editorFontFamily])
+
+  const normalizedLineHeight = useMemo(() => {
+    if (typeof editorLineHeight === 'number') return editorLineHeight
+    const parsed = parseFloat(editorLineHeight)
+    return Number.isFinite(parsed) ? parsed : 1.6
+  }, [editorLineHeight])
+
+  const surfaceStyles = useMemo(
+    () => ({
+      '--qc-font-family': resolvedFontStack,
+      '--qc-font-size': `${editorFontSize}px`,
+      '--qc-line-height': normalizedLineHeight
+    }),
+    [resolvedFontStack, editorFontSize, normalizedLineHeight]
+  )
+
+  const detectLanguage = useCallback((text) => {
+    const trimmed = text.trim().substring(0, 100)
+    if (!trimmed) return 'Markdown'
+    if (
+      trimmed.startsWith('import ') ||
+      trimmed.startsWith('const ') ||
+      trimmed.startsWith('function ')
+    )
+      return 'JavaScript'
+    if (trimmed.startsWith('<?php')) return 'PHP'
+    if (trimmed.startsWith('def ') || (trimmed.startsWith('import ') && trimmed.includes(' as ')))
+      return 'Python'
+    if (trimmed.startsWith('# ') || trimmed.startsWith('## ')) return 'Markdown'
+    if (trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html')) return 'HTML'
+    if (trimmed.includes('{') && trimmed.includes('}') && trimmed.includes(':')) return 'CSS'
+    return 'Markdown'
+  }, [])
 
   const handleSave = useCallback(async () => {
     if (!code.trim() || isSaving) return
@@ -111,31 +156,13 @@ const QuickCapture = () => {
       window.removeEventListener('keydown', handleKeyDown)
       if (unsubscribeReset) unsubscribeReset()
     }
-  }, [handleSave])
-
-  const detectLanguage = (text) => {
-    const trimmed = text.trim().substring(0, 100)
-    if (!trimmed) return 'Markdown'
-    if (
-      trimmed.startsWith('import ') ||
-      trimmed.startsWith('const ') ||
-      trimmed.startsWith('function ')
-    )
-      return 'JavaScript'
-    if (trimmed.startsWith('<?php')) return 'PHP'
-    if (trimmed.startsWith('def ') || (trimmed.startsWith('import ') && trimmed.includes(' as ')))
-      return 'Python'
-    if (trimmed.startsWith('# ') || trimmed.startsWith('## ')) return 'Markdown'
-    if (trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html')) return 'HTML'
-    if (trimmed.includes('{') && trimmed.includes('}') && trimmed.includes(':')) return 'CSS'
-    return 'Markdown'
-  }
+  }, [code, detectLanguage, isSaving])
 
   // Memoize language to prevent CPU spike and jitter during typing
-  const languageLabel = useMemo(() => detectLanguage(code), [code.split('\n')[0]])
+  const languageLabel = useMemo(() => detectLanguage(code), [code, detectLanguage])
 
   return (
-    <div className="qc-full-wrapper">
+    <div className="qc-full-wrapper" style={surfaceStyles}>
       <div className="qc-window-container">
         <div className="qc-card">
           <div className="qc-header">

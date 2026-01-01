@@ -3,8 +3,12 @@ import { RangeSetBuilder } from '@codemirror/state'
 
 /**
  * Zen Focus Extension
- * Dims all lines except the one containing the cursor (or the current paragraph).
+ * Dims everything in the editor except the current "writing zone" (active paragraph).
+ *
+ * Performance: Uses a single pass over visible ranges and minimizes doc lookups.
+ * Coverage: Dims both text lines and block widgets (via CSS sibling selectors).
  */
+
 const dimmedLineDeco = Decoration.line({
   class: 'cm-zen-dimmed'
 })
@@ -24,6 +28,7 @@ export const zenFocusExtension = (enabled = false) => {
         }
 
         update(update) {
+          // Re-calculate if layout changes, selection moves, or typing happens
           if (update.docChanged || update.selectionSet || update.viewportChanged) {
             this.decorations = this.getDecorations(update.view)
           }
@@ -33,32 +38,36 @@ export const zenFocusExtension = (enabled = false) => {
           const builder = new RangeSetBuilder()
           const { state } = view
           const selection = state.selection.main
+          const doc = state.doc
 
-          // Get the line range of the current selection/cursor
-          const startLine = state.doc.lineAt(selection.from).number
-          const endLine = state.doc.lineAt(selection.to).number
+          // 1. Identify the "Active Paragraph"
+          // We find the block of lines touching the cursor that aren't separated by empty lines.
+          const currentLineNum = doc.lineAt(selection.from).number
+          let paraStart = currentLineNum
+          let paraEnd = currentLineNum
 
-          // We zoom out to the "paragraph" level for a better writing experience
-          // A paragraph is a block of lines surrounded by empty lines
-          let paraStart = startLine
-          while (paraStart > 1 && state.doc.line(paraStart - 1).text.trim() !== '') {
+          // Expand Up
+          while (paraStart > 1) {
+            const prevLine = doc.line(paraStart - 1)
+            if (prevLine.text.trim() === '') break
             paraStart--
           }
-          let paraEnd = endLine
-          while (paraEnd < state.doc.lines && state.doc.line(paraEnd + 1).text.trim() !== '') {
+          // Expand Down
+          while (paraEnd < doc.lines) {
+            const nextLine = doc.line(paraEnd + 1)
+            if (nextLine.text.trim() === '') break
             paraEnd++
           }
 
+          // 2. Apply Decorations
+          // We only process what's currently on screen (visibleRanges) for P0 performance.
           for (const { from, to } of view.visibleRanges) {
-            for (let pos = from; pos <= to; ) {
-              const line = state.doc.lineAt(pos)
-              const isParaHeader = line.text.startsWith('#') // Keep headers slightly visible? No, dim them if not active.
+            let pos = from
+            while (pos <= to) {
+              const line = doc.lineAt(pos)
 
-              if (line.number >= paraStart && line.number <= paraEnd) {
-                builder.add(line.from, line.from, activeLineDeco)
-              } else {
-                builder.add(line.from, line.from, dimmedLineDeco)
-              }
+              const isActive = line.number >= paraStart && line.number <= paraEnd
+              builder.add(line.from, line.from, isActive ? activeLineDeco : dimmedLineDeco)
 
               pos = line.to + 1
             }

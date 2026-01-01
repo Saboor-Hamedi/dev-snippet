@@ -84,6 +84,7 @@ const api = {
   openMiniBrowser: (htmlContent) =>
     electronAPI.ipcRenderer.invoke('window:openMiniBrowser', htmlContent),
   resetWindow: () => electronAPI.ipcRenderer.invoke('window:reset'),
+  toggleQuickCapture: () => electronAPI.ipcRenderer.invoke('quickCapture:toggle'),
   // Backup Management
   listBackups: () => electronAPI.ipcRenderer.invoke('backup:list'),
   restoreBackup: (backupPath) => electronAPI.ipcRenderer.invoke('backup:restore', backupPath),
@@ -95,6 +96,7 @@ const api = {
   syncSetToken: (token) => electronAPI.ipcRenderer.invoke('sync:setToken', token),
   syncHasToken: () => electronAPI.ipcRenderer.invoke('sync:hasToken'),
   syncGetToken: () => electronAPI.ipcRenderer.invoke('sync:getToken'),
+  syncGetStatus: () => electronAPI.ipcRenderer.invoke('sync:getStatus'),
   syncBackup: () => electronAPI.ipcRenderer.invoke('sync:backup'),
   syncRestore: () => electronAPI.ipcRenderer.invoke('sync:restore'),
 

@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useKeyboardShortcuts } from '../../../hook/useKeyboardShortcuts'
+import { useKeyboardShortcuts } from '../../../features/keyboard/useKeyboardShortcuts'
 import { useModal } from './ModalContext'
 import { useView } from '../../../context/ViewContext'
 
@@ -174,6 +174,13 @@ const KeyboardHandler = ({
       } catch (err) {
         // Fallback: direct toggle
         onTogglePin(targetId)
+      }
+    },
+    onToggleQuickCapture: () => {
+      try {
+        window.api?.toggleQuickCapture?.()
+      } catch (err) {
+        console.error('Quick Capture toggle failed:', err)
       }
     },
     onToggleFlow: () => {

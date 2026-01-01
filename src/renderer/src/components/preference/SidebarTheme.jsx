@@ -10,22 +10,10 @@ import {
   PlusCircle
 } from 'lucide-react' // Assuming you use lucide-react or similar icons
 import ThemeSelector from './ThemeSelector'
-import SidebarHeader from '../layout/SidebarHeader'
 
 // Renders the ThemeSelector to manage application styling
-const Sidebar = ({ isOpen = true, onToggle }) => {
-  return (
-    <div
-      className="h-full flex flex-col w-full"
-      style={{
-        backgroundColor: 'var(--sidebar-bg)'
-      }}
-    >
-      <div className="flex-1 overflow-hidden h-full">
-        <ThemeSelector onClose={onToggle} />
-      </div>
-    </div>
-  )
+const Sidebar = ({ onToggle }) => {
+  return <ThemeSelector onClose={onToggle} />
 }
 
 export default Sidebar

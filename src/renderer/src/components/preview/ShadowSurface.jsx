@@ -5,7 +5,7 @@ import PropTypes from 'prop-types'
  * ShadowSurface - A robust, reusable high-performance Shadow DOM wrapper for React.
  * Encapsulates styles and content while remaining part of the same execution context.
  */
-const ShadowSurface = ({ html, styles, onRender, isDark, className = '' }) => {
+const ShadowSurface = ({ html, styles, onRender, isDark, zenFocus, className = '' }) => {
   const hostRef = useRef(null)
   const shadowRootRef = useRef(null)
   const contentRef = useRef(null)
@@ -55,6 +55,17 @@ const ShadowSurface = ({ html, styles, onRender, isDark, className = '' }) => {
       }
     }
   }, [isDark])
+
+  // 2.2 Synchronize Zen Focus Class
+  useEffect(() => {
+    if (contentRef.current) {
+      if (zenFocus) {
+        contentRef.current.classList.add('zen-focus-active')
+      } else {
+        contentRef.current.classList.remove('zen-focus-active')
+      }
+    }
+  }, [zenFocus])
 
   // 3. Synchronize Content & Trigger Render Hook
   const lastHtmlRef = useRef('')

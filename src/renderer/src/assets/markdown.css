@@ -1310,3 +1310,58 @@ html[data-theme='nebula'] strong,
 html[data-theme='nebula'] em {
   color: #ffffff !important;
 }
+
+/* ===== ZEN FOCUS IMMERSION ===== */
+/* When Zen Focus is active, we dim all content except the one being hovered/focused */
+:host-context(.zen-focus-active) .markdown-body > *,
+.markdown-body.zen-focus-active > * {
+  opacity: 0.25 !important;
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), filter 0.4s ease !important;
+  filter: blur(1px) grayscale(20%);
+}
+
+:host-context(.zen-focus-active) .markdown-body > *:hover,
+:host-context(.zen-focus-active) .markdown-body > *:focus-within,
+.markdown-body.zen-focus-active > *:hover,
+.markdown-body.zen-focus-active > *:focus-within {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+/* Specific overrides for elements the user mentioned: diagrams, images, tables, admonitions */
+:host-context(.zen-focus-active) .markdown-body img,
+:host-context(.zen-focus-active) .markdown-body table,
+:host-context(.zen-focus-active) .markdown-body .cm-md-table-rendered-wrapper,
+:host-context(.zen-focus-active) .markdown-body .mermaid,
+:host-context(.zen-focus-active) .markdown-body .mermaid-diagram-wrapper,
+:host-context(.zen-focus-active) .markdown-body pre,
+:host-context(.zen-focus-active) .markdown-body .cm-admonition,
+.markdown-body.zen-focus-active img,
+.markdown-body.zen-focus-active table,
+.markdown-body.zen-focus-active .cm-md-table-rendered-wrapper,
+.markdown-body.zen-focus-active .mermaid,
+.markdown-body.zen-focus-active .mermaid-diagram-wrapper,
+.markdown-body.zen-focus-active pre,
+.markdown-body.zen-focus-active .cm-admonition {
+  opacity: 0.25 !important;
+  filter: blur(2px) grayscale(50%) !important;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+:host-context(.zen-focus-active) .markdown-body img:hover,
+:host-context(.zen-focus-active) .markdown-body table:hover,
+:host-context(.zen-focus-active) .markdown-body .cm-md-table-rendered-wrapper:hover,
+:host-context(.zen-focus-active) .markdown-body .mermaid:hover,
+:host-context(.zen-focus-active) .markdown-body .mermaid-diagram-wrapper:hover,
+:host-context(.zen-focus-active) .markdown-body pre:hover,
+:host-context(.zen-focus-active) .markdown-body .cm-admonition:hover,
+.markdown-body.zen-focus-active img:hover,
+.markdown-body.zen-focus-active table:hover,
+.markdown-body.zen-focus-active .cm-md-table-rendered-wrapper:hover,
+.markdown-body.zen-focus-active .mermaid:hover,
+.markdown-body.zen-focus-active .mermaid-diagram-wrapper:hover,
+.markdown-body.zen-focus-active pre:hover,
+.markdown-body.zen-focus-active .cm-admonition:hover {
+  opacity: 1 !important;
+  filter: none !important;
+}

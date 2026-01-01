@@ -8,12 +8,12 @@
   position: fixed !important;
   top: 0;
   left: 0;
-  z-index: -1 !important; /* Forces the blur behind everything */
+  z-index: -1 !important; /* Forces the background behind everything */
   width: 100vw !important;
   height: 100vh !important;
   background-color: var(--color-bg-primary, rgba(0, 0, 0, 0.4)) !important;
   opacity: 0.9 !important;
-  backdrop-filter: blur(5px);
+  backdrop-filter: none !important;
   pointer-events: none; /* Crucial: clicks go through to underlying UI */
   transition: all 0.5s ease-in-out;
   animation: flowConvasFade 0.8s cubic-bezier(0.4, 0, 0.2, 1);
@@ -52,13 +52,94 @@
 /* Floating Editor specific styles */
 .universal-modal.flow-editor-modal,
 .universal-modal.flow-ghost-modal {
-  background-color: var(--color-bg-primary) !important;
-  border-radius: 12px;
+  background-color: var(--color-tooltip-bg, #1e1e1e) !important;
+  background: var(--color-tooltip-bg, #1e1e1e) !important;
+  border-radius: 0 !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
   overflow: hidden;
-  animation: flowIslandAppear 0.5s cubic-bezier(0.19, 1, 0.22, 1);
   font-size: 0.85em; /* Global scale down for flow mode */
+  z-index: 100 !important;
+  backdrop-filter: none !important;
+}
+
+/* Premium Flow Ghost Theme */
+.universal-modal.flow-ghost-modal {
+  background: var(--color-tooltip-bg, #1e1e1e) !important;
+  backdrop-filter: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+  overflow: hidden;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.flow-ghost-modal .universal-modal-header {
+  background: var(--color-bg-secondary) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  padding: 8px 12px;
+}
+
+.flow-ghost-modal .universal-modal-content {
+  background: var(--color-tooltip-bg, #1e1e1e) !important;
+}
+
+/* High-performance background swap for Ghost windows during drag */
+.universal-modal.flow-ghost-modal.is-dragging {
+  background: rgba(20, 24, 30, 0.95) !important;
+}
+
+/* Light Theme Overrides for Ghost Modal */
+[data-theme='polaris'] .universal-modal.flow-ghost-modal,
+[data-theme='latte'] .universal-modal.flow-ghost-modal,
+[data-theme='solar-dawn'] .universal-modal.flow-ghost-modal,
+[data-theme='minimal-gray'] .universal-modal.flow-ghost-modal,
+[data-theme='quiet-light'] .universal-modal.flow-ghost-modal {
+  background: #ffffff !important;
+  border: 1px solid #d0d7de !important;
+  color: #1f2328 !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme='polaris'] .flow-ghost-modal .universal-modal-header,
+[data-theme='latte'] .flow-ghost-modal .universal-modal-header,
+[data-theme='solar-dawn'] .flow-ghost-modal .universal-modal-header,
+[data-theme='minimal-gray'] .flow-ghost-modal .universal-modal-header,
+[data-theme='quiet-light'] .flow-ghost-modal .universal-modal-header {
+  background: #f6f8fa !important;
+  border-bottom: 1px solid #d0d7de !important;
+}
+
+[data-theme='polaris'] .flow-ghost-modal .universal-modal-title,
+[data-theme='latte'] .flow-ghost-modal .universal-modal-title {
+  color: var(--color-text-secondary) !important;
+}
+
+/* Premium Unified Scrollbars for Flow Mode */
+.flow-ghost-modal *::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+}
+
+.flow-ghost-modal *::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.flow-ghost-modal *::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-radius: 10px !important;
+  border: 2px solid transparent !important;
+  background-clip: content-box !important;
+  transition: background 0.3s ease !important;
+}
+
+.flow-ghost-modal *:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15) !important;
+  background-clip: content-box !important;
+}
+
+.flow-ghost-modal *::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent-primary, #58a6ff) !important;
+  background-clip: content-box !important;
 }
 
 .flow-editor-modal .markdown-body,
@@ -70,17 +151,6 @@
   padding: 0 !important;
   display: flex !important;
   flex-direction: column !important;
-}
-
-@keyframes flowIslandAppear {
-  0% {
-    opacity: 0;
-    transform: scale(0.98) translateY(10px);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
 }
 
 /* Ensure editor fills the flow content island */

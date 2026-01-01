@@ -29,10 +29,11 @@ import {
   SettingSelect,
   SettingInput
 } from './settings/components'
+import SyncControlModal from './sync/SyncControlModal'
 
 // Lazy load settings sections to improve performance
 const UpdateSettings = React.lazy(() => import('./settings/sections/UpdateSettings'))
-const KeyboardShortcuts = React.lazy(() => import('./settings/sections/KeyboardShortcuts'))
+const KeyboardShortcuts = React.lazy(() => import('../features/keyboard/KeyboardShortcutsSection'))
 const DataSettings = React.lazy(() => import('./settings/sections/DataSettings'))
 const UserSettings = React.lazy(() => import('./preference/UserSettings'))
 const SyncSettings = React.lazy(() => import('./settings/sections/SyncSettings'))
@@ -47,6 +48,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
   const [searchQuery, setSearchQuery] = useState('')
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [hasUpdate, setHasUpdate] = useState(false)
+  const [isSyncCenterOpen, setIsSyncCenterOpen] = useState(false)
 
   useEffect(() => {
     // Listen for update available event
@@ -76,6 +78,8 @@ const SettingsModal = ({ isOpen, onClose }) => {
     if (isOpen) {
       setActiveTab('updates')
       setShowMobileMenu(false)
+    } else {
+      setIsSyncCenterOpen(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen])
@@ -115,9 +119,10 @@ const SettingsModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/60 backdrop-blur-md animate-in fade-in duration-200 p-2 md:p-6">
+    <>
+      <div className="fixed inset-0 z-[200000] flex items-center justify-center bg-black/80 animate-in fade-in duration-200 p-2 md:p-6">
       <div
-        className="w-full max-w-5xl h-full md:h-[85vh] bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-xl md:rounded-2xl shadow-3xl flex relative overflow-hidden ring-1 ring-white/5"
+        className="w-full max-w-5xl h-full md:h-[85vh] bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-xl shadow-3xl flex relative overflow-hidden ring-1 ring-white/5"
         onClick={(e) => e.stopPropagation()}
         style={{
           backgroundColor: 'var(--color-bg-primary)',
@@ -128,7 +133,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
         {/* SIDEBAR - Responsive Toggle */}
         <aside
           className={`
-            fixed md:relative inset-y-0 left-0 z-50 w-64 md:w-64 border-r flex flex-col bg-opacity-95 md:bg-opacity-50
+            fixed md:relative inset-y-0 left-0 z-50 w-64 md:w-64 border-r flex flex-col
             transition-transform duration-300 ease-in-out md:translate-x-0
             ${showMobileMenu ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0'}
           `}
@@ -141,7 +146,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
           <div className="px-4 py-3 md:px-5 md:py-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded bg-[var(--color-accent-primary)] flex items-center justify-center shadow-md">
+                <div className="w-6 h-6 rounded-none bg-[var(--color-accent-primary)] flex items-center justify-center shadow-md">
                   <Settings size={10} className="text-[var(--color-bg-primary)]" />
                 </div>
                 <h2 className="text-xs font-bold tracking-tight">Settings</h2>
@@ -165,7 +170,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
                 placeholder="Search settings..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded py-1 pl-8 pr-3 text-[11px] outline-none focus:border-[var(--color-accent-primary)] transition-all"
+                className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-none py-1 pl-8 pr-3 text-[11px] outline-none focus:border-[var(--color-accent-primary)] transition-all"
               />
             </div>
           </div>
@@ -181,7 +186,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
                   onClick={() => {
                     setActiveTab(section.id)
                   }}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 md:py-1.5 rounded-md text-xs md:text-[11px] font-medium cursor-pointer transition-all duration-200 ${
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 md:py-1.5 rounded-none text-xs md:text-[11px] font-medium cursor-pointer transition-all duration-200 ${
                     activeTab === section.id
                       ? 'bg-[var(--color-accent-primary)] text-white shadow-sm'
                       : 'hover:bg-[var(--hover-bg)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
@@ -219,9 +224,9 @@ const SettingsModal = ({ isOpen, onClose }) => {
                   advanced: { enableCodeFolding: true, enableAutoComplete: true }
                 }
                 setLocalSettings(defaults)
-                onSettingsChange(defaults)
+                updateSettings(defaults)
               }}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs opacity-60 hover:opacity-100 transition-opacity"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-none text-xs opacity-60 hover:opacity-100 transition-opacity"
               style={{ color: 'var(--color-text-secondary)' }}
             >
               <RotateCcw size={14} />
@@ -240,7 +245,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
 
         {/* CONTENT */}
         <main
-          className="flex-1 flex flex-col bg-opacity-30 min-w-0"
+          className="flex-1 flex flex-col min-w-0"
           style={{ backgroundColor: 'var(--color-bg-primary)' }}
         >
           {/* Content Header */}
@@ -251,7 +256,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowMobileMenu(true)}
-                className="md:hidden p-2 hover:bg-[var(--hover-bg)] rounded-lg transition-colors"
+                className="md:hidden p-2 hover:bg-[var(--hover-bg)] rounded-none transition-colors"
               >
                 <Layout size={20} className="opacity-70" />
               </button>
@@ -270,7 +275,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
               <div id="settings-header-right"></div>
               <button
                 onClick={onClose}
-                className="p-1.5 hover:bg-[var(--hover-bg)] rounded-lg transition-colors cursor-pointer"
+                className="p-1.5 hover:bg-[var(--hover-bg)] rounded-none transition-colors cursor-pointer"
               >
                 <X size={12} />
               </button>
@@ -494,7 +499,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
 
                 {activeTab === 'sync' && (
                   <div className="animate-in slide-in-from-right-4  duration-300">
-                    <SyncSettings />
+                    <SyncSettings onOpenControlCenter={() => setIsSyncCenterOpen(true)} />
                   </div>
                 )}
 
@@ -652,15 +657,18 @@ export const DEFAULT_SETTINGS = {
           </div>
         </main>
       </div>
-    </div>
+      </div>
+
+      {isSyncCenterOpen && (
+        <SyncControlModal isOpen={isSyncCenterOpen} onClose={() => setIsSyncCenterOpen(false)} />
+      )}
+    </>
   )
 }
 
 SettingsModal.propTypes = {
   isOpen: PropTypes.bool.isRequired,
-  onClose: PropTypes.func.isRequired,
-  currentSettings: PropTypes.object.isRequired,
-  onSettingsChange: PropTypes.func.isRequired
+  onClose: PropTypes.func.isRequired
 }
 
 export default SettingsModal

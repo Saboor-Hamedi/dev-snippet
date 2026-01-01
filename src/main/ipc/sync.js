@@ -19,6 +19,10 @@ export const registerSyncHandlers = (db) => {
     return SyncManager.getToken()
   })
 
+  ipcMain.handle('sync:getStatus', async () => {
+    return await SyncManager.getStatus()
+  })
+
   ipcMain.handle('sync:backup', async () => {
     return await SyncManager.backupToGist()
   })

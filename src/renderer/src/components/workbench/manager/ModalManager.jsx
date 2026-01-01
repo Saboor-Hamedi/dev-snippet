@@ -8,6 +8,7 @@ const CommandPalette = lazy(() => import('../../CommandPalette'))
 const ImageExportModal = lazy(() => import('../../CodeEditor/ImageExport/ImageExportModal'))
 const SettingsModal = lazy(() => import('../../SettingsModal'))
 const TrashModal = lazy(() => import('../../mermaid/modal/TrashModal'))
+const SyncControlModal = lazy(() => import('../../sync/SyncControlModal'))
 
 import { ModalContext } from './ModalContext'
 
@@ -49,6 +50,7 @@ export const ModalProvider = ({
   const [imageExportModal, setImageExportModal] = useState({ isOpen: false, snippet: null })
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isTrashOpen, setIsTrashOpen] = useState(false)
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false)
 
   // API exposed to consumers
   const openRenameModal = useCallback((item, onConfirm, customTitle = 'Rename Snippet') => {
@@ -70,6 +72,10 @@ export const ModalProvider = ({
 
   const openTrashModal = useCallback(() => {
     setIsTrashOpen(true)
+  }, [])
+
+  const openSyncModal = useCallback(() => {
+    setIsSyncModalOpen(true)
   }, [])
 
   const toggleCommandPalette = useCallback(
@@ -110,6 +116,7 @@ export const ModalProvider = ({
     setImageExportModal({ isOpen: false, snippet: null })
     setIsSettingsOpen(false)
     setIsTrashOpen(false)
+    setIsSyncModalOpen(false)
   }, [])
 
   return (
@@ -119,6 +126,7 @@ export const ModalProvider = ({
         openDeleteModal,
         openImageExportModal,
         openSettingsModal,
+        openSyncModal,
         openTrashModal,
         toggleCommandPalette,
         closeAll,
@@ -130,7 +138,8 @@ export const ModalProvider = ({
           isCommandPaletteOpen ||
           imageExportModal.isOpen ||
           isSettingsOpen ||
-          isTrashOpen
+          isTrashOpen ||
+          isSyncModalOpen
       }}
     >
       {children}
@@ -140,6 +149,7 @@ export const ModalProvider = ({
         {renameModal.isOpen && (
           <Prompt
             isOpen={true}
+            zIndex={300000}
             title={renameModal.title}
             message={
               renameModal.item
@@ -162,7 +172,7 @@ export const ModalProvider = ({
         {deleteModal.isOpen && (
           <Prompt
             isOpen={true}
-            zIndex={10002}
+            zIndex={300000}
             variant="danger"
             title={
               deleteModal.snippetId === 'empty-trash'
@@ -257,6 +267,10 @@ export const ModalProvider = ({
             onLoadTrash={onLoadTrash}
             openDeleteModal={openDeleteModal}
           />
+        )}
+
+        {isSyncModalOpen && (
+          <SyncControlModal isOpen={true} onClose={() => setIsSyncModalOpen(false)} />
         )}
       </Suspense>
     </ModalContext.Provider>

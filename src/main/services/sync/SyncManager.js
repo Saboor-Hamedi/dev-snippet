@@ -4,6 +4,17 @@ import { app } from 'electron'
 const GIST_DESCRIPTION = 'Dev-Snippet-Backup-v1' // Signature to identify our gist
 const BACKUP_FILENAME = 'dev-snippet-data.json'
 const SETTINGS_FILENAME = 'dev-snippet-config.json'
+const SENSITIVE_SETTINGS_KEYS = new Set(['github.token'])
+const SYNC_STATUS_KEYS = {
+  LAST_BACKUP_AT: 'sync.lastBackupAt',
+  LAST_BACKUP_SUMMARY: 'sync.lastBackupSummary',
+  LAST_RESTORE_AT: 'sync.lastRestoreAt',
+  LAST_RESTORE_SUMMARY: 'sync.lastRestoreSummary',
+  LAST_ERROR: 'sync.lastError'
+}
+const BYTE_TOLERANCE = 16 // Small tolerance for encoding differences
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 class SyncManager {
   constructor() {
@@ -89,19 +100,30 @@ class SyncManager {
       // 2. Find existing Gist
       const existingGist = await GitHubService.findGistByDescription(GIST_DESCRIPTION)
 
+      let targetGistId = null
       if (existingGist) {
         // 3. Update existing
         console.log(`[Sync] Updating existing Gist: ${existingGist.id}`)
         await GitHubService.updateGist(existingGist.id, files)
+        targetGistId = existingGist.id
       } else {
         // 4. Create new
         console.log('[Sync] Creating new Gist')
-        await GitHubService.createGist(GIST_DESCRIPTION, files, false) // False = Private
+        const gist = await GitHubService.createGist(GIST_DESCRIPTION, files, false) // False = Private
+        targetGistId = gist?.id || null
       }
 
-      return { success: true, timestamp: Date.now() }
+      this.recordBackupSuccess({
+        gistId: targetGistId,
+        snippetCount: data.snippets?.length || 0,
+        folderCount: data.folders?.length || 0,
+        payloadBytes: Buffer.byteLength(files[BACKUP_FILENAME].content || '', 'utf8')
+      })
+
+      return { success: true, timestamp: Date.now(), gistId: targetGistId }
     } catch (error) {
       console.error('[Sync] Backup failed:', error)
+      this.recordSyncError('backup', error)
       throw error
     } finally {
       this.isSyncing = false
@@ -142,18 +164,172 @@ class SyncManager {
 
       if (!dataFile) throw new Error('Backup file not found in Gist')
 
-      const remoteData = JSON.parse(dataFile.content)
+      const backupContent = await this.fetchGistFileContent(dataFile, 'Backup data')
+      let remoteData
+      try {
+        remoteData = JSON.parse(backupContent)
+      } catch (parseError) {
+        console.error('[Sync] Backup JSON parse failed after validated download', parseError)
+        throw new Error(`Backup JSON parse failed: ${parseError.message}`)
+      }
 
       // 3. Restore to DB
       this.restoreToDB(remoteData)
 
+      this.recordRestoreSuccess({
+        gistId: gist.id,
+        snippetCount: remoteData?.snippets?.length || 0,
+        folderCount: remoteData?.folders?.length || 0
+      })
+
       return { success: true, timestamp: Date.now() }
     } catch (error) {
       console.error('[Sync] Restore failed:', error)
+      this.recordSyncError('restore', error)
       throw error
     } finally {
       this.isSyncing = false
     }
+  }
+
+  setStatusValue(key, value) {
+    if (!this.db) return
+    if (value === undefined || value === null) {
+      this.db.prepare('DELETE FROM settings WHERE key = ?').run(key)
+      return
+    }
+    this.db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(
+      key,
+      typeof value === 'string' ? value : String(value)
+    )
+  }
+
+  getStatusValue(key) {
+    if (!this.db) return null
+    try {
+      const row = this.db.prepare('SELECT value FROM settings WHERE key = ?').get(key)
+      return row ? row.value : null
+    } catch (err) {
+      console.warn('[Sync] Failed to read status value', key, err)
+      return null
+    }
+  }
+
+  recordBackupSuccess(meta = {}) {
+    const payload = { ...meta, operation: 'backup', at: Date.now() }
+    this.setStatusValue(SYNC_STATUS_KEYS.LAST_BACKUP_AT, String(payload.at))
+    this.setStatusValue(SYNC_STATUS_KEYS.LAST_BACKUP_SUMMARY, JSON.stringify(payload))
+    this.clearLastError()
+  }
+
+  recordRestoreSuccess(meta = {}) {
+    const payload = { ...meta, operation: 'restore', at: Date.now() }
+    this.setStatusValue(SYNC_STATUS_KEYS.LAST_RESTORE_AT, String(payload.at))
+    this.setStatusValue(SYNC_STATUS_KEYS.LAST_RESTORE_SUMMARY, JSON.stringify(payload))
+    this.clearLastError()
+  }
+
+  recordSyncError(operation, error) {
+    const payload = {
+      operation,
+      message: error?.message || String(error),
+      at: Date.now()
+    }
+    this.setStatusValue(SYNC_STATUS_KEYS.LAST_ERROR, JSON.stringify(payload))
+  }
+
+  clearLastError() {
+    this.setStatusValue(SYNC_STATUS_KEYS.LAST_ERROR, null)
+  }
+
+  parseJSON(value) {
+    if (!value) return null
+    try {
+      return JSON.parse(value)
+    } catch (err) {
+      return null
+    }
+  }
+
+  getStatusSnapshot() {
+    const numberOrNull = (value) => {
+      if (!value && value !== '0') return null
+      const num = Number(value)
+      return Number.isNaN(num) ? null : num
+    }
+
+    return {
+      lastBackupAt: numberOrNull(this.getStatusValue(SYNC_STATUS_KEYS.LAST_BACKUP_AT)),
+      lastRestoreAt: numberOrNull(this.getStatusValue(SYNC_STATUS_KEYS.LAST_RESTORE_AT)),
+      lastBackupSummary: this.parseJSON(this.getStatusValue(SYNC_STATUS_KEYS.LAST_BACKUP_SUMMARY)),
+      lastRestoreSummary: this.parseJSON(
+        this.getStatusValue(SYNC_STATUS_KEYS.LAST_RESTORE_SUMMARY)
+      ),
+      lastError: this.parseJSON(this.getStatusValue(SYNC_STATUS_KEYS.LAST_ERROR))
+    }
+  }
+
+  maskToken(token) {
+    if (!token) return null
+    if (token.length <= 8) return `${token.slice(0, 2)}...${token.slice(-2)}`
+    return `${token.slice(0, 4)}...${token.slice(-4)}`
+  }
+
+  async getStatus() {
+    const token = this.getToken()
+    const baseStatus = {
+      ...this.getStatusSnapshot(),
+      hasToken: !!token,
+      maskedToken: token ? this.maskToken(token) : null,
+      remoteAccount: null,
+      gist: null,
+      remoteAuthError: null,
+      remoteGistError: null,
+      statusVersion: 1
+    }
+
+    if (!token) {
+      return baseStatus
+    }
+
+    try {
+      GitHubService.setToken(token)
+      try {
+        const user = await GitHubService.getUser()
+        baseStatus.remoteAccount = {
+          login: user?.login,
+          avatarUrl: user?.avatar_url,
+          profileUrl: user?.html_url
+        }
+      } catch (authError) {
+        baseStatus.remoteAuthError = authError?.message || 'Failed to verify GitHub token'
+        return baseStatus
+      }
+
+      try {
+        const gist = await GitHubService.findGistByDescription(GIST_DESCRIPTION)
+        if (gist) {
+          baseStatus.gist = {
+            id: gist.id,
+            url: gist.html_url,
+            updatedAt: gist.updated_at,
+            description: gist.description,
+            owner: gist.owner ? { login: gist.owner.login } : null,
+            files: Object.values(gist.files || {}).map((file) => ({
+              filename: file.filename,
+              size: file.size,
+              language: file.language
+            }))
+          }
+        }
+      } catch (gistError) {
+        baseStatus.remoteGistError = gistError?.message || 'Failed to fetch backup gist'
+      }
+    } catch (err) {
+      baseStatus.remoteAuthError = err?.message || 'Failed to fetch sync status'
+    }
+
+    return baseStatus
   }
 
   // --- Private Helpers ---
@@ -184,6 +360,7 @@ class SyncManager {
       const settingsRows = this.db.prepare('SELECT * FROM settings').all()
       const settingsObj = {}
       settingsRows.forEach((row) => {
+        if (SENSITIVE_SETTINGS_KEYS.has(row.key)) return
         settingsObj[row.key] = row.value
       })
       return settingsObj
@@ -239,6 +416,41 @@ class SyncManager {
 
     restoreTx()
     console.log('[Sync] Local DB updated successfully')
+  }
+
+  async fetchGistFileContent(fileMeta, label) {
+    if (!fileMeta) throw new Error(`${label} file entry missing in gist`)
+    if (!fileMeta.raw_url) throw new Error(`${label} file is missing raw_url (cannot download)`)
+
+    const expectedBytes = typeof fileMeta.size === 'number' ? fileMeta.size : null
+    const attempts = 3
+
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+      try {
+        const content = await GitHubService.fetchRawFile(fileMeta.raw_url, { cacheBust: true })
+        if (!content) {
+          console.warn(`[Sync] ${label} attempt ${attempt} returned empty payload`)
+        } else if (expectedBytes) {
+          const actualBytes = Buffer.byteLength(content, 'utf8')
+          if (actualBytes + BYTE_TOLERANCE < expectedBytes) {
+            console.warn(
+              `[Sync] ${label} attempt ${attempt} looked truncated (${actualBytes}/${expectedBytes} bytes)`
+            )
+          } else {
+            return content
+          }
+        } else {
+          return content
+        }
+      } catch (err) {
+        console.warn(`[Sync] ${label} attempt ${attempt} failed`, err)
+        if (attempt === attempts) throw err
+      }
+
+      await sleep(attempt * 200)
+    }
+
+    throw new Error(`${label} download failed: file appears truncated even after retries`)
   }
 }
 

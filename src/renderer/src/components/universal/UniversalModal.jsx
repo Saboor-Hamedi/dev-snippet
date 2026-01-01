@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useLayoutEffect } from 'react'
 import ReactDOM from 'react-dom'
 import { GripHorizontal } from 'lucide-react'
 import { makeDraggable } from '../../utils/draggable'
@@ -22,16 +22,40 @@ const UniversalModal = ({
 }) => {
   const modalRef = useRef(null)
   const headerRef = useRef(null)
+  const dragHandleRef = useRef(null)
+  const isFirstRender = useRef(true)
   const { settings } = useSettings()
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (isOpen && modalRef.current && headerRef.current) {
       const modal = modalRef.current
       const header = headerRef.current
+
+      // Force solid background to remove transparency from all themes
+      // We use --color-tooltip-bg because it is guaranteed to be a solid hex/rgb in all themes
+      // We use 'background' shorthand to override any 'background: rgba(...)' in CSS
+      const solidBg = 'var(--color-tooltip-bg, #1e1e1e)'
+      const solidBorder = 'var(--color-border, #333)'
+
+      modal.style.setProperty('background', solidBg, 'important')
+      modal.style.setProperty('background-color', solidBg, 'important')
+      modal.style.setProperty('backdrop-filter', 'none', 'important')
+      modal.style.setProperty('opacity', '1', 'important')
+      modal.style.setProperty('border-color', solidBorder, 'important')
+
+      header.style.setProperty('background', solidBg, 'important')
+      header.style.setProperty('background-color', solidBg, 'important')
+      header.style.setProperty('border-bottom-color', solidBorder, 'important')
+
       const isLocked = settings?.ui?.universalLock?.modal
 
       // 1. Position & Size Setup
       const saved = getPersistentPosition(customKey, null)
+
+      // Disable transitions for the initial positioning to prevent "shaking"
+      if (isFirstRender.current) {
+        modal.classList.add('no-transition')
+      }
 
       if (isMaximized) {
         modal.classList.add('maximized')
@@ -39,10 +63,13 @@ const UniversalModal = ({
         modal.style.setProperty('top', '0', 'important')
         modal.style.setProperty('width', '100vw', 'important')
         modal.style.setProperty('height', '100vh', 'important')
+        modal.style.setProperty('max-width', 'none', 'important')
+        modal.style.setProperty('max-height', 'none', 'important')
         modal.style.setProperty('margin', '0', 'important')
         modal.style.setProperty('position', 'fixed', 'important')
         modal.style.setProperty('border-radius', '0', 'important')
         modal.style.setProperty('z-index', '99999', 'important')
+        modal.style.setProperty('transform', 'none', 'important')
       } else {
         modal.classList.remove('maximized')
         // Explicitly clear all maximization overrides
@@ -50,15 +77,19 @@ const UniversalModal = ({
         modal.style.removeProperty('top')
         modal.style.removeProperty('width')
         modal.style.removeProperty('height')
+        modal.style.removeProperty('max-width')
+        modal.style.removeProperty('max-height')
         modal.style.removeProperty('margin')
         modal.style.removeProperty('position')
         modal.style.removeProperty('border-radius')
         modal.style.removeProperty('z-index')
+        modal.style.removeProperty('transform')
 
         if (isLocked || resetPosition) {
           modal.style.position = isLocked ? 'relative' : 'absolute'
-          modal.style.width = initialWidth
-          modal.style.height = initialHeight
+          modal.style.width = typeof initialWidth === 'number' ? `${initialWidth}px` : initialWidth
+          modal.style.height =
+            typeof initialHeight === 'number' ? `${initialHeight}px` : initialHeight
           modal.style.margin = 'auto'
           modal.style.left = ''
           modal.style.top = ''
@@ -66,8 +97,11 @@ const UniversalModal = ({
           modal.style.position = 'absolute'
           modal.style.left = saved.left
           modal.style.top = saved.top
-          modal.style.width = saved.width || initialWidth
-          modal.style.height = saved.height || initialHeight
+          modal.style.width =
+            saved.width || (typeof initialWidth === 'number' ? `${initialWidth}px` : initialWidth)
+          modal.style.height =
+            saved.height ||
+            (typeof initialHeight === 'number' ? `${initialHeight}px` : initialHeight)
           modal.style.margin = '0'
         } else {
           modal.style.position = 'absolute'
@@ -79,6 +113,14 @@ const UniversalModal = ({
               modal.style.right = '60px'
               modal.style.top = '100px'
               modal.style.left = 'auto'
+            } else if (customKey === 'flow_workspace_position') {
+              // Center the workspace by default
+              const w =
+                typeof initialWidth === 'number' ? initialWidth : parseInt(initialWidth) || 800
+              const h =
+                typeof initialHeight === 'number' ? initialHeight : parseInt(initialHeight) || 700
+              modal.style.left = `${Math.max(0, (window.innerWidth - w) / 2)}px`
+              modal.style.top = `${Math.max(0, (window.innerHeight - h) / 2)}px`
             } else {
               modal.style.right = '40px'
               modal.style.top = '80px'
@@ -90,15 +132,24 @@ const UniversalModal = ({
             modal.style.top = ''
             modal.style.margin = 'auto'
           }
-          modal.style.width = initialWidth
-          modal.style.height = initialHeight
+          modal.style.width = typeof initialWidth === 'number' ? `${initialWidth}px` : initialWidth
+          modal.style.height =
+            typeof initialHeight === 'number' ? `${initialHeight}px` : initialHeight
         }
+      }
+
+      // Re-enable transitions after initial positioning
+      if (isFirstRender.current) {
+        // Force a reflow to ensure the initial position is applied without transition
+        void modal.offsetHeight
+        modal.classList.remove('no-transition')
+        isFirstRender.current = false
       }
 
       // 2. Enable Dragging
       let cleanupDrag
-      if (!isLocked && !isMaximized) {
-        cleanupDrag = makeDraggable(modal, header, (pos) => {
+      if (!isLocked && !isMaximized && dragHandleRef.current) {
+        cleanupDrag = makeDraggable(modal, dragHandleRef.current, (pos) => {
           savePersistentPosition(customKey, {
             ...saved,
             left: `${pos.x}px`,
@@ -158,6 +209,7 @@ const UniversalModal = ({
     initialWidth,
     initialHeight,
     settings?.ui?.universalLock?.modal,
+    settings?.ui?.theme,
     resetPosition,
     isMaximized
   ])
@@ -171,10 +223,15 @@ const UniversalModal = ({
       ref={modalRef}
       className={`universal-modal ${isDragDisabled ? 'locked' : ''} ${className} ${noOverlay ? 'no-overlay' : ''}`}
       style={{
-        width: initialWidth,
-        height: initialHeight,
-        zIndex: noOverlay ? 1000 : undefined,
-        pointerEvents: className.includes('click-through') ? 'none' : 'auto'
+        width: typeof initialWidth === 'number' ? `${initialWidth}px` : initialWidth,
+        height: typeof initialHeight === 'number' ? `${initialHeight}px` : initialHeight,
+        zIndex: noOverlay ? 100000 : 200000,
+        pointerEvents: className.includes('click-through') ? 'none' : 'auto',
+        backgroundColor: 'rgb(var(--color-bg-primary-rgb))',
+        background: 'rgb(var(--color-bg-primary-rgb))',
+        backdropFilter: 'none',
+        opacity: 1,
+        borderColor: 'var(--color-border, #333)'
       }}
     >
       <div
@@ -187,13 +244,32 @@ const UniversalModal = ({
           }
         }}
         style={{
-          cursor: isDragDisabled ? 'default' : 'move',
-          pointerEvents: 'auto' // Header must always be interactable for dragging
+          cursor: 'default',
+          pointerEvents: 'auto', // Header must always be interactable for dragging
+          backgroundColor: 'rgb(var(--color-bg-primary-rgb))',
+          background: 'rgb(var(--color-bg-primary-rgb))',
+          borderBottomColor: 'var(--color-border, #333)'
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
-          {!isDragDisabled && <GripHorizontal size={14} style={{ opacity: 0.3 }} />}
-          <div className="universal-modal-title" style={{ flex: 1 }}>
+          {!isDragDisabled && (
+            <div
+              ref={dragHandleRef}
+              style={{
+                cursor: 'move',
+                padding: '4px',
+                marginLeft: '-4px',
+                display: 'flex',
+                alignItems: 'center'
+              }}
+            >
+              <GripHorizontal size={14} style={{ opacity: 0.3 }} />
+            </div>
+          )}
+          <div
+            className="universal-modal-title"
+            style={{ flex: 1, fontSize: '13px', color: 'var(--color-text-primary)' }}
+          >
             {title}
           </div>
         </div>
@@ -203,7 +279,18 @@ const UniversalModal = ({
       >
         {children}
       </div>
-      {footer && <div className="universal-modal-footer">{footer}</div>}
+      {footer && (
+        <div
+          className="universal-modal-footer"
+          style={{
+            backgroundColor: 'rgb(var(--color-bg-primary-rgb))',
+            background: 'rgb(var(--color-bg-primary-rgb))',
+            borderTopColor: 'var(--color-border, #333)'
+          }}
+        >
+          {footer}
+        </div>
+      )}
     </div>
   )
 

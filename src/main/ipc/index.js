@@ -13,8 +13,16 @@ import { registerUpdatesHandlers } from './updates'
 import { registerExportHandlers } from '../export/export'
 import { registerWordExportHandler } from '../export/exportWord'
 import { registerSyncHandlers } from './sync'
+import { registerQuickCaptureHandlers } from '../QuickCapture/ipc'
 
-export const registerAllHandlers = (app, mainWindow, db, preparedStatements, getDB) => {
+export const registerAllHandlers = (
+  app,
+  mainWindow,
+  db,
+  preparedStatements,
+  getDB,
+  enableDevtools
+) => {
   // Register all IPC handlers
   registerWindowHandlers(app, mainWindow)
   registerDatabaseHandlers(db, preparedStatements)
@@ -23,14 +31,16 @@ export const registerAllHandlers = (app, mainWindow, db, preparedStatements, get
   registerBackupHandlers(app, getDB)
   registerDialogHandlers()
   registerUpdatesHandlers(mainWindow)
-  console.log('✅ Registering Export Handlers...')
+  console.log('Registering Export Handlers...')
   registerExportHandlers()
 
   // Register Word export handler
   registerWordExportHandler(app)
 
-  console.log('✅ Registering Sync Handlers...')
+  console.log('Registering Sync Handlers...')
   registerSyncHandlers(db)
+
+  registerQuickCaptureHandlers(app, enableDevtools)
 
   return {
     settingsHandlers

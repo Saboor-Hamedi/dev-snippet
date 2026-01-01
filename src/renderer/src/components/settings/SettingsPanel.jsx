@@ -17,13 +17,8 @@ import { useToast } from '../../hook/useToast'
 import ToastNotification from '../../utils/ToastNotification'
 import UserSettings from '../preference/UserSettings.jsx'
 import cleanErrorJson from '../../hook/useCleanErrorJson.js'
-import {
-  AppearanceSettings,
-  EditorSettings,
-  KeyboardShortcuts,
-  DataSettings,
-  UpdateSettings
-} from './sections'
+import { AppearanceSettings, EditorSettings, DataSettings, UpdateSettings } from './sections'
+import KeyboardShortcuts from '../../features/keyboard/KeyboardShortcutsSection'
 
 /**
  * Main Settings Panel Component

@@ -65,6 +65,70 @@ export const linkPreviewTooltip = hoverTooltip(async (view, pos, side) => {
   const snippet = await window.api.invoke('db:getSnippetByTitle', title)
   if (!snippet) return null
 
+  // Pre-render HTML to avoid layout jumps during tooltip display
+  let codeToParse = snippet.code?.trim() || ''
+  const lang = (snippet.language || 'markdown').toLowerCase()
+
+  // Auto-wrap non-markdown content in proper fences
+  if (lang === 'mermaid' && !codeToParse.startsWith('```mermaid')) {
+    codeToParse = '```mermaid\n' + codeToParse + '\n```'
+  } else if (lang !== 'markdown' && lang !== 'md' && !/^```/.test(codeToParse)) {
+    codeToParse = '```' + lang + '\n' + codeToParse + '\n```'
+  }
+
+  let initialHTML = ''
+  try {
+    initialHTML = await markdownToHtml(codeToParse, { renderMetadata: false })
+  } catch (err) {
+    initialHTML = `<div>${codeToParse}</div>`
+  }
+
+  // Pre-calculate image and diagram loading to avoid layout shifts
+  const tempMeasureDiv = document.createElement('div')
+  tempMeasureDiv.innerHTML = initialHTML
+
+  // 1. Render Mermaid Diagrams in the background before showing
+  const mermaidNodes = tempMeasureDiv.querySelectorAll('.mermaid')
+  if (mermaidNodes.length > 0) {
+    try {
+      // We must be in a DOM-attached state for mermaid to measure correctly,
+      // so we use a hidden anchor in the body for pre-rendering
+      const anchor = document.createElement('div')
+      anchor.style.position = 'fixed'
+      anchor.style.left = '-10000px'
+      anchor.style.visibility = 'hidden'
+      anchor.innerHTML = initialHTML
+      document.body.appendChild(anchor)
+
+      const nodesToRun = Array.from(anchor.querySelectorAll('.mermaid'))
+      await mermaid.run({ nodes: nodesToRun })
+
+      // Transfer the rendered HTML back to our measure div
+      initialHTML = anchor.innerHTML
+      document.body.removeChild(anchor)
+    } catch (e) {
+      console.warn('Pre-render Mermaid failed:', e)
+    }
+  }
+
+  // 2. Wait for regular images
+  const images = Array.from(tempMeasureDiv.querySelectorAll('img'))
+  if (images.length > 0) {
+    await Promise.all(
+      images.map(
+        (img) =>
+          new Promise((resolve) => {
+            if (img.complete) resolve()
+            else {
+              img.onload = resolve
+              img.onerror = resolve
+              setTimeout(resolve, 1500)
+            }
+          })
+      )
+    )
+  }
+
   return {
     pos: start,
     end,
@@ -93,52 +157,14 @@ export const linkPreviewTooltip = hoverTooltip(async (view, pos, side) => {
       const body = document.createElement('div')
       body.className = 'preview-body markdown-body'
 
-      const renderContent = async () => {
-        let codeToParse = snippet.code?.trim() || ''
-        const lang = (snippet.language || 'markdown').toLowerCase()
-
-        // Auto-wrap non-markdown content in proper fences
-        if (lang === 'mermaid' && !codeToParse.startsWith('```mermaid')) {
-          codeToParse = '```mermaid\n' + codeToParse + '\n```'
-        } else if (lang !== 'markdown' && lang !== 'md' && !/^```/.test(codeToParse)) {
-          codeToParse = '```' + lang + '\n' + codeToParse + '\n```'
-        }
-
-        try {
-          const rawHTML = await markdownToHtml(codeToParse, { renderMetadata: false })
-          const tempDiv = document.createElement('div')
-          tempDiv.innerHTML = rawHTML
-
-          // Strip metadata/intel if present
-          const intel = tempDiv.querySelector('.preview-intel')
-          if (intel) intel.remove()
-
-          const content = tempDiv.querySelector('.markdown-content') || tempDiv
-          body.innerHTML = content.innerHTML
-        } catch (err) {
-          console.warn('Markdown render failed in tooltip:', err)
-          body.textContent = codeToParse || '(empty)'
-        }
-
-        container.insertBefore(body, container.lastChild) // Insert before footer
-
-        // Render Mermaid diagrams (if any)
-        const mermaidNodes = body.querySelectorAll('.mermaid')
-        if (mermaidNodes.length > 0) {
-          requestAnimationFrame(async () => {
-            try {
-              const unprocessed = Array.from(mermaidNodes).filter(
-                (node) => !node.getAttribute('data-processed')
-              )
-              if (unprocessed.length > 0) {
-                await mermaid.run({ nodes: unprocessed })
-              }
-            } catch (e) {
-              console.warn('Mermaid failed in tooltip:', e)
-            }
-          })
-        }
-      }
+      // Inject pre-rendered content immediately (images + diagrams are already ready)
+      const tempDiv = document.createElement('div')
+      tempDiv.innerHTML = initialHTML
+      const intel = tempDiv.querySelector('.preview-intel')
+      if (intel) intel.remove()
+      const content = tempDiv.querySelector('.markdown-content') || tempDiv
+      body.innerHTML = content.innerHTML
+      container.appendChild(body)
 
       // Footer: Last modified (compact)
       const footer = document.createElement('div')
@@ -152,9 +178,6 @@ export const linkPreviewTooltip = hoverTooltip(async (view, pos, side) => {
         : '—'
       footer.textContent = `Modified: ${dateStr}`
       container.appendChild(footer)
-
-      // Trigger render
-      renderContent()
 
       return { dom: container }
     }

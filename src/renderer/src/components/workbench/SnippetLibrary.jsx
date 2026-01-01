@@ -4,6 +4,8 @@ import { ViewProvider } from '../../context/ViewContext'
 import { ModalProvider } from './manager/ModalManager'
 import SnippetLibraryInner from './SnippetLibraryInner'
 
+// #file:SnippetLibrary.jsx wires global data providers before rendering the workbench shell.
+
 const SnippetLibrary = () => {
   const snippetData = useSnippetData() // Global data fetcher
 

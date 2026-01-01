@@ -8,6 +8,7 @@ import path from 'path'
 import { initDB, getDB, getPreparedStatements } from './database'
 import { createWindow } from './window'
 import { registerAllHandlers } from './ipc'
+import { toggleQuickCapture } from './QuickCapture'
 // QuickCapture hook logic is frontend-only, we should not import it here in Main.
 // Instead, logic for toggling the window should be inside createWindow or handled via IPC if needed.
 // For now, we'll remove this incorrect import.
@@ -46,19 +47,7 @@ app.whenReady().then(() => {
   // 🚀 Register Global Quick Capture (Shift + Alt + Space)
   const shortcut = 'Shift+Alt+Space'
   const ret = globalShortcut.register(shortcut, () => {
-    if (mainWindow) {
-      if (mainWindow.isVisible()) {
-        if (mainWindow.isFocused()) {
-          mainWindow.hide()
-        } else {
-          mainWindow.show()
-          mainWindow.focus()
-        }
-      } else {
-        mainWindow.show()
-        mainWindow.focus()
-      }
-    }
+    toggleQuickCapture(ENABLE_DEVTOOLS)
   })
   if (!ret) {
     console.warn(`❌ Global shortcut [${shortcut}] registration failed.`)
@@ -77,7 +66,7 @@ app.whenReady().then(() => {
   })
 
   // Register all IPC handlers
-  registerAllHandlers(app, mainWindow, db, preparedStatements, () => getDB(app))
+  registerAllHandlers(app, mainWindow, db, preparedStatements, () => getDB(app), ENABLE_DEVTOOLS)
 
   // macOS: Re-create window when dock icon is clicked
   app.on('activate', function () {

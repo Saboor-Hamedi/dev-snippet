@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook } from '@testing-library/react'
-import { useKeyboardShortcuts } from '../renderer/src/hook/useKeyboardShortcuts.js'
+import { useKeyboardShortcuts } from '../renderer/src/features/keyboard/useKeyboardShortcuts.js'
 
 describe('useKeyboardShortcuts', () => {
   let mockHandlers
@@ -16,7 +16,8 @@ describe('useKeyboardShortcuts', () => {
       onRenameSnippet: vi.fn(),
       onDeleteSnippet: vi.fn(),
       onCloseEditor: vi.fn(),
-      onEscapeMenusOnly: vi.fn()
+      onEscapeMenusOnly: vi.fn(),
+      onToggleQuickCapture: vi.fn()
     }
   })
 
@@ -139,7 +140,12 @@ describe('useKeyboardShortcuts', () => {
 
     unmount()
 
-    expect(removeEventListenerSpy).toHaveBeenCalledWith('keydown', expect.any(Function))
+    expect(removeEventListenerSpy).toHaveBeenCalledWith('keydown', expect.any(Function), true)
+    expect(removeEventListenerSpy).toHaveBeenCalledWith(
+      'wheel',
+      expect.any(Function),
+      expect.objectContaining({ capture: true })
+    )
   })
 
   it('updates handlers when shortcuts change', () => {
@@ -168,5 +174,20 @@ describe('useKeyboardShortcuts', () => {
 
     // Should not crash, just silently ignore
     expect(partialHandlers.onSave).not.toHaveBeenCalled()
+  })
+
+  it('calls onToggleQuickCapture for Shift+Alt+Space', () => {
+    renderHook(() => useKeyboardShortcuts(mockHandlers))
+
+    const event = new KeyboardEvent('keydown', {
+      key: ' ',
+      code: 'Space',
+      shiftKey: true,
+      altKey: true
+    })
+
+    window.dispatchEvent(event)
+
+    expect(mockHandlers.onToggleQuickCapture).toHaveBeenCalled()
   })
 })

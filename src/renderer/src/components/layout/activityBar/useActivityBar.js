@@ -11,7 +11,7 @@ export const useActivityBar = (settings, activeTab, trashCount) => {
     return {
       item: (isActive) => ({
         color: isActive
-          ? 'var(--activity-bar-active-fg, var(--color-accent-primary, #ffffff))'
+          ? 'var(--activity-bar-active-fg, var(--sidebar-icon-color, var(--color-accent-primary, #ffffff)))'
           : 'var(--activity-bar-inactive-fg, var(--color-text-secondary, rgba(255, 255, 255, 0.4)))',
         opacity: isActive ? 1 : 0.6
       }),

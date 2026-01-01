@@ -8,6 +8,7 @@ import { useSearchLogic } from './useSnippetData/useSearchLogic'
 export const useSnippetData = () => {
   // 1. Centralized State
   const [snippets, setSnippets] = useState([])
+  const [hasLoadedSnippets, setHasLoadedSnippets] = useState(false)
   const [folders, setFolders] = useState([])
   const [trash, setTrash] = useState([])
   const [projects, setProjects] = useState([])
@@ -59,9 +60,13 @@ export const useSnippetData = () => {
           offset: 0
         })
         setSnippets(loadedSnippets || [])
+        setHasLoadedSnippets(true)
+      } else {
+        setHasLoadedSnippets(true)
       }
     } catch (error) {
       console.error('Data loading error:', error)
+      setHasLoadedSnippets(true)
     }
   }, [])
 
@@ -255,6 +260,7 @@ export const useSnippetData = () => {
     toggleFolderCollapse: folderOps.toggleFolderCollapse,
     moveSnippet,
     moveFolder: folderOps.moveFolder,
-    togglePinnedSnippet
+    togglePinnedSnippet,
+    hasLoadedSnippets
   }
 }

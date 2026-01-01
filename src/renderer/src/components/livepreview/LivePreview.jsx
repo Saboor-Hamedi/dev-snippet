@@ -34,7 +34,8 @@ const LivePreview = ({
   onExportPDF,
   showHeader = true,
   enableScrollSync = false,
-  fontSize = null
+  fontSize = null,
+  zenFocus = false
 }) => {
   // --- Refs & Context ---
   const lastScrollPercentage = useRef(0)
@@ -101,18 +102,18 @@ const LivePreview = ({
             .replace(/"/g, '&quot;')
           const encoded = encodeURIComponent(visibleCode)
           result = `
-            <div class="mermaid-diagram-wrapper" style="display: flex !important; flex-direction: column !important; width: 100% !important; background: var(--color-bg-secondary) !important; border: 1px solid var(--color-border) !important; border-radius: 12px !important; margin: 2rem 0 !important; box-sizing: border-box !important; shadow: var(--box-shadow-premium) !important; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5) !important;">
-              <div class="code-block-header" style="display: flex !important; justify-content: space-between !important; align-items: center !important; padding: 12px 20px !important; background: var(--color-bg-tertiary) !important; backdrop-filter: blur(12px) saturate(180%) !important; border-bottom: 1px solid var(--color-border) !important; width: 100% !important; box-sizing: border-box !important; flex-shrink: 0 !important; height: 44px !important;">
+            <div class="mermaid-diagram-wrapper" style="display: flex !important; flex-direction: column !important; width: 100% !important; background: var(--color-bg-secondary) !important; border: 1px solid var(--color-border) !important; border-radius: 0 !important; margin: 2rem 0 !important; box-sizing: border-box !important;">
+              <div class="code-block-header" style="display: flex !important; justify-content: space-between !important; align-items: center !important; padding: 12px 20px !important; background: var(--color-bg-tertiary) !important; backdrop-filter: none !important; border-bottom: 1px solid var(--color-border) !important; width: 100% !important; box-sizing: border-box !important; flex-shrink: 0 !important; height: 44px !important;">
                 <div style="display: flex !important; align-items: center !important; gap: 8px !important;">
-                  <div style="width: 10px; height: 10px; border-radius: 50%; background: #ff5f56; box-shadow: 0 0 6px #ff5f5666; border: 0.5px solid rgba(0,0,0,0.1); margin: 0 !important; padding: 0 !important;"></div>
-                  <div style="width: 10px; height: 10px; border-radius: 50%; background: #ffbd2e; box-shadow: 0 0 6px #ffbd2e66; border: 0.5px solid rgba(0,0,0,0.1); margin: 0 !important; padding: 0 !important;"></div>
-                  <div style="width: 10px; height: 10px; border-radius: 50%; background: #27c93f; box-shadow: 0 0 6px #27c93f66; border: 0.5px solid rgba(0,0,0,0.1); margin: 0 !important; padding: 0 !important;"></div>
+                  <div style="width: 10px; height: 10px; border-radius: 50%; background: #ff5f56; border: 0.5px solid rgba(0,0,0,0.1); margin: 0 !important; padding: 0 !important;"></div>
+                  <div style="width: 10px; height: 10px; border-radius: 50%; background: #ffbd2e; border: 0.5px solid rgba(0,0,0,0.1); margin: 0 !important; padding: 0 !important;"></div>
+                  <div style="width: 10px; height: 10px; border-radius: 50%; background: #27c93f; border: 0.5px solid rgba(0,0,0,0.1); margin: 0 !important; padding: 0 !important;"></div>
                 </div>
                 <div class="code-actions" style="display: flex !important; gap: 10px !important; align-items: center !important;">
-                  <button class="copy-image-btn" data-code="${encoded}" data-lang="mermaid" title="Export as Image" style="background: transparent !important; border: none !important; cursor: pointer !important; color: var(--color-text-tertiary) !important; padding: 6px !important; border-radius: 6px !important; display: flex !important; align-items: center !important; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); hover:background: rgba(255,255,255,0.05) !important;">
+                  <button class="copy-image-btn" data-code="${encoded}" data-lang="mermaid" title="Export as Image" style="background: transparent !important; border: none !important; cursor: pointer !important; color: var(--color-text-tertiary) !important; padding: 6px !important; border-radius: 0 !important; display: flex !important; align-items: center !important; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); hover:background: rgba(255,255,255,0.05) !important;">
                       <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-image"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
                   </button>
-                  <button class="copy-code-btn" data-code="${encoded}" title="Copy Mermaid Source" style="background: transparent !important; border: none !important; cursor: pointer !important; color: var(--color-text-tertiary) !important; padding: 6px !important; border-radius: 6px !important; display: flex !important; align-items: center !important; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); hover:background: rgba(255,255,255,0.05) !important;">
+                  <button class="copy-code-btn" data-code="${encoded}" title="Copy Mermaid Source" style="background: transparent !important; border: none !important; cursor: pointer !important; color: var(--color-text-tertiary) !important; padding: 6px !important; border-radius: 0 !important; display: flex !important; align-items: center !important; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); hover:background: rgba(255,255,255,0.05) !important;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                   </button>
                 </div>
@@ -328,7 +329,7 @@ const LivePreview = ({
                 } catch (renderErr) {
                   console.error('Mermaid individual render failure:', renderErr)
                   node.setAttribute('data-processed', 'error')
-                  node.innerHTML = `<div style="color: #ef4444; font-size: 11px; padding: 12px; border: 1px solid #ef444433; border-radius: 6px; background: rgba(239, 68, 68, 0.05);">Mermaid Error: check diagram syntax</div>`
+                  node.innerHTML = `<div style="color: #ef4444; font-size: 11px; padding: 12px; border: 1px solid #ef444433; border-radius: 0; background: rgba(239, 68, 68, 0.05);">Mermaid Error: check diagram syntax</div>`
                 } finally {
                   // Carefully clear ONLY this render's bridge content
                   bridge.innerHTML = ''
@@ -350,21 +351,29 @@ const LivePreview = ({
   useEffect(() => {
     if (!enableScrollSync) return
 
+    let rafId = null
     const handleSync = (e) => {
       const percentage = e.detail?.percentage
       if (typeof percentage !== 'number') return
 
       lastScrollPercentage.current = percentage
 
-      const container = shadowContentRef.current
-      if (container) {
-        const scrollTarget = (container.scrollHeight - container.clientHeight) * percentage
-        container.scrollTo({ top: scrollTarget, behavior: 'instant' })
-      }
+      if (rafId) cancelAnimationFrame(rafId)
+      rafId = requestAnimationFrame(() => {
+        const container = shadowContentRef.current
+        if (container) {
+          const scrollTarget = (container.scrollHeight - container.clientHeight) * percentage
+          container.scrollTo({ top: scrollTarget, behavior: 'instant' })
+        }
+        rafId = null
+      })
     }
 
     window.addEventListener('app:editor-scroll', handleSync)
-    return () => window.removeEventListener('app:editor-scroll', handleSync)
+    return () => {
+      window.removeEventListener('app:editor-scroll', handleSync)
+      if (rafId) cancelAnimationFrame(rafId)
+    }
   }, [enableScrollSync])
 
   // --- 5. Main Render Output ---
@@ -382,7 +391,7 @@ const LivePreview = ({
           <div className="flex items-center gap-2 flex-shrink-0">
             <button
               onClick={() => setOverlay(!isOverlay)}
-              className={`w-7 h-7 flex items-center justify-center rounded-md transition-all ${isOverlay ? 'bg-[var(--color-accent-primary)] text-white' : 'hover:bg-black/5 dark:hover:bg-white/5 opacity-60 hover:opacity-100'}`}
+              className={`w-7 h-7 flex items-center justify-center rounded-none transition-all ${isOverlay ? 'bg-[var(--color-accent-primary)] text-white' : 'hover:bg-black/5 dark:hover:bg-white/5 opacity-60 hover:opacity-100'}`}
               title={isOverlay ? 'Switch to Split View' : 'Switch to Overlay Mode'}
             >
               <Layers size={14} />
@@ -397,21 +406,21 @@ const LivePreview = ({
               <div className="flex items-center gap-1 h-4 ml-1">
                 <button
                   onClick={() => splitContext.setOverlayWidth(25)}
-                  className={`p-1 rounded transition-colors ${splitContext.overlayWidth === 25 ? 'bg-[var(--color-accent-primary)] text-white' : 'text-[var(--color-text-tertiary)] hover:bg-black/5 dark:hover:bg-white/5'}`}
+                  className={`p-1 rounded-none transition-colors ${splitContext.overlayWidth === 25 ? 'bg-[var(--color-accent-primary)] text-white' : 'text-[var(--color-text-tertiary)] hover:bg-black/5 dark:hover:bg-white/5'}`}
                   title="Phone View"
                 >
                   <Smartphone size={14} />
                 </button>
                 <button
                   onClick={() => splitContext.setOverlayWidth(50)}
-                  className={`p-1 rounded transition-colors ${splitContext.overlayWidth === 50 ? 'bg-[var(--color-accent-primary)] text-white' : 'text-[var(--color-text-tertiary)] hover:bg-black/5 dark:hover:bg-white/5'}`}
+                  className={`p-1 rounded-none transition-colors ${splitContext.overlayWidth === 50 ? 'bg-[var(--color-accent-primary)] text-white' : 'text-[var(--color-text-tertiary)] hover:bg-black/5 dark:hover:bg-white/5'}`}
                   title="Tablet View"
                 >
                   <Tablet size={14} />
                 </button>
                 <button
                   onClick={() => splitContext.setOverlayWidth(75)}
-                  className={`p-1 rounded transition-colors ${splitContext.overlayWidth === 75 ? 'bg-[var(--color-accent-primary)] text-white' : 'text-[var(--color-text-tertiary)] hover:bg-black/5 dark:hover:bg-white/5'}`}
+                  className={`p-1 rounded-none transition-colors ${splitContext.overlayWidth === 75 ? 'bg-[var(--color-accent-primary)] text-white' : 'text-[var(--color-text-tertiary)] hover:bg-black/5 dark:hover:bg-white/5'}`}
                   title="Desktop View"
                 >
                   <Monitor size={14} />
@@ -422,7 +431,7 @@ const LivePreview = ({
           <div className="flex items-center gap-1 flex-shrink-0 ml-4">
             <button
               onClick={onOpenMiniPreview}
-              className="w-7 h-7 rounded-md hover:bg-[var(--hover-bg)] text-[var(--color-text-primary)] flex items-center justify-center transition-opacity hover:opacity-70"
+              className="w-7 h-7 rounded-none hover:bg-[var(--hover-bg)] text-[var(--color-text-primary)] flex items-center justify-center transition-opacity hover:opacity-70"
               title="Pop out Mini Preview"
             >
               <svg
@@ -442,7 +451,7 @@ const LivePreview = ({
             </button>
             <button
               onClick={onOpenExternal}
-              className="w-7 h-7 rounded-md hover:bg-[var(--hover-bg)] text-[var(--color-text-primary)] flex items-center justify-center transition-opacity hover:opacity-70"
+              className="w-7 h-7 rounded-none hover:bg-[var(--hover-bg)] text-[var(--color-text-primary)] flex items-center justify-center transition-opacity hover:opacity-70"
               title="Open in System Browser"
             >
               <svg
@@ -467,7 +476,7 @@ const LivePreview = ({
                 else if (window.api?.exportPDF) window.api.exportPDF()
                 else window.print()
               }}
-              className="px-2 py-1 rounded-md bg-blue-500 text-white text-[10px] font-bold"
+              className="px-2 py-1 rounded-none bg-blue-500 text-white text-[10px] font-bold"
             >
               Export
             </button>
@@ -484,6 +493,7 @@ const LivePreview = ({
           styles={combinedStyles}
           onRender={onShadowRender}
           isDark={isDark}
+          zenFocus={zenFocus}
           className="w-full h-full"
         />
       </div>

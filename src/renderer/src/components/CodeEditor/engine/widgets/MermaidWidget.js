@@ -48,6 +48,14 @@ export class MermaidWidget extends WidgetType {
   }
 
   /**
+   * ignoreEvent - Ensures that interactions with the Mermaid diagram (zooming, panning)
+   * do not cause CodeMirror to move the cursor or selection into the code block.
+   */
+  ignoreEvent() {
+    return true
+  }
+
+  /**
    * updateDOM called when eq() returns true.
    * We use this to trigger a "Soft Update" of the diagram without destroying the container.
    */

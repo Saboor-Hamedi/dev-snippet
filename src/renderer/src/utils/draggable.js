@@ -10,6 +10,7 @@ export const makeDraggable = (el, handle, onDragEnd) => {
     pos2 = 0,
     pos3 = 0,
     pos4 = 0
+  let rafId = null
 
   const mouseDownHandler = (e) => {
     // Only left click
@@ -46,33 +47,40 @@ export const makeDraggable = (el, handle, onDragEnd) => {
   }
 
   const mouseMoveHandler = (e) => {
-    // No preventDefault here to keep it lean, or keep it if needed for text selection
-    // e.preventDefault()
+    if (rafId) return
 
-    pos1 = pos3 - e.clientX
-    pos2 = pos4 - e.clientY
-    pos3 = e.clientX
-    pos4 = e.clientY
+    rafId = requestAnimationFrame(() => {
+      pos1 = pos3 - e.clientX
+      pos2 = pos4 - e.clientY
+      pos3 = e.clientX
+      pos4 = e.clientY
 
-    let newTop = el.offsetTop - pos2
-    let newLeft = el.offsetLeft - pos1
+      let newTop = el.offsetTop - pos2
+      let newLeft = el.offsetLeft - pos1
 
-    const parent = el.offsetParent
-    if (parent) {
-      const maxLeft = parent.offsetWidth - el.offsetWidth
-      const maxTop = parent.offsetHeight - el.offsetHeight
-      newLeft = Math.max(0, Math.min(newLeft, maxLeft))
-      newTop = Math.max(0, Math.min(newTop, maxTop))
-    }
+      const parent = el.offsetParent
+      if (parent) {
+        const maxLeft = parent.offsetWidth - el.offsetWidth
+        const maxTop = parent.offsetHeight - el.offsetHeight
+        newLeft = Math.max(0, Math.min(newLeft, maxLeft))
+        newTop = Math.max(0, Math.min(newTop, maxTop))
+      }
 
-    el.style.top = `${newTop}px`
-    el.style.left = `${newLeft}px`
-    el.style.bottom = 'auto'
-    el.style.right = 'auto'
-    el.style.margin = '0'
+      el.style.top = `${newTop}px`
+      el.style.left = `${newLeft}px`
+      el.style.bottom = 'auto'
+      el.style.right = 'auto'
+      el.style.margin = '0'
+      
+      rafId = null
+    })
   }
 
   const mouseUpHandler = () => {
+    if (rafId) {
+      cancelAnimationFrame(rafId)
+      rafId = null
+    }
     document.removeEventListener('mouseup', mouseUpHandler)
     document.removeEventListener('mousemove', mouseMoveHandler)
 

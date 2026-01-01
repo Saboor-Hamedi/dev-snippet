@@ -64,8 +64,10 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
     if (convas) {
       if (!isZenFocused) {
         convas.classList.add('is-snapped')
+        document.body.classList.remove('zen-focus-active')
       } else {
         convas.classList.remove('is-snapped')
+        document.body.classList.add('zen-focus-active')
       }
     }
 
@@ -73,6 +75,7 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
     return () => {
       const c = document.querySelector('.flow-convas')
       if (c) c.classList.remove('is-snapped')
+      document.body.classList.remove('zen-focus-active')
     }
   }, [isZenFocused])
 
@@ -121,7 +124,7 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
 
   const header = (
     <div
-      className="flex items-center justify-between w-full h-full pr-1 font-mono"
+      className="flex items-center justify-between w-full pr-1 font-mono"
       style={{ pointerEvents: 'auto' }}
     >
       <div className="flex items-center gap-6">
@@ -147,7 +150,7 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
                 e.stopPropagation()
                 setIsTimerActive(!isTimerActive)
               }}
-              className="p-1 rounded hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition-all"
+              className="p-1 rounded-none hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition-all"
             >
               {isTimerActive ? <Pause size={10} /> : <Play size={10} />}
             </button>
@@ -156,7 +159,7 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
                 e.stopPropagation()
                 setSeconds(0)
               }}
-              className="p-1 rounded hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition-all"
+              className="p-1 rounded-none hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition-all"
             >
               <RotateCcw size={10} />
             </button>
@@ -166,7 +169,7 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
         {/* Station Identity (Clean Text Only) */}
         <div className="hidden md:flex items-center gap-3">
           <div className="flex items-center gap-3 opacity-60">
-            <div className="w-1 h-1 rounded-full bg-[var(--color-accent-primary)]" />
+            <div className="w-1 h-1 rounded-none bg-[var(--color-accent-primary)]" />
             <span
               className="text-[10px] font-bold tracking-[0.2em] uppercase"
               style={{ color: 'var(--color-text-secondary)' }}
@@ -183,13 +186,13 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
 
       <div className="flex items-center gap-1.5" style={{ pointerEvents: 'auto' }}>
         {/* Simplified Control Group */}
-        <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-[var(--color-bg-tertiary)] border border-[var(--color-border)]">
+        <div className="flex items-center gap-0.5 p-0.5 rounded-none">
           <button
             onClick={(e) => {
               e.stopPropagation()
               setShowPreview(!showPreview)
             }}
-            className={`p-1.5 rounded-md transition-all ${showPreview ? 'text-[var(--color-accent-primary)] bg-[var(--color-bg-primary)] shadow-sm' : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]'}`}
+            className={`p-1.5 rounded-none ${showPreview ? 'text-[var(--color-accent-primary)]' : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]'}`}
             title="Toggle Scientist Preview"
           >
             <Columns size={13} />
@@ -200,7 +203,7 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
               e.stopPropagation()
               setIsStationMaximized(!isStationMaximized)
             }}
-            className={`p-1.5 rounded-md transition-all ${isStationMaximized ? 'text-[var(--color-accent-primary)] bg-[var(--color-bg-primary)] shadow-sm' : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]'}`}
+            className={`p-1.5 rounded-none ${isStationMaximized ? 'text-[var(--color-accent-primary)]' : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]'}`}
             title={
               isStationMaximized
                 ? 'Restore Station Layout (Windowed)'
@@ -215,11 +218,11 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
               e.stopPropagation()
               setIsZenFocused(!isZenFocused)
             }}
-            className={`p-1.5 rounded-md transition-all ${isZenFocused ? 'text-[var(--color-accent-primary)] bg-[var(--color-bg-primary)] shadow-sm' : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]'}`}
+            className={`p-1.5 rounded-none ${isZenFocused ? 'text-[var(--color-accent-primary)]' : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]'}`}
             title={
               isZenFocused
                 ? 'Exit Zen Environment (Snap Backdrop to Frame)'
-                : 'Enter Zen Environment (Immersive Backdrop Blur)'
+                : 'Enter Zen Environment (Immersive Focus Mode)'
             }
           >
             {isZenFocused ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
@@ -232,11 +235,32 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
                 e.stopPropagation()
                 setIsLocked(!isLocked)
               }}
-              className={`p-1.5 rounded-md transition-all ${isLocked ? 'text-[var(--color-accent-primary)] bg-[var(--color-bg-tertiary)]' : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]'}`}
+              className={`p-1.5 rounded-none transition-all ${isLocked ? 'text-[var(--color-accent-primary)]' : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]'}`}
               title={isLocked ? 'Disable Ghost Interactivity' : 'Enable Ghost Interactivity'}
             >
               <Ghost size={13} />
             </button>
+
+            {/* Ghost Opacity Control */}
+            <div className="flex items-center gap-2 px-2 border-l border-[var(--color-border)] ml-1 group/opacity">
+              <span className="text-[8px] font-black opacity-30 uppercase tracking-widest group-hover/opacity:opacity-60 transition-opacity">
+                Ghost
+              </span>
+              <input
+                type="range"
+                min="0.1"
+                max="1.0"
+                step="0.1"
+                value={opacity}
+                onMouseDown={(e) => e.stopPropagation()}
+                onChange={(e) => {
+                  e.stopPropagation()
+                  setOpacity(parseFloat(e.target.value))
+                }}
+                className="w-12 h-1 accent-[var(--color-accent-primary)] cursor-pointer opacity-40 hover:opacity-100 transition-opacity"
+                title="Adjust Ghost Transparency"
+              />
+            </div>
 
             {/* Viewport Presets - Minimalist */}
             <div className="flex items-center gap-0.5">
@@ -253,7 +277,7 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
                     setDevice(v.id)
                     setShowPreview(true)
                   }}
-                  className={`p-1.5 rounded hover:bg-[var(--color-bg-tertiary)] transition-all ${device === v.id && showPreview ? 'text-[var(--color-accent-primary)]' : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]'}`}
+                  className={`p-1.5 rounded-none transition-all ${device === v.id && showPreview ? 'text-[var(--color-accent-primary)]' : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]'}`}
                 >
                   <v.icon size={v.size} />
                 </button>
@@ -265,9 +289,21 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
         <button
           onClick={(e) => {
             e.stopPropagation()
+            localStorage.removeItem('pos_flow_workspace_position')
+            window.location.reload()
+          }}
+          className="p-1.5 rounded-none text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition-all"
+          title="Reset Station Layout"
+        >
+          <RotateCcw size={13} />
+        </button>
+
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
             onExit()
           }}
-          className="ml-2 p-1.5 rounded-md bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white transition-all"
+          className="ml-1 p-1.5 rounded-none bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white transition-all"
           title="Terminate Station"
         >
           <LogOut size={13} />
@@ -294,12 +330,12 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
       isOpen={true}
       onClose={onExit}
       title={header}
-      width={showPreview ? 1100 : 800} // Numeric width for smoother JS interpolation
-      height={800}
+      width={showPreview ? 800 : 600} // Numeric width for smoother JS interpolation
+      height={700}
       noOverlay={true}
       customKey="flow_workspace_position"
-      isMaximized={isStationMaximized}
-      className={`flow-ghost-modal no-padding transition-all duration-300 ease-in-out ${!isZenFocused ? 'snap-frame' : ''}`}
+      isMaximized={isStationMaximized || isZenFocused}
+      className={`flow-ghost-modal no-padding ${!isZenFocused ? 'snap-frame' : ''}`}
     >
       {isStationMaximized && (
         <div
@@ -308,7 +344,7 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
         >
           <button
             onClick={() => setIsStationMaximized(false)}
-            className="pointer-events-auto bg-red-500/80 hover:bg-red-500 text-white px-4 py-1.5 rounded-b-xl border border-t-0 border-white/20 shadow-xl flex items-center gap-2 transform -translate-y-full group-hover:translate-y-0 transition-transform duration-500"
+            className="pointer-events-auto bg-red-500/80 hover:bg-red-500 text-white px-4 py-1.5 rounded-none border border-t-0 border-white/20 shadow-xl flex items-center gap-2 transform -translate-y-full group-hover:translate-y-0 transition-transform duration-500"
           >
             <Minimize size={14} />
             <span className="text-[10px] font-black tracking-widest uppercase">
@@ -318,7 +354,7 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
         </div>
       )}
       <div
-        className={`flex h-full w-full relative overflow-hidden transition-all duration-500 ${isStationMaximized ? 'rounded-none' : 'rounded-xl'} ${isZenFocused ? 'bg-[var(--color-bg-primary)] shadow-none' : 'bg-[var(--color-bg-primary)] shadow-[0_4px_40px_rgba(0,0,0,0.6)]'} ${isMobile ? 'flex-col' : 'flex-row'}`}
+        className={`flex flex-1 w-full relative overflow-hidden min-h-0 transition-all duration-500 rounded-none ${isZenFocused ? 'bg-[var(--color-bg-primary)] shadow-none' : 'bg-[var(--color-bg-primary)] shadow-[0_4px_40px_rgba(0,0,0,0.6)]'} ${isMobile ? 'flex-col' : 'flex-row'}`}
         style={{
           backgroundColor: 'var(--color-bg-primary)',
           opacity: 1
@@ -326,7 +362,12 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
       >
         {/* Editor Column */}
         <div
-          className={`flex-1 min-w-[320px] flex flex-col bg-[var(--editor-bg)] ${isMobile ? 'border-b border-white/5' : 'border-r border-white/5'}`}
+          className={`flex-1 min-w-[320px] flex flex-col ${isMobile ? 'border-b border-white/5' : 'border-r border-white/5'}`}
+          style={{ 
+            backgroundColor: 'var(--editor-bg)',
+            backdropFilter: 'none',
+            paddingBottom: '10px'
+          }}
         >
           {renderEditor()}
         </div>
@@ -339,8 +380,8 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
               width: isMobile ? '100%' : getPreviewWidth(),
               height: isMobile ? '40%' : '100%',
               opacity: opacity,
-              backgroundColor: 'rgba(10, 12, 16, 0.4)',
-              backdropFilter: 'blur(30px) saturate(150%)'
+              backgroundColor: 'var(--color-bg-primary)',
+              backdropFilter: 'none'
             }}
           >
             <div className="w-full h-full">
@@ -352,37 +393,19 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
                 fontFamily={fontFamily}
                 showHeader={false}
                 enableScrollSync={true}
+                zenFocus={isZenFocused}
               />
             </div>
 
             {/* Stats Overlay */}
             {showStats && (
-              <div className="absolute top-4 left-4 p-2 bg-black/60 backdrop-blur-md rounded border border-white/10 pointer-events-none font-mono text-[9px] text-blue-400">
+              <div className="absolute top-4 left-4 p-2 bg-black/60 rounded-none border border-white/10 pointer-events-none font-mono text-[9px] text-blue-400">
                 <div className="flex flex-col gap-1">
                   <span>CHARS: {stats.chars}</span>
                   <span>WORDS: {stats.words}</span>
                 </div>
               </div>
             )}
-
-            {/* Contextual HUD Controls */}
-            <div className="absolute top-4 right-4 z-50 flex flex-col gap-2">
-              <div className="p-2 bg-black/60 backdrop-blur-md rounded-full border border-white/10 opacity-0 hover:opacity-100 transition-opacity">
-                <input
-                  type="range"
-                  min="0.1"
-                  max="1.0"
-                  step="0.1"
-                  value={opacity}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onChange={(e) => {
-                    e.stopPropagation()
-                    setOpacity(parseFloat(e.target.value))
-                  }}
-                  className="w-16 h-1 accent-blue-500 cursor-nw-resize"
-                />
-              </div>
-            </div>
           </div>
         )}
       </div>

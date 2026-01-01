@@ -67,16 +67,18 @@ const ContextMenu = ({ x, y, items, onClose }) => {
       className="fixed z-[9999] min-w-[160px] max-w-[calc(100vw-20px)] max-h-[85vh] overflow-y-auto rounded-[5px] border py-1 animate-in fade-in zoom-in-95 duration-75 ease-out select-none scrollbar-hide"
       style={{
         ...style,
-        backgroundColor: 'rgba(var(--color-bg-primary-rgb, 13, 17, 23), 0.98)',
+        backgroundColor: 'rgb(var(--color-bg-primary-rgb, 13, 17, 23))',
         borderColor: 'var(--color-border)',
-        backdropFilter: 'blur(20px)',
+        backdropFilter: 'none',
         boxShadow: '0 12px 32px rgba(0, 0, 0, 0.6)'
       }}
     >
       <div className="flex flex-col">
         {items.map((item, index) => {
           if (item.label === 'separator') {
-            return <div key={index} className="h-[1px] my-1 mx-1 bg-white/10" />
+            return (
+              <div key={index} className="h-[1px] my-1 mx-1 opacity-20 bg-[var(--color-border)]" />
+            )
           }
 
           return (
