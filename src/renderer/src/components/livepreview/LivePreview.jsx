@@ -63,11 +63,9 @@ const LivePreview = ({
   const { handleQuickCopyMermaid } = useMermaidCapture(fontFamily)
   const { openImageExportModal } = useModal()
 
-  // --- 1. Parsing Engine (Master-Simple: Direct Inline, No Worker) ---
+  // --- 1. Parsing Engine Engine ---
   useEffect(() => {
     let active = true
-    let timeoutId = null
-
     const parse = async () => {
       if (disabled || code === undefined || code === null) {
         setRenderedHtml('')
@@ -154,12 +152,11 @@ const LivePreview = ({
         if (active) setIsParsing(false)
       }
     }
-
-    // Debounce to prevent editor blocking: 100ms keeps typing responsive
-    timeoutId = setTimeout(parse, 100)
+    // Debounce: 500ms delay before parsing to keep editor responsive during typing
+    const timeoutId = setTimeout(parse, 500)
     return () => {
       active = false
-      if (timeoutId) clearTimeout(timeoutId)
+      clearTimeout(timeoutId)
     }
   }, [code, language, showHeader, existingTitles, disabled])
 

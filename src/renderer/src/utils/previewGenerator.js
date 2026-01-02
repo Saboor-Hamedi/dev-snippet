@@ -9,7 +9,7 @@ import variableStyles from '../assets/variables.css?raw'
 import mermaidStyles from '../components/mermaid/mermaid.css?raw'
 import { getMermaidConfig } from '../components/mermaid/mermaidConfig'
 import { getMermaidEngine } from '../components/mermaid/mermaidEngine'
-import { markdownWorkerClient } from '../workers/markdownWorkerClient'
+import { markdownToHtml } from './markdownParser'
 
 import { themes } from '../components/preference/theme/themes'
 
@@ -446,7 +446,7 @@ export const generatePreviewHtml = async ({
   let contentHtml = ''
   if (isMarkdown) {
     // Hide intel (word count/read time) for print/export views
-    contentHtml = await markdownWorkerClient.parseMarkdown(code, { renderMetadata: !forPrint })
+    contentHtml = await markdownToHtml(code, { renderMetadata: !forPrint })
   } else {
     // Escaped content for general snippets (Code or Text)
     const escaped = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
