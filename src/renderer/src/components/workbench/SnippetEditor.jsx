@@ -48,6 +48,8 @@ const SnippetEditor = ({
 }) => {
   const [code, setCode] = useState(initialSnippet?.code || '')
   const [isDirty, setIsDirty] = useState(false)
+  const isDiscardingRef = useRef(false)
+  const skipAutosaveRef = useRef(false)
 
   // PERFORMANCE: Ref to block redundant dirty updates during rapid typing
   const isDirtyRef = useRef(false)
@@ -441,7 +443,10 @@ const SnippetEditor = ({
   useEditorFocus({ initialSnippet, isCreateMode, textareaRef })
 
   const scheduleSave = useCallback(() => {
-    // 1. Explicitly check if enabled first
+    // 1. Skip autosave if we're discarding changes
+    if (skipAutosaveRef.current) return
+    
+    // 2. Explicitly check if enabled first
     if (!autoSaveEnabled) return
 
     // Clear any pending timer
@@ -517,6 +522,8 @@ const SnippetEditor = ({
       setTitle(initialSnippet.title || '')
       setIsDirty(false)
       setIsInitialMount(true)
+      isDiscardingRef.current = false // Reset discard flag for new snippet
+      skipAutosaveRef.current = false // Reset autosave skip flag
       lastSnippetId.current = initialSnippet.id
       return
     }
@@ -1047,6 +1054,12 @@ const SnippetEditor = ({
   }
 
   const handleTriggerCloseCheck = useCallback(() => {
+    // Skip if we're already in the process of discarding
+    if (isDiscardingRef.current) {
+      if (onCancel) onCancel(true)
+      return
+    }
+    
     // IF UNSAVED: Prompt user using the custom modal
     if (isDirty) {
       openModal({
@@ -1074,7 +1087,28 @@ const SnippetEditor = ({
             <button
               className="px-3 py-1.5 text-xs font-medium rounded-md bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
               onClick={() => {
+                // Mark that we're discarding to prevent re-checks and autosave
+                isDiscardingRef.current = true
+                skipAutosaveRef.current = true
+                
+                // Close modal immediately
                 closeUni()
+                
+                // Revert code to original state
+                const originalCode = initialSnippet?.code || ''
+                setCode(originalCode)
+                codeRef.current = originalCode
+                
+                // Clear dirty state
+                setIsDirty(false)
+                isDirtyRef.current = false
+                
+                // Tell parent it's no longer dirty
+                if (initialSnippet?.id && onDirtyStateChange) {
+                  onDirtyStateChange(initialSnippet.id, false)
+                }
+                
+                // Close the tab
                 if (onCancel) onCancel(true)
               }}
             >

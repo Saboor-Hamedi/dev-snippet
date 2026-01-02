@@ -160,13 +160,22 @@ const SnippetLibraryInner = ({ snippetData }) => {
         return
       }
 
+      // UNSAVED CHANGES CHECK: Before switching to a different snippet
+      if (selectedSnippet && selectedSnippet.id !== s.id && dirtySnippetIds.has(selectedSnippet.id)) {
+        // Store the next snippet to switch to
+        window.__pendingSnippetSwitch = s
+        // Trigger close check on current snippet
+        window.dispatchEvent(new CustomEvent('app:trigger-close-check'))
+        return
+      }
+
       setSelectedSnippet(s)
       setSelectedFolderId(null)
       setSelectedIds([s.id])
 
       navigateTo('editor')
     },
-    [setSelectedSnippet, setSelectedFolderId, setSelectedIds, navigateTo]
+    [setSelectedSnippet, setSelectedFolderId, setSelectedIds, navigateTo, selectedSnippet, dirtySnippetIds]
   )
 
   // Session Restoration (P1 Feature) - Must be after state init & handler definition
@@ -1043,10 +1052,32 @@ const SnippetLibraryInner = ({ snippetData }) => {
                 setSnippets((prev) => prev.filter((s) => s.id !== freshSnippet.id))
               }
             }
-            setIsCreatingSnippet(false)
-            setSelectedIds([])
-            setSelectedSnippet(null)
-            navigateTo('snippets')
+            
+            // Handle pending snippet switch (when user discards and wants to switch)
+            if (window.__pendingSnippetSwitch) {
+              const pendingSnippet = window.__pendingSnippetSwitch
+              window.__pendingSnippetSwitch = null
+              
+              setIsCreatingSnippet(false)
+              setSelectedIds([])
+              setSelectedSnippet(pendingSnippet)
+              setSelectedFolderId(null)
+              setSelectedIds([pendingSnippet.id])
+              navigateTo('editor')
+            } else if (window.__pendingNewSnippet) {
+              // Handle pending new snippet creation (Ctrl+N or new button)
+              window.__pendingNewSnippet = null
+              
+              setIsCreatingSnippet(false)
+              setSelectedIds([])
+              setSelectedSnippet(null)
+              createDraftSnippet()
+            } else {
+              setIsCreatingSnippet(false)
+              setSelectedIds([])
+              setSelectedSnippet(null)
+              navigateTo('snippets')
+            }
           }}
           onCancelEditor={() => {
             // DISCARD GHOST DRAFTS: Only remove if truly a blank ghost
@@ -1100,7 +1131,17 @@ const SnippetLibraryInner = ({ snippetData }) => {
               else console.error(e)
             }
           }}
-          onNewRequest={() => createDraftSnippet()}
+          onNewRequest={() => {
+            // UNSAVED CHANGES CHECK: Before creating a new snippet
+            if (selectedSnippet && dirtySnippetIds.has(selectedSnippet.id)) {
+              // Store action to create new snippet after discard
+              window.__pendingNewSnippet = true
+              // Trigger close check on current snippet
+              window.dispatchEvent(new CustomEvent('app:trigger-close-check'))
+              return
+            }
+            createDraftSnippet()
+          }}
           onDeleteRequest={handleDeleteRequest}
           onBulkDeleteRequest={handleBulkDelete}
           onNewSnippet={(title, folderId, options) => {
