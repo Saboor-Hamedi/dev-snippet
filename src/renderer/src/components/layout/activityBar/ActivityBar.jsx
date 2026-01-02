@@ -13,35 +13,36 @@ const ActivityButton = ({ item, isActive, glow = false, styles, onSettings, hand
         e.currentTarget.blur()
         item.id === 'settings' ? onSettings() : handleAction(item)
       }}
-      className={`w-full h-[40px] flex items-center justify-center relative cursor-pointer group transition-all duration-200 ${
-        glow
-          ? 'bg-[var(--color-accent-primary)]/10 ring-1 ring-inset ring-[var(--color-accent-primary)]/20 shadow-[0_0_20px_rgba(var(--color-accent-primary-rgb),0.15)]'
-          : isActive
-            ? 'bg-[var(--color-bg-tertiary)] opacity-100'
-            : 'hover:bg-[var(--color-bg-tertiary)]/50 opacity-80 hover:opacity-100'
+      className={`w-full h-[48px] flex items-center justify-center relative cursor-pointer group transition-all duration-300 theme-exempt ${
+        isActive ? 'opacity-100' : 'opacity-40 hover:opacity-100'
       }`}
-      style={itemStyle}
+      style={{ background: 'transparent' }}
       title={item.label}
     >
-      <div className="relative group-active:scale-90 transition-transform duration-150">
-        <Icon strokeWidth={isActive ? 2 : 1.5} size={18} color={itemStyle.color} />
+      {/* Sliding Hover Overlay */}
+      <div className="absolute inset-0 bg-white/[0.05] translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 pointer-events-none" />
+
+      {/* Active Selection Indicator (Neutral) */}
+      <div
+        className={`absolute left-0 top-1/2 -translate-y-1/2 w-[2.5px] bg-white rounded-r-full transition-all duration-300 ${
+          isActive ? 'h-6 opacity-80' : 'h-0 opacity-0'
+        }`}
+      />
+
+      <div className="relative group-active:scale-95 transition-transform duration-150 z-10">
+        <Icon
+          strokeWidth={isActive ? 2 : 1.5}
+          size={19}
+          color={isActive ? '#ffffff' : 'rgba(255,255,255,0.45)'}
+        />
         {item.badge > 0 && (
-          <div
-            className="absolute -top-1 -right-1 min-w-[14px] h-[14px] rounded-full flex items-center justify-center font-bold"
-            style={styles.badge}
-          >
-            <span className="text-[9px] px-0.5 pointer-events-none">
+          <div className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] rounded-full flex items-center justify-center font-bold bg-red-500 text-white shadow-sm">
+            <span className="text-[8px] px-0.5 pointer-events-none">
               {item.badge > 99 ? '99+' : item.badge}
             </span>
           </div>
         )}
       </div>
-      {isActive && (
-        <div
-          className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-5 rounded-r-full"
-          style={styles.indicator}
-        />
-      )}
     </button>
   )
 }
@@ -83,8 +84,8 @@ const ActivityBar = ({
 
   return (
     <div
-      className="w-[40px] h-full flex flex-col items-center z-10 select-none border-r border-[var(--color-border)] activity-bar transition-colors duration-300"
-      style={{ backgroundColor: 'var(--activity-bar-bg)' }}
+      className="w-[48px] h-full flex flex-col items-center z-10 select-none activity-bar transition-colors duration-300 border-right border-white/5"
+      style={{ backgroundColor: '#09090b' }}
     >
       <div className="flex flex-col w-full">
         {items.map((item) => (

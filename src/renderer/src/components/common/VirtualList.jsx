@@ -84,9 +84,26 @@ const VirtualList = React.forwardRef(
         ref={containerRef}
         style={{ height, width, overflowY: 'auto', overflowX: 'hidden', position: 'relative' }}
         onScroll={handleScroll}
-        className="custom-scrollbar"
+        className="custom-scrollbar virtual-list-container"
       >
-        <div style={{ height: itemCount * itemSize, width: '100%' }}>{items}</div>
+        <div
+          className="virtual-list-inner"
+          style={{
+            height: itemCount * itemSize + itemSize, // Space for exactly one item at the bottom
+            width: '100%',
+            cursor: 'default'
+          }}
+          onClick={(e) => {
+            // If clicking directly on the spacer/inner container (not on a row)
+            if (e.target === e.currentTarget) {
+              if (itemData.handleBackgroundClick) {
+                itemData.handleBackgroundClick(e)
+              }
+            }
+          }}
+        >
+          {items}
+        </div>
       </div>
     )
   }

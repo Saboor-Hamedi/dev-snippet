@@ -59,10 +59,7 @@ export const useFolderData = (showToast, folders, setFolders, setSnippets, setTr
       if (setTrash) {
         setTrash((prev) => [{ ...folder, type: 'folder', deleted_at: Date.now() }, ...prev])
       }
-
-      if (setSnippets) {
-        setSnippets((prev) => prev.map((s) => (s.folder_id === id ? { ...s, folder_id: null } : s)))
-      }
+      // Note: setSnippets update is handled by the global re-fetch triggered by notifyDataChanged in main process
       showToast('✓ Folder moved to trash')
     } catch (error) {
       showToast('❌ Failed to delete folder')
@@ -90,12 +87,7 @@ export const useFolderData = (showToast, folders, setFolders, setSnippets, setTr
           ...prev
         ])
       }
-
-      if (setSnippets) {
-        setSnippets((prev) =>
-          prev.map((s) => (ids.includes(s.folder_id) ? { ...s, folder_id: null } : s))
-        )
-      }
+      // Snippets update handled by global re-fetch
       showToast(`✓ ${ids.length} folders moved to trash`)
     } catch (error) {
       showToast('❌ Failed to delete folders')

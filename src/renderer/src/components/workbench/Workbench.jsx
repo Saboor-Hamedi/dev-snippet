@@ -17,65 +17,76 @@ import LivePreview from '../livepreview/LivePreview'
 import { useTheme } from '../../hook/useTheme'
 
 const Workbench = ({
+  // Data Props
   activeView,
   selectedSnippet,
   snippets,
   allSnippets,
+  folders,
   trash,
+
+  // Sidebar State (Passed to SnippetSidebar)
+  isSidebarOpen,
+  setIsSidebarOpen,
+
+  // Actions
+  onSave,
+  onNewSnippet,
+  onNewFolder,
+  onDeleteRequest,
+  onDeleteFolder,
+  onDeleteBulk,
   onRestoreItem,
   onPermanentDeleteItem,
   onLoadTrash,
-  showPreview,
-  onTogglePreview,
-  onSave,
   onCloseSnippet,
   onCancelEditor,
-  onDeleteRequest,
-  onNewSnippet,
   onSelectSnippet,
+  onRenameSnippet,
+  onRenameFolder,
+  onRename, // Global rename handler
+  onMoveSnippet,
+  onMoveFolder,
+  onToggleFolder,
+  onTogglePin,
+  onToggleFavorite,
+  onSelectionChange,
+  onSearchSnippets,
+  onInlineRename,
+
+  // View/UI State
+  showPreview,
+  onTogglePreview,
   currentContext,
-  onOpenSettings,
-  onCloseSettings,
   isCompact,
   onToggleCompact,
   autosaveStatus,
   onAutosave,
   showToast,
   hideWelcomePage,
-  onSearchSnippets,
-  searchQuery,
-  isSidebarOpen,
-  setIsSidebarOpen,
-  onRename,
-  folders,
-  onToggleFolder,
-  onNewFolder,
-  onMoveSnippet,
-  onMoveFolder,
-  selectedFolderId,
-  onSelectFolder,
-  onRenameSnippet,
-  onRenameFolder,
-  onDeleteFolder,
-  onDeleteBulk,
-  onTogglePin,
-  onToggleFavorite,
-  selectedIds,
-  onSelectionChange,
+
+  // Settings
   settings,
   isSettingsOpen,
-  // Clipboard operations
+  onOpenSettings,
+  onCloseSettings,
+
+  // Clipboard & Global Commands
   onCopy,
   onCut,
   onPaste,
   onSelectAll,
   onDailyNote,
-  pinPopover,
-  setPinPopover,
   onPing,
   onFavorite,
+
+  // Dirty State
   onDirtyStateChange,
-  dirtyIds
+  dirtyIds,
+
+  // Components/Refs sharing
+  pinPopover,
+  setPinPopover
 }) => {
   const { currentTheme } = useTheme()
   const handleSave = (snippet) => {
@@ -304,13 +315,10 @@ const Workbench = ({
                 snippets={snippets}
                 folders={folders}
                 selectedSnippet={selectedSnippet}
-                selectedFolderId={selectedFolderId}
-                onSelectFolder={onSelectFolder}
                 onNew={onNewSnippet}
                 onNewFolder={onNewFolder}
                 onDailyNote={onDailyNote}
                 onSearch={onSearchSnippets}
-                searchQuery={searchQuery}
                 onToggleFolder={onToggleFolder}
                 onMoveSnippet={onMoveSnippet}
                 onMoveFolder={onMoveFolder}
@@ -321,8 +329,6 @@ const Workbench = ({
                 onDeleteBulk={onDeleteBulk}
                 onTogglePin={onTogglePin}
                 onToggleFavorite={onToggleFavorite}
-                selectedIds={selectedIds}
-                onSelectionChange={onSelectionChange}
                 onSelect={(s) => {
                   // Prevent deselecting the editor view by clicking sidebar background
                   if (s === null && activeView === 'editor') {
@@ -341,6 +347,7 @@ const Workbench = ({
                 onPaste={onPaste}
                 onSelectAll={onSelectAll}
                 dirtyIds={dirtyIds}
+                onInlineRename={onInlineRename}
               />
             )}
 

@@ -15,6 +15,20 @@ export const registerUpdatesHandlers = (mainWindow) => {
   // 1. Check for updates
   ipcMain.handle('updates:check', async () => {
     try {
+      // Safety check: if we are in dev, just return null to simulate "up to date"
+      // instead of hanging the UI
+      if (
+        process.env.NODE_ENV === 'development' ||
+        !mainWindow ||
+        (mainWindow.webContents?.getOwnerBrowserWindow &&
+          !mainWindow.webContents.getOwnerBrowserWindow().isPackaged)
+      ) {
+        // Fallback for dev mode
+        console.log('[Updater] Skipping check in dev mode.')
+        return null
+      }
+
+      // Check for updates
       const result = await autoUpdater.checkForUpdates()
       return result?.updateInfo || null
     } catch (error) {

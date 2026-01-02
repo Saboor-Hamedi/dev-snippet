@@ -41,12 +41,12 @@ const UniversalModal = ({
       modal.style.setProperty('background-color', solidBg, 'important')
       modal.style.setProperty('backdrop-filter', 'none', 'important')
       modal.style.setProperty('opacity', '1', 'important')
-      modal.style.setProperty('border-color', solidBorder, 'important')
+      modal.style.setProperty('border', 'none', 'important')
       modal.style.setProperty('box-shadow', 'none', 'important')
 
       header.style.setProperty('background', solidBg, 'important')
       header.style.setProperty('background-color', solidBg, 'important')
-      header.style.setProperty('border-bottom-color', solidBorder, 'important')
+      header.style.setProperty('border', 'none', 'important')
 
       const isLocked = settings?.ui?.universalLock?.modal
 
@@ -232,7 +232,7 @@ const UniversalModal = ({
         background: 'rgb(var(--color-bg-primary-rgb))',
         backdropFilter: 'none',
         opacity: 1,
-        borderColor: 'var(--color-border, #333)'
+        border: 'none'
       }}
     >
       <div
@@ -249,7 +249,7 @@ const UniversalModal = ({
           pointerEvents: 'auto', // Header must always be interactable for dragging
           backgroundColor: 'rgb(var(--color-bg-primary-rgb))',
           background: 'rgb(var(--color-bg-primary-rgb))',
-          borderBottomColor: 'var(--color-border, #333)'
+          border: 'none'
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
@@ -285,7 +285,7 @@ const UniversalModal = ({
           style={{
             backgroundColor: 'rgb(var(--color-bg-primary-rgb))',
             background: 'rgb(var(--color-bg-primary-rgb))',
-            borderTopColor: 'var(--color-border, #333)'
+            border: 'none'
           }}
         >
           {footer}

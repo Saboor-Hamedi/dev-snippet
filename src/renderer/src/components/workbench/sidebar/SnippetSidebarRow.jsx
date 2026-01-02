@@ -14,12 +14,13 @@ import {
   Calendar
 } from 'lucide-react'
 
+import { getFileIcon } from '../../../utils/iconUtils'
 import { getBaseTitle, isDateTitle } from '../../../utils/snippetUtils'
+import { useSidebarStore } from '../../../store/useSidebarStore'
 
-// Optimized Dot Component
 const UnsavedDot = React.memo(() => (
   <div
-    className="w-2 h-2 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,1)] flex-shrink-0 animate-pulse border border-yellow-200/20"
+    className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)] flex-shrink-0 animate-pulse border border-amber-300/30"
     title="Modified (Unsaved Changes)"
   />
 ))
@@ -41,7 +42,7 @@ const HighlightText = ({ text, highlight }) => {
     <span className="opacity-100">
       {parts.map((part, i) =>
         regex.test(part) ? (
-          <span key={`match-${i}`} className="text-white/60 font-bold">
+          <span key={`match-${i}`} className="text-[var(--color-accent-primary)] font-bold">
             {part}
           </span>
         ) : (
@@ -52,53 +53,17 @@ const HighlightText = ({ text, highlight }) => {
   )
 }
 
-// Helper to get file icon
-const getFileIcon = (lang, title = '') => {
-  const safeTitle = typeof title === 'string' ? title : ''
-  let cleanTitle = safeTitle.toLowerCase()
-  let isMd = false
-
-  if (cleanTitle.endsWith('.md')) {
-    const temp = cleanTitle.slice(0, -3)
-    if (temp.includes('.')) {
-      cleanTitle = temp
-    } else {
-      isMd = true
-    }
-  }
-
-  const extension = cleanTitle.split('.').pop() || ''
-
-  // Daily Note Detection (ISO or String dates)
-  if (isDateTitle(cleanTitle)) return { icon: Calendar, color: '#818cf8' } // Classic Journal Color
-
-  if (lang === 'javascript' || lang === 'js' || extension === 'js')
-    return { icon: FileCode, color: '#f7df1e' }
-  if (lang === 'typescript' || lang === 'ts' || extension === 'ts')
-    return { icon: FileCode, color: '#007acc' }
-  if (lang === 'react' || extension === 'jsx' || extension === 'tsx')
-    return { icon: FileCode, color: '#61dafb' }
-  if (lang === 'css' || extension === 'css') return { icon: FileCode, color: '#264de4' }
-  if (lang === 'html' || extension === 'html') return { icon: FileCode, color: '#e34c26' }
-  if (lang === 'python' || extension === 'py') return { icon: FileCode, color: '#3776ab' }
-
-  if (lang === 'markdown' || lang === 'md' || extension === 'md' || isMd)
-    return { icon: FileText, color: '#519aba' }
-
-  return { icon: File, color: 'var(--sidebar-icon-color)' }
-}
-
 const PinnedHeaderRow = ({ style, data, togglePinned }) => {
   const isCollapsed = data ? data.collapsed : false
   return (
     <div style={style} className="select-none outline-none focus:outline-none relative">
       <div
-        className="group flex items-center gap-[6px] w-full h-full pr-2 relative rounded-[6px] transition-all duration-200 cursor-pointer"
+        className="group flex items-center gap-[6px] w-full h-full pr-2 relative rounded-[6px] cursor-pointer"
         style={{
           marginLeft: '4px',
           width: 'calc(100% - 8px)',
-          backgroundColor: isCollapsed ? 'transparent' : 'rgba(255, 255, 255, 0.03)',
-          borderBottom: isCollapsed ? 'none' : '1px solid rgba(255, 255, 255, 0.05)'
+          backgroundColor: isCollapsed ? 'transparent' : 'var(--color-bg-tertiary)',
+          borderBottom: isCollapsed ? 'none' : '1px solid var(--color-border)'
         }}
         onClick={(e) => {
           e.stopPropagation()
@@ -134,13 +99,30 @@ const PinnedHeaderRow = ({ style, data, togglePinned }) => {
   )
 }
 
-const CreationInputRow = ({ style, depth, itemData, onConfirm, onCancel, isCompact }) => {
+const CreationInputRow = ({
+  style,
+  depth,
+  itemData,
+  onConfirm,
+  onCancel,
+  isCompact,
+  initialValue = ''
+}) => {
   const isFolder = itemData.type === 'folder'
   const inputRef = React.useRef(null)
 
   React.useEffect(() => {
     if (inputRef.current) {
       inputRef.current.focus()
+      if (initialValue) {
+        // Select base name without extension if it's a snippet
+        const dotIndex = initialValue.lastIndexOf('.')
+        if (dotIndex > 0 && !isFolder) {
+          inputRef.current.setSelectionRange(0, dotIndex)
+        } else {
+          inputRef.current.select()
+        }
+      }
     }
   }, [])
 
@@ -161,29 +143,25 @@ const CreationInputRow = ({ style, depth, itemData, onConfirm, onCancel, isCompa
   }
 
   return (
-    <div style={style} className="pr-2">
+    <div style={style} className="pr-2 z-20">
       <div
-        className="flex items-center w-full h-full pl-0 select-none"
-        style={{ paddingLeft: `${depth * 16 + 24}px` }}
+        className="flex items-center w-full h-full pl-0 select-none animate-in fade-in slide-in-from-left-2 duration-200"
+        style={{ paddingLeft: `${depth * 16 + 8}px` }}
       >
-        <div className="flex-1 flex items-center bg-[var(--color-bg-secondary)] border border-[var(--color-accent-primary)]/50 rounded-sm h-[22px]">
+        <div className="flex-1 flex items-center bg-[var(--color-bg-primary)] border border-[var(--color-accent-primary)]/50 rounded-md h-[24px] shadow-lg shadow-black/20">
           <input
             ref={inputRef}
             type="text"
+            defaultValue={initialValue}
             placeholder={isFolder ? 'Folder Name' : 'Snippet Name'}
             onKeyDown={handleKeyDown}
-            onFocus={(e) => {
-              e.target.style.backgroundColor = 'var(--color-bg-primary)'
-              e.target.style.borderColor = 'var(--color-accent-primary)'
-            }}
             onBlur={(e) => {
-              e.target.style.backgroundColor = 'var(--color-bg-secondary)'
-              e.target.style.borderColor = 'var(--color-border)'
-              onCancel()
+              // Wait a bit to allow click on confirm button if we add one, or handle logic
+              setTimeout(() => onCancel(), 150)
             }}
             spellCheck="false"
             autoComplete="off"
-            className={`flex-1 min-w-0 rounded-[5px] px-2 py-0.5 outline-none border border-[var(--color-border)] ring-0 focus:ring-0 focus:outline-none transition-none ${
+            className={`flex-1 min-w-0 px-2 py-0.5 outline-none ring-0 focus:ring-0 focus:outline-none transition-none ${
               isCompact ? 'text-[11px]' : 'text-[12px]'
             }`}
             style={{
@@ -203,13 +181,13 @@ const IndentGuides = ({ depth }) => {
   if (depth <= 0) return null
   return (
     <div
-      className="absolute top-0 left-0 h-full pointer-events-none"
+      className="absolute top-0 left-0 h-full pointer-events-none z-0"
       style={{ width: depth * 16 + 8 }}
     >
       {Array.from({ length: depth }).map((_, i) => (
         <div
           key={i}
-          className="absolute top-0 bottom-0 w-[1px] bg-white opacity-10"
+          className="absolute top-0 bottom-0 w-[1px] bg-[var(--color-border)] opacity-30 group-hover/row:opacity-60 transition-opacity"
           style={{ left: `${i * 16 + 13}px` }}
         />
       ))}
@@ -223,8 +201,8 @@ const SnippetSidebarRow = ({ index, style, data }) => {
   const {
     treeItems,
     selectedSnippet,
-    selectedFolderId,
-    selectedIds = [],
+    // selectedFolderId - from store
+    // selectedIds - from store
     onSelect,
     onSelectFolder,
     onSelectionChange,
@@ -237,10 +215,24 @@ const SnippetSidebarRow = ({ index, style, data }) => {
     onContextMenu,
     lastSelectedIdRef,
     onTogglePin,
-    searchQuery,
+    // searchQuery - from store
     onConfirmCreation,
-    onCancelCreation
+    onCancelCreation,
+    editingId,
+    onInlineRename,
+    onCancelRenaming,
+    startCreation
+    // setSidebarSelected - from store
   } = data
+
+  const {
+    selectedFolderId,
+    selectedIds,
+    searchQuery,
+    setSidebarSelected,
+    setSelectedIds,
+    setSelectedFolderId
+  } = useSidebarStore()
 
   const item = treeItems[index]
   if (!item) return null
@@ -319,16 +311,49 @@ const SnippetSidebarRow = ({ index, style, data }) => {
     setTimeout(() => document.body.removeChild(ghost), 0)
   }
 
+  const dragExpandTimerRef = React.useRef(null)
+
   const handleDragOver = (e) => {
     if (type === 'folder') {
       e.preventDefault()
       e.stopPropagation()
       setIsDragOver(true)
       e.dataTransfer.dropEffect = 'move'
+
+      // Auto-expand folder on drag-over after delay
+      if (!isOpen && !dragExpandTimerRef.current) {
+        dragExpandTimerRef.current = setTimeout(() => {
+          onToggleFolder(itemData.id, true)
+        }, 400)
+      }
+    }
+  }
+
+  const handleDragLeave = (e) => {
+    // Prevent flickering: only trigger leave if we actually left the folder row
+    if (type === 'folder') {
+      const rect = e.currentTarget.getBoundingClientRect()
+      const { clientX, clientY } = e
+      if (
+        clientX <= rect.left ||
+        clientX >= rect.right ||
+        clientY <= rect.top ||
+        clientY >= rect.bottom
+      ) {
+        setIsDragOver(false)
+        if (dragExpandTimerRef.current) {
+          clearTimeout(dragExpandTimerRef.current)
+          dragExpandTimerRef.current = null
+        }
+      }
     }
   }
 
   const handleDrop = (e) => {
+    if (dragExpandTimerRef.current) {
+      clearTimeout(dragExpandTimerRef.current)
+      dragExpandTimerRef.current = null
+    }
     if (type === 'folder') {
       e.preventDefault()
       e.stopPropagation()
@@ -369,28 +394,42 @@ const SnippetSidebarRow = ({ index, style, data }) => {
       if (type === 'snippet' || type === 'pinned_snippet') {
         onSelect(itemData)
       } else {
-        onSelectFolder(itemId)
-        onToggleFolder(itemId, !item.isExpanded)
+        setSelectedFolderId(itemId)
+        onToggleFolder(itemId, !itemData.collapsed)
       }
     }
 
     lastSelectedIdRef.current = treeItems[index].id
-    onSelectionChange(newSelection)
+    setSelectedIds(newSelection)
+    if (setSidebarSelected) setSidebarSelected(false)
   }
 
   if (type === 'folder') {
+    if (item.isEditing) {
+      return (
+        <CreationInputRow
+          style={style}
+          depth={depth}
+          itemData={{ ...itemData, type: 'folder' }}
+          onConfirm={(val) => onInlineRename(itemData.id, val, 'folder')}
+          onCancel={onCancelRenaming}
+          isCompact={isCompact}
+          initialValue={itemData.name}
+        />
+      )
+    }
     const isSelected = selectedIds.includes(itemData.id) || selectedFolderId === itemData.id
     const isOpen = !itemData.collapsed
 
     return (
       <div
         id={`sidebar-item-${index}`}
-        className="outline-none focus:outline-none relative animate-in fade-in slide-in-from-left-2 duration-500 fill-mode-backwards"
-        style={{ ...style, animationDelay: `${Math.min(index * 15, 300)}ms` }}
+        className="outline-none focus:outline-none relative group/row"
+        style={{ ...style }}
         draggable
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
-        onDragLeave={() => setIsDragOver(false)}
+        onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         tabIndex={0}
         onClick={handleItemClick}
@@ -402,12 +441,12 @@ const SnippetSidebarRow = ({ index, style, data }) => {
           <div className="absolute left-1 top-1 bottom-1 w-[2px] bg-[var(--color-accent-primary)] rounded-full z-10" />
         )}
         <div
-          className={`group flex items-center gap-[6px] w-full h-full select-none transition-all duration-200 pr-2 relative rounded-[6px] ${
+          className={`group flex items-center gap-[6px] w-full h-full select-none pr-2 relative rounded-[6px] ${
             isDragOver
               ? 'bg-[var(--color-accent-primary)] bg-opacity-20'
               : isSelected
-                ? 'bg-white/[0.06] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]'
-                : 'hover:bg-white/[0.03]'
+                ? 'bg-[var(--color-bg-tertiary)]'
+                : 'opacity-80 hover:opacity-100'
           }`}
           style={{
             color: isSelected ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
@@ -421,7 +460,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
               e.stopPropagation()
               onToggleFolder(itemData.id, !itemData.collapsed)
             }}
-            className={`flex-shrink-0 flex items-center justify-center rounded transition-all ${
+            className={`flex-shrink-0 flex items-center justify-center rounded ${
               isSelected ? 'opacity-100' : 'opacity-40 hover:opacity-100'
             }`}
           >
@@ -431,10 +470,10 @@ const SnippetSidebarRow = ({ index, style, data }) => {
             />
           </button>
           <div
-            className={`flex-shrink-0 px-0.5 transition-colors ${isSelected ? 'text-[var(--color-accent-primary)] opacity-100' : 'opacity-60 group-hover:opacity-100'}`}
+            className={`flex-shrink-0 px-0.5 ${isSelected ? 'text-[var(--color-accent-primary)] opacity-100' : 'opacity-60 group-hover:opacity-100'}`}
           >
             {itemData.name === '📥 Inbox' ? (
-              <Inbox size={14} className="text-indigo-400" />
+              <Inbox size={14} className="text-[var(--color-accent-primary)]" />
             ) : isOpen ? (
               <FolderOpen size={14} />
             ) : (
@@ -446,13 +485,41 @@ const SnippetSidebarRow = ({ index, style, data }) => {
           >
             {itemData.name}
           </span>
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pr-1">
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                startCreation('snippet', itemData.id)
+              }}
+              title="New Snippet"
+              className="p-1 rounded hover:bg-white/10 text-[var(--color-text-secondary)] hover:text-[var(--color-accent-primary)] transition-colors"
+            >
+              <Plus size={14} />
+            </button>
+          </div>
           {itemData.itemCount > 0 && (
-            <span className="text-[10px] opacity-20 group-hover:opacity-50 pr-1 tabular-nums font-mono">
+            <span className="text-[10px] opacity-20 group-hover:opacity-0 pr-1 tabular-nums font-mono transition-opacity">
               {itemData.itemCount}
             </span>
           )}
         </div>
       </div>
+    )
+  }
+
+  if (item.isEditing) {
+    return (
+      <CreationInputRow
+        style={style}
+        depth={depth}
+        itemData={{ ...itemData, type: 'snippet' }}
+        onConfirm={(val) =>
+          onInlineRename(type === 'pinned_snippet' ? item.realId : itemData.id, val, 'snippet')
+        }
+        onCancel={onCancelRenaming}
+        isCompact={isCompact}
+        initialValue={itemData.title}
+      />
     )
   }
 
@@ -469,10 +536,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
   const isTodayLog = getBaseTitle(itemData.title) === todayStr
 
   return (
-    <div
-      style={{ ...style, animationDelay: `${Math.min(index * 15, 300)}ms` }}
-      className="relative group/row animate-in fade-in slide-in-from-left-2 duration-500 fill-mode-backwards"
-    >
+    <div style={{ ...style }} className="relative group/row">
       <IndentGuides depth={depth} />
       {isSelected && (
         <div className="absolute left-1 top-1.5 bottom-1.5 w-[2px] bg-[var(--color-accent-primary)] rounded-full z-10" />
@@ -481,17 +545,18 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         id={`sidebar-item-${index}`}
         data-snippet-id={itemData.id}
         draggable
+        onDragStart={handleDragStart}
         onClick={handleItemClick}
         onKeyDown={(e) => handleItemKeyDown(e, index)}
         onContextMenu={(e) => onContextMenu(e, 'snippet', itemData)}
-        className={`flex items-center gap-[6px] w-full h-full select-none pr-3 relative transition-all duration-150 ${
+        className={`theme-exempt flex items-center gap-[6px] w-full h-full select-none pr-3 relative transition-all duration-150 ${
           isCompact ? 'text-[11px]' : 'text-[12px]'
         } ${
           isSelected
-            ? 'bg-white/[0.06] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]'
+            ? 'bg-[var(--color-bg-tertiary)]'
             : isSearchMatch
-              ? 'bg-[var(--color-accent-primary)]/5 border-l-2 border-[var(--color-accent-primary)]'
-              : 'hover:bg-white/[0.03]'
+              ? 'bg-[var(--color-accent-primary)]/5'
+              : 'opacity-80 hover:opacity-100'
         } rounded-[6px]`}
         style={{
           color: isSelected ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
@@ -521,7 +586,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         >
           <HighlightText text={safeTitle || 'Untitled'} highlight={searchQuery} />
           {isTodayLog && (
-            <span className="text-[8px] px-1 py-0 rounded bg-indigo-500/20 text-indigo-400 font-black uppercase tracking-widest border border-indigo-500/20">
+            <span className="text-[8px] px-1 py-0 rounded bg-[var(--color-accent-primary)]/20 text-[var(--color-accent-primary)] font-black uppercase tracking-widest border border-[var(--color-accent-primary)]/20">
               Live
             </span>
           )}

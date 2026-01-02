@@ -251,19 +251,108 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
   })
 
   ipcMain.handle('db:deleteFolder', (event, id) => {
-    preparedStatements.softDeleteFolder.run(Date.now(), id)
-    notifyDataChanged()
-    return true
+    try {
+      const now = Date.now()
+
+      const recursiveDelete = (folderId) => {
+        // 1. Soft delete all snippets in this folder
+        db.prepare('UPDATE snippets SET is_deleted = 1, deleted_at = ? WHERE folder_id = ?').run(
+          now,
+          folderId
+        )
+
+        // 2. Find all child folders
+        const children = db
+          .prepare('SELECT id FROM folders WHERE parent_id = ? AND is_deleted = 0')
+          .all(folderId)
+
+        // 3. Recurse into children
+        for (const child of children) {
+          recursiveDelete(child.id)
+        }
+
+        // 4. Soft delete the folder itself
+        db.prepare('UPDATE folders SET is_deleted = 1, deleted_at = ? WHERE id = ?').run(
+          now,
+          folderId
+        )
+      }
+
+      db.transaction(() => {
+        recursiveDelete(id)
+      })()
+
+      notifyDataChanged()
+      return true
+    } catch (e) {
+      console.error('Recursive folder delete failed:', e)
+      throw e
+    }
   })
 
   ipcMain.handle('db:restoreFolder', (event, id) => {
-    preparedStatements.restoreFolder.run(id)
-    return true
+    try {
+      const recursiveRestore = (folderId) => {
+        // 1. Restore all snippets in this folder that were deleted at the same time or were simply in it
+        // To be safe, we restore all snippets that have this folder_id and are deleted
+        db.prepare('UPDATE snippets SET is_deleted = 0, deleted_at = NULL WHERE folder_id = ?').run(
+          folderId
+        )
+
+        // 2. Find all child folders (even deleted ones)
+        const children = db.prepare('SELECT id FROM folders WHERE parent_id = ?').all(folderId)
+
+        // 3. Recurse
+        for (const child of children) {
+          recursiveRestore(child.id)
+        }
+
+        // 4. Restore the folder itself
+        db.prepare('UPDATE folders SET is_deleted = 0, deleted_at = NULL WHERE id = ?').run(
+          folderId
+        )
+      }
+
+      db.transaction(() => {
+        recursiveRestore(id)
+      })()
+
+      notifyDataChanged()
+      return true
+    } catch (e) {
+      console.error('Recursive folder restore failed:', e)
+      throw e
+    }
   })
 
   ipcMain.handle('db:permanentDeleteFolder', (event, id) => {
-    preparedStatements.deleteFolder.run(id)
-    return true
+    try {
+      const recursivePermanentDelete = (folderId) => {
+        // 1. Delete all snippets in this folder
+        db.prepare('DELETE FROM snippets WHERE folder_id = ?').run(folderId)
+
+        // 2. Find all child folders
+        const children = db.prepare('SELECT id FROM folders WHERE parent_id = ?').all(folderId)
+
+        // 3. Recurse
+        for (const child of children) {
+          recursivePermanentDelete(child.id)
+        }
+
+        // 4. Delete the folder itself
+        db.prepare('DELETE FROM folders WHERE id = ?').run(folderId)
+      }
+
+      db.transaction(() => {
+        recursivePermanentDelete(id)
+      })()
+
+      notifyDataChanged()
+      return true
+    } catch (e) {
+      console.error('Recursive folder permanent delete failed:', e)
+      throw e
+    }
   })
 
   // Get Trash (unified)

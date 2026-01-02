@@ -17,6 +17,7 @@ import { handleRenameSnippet } from '../../hook/handleRenameSnippet'
 import { useFlowMode } from '../FlowMode/useFlowMode'
 import { getBaseTitle } from '../../utils/snippetUtils'
 import { useSessionRestore } from '../../hook/session/useSessionRestore'
+import { useSidebarStore } from '../../store/useSidebarStore'
 
 // #file:SnippetLibraryInner.jsx orchestrates the entire workbench experience.
 // The Core Logic Component
@@ -82,16 +83,23 @@ const SnippetLibraryInner = ({ snippetData }) => {
   const [isCreatingSnippet, setIsCreatingSnippet] = useState(false)
   const [zoomLevel, setZoomLevel] = useZoomLevel()
   const [editorZoom, setEditorZoom] = useEditorZoomLevel()
-  const [selectedFolderId, setSelectedFolderId] = useState(null)
-  const [selectedIds, setSelectedIds] = useState([])
+
+  // Sidebar UI Store
+  const {
+    selectedFolderId,
+    setSelectedFolderId,
+    selectedIds,
+    setSelectedIds,
+    searchQuery,
+    setSearchQuery
+  } = useSidebarStore()
+
   const [dirtySnippetIds, setDirtySnippetIds] = useState(new Set())
   const [pinPopover, setPinPopover] = useState({ visible: false, x: 0, y: 0, snippetId: null })
   const { overlayMode, setOverlayMode } = useAdvancedSplitPane()
 
   // Clipboard state for cut/copy/paste operations
   const [clipboard, setClipboard] = useState(null) // { type: 'cut'|'copy', items: [{id, type, data}] }
-
-  const [searchQuery, setSearchQuery] = useState('')
 
   const sortedAndFilteredSnippets = useMemo(() => {
     let filtered = [...snippets]
@@ -123,11 +131,8 @@ const SnippetLibraryInner = ({ snippetData }) => {
   const handleSearchSnippets = useCallback(
     (query) => {
       setSearchQuery(query)
-      if (!query || !query.trim()) {
-        setSelectedFolderId(null)
-      }
     },
-    [setSelectedFolderId]
+    [setSearchQuery]
   )
 
   const handleDirtyStateChange = useCallback((id, isDirty) => {
@@ -138,6 +143,46 @@ const SnippetLibraryInner = ({ snippetData }) => {
       return next
     })
   }, [])
+
+  // GLOBAL WINDOW DIRTY TRACKING: Syncs the set of all dirty snippets to the main process
+  // to ensure exit protection works even across different workbench views.
+  useEffect(() => {
+    if (window.api?.setWindowDirty) {
+      window.api.setWindowDirty(dirtySnippetIds.size > 0)
+    }
+  }, [dirtySnippetIds])
+
+  // GLOBAL WINDOW CLOSE HANDLER (Fallback for when editor is not focused/mounted)
+  useEffect(() => {
+    let unsubscribe = null
+    if (window.api?.onCloseRequest) {
+      unsubscribe = window.api.onCloseRequest(() => {
+        // 1. If we have any dirty snippets, we must handle them
+        if (dirtySnippetIds.size > 0) {
+          // If we are not currently looking at the dirty snippet, jump back to it first
+          const firstDirtyId = Array.from(dirtySnippetIds)[0]
+          if (!selectedSnippet || selectedSnippet.id !== firstDirtyId) {
+            const snippet = snippets.find((s) => s.id === firstDirtyId)
+            if (snippet) {
+              setSelectedSnippet(snippet)
+              navigateTo('editor')
+            }
+          }
+
+          // Wait a tick for navigation if it happened, then trigger the modal
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('app:trigger-close-check'))
+          }, 50)
+        } else {
+          // 2. No dirty snippets, safe to close the application immediately
+          if (window.api?.closeWindow) window.api.closeWindow()
+        }
+      })
+    }
+    return () => {
+      if (unsubscribe) unsubscribe()
+    }
+  }, [dirtySnippetIds, selectedSnippet, snippets, setSelectedSnippet, navigateTo])
 
   // Lifted Sidebar State - defaults to closed, remembers last state
   const isSidebarOpen = settings?.ui?.showSidebar !== false
@@ -161,7 +206,11 @@ const SnippetLibraryInner = ({ snippetData }) => {
       }
 
       // UNSAVED CHANGES CHECK: Before switching to a different snippet
-      if (selectedSnippet && selectedSnippet.id !== s.id && dirtySnippetIds.has(selectedSnippet.id)) {
+      if (
+        selectedSnippet &&
+        selectedSnippet.id !== s.id &&
+        dirtySnippetIds.has(selectedSnippet.id)
+      ) {
         // Store the next snippet to switch to
         window.__pendingSnippetSwitch = s
         // Trigger close check on current snippet
@@ -175,7 +224,14 @@ const SnippetLibraryInner = ({ snippetData }) => {
 
       navigateTo('editor')
     },
-    [setSelectedSnippet, setSelectedFolderId, setSelectedIds, navigateTo, selectedSnippet, dirtySnippetIds]
+    [
+      setSelectedSnippet,
+      setSelectedFolderId,
+      setSelectedIds,
+      navigateTo,
+      selectedSnippet,
+      dirtySnippetIds
+    ]
   )
 
   // Session Restoration (P1 Feature) - Must be after state init & handler definition
@@ -541,7 +597,24 @@ const SnippetLibraryInner = ({ snippetData }) => {
     window.addEventListener('app:toggle-favorite', onCommandFavorite)
     window.addEventListener('app:ping-snippet', onCommandPing)
 
+    // Listen for wiki-link navigation events
+    const onOpenSnippet = (e) => {
+      const { title } = e.detail || {}
+      if (!title) return
+
+      const target = snippets.find(
+        (s) => (s.title || '').trim().toLowerCase() === title.trim().toLowerCase()
+      )
+      if (target) {
+        handleSelectSnippet(target)
+      } else {
+        showToast(`Snippet "${title}" not found`, 'warning')
+      }
+    }
+    window.addEventListener('app:open-snippet', onOpenSnippet)
+
     return () => {
+      window.removeEventListener('app:open-snippet', onOpenSnippet)
       window.removeEventListener('app:command-new-snippet', onCommandNew)
       window.removeEventListener('app:toggle-theme', onCommandTheme)
       window.removeEventListener('app:toggle-sidebar', onCommandSidebar)
@@ -623,28 +696,47 @@ const SnippetLibraryInner = ({ snippetData }) => {
     )
   }
 
+  const handleInlineRename = async (id, newName, type) => {
+    try {
+      if (!newName || !newName.trim()) return
+
+      if (type === 'snippet') {
+        const snippet = snippets.find((s) => s.id === id)
+        if (snippet) {
+          if (snippet.title === newName.trim()) return
+
+          const uniqueTitle = getUniqueTitle(newName.trim(), snippet.folder_id, id)
+          const updated = { ...snippet, title: uniqueTitle }
+
+          if (uniqueTitle !== newName.trim()) {
+            showToast(`Renamed to "${uniqueTitle}" to avoid duplicate`, 'info')
+          }
+
+          await saveSnippet(updated)
+          setSnippets((prev) => prev.map((s) => (s.id === id ? updated : s)))
+          if (selectedSnippet?.id === id) setSelectedSnippet(updated)
+          showToast('Snippet renamed', 'success')
+        }
+      } else {
+        const folder = folders.find((f) => f.id === id)
+        if (folder) {
+          if (folder.name === newName.trim()) return
+          // Future: check for duplicate folder names in same parent
+          const updated = { ...folder, name: newName.trim() }
+          await saveFolder(updated)
+          showToast('Folder renamed', 'success')
+        }
+      }
+    } catch (e) {
+      console.error('Inline rename failed:', e)
+      showToast('Rename failed', 'error')
+    }
+  }
+
   const handleDeleteRequest = (id) => {
     openDeleteModal(id, async (targetId) => {
       await deleteItem(targetId)
     })
-  }
-
-  const handleSelectFolder = (folderId) => {
-    setSelectedFolderId(folderId)
-    setSelectedIds(folderId ? [folderId] : [])
-  }
-
-  const handleSelectionChange = (ids) => {
-    setSelectedIds(ids)
-    if (ids.length === 1) {
-      const snippet = snippets.find((s) => s.id === ids[0])
-      if (snippet) {
-        setSelectedSnippet(snippet)
-        setSelectedFolderId(null)
-      } else {
-        setSelectedFolderId(ids[0])
-      }
-    }
   }
 
   // Clipboard operations
@@ -1052,12 +1144,12 @@ const SnippetLibraryInner = ({ snippetData }) => {
                 setSnippets((prev) => prev.filter((s) => s.id !== freshSnippet.id))
               }
             }
-            
+
             // Handle pending snippet switch (when user discards and wants to switch)
             if (window.__pendingSnippetSwitch) {
               const pendingSnippet = window.__pendingSnippetSwitch
               window.__pendingSnippetSwitch = null
-              
+
               setIsCreatingSnippet(false)
               setSelectedIds([])
               setSelectedSnippet(pendingSnippet)
@@ -1067,7 +1159,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
             } else if (window.__pendingNewSnippet) {
               // Handle pending new snippet creation (Ctrl+N or new button)
               window.__pendingNewSnippet = null
-              
+
               setIsCreatingSnippet(false)
               setSelectedIds([])
               setSelectedSnippet(null)
@@ -1090,6 +1182,8 @@ const SnippetLibraryInner = ({ snippetData }) => {
               }
             }
             setIsCreatingSnippet(false)
+            setSelectedSnippet(null)
+            setSelectedIds([])
             navigateTo('snippets')
           }}
           isCompact={isCompact}
@@ -1161,10 +1255,6 @@ const SnippetLibraryInner = ({ snippetData }) => {
           onRenameFolder={handleRenameFolder}
           onDeleteFolder={handleDeleteFolder}
           onDeleteBulk={handleBulkDelete}
-          selectedFolderId={selectedFolderId}
-          selectedIds={selectedIds}
-          onSelectionChange={handleSelectionChange}
-          onSelectFolder={handleSelectFolder}
           onToggleFolder={toggleFolderCollapse}
           onMoveSnippet={moveSnippet}
           onMoveFolder={moveFolder}
@@ -1172,11 +1262,10 @@ const SnippetLibraryInner = ({ snippetData }) => {
           onToggleFavorite={toggleFavoriteSnippet}
           onSelectSnippet={handleSelectSnippet}
           onSearchSnippets={handleSearchSnippets}
-          searchQuery={searchQuery}
           onOpenSettings={() => openSettingsModal()}
           isSettingsOpen={isSettingsOpen}
           onCloseSettings={() => navigateTo('snippets')}
-          onRename={handleRenameRequest}
+          onInlineRename={handleInlineRename}
           // Clipboard operations
           onCopy={handleCopy}
           onCut={handleCut}

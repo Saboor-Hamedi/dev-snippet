@@ -10,6 +10,7 @@ import {
   Pin,
   Star,
   ChevronsUp,
+  Plus,
   RefreshCw
 } from 'lucide-react'
 import SidebarHeader from '../layout/SidebarHeader'
@@ -17,6 +18,7 @@ import VirtualList from '../common/VirtualList'
 import ContextMenu from '../common/ContextMenu'
 import SnippetSidebarRow from './sidebar/SnippetSidebarRow'
 import { useSidebarLogic } from './sidebar/useSidebarLogic'
+import { useSidebarStore } from '../../store/useSidebarStore'
 
 const SnippetSidebar = ({
   snippets,
@@ -26,12 +28,10 @@ const SnippetSidebar = ({
   onNew,
   onNewFolder,
   onSearch,
-  searchQuery,
   onToggleFolder,
   onMoveSnippet,
   onMoveFolder,
-  selectedFolderId,
-  onSelectFolder,
+
   onRenameSnippet,
   onRenameFolder,
   onDeleteFolder,
@@ -39,8 +39,6 @@ const SnippetSidebar = ({
   onDeleteBulk,
   onTogglePin,
   onToggleFavorite,
-  selectedIds = [],
-  onSelectionChange,
   isOpen,
   onToggle,
   isCompact = false,
@@ -51,8 +49,20 @@ const SnippetSidebar = ({
   onPaste,
   onSelectAll,
   onDailyNote,
-  dirtyIds
+  dirtyIds,
+  onInlineRename
 }) => {
+  const {
+    searchQuery,
+    setSearchQuery,
+    selectedFolderId,
+    setSelectedFolderId,
+    selectedIds,
+    setSelectedIds,
+    isSidebarSelected,
+    setSidebarSelected
+  } = useSidebarStore()
+
   const [filter, setFilter] = useState('')
   const [contextMenu, setContextMenu] = useState(null)
   const [showLocationModal, setShowLocationModal] = useState(false)
@@ -60,7 +70,6 @@ const SnippetSidebar = ({
   const now = new Date()
   const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
   const [pendingCreationType, setPendingCreationType] = useState(null)
-  const [sidebarSelected, setSidebarSelected] = useState(false)
   const [isDragOver, setIsDragOver] = useState(false) // State for root drop target visual
   const inputRef = React.useRef(null)
   const listRef = React.useRef(null)
@@ -75,7 +84,11 @@ const SnippetSidebar = ({
     startCreation,
     cancelCreation,
     confirmCreation,
-    togglePinned
+    togglePinned,
+    collapseAll,
+    editingId,
+    startRenaming,
+    cancelRenaming
   } = useSidebarLogic({
     folders,
     snippets,
@@ -83,12 +96,11 @@ const SnippetSidebar = ({
     selectedFolderId,
     selectedSnippet,
     onSelect,
-    onSelectFolder,
-    onSelectionChange,
     onToggleFolder,
     inputRef,
     listRef,
     setSidebarSelected,
+    sidebarSelected: isSidebarSelected,
     dirtyIds
   })
 
@@ -222,7 +234,7 @@ const SnippetSidebar = ({
             onClick: () => startCreation('folder', itemData.id)
           },
           { label: 'separator' },
-          { label: 'Rename', icon: Edit2, onClick: () => onRenameFolder(itemData) }
+          { label: 'Rename', icon: Edit2, onClick: () => startRenaming(itemData.id) }
         )
       }
     } else if (type === 'snippet') {
@@ -248,7 +260,7 @@ const SnippetSidebar = ({
         menuItems.unshift({
           label: 'Rename',
           icon: Edit2,
-          onClick: () => onRenameSnippet(itemData)
+          onClick: () => startRenaming(itemData.id)
         })
       }
     } else {
@@ -309,82 +321,191 @@ const SnippetSidebar = ({
     return () => ro.disconnect()
   }, [])
 
-  // --- Global Drag Cleanup ---
+  // --- Global Keyboard Shortcuts & Drag Cleanup ---
   React.useEffect(() => {
-    // Ensure dragged visuals are cleared no matter where the drop happens
-    const cleanup = () => {
+    const handleKeyDownGlobal = (e) => {
+      if (e.key === 'Escape') {
+        if (isSidebarSelected || isDragOver) {
+          setSidebarSelected(false)
+          setIsDragOver(false)
+          setSelectedIds([])
+          onSelect(null)
+          setSelectedFolderId(null)
+        }
+      }
+    }
+
+    const cleanupDrag = () => {
       setIsDragOver(false)
     }
-    // Use capture phase to catch events even if propagation is stopped by children
-    window.addEventListener('drop', cleanup, true)
-    window.addEventListener('dragend', cleanup, true)
+
+    window.addEventListener('keydown', handleKeyDownGlobal)
+    window.addEventListener('drop', cleanupDrag, true)
+    window.addEventListener('dragend', cleanupDrag, true)
+
     return () => {
-      window.removeEventListener('drop', cleanup, true)
-      window.removeEventListener('dragend', cleanup, true)
+      window.removeEventListener('keydown', handleKeyDownGlobal)
+      window.removeEventListener('drop', cleanupDrag, true)
+      window.removeEventListener('dragend', cleanupDrag, true)
     }
-  }, [])
+  }, [isSidebarSelected, isDragOver, onSelect])
+
+  // Optimize itemData with useMemo to prevent frequent re-renders in VirtualList
+  const itemData = React.useMemo(
+    () => ({
+      treeItems,
+      selectedSnippet,
+      onSelect,
+      handleItemKeyDown,
+      isCompact,
+      onToggleFolder,
+      onNew,
+      onMoveSnippet,
+      onMoveFolder,
+      onContextMenu: handleContextMenu,
+      lastSelectedIdRef,
+      togglePinned,
+      onTogglePin,
+      onConfirmCreation: handleConfirmCreation,
+      onCancelCreation: cancelCreation,
+      editingId,
+      onInlineRename,
+      onCancelRenaming: cancelRenaming,
+      startCreation,
+      handleBackgroundClick,
+      todayStr
+    }),
+    [
+      treeItems,
+      selectedSnippet,
+      onSelect,
+      handleItemKeyDown,
+      isCompact,
+      onToggleFolder,
+      onNew,
+      onMoveSnippet,
+      onMoveFolder,
+      // handleContextMenu is a function, if it's not memoized it will cause updates.
+      // Ideally we should assume these handlers are stable or harmless to update if they are fast.
+      // Given the structure, including them here is correct for correctness.
+      lastSelectedIdRef, // ref, stable
+      togglePinned,
+      onTogglePin,
+      // handleConfirmCreation, // We need to check if this is stable. It's defined inside the component so it's NOT stable unless wrapped.
+      // cancelCreation, // from hook, hopefully stable
+      editingId,
+      onInlineRename,
+      // cancelRenaming, // from hook
+      startCreation,
+      handleBackgroundClick,
+      todayStr
+    ]
+  )
 
   return (
     <div
       className="h-full flex flex-col w-full"
       style={{ backgroundColor: 'var(--sidebar-bg)', color: 'var(--sidebar-text)' }}
     >
-      <SidebarHeader className="gap-2 z-10 relative pr-1 border-b border-white/[0.03] pb-2">
-        <div className="relative group flex-1">
-          <input
-            ref={inputRef}
-            type="text"
-            placeholder="Search Snippets..."
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            className="w-full rounded-[8px] py-1.5 px-3 text-[12px] outline-none border border-transparent focus:border-[var(--color-accent-primary)]/30 bg-white/[0.03] hover:bg-white/[0.05] focus:bg-white/[0.08] text-[var(--color-text-primary)] placeholder:text-[11px] placeholder:opacity-40 transition-all focus:shadow-[0_0_15px_rgba(var(--color-accent-primary-rgb),0.1)]"
-          />
-        </div>
-        {/* Action Icons - Obsidian Style */}
-        <div className="flex items-center gap-0.5 bg-white/[0.03] p-0.5 rounded-[8px] border border-white/[0.03]">
-          <button
-            onClick={() => handleSmartCreation('snippet')}
-            className="p-1.5 rounded-[6px] opacity-40 hover:opacity-100 hover:bg-white/[0.08] transition-all"
-            title="New Snippet"
-            style={{ color: 'var(--color-text-primary)' }}
-          >
-            <FilePlus size={14} strokeWidth={2.5} />
-          </button>
-          <button
-            onClick={() => handleSmartCreation('folder')}
-            className="p-1.5 rounded-[6px] opacity-40 hover:opacity-100 hover:bg-white/[0.08] transition-all"
-            title="New Folder"
-            style={{ color: 'var(--color-text-primary)' }}
-          >
-            <FolderPlus size={14} strokeWidth={2.5} />
-          </button>
-          <div className="w-[1px] h-3 bg-white/[0.05] mx-0.5" />
-          <button
-            onClick={() => {
-              onSelect(null)
-              setSidebarSelected(true)
-            }}
-            className="p-1.5 rounded-[6px] opacity-40 hover:opacity-100 hover:bg-white/[0.08] transition-all"
-            title="Collapse / Deselect All"
-            style={{ color: 'var(--color-text-primary)' }}
-          >
-            <ChevronsUp size={14} strokeWidth={2.5} />
-          </button>
+      <SidebarHeader className="z-10 relative pr-1 border-b border-[var(--color-border)] pb-3 pt-1 px-1">
+        <div className="flex flex-col gap-2 w-full">
+          <div className="flex items-center gap-2">
+            <div className="relative group flex-1">
+              <div className="absolute left-2.5 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-70 transition-opacity text-[var(--color-text-primary)]">
+                <Search size={12} />
+              </div>
+              <input
+                ref={inputRef}
+                type="text"
+                placeholder="Search Snippets"
+                value={filter}
+                onChange={(e) => {
+                  setFilter(e.target.value)
+                  onSearch(e.target.value)
+                }}
+                className="w-full rounded-[8px] py-1.5 pl-8 pr-8 text-[12px] outline-none border border-transparent focus:border-[var(--color-accent-primary)]/30 bg-[var(--color-bg-tertiary)] hover:brightness-110 focus:brightness-125 text-[var(--color-text-primary)] placeholder:text-[11px] placeholder:opacity-30 transition-all focus:shadow-[0_0_20px_rgba(var(--color-accent-primary-rgb),0.1)]"
+              />
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                {filter ? (
+                  <button
+                    onClick={() => {
+                      setFilter('')
+                      onSearch('')
+                      inputRef.current?.focus()
+                    }}
+                    className="p-1 rounded-full hover:bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] opacity-40 hover:opacity-100 transition-all"
+                  >
+                    <RefreshCw size={10} className="rotate-45" />
+                  </button>
+                ) : (
+                  <div className="hidden sm:flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-[var(--color-border)] bg-[var(--color-bg-secondary)] text-[9px] font-bold text-[var(--color-text-primary)] opacity-20 group-hover:opacity-40 transition-opacity">
+                    <span>⌘</span>
+                    <span>F</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Action Icons - Obsidian Style */}
+            <div className="flex items-center gap-0 shrink-0">
+              <button
+                onClick={() => handleSmartCreation('snippet')}
+                className="p-1 rounded-[4px] opacity-40 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all group/btn"
+                title="New Snippet"
+                style={{ color: 'var(--color-text-primary)' }}
+              >
+                <FilePlus
+                  size={14}
+                  strokeWidth={2.5}
+                  className="group-hover/btn:scale-110 transition-transform"
+                />
+              </button>
+              <button
+                onClick={() => handleSmartCreation('folder')}
+                className="p-1 rounded-[4px] opacity-40 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all group/btn"
+                title="New Folder"
+                style={{ color: 'var(--color-text-primary)' }}
+              >
+                <FolderPlus
+                  size={14}
+                  strokeWidth={2.5}
+                  className="group-hover/btn:scale-110 transition-transform"
+                />
+              </button>
+              <button
+                onClick={() => {
+                  collapseAll()
+                  onSelect(null)
+                  setSelectedIds([])
+                  setSidebarSelected(true)
+                }}
+                className="p-1 rounded-[4px] opacity-40 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all group/btn"
+                title="Collapse All Folders"
+                style={{ color: 'var(--color-text-primary)' }}
+              >
+                <ChevronsUp
+                  size={14}
+                  strokeWidth={2.5}
+                  className="group-hover/btn:-translate-y-0.5 transition-transform"
+                />
+              </button>
+            </div>
+          </div>
         </div>
       </SidebarHeader>
 
       <div
-        className={`flex-1 overflow-hidden relative transition-colors duration-200 outline-none`}
+        className={`flex-1 overflow-hidden relative outline-none`}
         style={{
           backgroundColor: isDragOver
-            ? 'rgba(0, 0, 0, 0.04)'
-            : sidebarSelected
-              ? 'rgba(0, 0, 0, 0.02)'
+            ? 'rgba(var(--color-accent-primary-rgb), 0.05)'
+            : isSidebarSelected
+              ? 'rgba(var(--color-accent-primary-rgb), 0.02)'
               : 'transparent',
           // Fix: Use box-shadow (inset) for focus border to avoid layout shifts and clipping (right side issue).
           boxShadow: isDragOver
-            ? 'inset 0 0 0 1px var(--color-accent-primary)'
-            : sidebarSelected
+            ? 'inset 0 0 40px rgba(var(--color-accent-primary-rgb), 0.1), inset 0 0 0 1px var(--color-accent-primary)'
+            : isSidebarSelected
               ? 'inset 0 0 0 1px var(--color-accent-primary)'
               : 'none'
         }}
@@ -402,7 +523,7 @@ const SnippetSidebar = ({
             e.stopPropagation()
             setSidebarSelected(false)
             onSelect(null)
-            onSelectionChange([])
+            setSelectedIds([])
           }
         }}
         onClick={(e) => {
@@ -420,9 +541,9 @@ const SnippetSidebar = ({
           }
 
           setSidebarSelected(true)
-          onSelectionChange([])
+          setSelectedIds([])
           onSelect(null)
-          onSelectFolder(null)
+          setSelectedFolderId(null)
           if (inputRef.current) inputRef.current.blur()
         }}
         onContextMenu={(e) => {
@@ -457,17 +578,49 @@ const SnippetSidebar = ({
       >
         {treeItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full px-6 text-center animate-in fade-in zoom-in-95 duration-500">
-            <div className="w-12 h-12 rounded-full bg-white/[0.02] border border-white/[0.05] flex items-center justify-center mb-4">
-              <RefreshCw className="w-5 h-5 opacity-20" />
+            <div className="w-16 h-16 rounded-2xl bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] flex items-center justify-center mb-6 shadow-xl shadow-black/10">
+              {filter ? (
+                <RefreshCw className="w-6 h-6 text-[var(--color-text-primary)] opacity-20" />
+              ) : (
+                <Plus className="w-6 h-6 text-[var(--color-text-primary)] opacity-20" />
+              )}
             </div>
-            <h3 className="text-[13px] font-bold text-[var(--color-text-primary)] opacity-80 mb-1">
-              {filter ? 'No Matches Found' : 'Initialize Library'}
+            <h3 className="text-[14px] font-bold text-[var(--color-text-primary)] opacity-90 mb-2">
+              {filter ? 'No Matches Found' : 'Your Library is Empty'}
             </h3>
-            <p className="text-[11px] leading-relaxed text-[var(--color-text-secondary)] opacity-40">
+            <p className="text-[12px] leading-relaxed text-[var(--color-text-secondary)] opacity-50 mb-8 max-w-[200px] mx-auto">
               {filter
-                ? `No snippets match "${filter}". Try a different keyword.`
+                ? `We couldn't find any snippets matching "${filter}".`
                 : 'Start organizing your knowledge by creating your first snippet or folder.'}
             </p>
+            <div className="flex flex-col gap-2 w-full max-w-[160px]">
+              {filter ? (
+                <button
+                  onClick={() => {
+                    setFilter('')
+                    onSearch('')
+                  }}
+                  className="w-full py-2 px-4 rounded-lg bg-[var(--color-bg-tertiary)] hover:brightness-110 text-[var(--color-text-primary)] text-[11px] font-medium transition-all border border-[var(--color-border)]"
+                >
+                  Clear Search
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={() => onNew()}
+                    className="w-full py-2 px-4 rounded-lg bg-[var(--color-accent-primary)] hover:opacity-90 text-[11px] font-bold text-white transition-all shadow-lg shadow-[var(--color-accent-primary)]/20"
+                  >
+                    Create Snippet
+                  </button>
+                  <button
+                    onClick={() => startCreation('folder')}
+                    className="w-full py-2 px-4 rounded-lg bg-[var(--color-bg-tertiary)] hover:brightness-110 text-[var(--color-text-primary)] text-[11px] font-medium transition-all border border-[var(--color-border)]"
+                  >
+                    New Folder
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         ) : (
           <VirtualList
@@ -480,30 +633,7 @@ const SnippetSidebar = ({
             // The GPU promotion style should be applied to the individual rows (SnippetSidebarRow),
             // not the VirtualList container itself.
             // This style is passed down to SnippetSidebarRow via itemData.
-            itemData={{
-              treeItems,
-              selectedSnippet,
-              selectedFolderId,
-              selectedIds,
-              onSelect,
-              onSelectFolder,
-              onSelectionChange,
-              handleItemKeyDown,
-              isCompact,
-              onToggleFolder,
-              onNew,
-              onMoveSnippet,
-              onMoveFolder,
-              onContextMenu: handleContextMenu,
-              lastSelectedIdRef,
-              togglePinned,
-              onTogglePin,
-              searchQuery,
-              // Creation Props
-              onConfirmCreation: handleConfirmCreation,
-              onCancelCreation: cancelCreation,
-              todayStr
-            }}
+            itemData={itemData}
           >
             {SnippetSidebarRow}
           </VirtualList>
@@ -527,7 +657,6 @@ SnippetSidebar.propTypes = {
   folders: PropTypes.array,
   selectedSnippet: PropTypes.object,
   selectedFolderId: PropTypes.string,
-  onSelectFolder: PropTypes.func,
   onSelect: PropTypes.func.isRequired,
   onNew: PropTypes.func.isRequired,
   onNewFolder: PropTypes.func,
@@ -535,15 +664,12 @@ SnippetSidebar.propTypes = {
   onToggleFolder: PropTypes.func,
   onMoveSnippet: PropTypes.func,
   onMoveFolder: PropTypes.func,
-  onRenameSnippet: PropTypes.func,
-  onRenameFolder: PropTypes.func,
   onDeleteFolder: PropTypes.func,
   onDeleteSnippet: PropTypes.func,
   onDeleteBulk: PropTypes.func,
   onTogglePin: PropTypes.func,
   onToggleFavorite: PropTypes.func,
   selectedIds: PropTypes.array,
-  onSelectionChange: PropTypes.func,
   isOpen: PropTypes.bool,
   onToggle: PropTypes.func,
   isCompact: PropTypes.bool,

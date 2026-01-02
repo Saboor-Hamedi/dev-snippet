@@ -86,6 +86,11 @@ const api = {
   resetWindow: () => electronAPI.ipcRenderer.invoke('window:reset'),
   toggleQuickCapture: () => electronAPI.ipcRenderer.invoke('quickCapture:toggle'),
   setWindowDirty: (isDirty) => electronAPI.ipcRenderer.invoke('window:set-dirty', isDirty),
+  onCloseRequest: (callback) => {
+    const subscription = () => callback()
+    electronAPI.ipcRenderer.on('app:request-close', subscription)
+    return () => electronAPI.ipcRenderer.removeListener('app:request-close', subscription)
+  },
   // Backup Management
   listBackups: () => electronAPI.ipcRenderer.invoke('backup:list'),
   restoreBackup: (backupPath) => electronAPI.ipcRenderer.invoke('backup:restore', backupPath),

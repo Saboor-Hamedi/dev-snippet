@@ -148,7 +148,7 @@ const StatusBar = ({
               <span className="text-xs leading-none group-hover:scale-110 transition-transform">
                 🌀
               </span>
-              <span className="font-mono text-xtiny opacity-90 hidden md:inline">Flow Mode</span>
+              {/* <span className="font-mono text-xtiny opacity-90 hidden md:inline">Flow Mode</span> */}
             </button>
           )}
 
@@ -162,7 +162,7 @@ const StatusBar = ({
                 <Edit2 size={12} className="group-hover:hidden" />
                 <Eye size={12} className="hidden group-hover:block" />
               </div>
-              <span className="font-mono text-xtiny opacity-90 hidden md:inline">Mode</span>
+              {/* <span className="font-mono text-xtiny opacity-90 hidden md:inline">Mode</span> */}
             </button>
           )}
 

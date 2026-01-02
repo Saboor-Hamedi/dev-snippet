@@ -61,6 +61,7 @@ const SnippetEditor = ({
 
   const handleCodeChange = useCallback(
     (val) => {
+      if (isDiscardingRef.current) return
       const newVal = val || ''
       if (newVal !== codeRef.current) {
         codeRef.current = newVal
@@ -376,12 +377,8 @@ const SnippetEditor = ({
     return () => clearTimeout(timer)
   }, [code, detectedLang, initialSnippet?.id, isDirty])
 
-  // Restore setWindowDirty effect
-  useEffect(() => {
-    if (window.api?.setWindowDirty) {
-      window.api.setWindowDirty(isDirty)
-    }
-  }, [isDirty])
+  // PERF: Synced dirty state is now handled globally via onDirtyStateChange
+  // which updates the main process 'isAppDirty' from SnippetLibraryInner.
 
   // SYNC DIRTY STATE WITH PARENT (For Sidebar Dot)
   useEffect(() => {
@@ -445,7 +442,7 @@ const SnippetEditor = ({
   const scheduleSave = useCallback(() => {
     // 1. Skip autosave if we're discarding changes
     if (skipAutosaveRef.current) return
-    
+
     // 2. Explicitly check if enabled first
     if (!autoSaveEnabled) return
 
@@ -1053,87 +1050,100 @@ const SnippetEditor = ({
     }
   }
 
-  const handleTriggerCloseCheck = useCallback(() => {
-    // Skip if we're already in the process of discarding
-    if (isDiscardingRef.current) {
-      if (onCancel) onCancel(true)
-      return
-    }
-    
-    // IF UNSAVED: Prompt user using the custom modal
-    if (isDirty) {
-      openModal({
-        title: 'Unsaved Changes',
-        width: '320px',
-        content: (
-          <div className="p-4 text-[var(--color-text-secondary)] text-sm">
-            <p>
-              Save changes to "
-              <span className="text-[var(--color-text-primary)] font-semibold">
-                {title || 'Untitled'}
-              </span>
-              "?
-            </p>
-          </div>
-        ),
-        footer: (
-          <div className="flex justify-end gap-2 w-full px-4 pb-3">
-            <button
-              className="px-3 py-1.5 text-xs font-medium rounded-md hover:bg-white/10 text-[var(--color-text-secondary)] transition-colors"
-              onClick={() => closeUni()}
-            >
-              Cancel
-            </button>
-            <button
-              className="px-3 py-1.5 text-xs font-medium rounded-md bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
-              onClick={() => {
-                // Mark that we're discarding to prevent re-checks and autosave
-                isDiscardingRef.current = true
-                skipAutosaveRef.current = true
-                
-                // Close modal immediately
-                closeUni()
-                
-                // Revert code to original state
-                const originalCode = initialSnippet?.code || ''
-                setCode(originalCode)
-                codeRef.current = originalCode
-                
-                // Clear dirty state
-                setIsDirty(false)
-                isDirtyRef.current = false
-                
-                // Tell parent it's no longer dirty
-                if (initialSnippet?.id && onDirtyStateChange) {
-                  onDirtyStateChange(initialSnippet.id, false)
-                }
-                
-                // Close the tab
-                if (onCancel) onCancel(true)
-              }}
-            >
-              Discard
-            </button>
-            <button
-              className="px-3 py-1.5 text-xs font-medium rounded-md bg-[var(--color-accent-primary)] text-white hover:opacity-90 transition-colors shadow-sm"
-              onClick={() => {
-                handleSave(false).then(() => {
-                  closeUni()
-                  // Force close after save
-                  if (onCancel) onCancel(true)
-                })
-              }}
-            >
-              Save
-            </button>
-          </div>
-        )
-      })
-      return
-    }
+  const handleTriggerCloseCheck = useCallback(
+    (isWindowClose = false) => {
+      // IF UNSAVED: Prompt user using the custom modal
+      if (isDirty) {
+        openModal({
+          title: 'Unsaved Changes',
+          width: '320px',
+          content: (
+            <div className="p-4 text-[var(--color-text-secondary)] text-sm">
+              <p>
+                Save changes to "
+                <span className="text-[var(--color-text-primary)] font-semibold">
+                  {title || 'Untitled'}
+                </span>
+                "?
+              </p>
+            </div>
+          ),
+          footer: (
+            <div className="flex justify-end gap-2 w-full px-4 pb-3">
+              <button
+                className="px-3 py-1.5 text-xs font-medium rounded-md hover:bg-white/10 text-[var(--color-text-secondary)] transition-colors"
+                onClick={() => closeUni()}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-3 py-1.5 text-xs font-medium rounded-md bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
+                onClick={async () => {
+                  // Mark that we're discarding to prevent re-checks and autosave
+                  isDiscardingRef.current = true
+                  skipAutosaveRef.current = true
 
-    if (onCancel) onCancel()
-  }, [isDirty, title, openModal, closeUni, onCancel, handleSave])
+                  // 1. Revert state and clear dirty
+                  const originalCode = initialSnippet?.code || ''
+                  setCode(originalCode)
+                  codeRef.current = originalCode
+                  setIsDirty(false)
+                  isDirtyRef.current = false
+                  if (initialSnippet?.id && onDirtyStateChange) {
+                    onDirtyStateChange(initialSnippet.id, false)
+                  }
+
+                  // 2. Disable global dirty tracking so main process allows close
+                  if (window.api?.setWindowDirty) {
+                    await window.api.setWindowDirty(false)
+                  }
+
+                  // 3. Close modal immediately
+                  closeUni()
+
+                  // 4. EITHER Exit App or Close Tab
+                  if (isWindowClose) {
+                    if (window.api?.closeWindow) window.api.closeWindow()
+                  } else {
+                    if (onCancel) onCancel(true)
+                  }
+                }}
+              >
+                Discard
+              </button>
+              <button
+                className="px-3 py-1.5 text-xs font-medium rounded-md bg-[var(--color-accent-primary)] text-white hover:opacity-90 transition-colors shadow-sm"
+                onClick={() => {
+                  handleSave(false).then(async () => {
+                    closeUni()
+                    // Disable global dirty tracking
+                    if (window.api?.setWindowDirty) {
+                      await window.api.setWindowDirty(false)
+                    }
+                    if (isWindowClose) {
+                      if (window.api?.closeWindow) window.api.closeWindow()
+                    } else {
+                      if (onCancel) onCancel(true)
+                    }
+                  })
+                }}
+              >
+                Save
+              </button>
+            </div>
+          )
+        })
+        return
+      }
+
+      if (isWindowClose) {
+        if (window.api?.closeWindow) window.api.closeWindow()
+      } else if (onCancel) {
+        onCancel()
+      }
+    },
+    [isDirty, title, openModal, closeUni, onCancel, handleSave, initialSnippet, onDirtyStateChange]
+  )
 
   useKeyboardShortcuts({
     onSave: () => {
@@ -1192,11 +1202,19 @@ const SnippetEditor = ({
     window.addEventListener('app:trigger-export-pdf', pdfFn)
     window.addEventListener('app:trigger-export-word', wordFn)
     window.addEventListener('app:trigger-close-check', closeCheckFn)
+
+    // Listen for main window close request
+    let unsubscribeClose = null
+    if (window.api?.onCloseRequest) {
+      unsubscribeClose = window.api.onCloseRequest(() => handleTriggerCloseCheck(true))
+    }
+
     return () => {
       window.removeEventListener('force-save', fn)
       window.removeEventListener('app:trigger-export-pdf', pdfFn)
       window.removeEventListener('app:trigger-export-word', wordFn)
       window.removeEventListener('app:trigger-close-check', closeCheckFn)
+      if (unsubscribeClose) unsubscribeClose()
     }
   }, [
     code,
@@ -1238,7 +1256,7 @@ const SnippetEditor = ({
                       onKeyDown={(e) => {
                         if (e.key === 'Escape') {
                           // Trigger the close logic which now handles the warning
-                          handlers.onCloseEditor()
+                          handleTriggerCloseCheck()
                         }
                         if ((e.ctrlKey || e.metaKey) && e.key === ',') {
                           e.preventDefault()

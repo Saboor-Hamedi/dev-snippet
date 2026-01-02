@@ -89,10 +89,9 @@ const UpdateManager = () => {
     }
 
     try {
-      if (!silent) {
-        setError(null)
-        setStatus('checking')
-      }
+      // Force showing the checking state for better visual feedback, even in dev mode
+      setError(null)
+      setStatus('checking')
 
       // Artificial delay for visual feedback
       setTimeout(async () => {
@@ -100,21 +99,19 @@ const UpdateManager = () => {
           // checkForUpdates returns the updateInfo if found
           const info = await window.api.checkForUpdates()
           if (!info) {
-            // If info is null, usually means it triggered not-available event
+            // No update found or skipped in dev mode
+            setStatus('no-update')
+            setTimeout(() => setStatus('idle'), 3000)
           }
         } catch (e) {
           // If it throws, it's an actual error (network, config, etc)
-          if (!silent) {
-            setError(e.message || 'Connection failed')
-            setStatus('error')
-          }
+          setError(e.message || 'Connection failed')
+          setStatus('error')
         }
-      }, 700)
+      }, 1200)
     } catch (err) {
-      if (!silent) {
-        setError('Communication error')
-        setStatus('error')
-      }
+      setError('Communication error')
+      setStatus('error')
     }
   }
 

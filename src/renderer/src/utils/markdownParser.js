@@ -156,32 +156,49 @@ async function getMarkdownEngines() {
   function customCodePlugin() {
     return (tree) => {
       visit(tree, 'code', (node) => {
-        if (node.lang === 'mermaid') {
-          const escaped = node.value
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-          const encoded = encodeURIComponent(node.value)
+        const lang = (node.lang || 'text').toLowerCase()
+        const escaped = node.value
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+        const encoded = encodeURIComponent(node.value)
+
+        if (lang === 'mermaid') {
           node.type = 'html'
           node.value = `
-          <div class="mermaid-diagram-wrapper" style="width: 100%; background: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: 12px; margin: 2rem 0; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);">
-            <div class="code-block-header" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: var(--color-bg-tertiary); border-bottom: 1px solid var(--color-border); height: 44px;">
+          <div class="mermaid-diagram-wrapper" style="width: 100%; background: var(--color-bg-secondary); border: none; border-radius: 12px; margin: 2rem 0; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5); overflow: hidden;">
+            <div class="code-block-header" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: var(--color-bg-tertiary); border-bottom: none; height: 44px;">
               <div style="display: flex; gap: 8px;">
                 <div style="width: 10px; height: 10px; border-radius: 50%; background: #ff5f56;"></div>
                 <div style="width: 10px; height: 10px; border-radius: 50%; background: #ffbd2e;"></div>
                 <div style="width: 10px; height: 10px; border-radius: 50%; background: #27c93f;"></div>
               </div>
               <div class="code-actions" style="display: flex; gap: 10px;">
-                <button class="copy-image-btn" data-code="${encoded}" data-lang="mermaid" style="background:transparent; border:none; cursor:pointer;" title="Export as Image">
+                <button class="copy-image-btn" data-code="${encoded}" data-lang="mermaid" style="background:transparent; border:none; cursor:pointer; color: var(--color-text-tertiary); display: flex; align-items: center;" title="Export as Image">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
                 </button>
-                <button class="copy-code-btn" data-code="${encoded}" style="background:transparent; border:none; cursor:pointer;" title="Copy Mermaid Source">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                <button class="copy-code-btn" data-code="${encoded}" style="background:transparent; border:none; cursor:pointer; color: var(--color-text-tertiary); display: flex; align-items: center;" title="Copy Mermaid Source">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                 </button>
               </div>
             </div>
             <div class="mermaid" data-mermaid-src="${encoded}" style="display:flex; justify-content:center; padding: 40px 20px; background: var(--color-bg-primary); min-height: 150px;">${escaped}</div>
+          </div>`
+        } else {
+          // Standard code block enhancement
+          node.type = 'html'
+          node.value = `
+          <div class="code-block-wrapper">
+            <div class="code-block-header">
+              <span class="code-language font-bold">${lang}</span>
+              <div class="code-actions">
+                <button class="copy-code-btn" data-code="${encoded}" title="Copy Code">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                </button>
+              </div>
+            </div>
+            <pre><code class="language-${lang}">${escaped}</code></pre>
           </div>`
         }
       })

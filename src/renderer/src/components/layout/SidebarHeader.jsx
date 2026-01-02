@@ -7,13 +7,13 @@ const SidebarHeader = ({ children, className, onToggle }) => {
     <div
       className={`
         flex items-center justify-between px-3 py-2
-        border-b border-[#1e1e1e]
+        border-none
         min-h-[36px]
         ${className || ''}
       `}
       style={{
         backgroundColor: 'var(--header-bg)',
-        borderBottomColor: 'var(--color-border)'
+        borderBottom: 'none'
       }}
     >
       {onToggle && (

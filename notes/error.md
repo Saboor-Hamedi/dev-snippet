@@ -99,6 +99,28 @@ If you modify these, the editor will start **JUMPING** or trigger **Measure Loop
      - Because `line-height` expands the actual text box, both the selection highlight and the caret will naturally adopt the same height.
   4. **CSS Cleanup**: Ensure `CodeEditor.css` does not have any legacy `.cm-line-h* .cm-force-selection` padding rules, as these will manually "stretch" the selection background and break the alignment.
 
+### ❌ Error: "Discard doesn't close tab or Modal re-appears"
+
+* **Why it happens**:
+  1. **Async State Drift**: Calling `setIsDirty(false)` right before `onCancel()` can cause the editor to re-render in a "clean" state, which might skip the cleanup logic.
+  2. **Window vs Tab mismatch**: The main process native dialog used to handle window close, while the renderer handled tab close, leading to inconsistent UX.
+* **The Fix**:
+  1. **Unified Flow**: Use a single `handleTriggerCloseCheck` that handles both tab and window closures (via `isWindowClose` flag).
+  2. **Intercept Main Close**: Prevent default window close in Main, send `app:request-close` to Renderer, and let the custom `UniversalModal` handle the confirmation.
+  3. **Explicit Dirty Reset**: Always `await api.setWindowDirty(false)` before calling `api.closeWindow()` to ensure the Main process allows the exit.
+  4. **Ghost Draft Cleanup**: Added logic to `onCloseSnippet` to prune empty or untitled "Draft" snippets that haven't been modified yet.
+
+---
+
+### ❌ Error: "Sidebar items flash or animate on theme switch"
+
+* **Why it happens**:
+  1. **Global CSS Conflicts**: Global rules like `button:not(.theme-exempt)` apply styles to all buttons. Sidebar rows are buttons but need to remain transparent.
+  2. **Re-triggering Animations**: CSS entrance animations (`animate-in`) with `style={{ animationDelay: ... }}` inside `VirtualList` rows get re-triggered whenever the parent re-renders (like during a theme context update), causing a "wave" effect.
+* **The Fix**:
+  1. **Class Exemption**: Explicitly add `.theme-exempt` to the sidebar row `className`.
+  2. **Animation Removal**: Remove entrance animations from virtualized list rows. They are computationally expensive and visually distracting during state updates.
+
 ---
 
 ## 3. The "Obsidian Secret" Implementation Details
@@ -112,4 +134,16 @@ If you modify these, the editor will start **JUMPING** or trigger **Measure Loop
 
 ---
 
-*Technical reference for DevSnippet stability. Do not deviate from these rules unless you are prepared for layout shudders.*
+---
+
+## 4. Lifecycle & Interaction Regressions
+
+### ❌ Error: "Dragging files or folders into folders does nothing" (v1.3.1)
+
+*   **Why it happened**: During the "Premium Theme" refactor of `SnippetSidebarRow.jsx`, the `onDragStart` handler was inadvertently removed from the snippet row buttons. While the browser allowed the drag gesture to initiate, no `sourceIds` or `sourceTypes` metadata was being attached to the `dataTransfer` object. Consequently, the folder drop zones (`handleDrop`) received empty data and aborted the move operation silently.
+*   **The Fix**:
+    1.  **Re-attach `onDragStart`**: Ensured that every draggable element in the sidebar (Snippets, Pinned Snippets, Folders) explicitly calls the `handleDragStart` provided by the logic hook.
+    2.  **Metadata Verification**: The `handleDragStart` function was verified to correctly stringify and set `sourceIds` and `sourceTypes` on the event.
+    3.  **Visual Feedback**: Restored the `isDragOver` state logic to ensure folders provide visual "Open" or "Glow" cues during a valid drag operation.
+
+*Technical reference for DevSnippet stability. Last updated: January 2, 2026. v1.3.1*

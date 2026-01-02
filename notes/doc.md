@@ -1,9 +1,9 @@
 
 # Dev Snippet Technical Reference Manual
 
-**Version**: 1.3.0
+**Version**: 1.3.2
 **Date**: January 2, 2026
-**Status**: Stable (Large File Optimization & Modular Features)
+**Status**: Stable (Large File Optimization & Zustand State Management)
 
 ---
 
@@ -483,3 +483,55 @@ Newly created split parts inherit all attributes (Folder ID, Pin status) from th
 *   **Distributed Sync**: Peer-to-peer snippet syncing using CRDTs (Conflict-free Replicated Data Types).
 *   **AI Metadata Extraction**: Automatic tag suggestion and title generation using local LLMs.
 *   **Visual Graph View**: Visualize WikiLinks nodes in a force-directed graph.
+
+---
+
+## 13. Sidebar Navigation & Root Interaction (v1.3.1)
+
+To improve the UX of creating top-level folders and snippets in flat or dense libraries, DevSnippet implements a "Root Selection" logic inspired by professional IDEs like VS Code.
+
+### 13.1 VirtualList Interactive Spacer
+
+The `VirtualList` component (`VirtualList.jsx`) now includes a dynamic bottom gap that scales with the UI:
+
+*   **Logic**: The inner scrollable container height is calculated as `(itemCount * itemSize) + itemSize`. 
+*   **Purpose**: This ensures there is always exactly **one row** of empty space at the bottom of the list, regardless of how many items are currently visible.
+*   **Interactivity**: Clicking this empty space triggers the `handleBackgroundClick` event, which deselects all active items and selects the **Library Root**.
+
+### 13.2 Smart Focus Sequencer
+
+The sidebar selection state (`sidebarSelected`) management was refined to prevent "focus trapping":
+
+1.  **Selection Clearing**: Selecting any specific snippet or folder row now automatically dispatches a signal to clear the root sidebar highlight (`setSidebarSelected(false)`).
+2.  **Explicit Root Targeting**: The "Collapse All" button and the "Bottom Gap" are the two primary ways to target the root. 
+3.  **Visual Clues**: The root selection uses the same high-contrast focus border as individual rows but applies it to the entire sidebar container, providing a clear visual cue that the user is about to "Create in Root".
+
+---
+
+---
+
+## 14. Sidebar State Management (v1.3.2)
+
+To address performance bottlenecks and excessive prop-drilling in the Workbench-Sidebar hierarchy, the application has adopted **Zustand** for localized state management.
+
+### 14.1 The Sidebar Store (`useSidebarStore.js`)
+
+Key sidebar UI state is no longer managed by React Context or passed down from the root `Workbench` component. Instead, it resides in a transient, high-performance atomic store.
+
+**Store Schema:**
+*   `selectedIds` (Array): Tracks multi-selection of snippet/folder IDs.
+*   `selectedFolderId` (String|Null): Tracks the currently focused folder for scope creation.
+*   `searchQuery` (String): The real-time filter string.
+*   `isSidebarSelected` (Boolean): Tracks focus on the sidebar root container.
+
+### 14.2 Architecture & Benefits
+
+This migration decoupled the `SnippetSidebar` from the `Workbench` render cycle.
+
+1.  **Zero Prop-Drilling**: Intermediate components no longer need to pass `selectedIds` or `onSelectionChange` props. Components like `SnippetSidebarRow` consume the store directly.
+2.  **Transient Updates**: Rapid state changes (like typing in the search bar or multi-selecting rows) trigger re-renders **only** in the subscribing components, not the entire Workbench layout.
+3.  **Action Encapsulation**: Complex logic for selection toggling (Ctrl+Click, Shift+Click) is cleaner as the actions (`setSelectedIds`) are available globally without callback hell.
+
+---
+
+*Technical reference for DevSnippet stability. Last updated: January 2, 2026. v1.3.2*

@@ -408,3 +408,63 @@ Pasting very large snippets (50,000+ lines or characters) caused three issues:
 * ✅ **Startup Speed**: ~40% faster boot time.
 * ✅ **Bundle Size**: Reduced by removing redundant parsers.
 * ✅ **UX**: Infinite scrolling replaced clunky pagination.
+
+---
+
+## ✅ SOLVED: WikiLink Navigation
+
+### The Challenge
+WikiLinks (`[[Link]]`) were visually parsed but non-functional for navigation. Users expected:
+1. Double-clicking a link to open the corresponding snippet.
+2. A hover preview that didn't interfere with interaction.
+3. The ability to click the title *inside* the preview to navigate.
+4. Robust handling of `.md` extensions in titles.
+
+### The Solution
+* **Navigation Engine**: Implemented `wikiLinkWarp` extension to handle double-clicks. It dispatchs an `app:open-snippet` event, which the `SnippetLibraryInner` listens for.
+* **Smart Matching**: The navigation logic now correctly handles snippet titles with or without the `.md` extension, ensuring that `[[MyFile.md]]` finds `MyFile.md` correctly in the database.
+* **Non-Blocking Preview**: The hover tooltip (`linkPreviewTooltip`) now has a `600ms` delay to prevent accidental blocking of text selection or double-clicks. It is also offset by `5px` to avoid overlapping the link text.
+* **Interactive Tooltip**: The title header within the preview tooltip is now clickable, offering a secondary navigation method.
+
+### Result
+* ✅ **Seamless Navigation**: Double-click works reliably.
+* ✅ **Corruption Fixed**: Fixed syntax errors and redeclarations in `linkPreview.js`.
+* ✅ **UX Polish**: Preview is helpful but unobtrusive; Title is actionable.
+
+---
+
+## ✅ SOLVED: Zustand State Migration (Sidebar)
+
+### The Architecture Shift
+We are moving away from deep prop-drilling towards a centralized state management using **Zustand**. This uncouples `SnippetSidebar` from the complexity of managing selection states up and down the tree.
+
+### Migrated Components
+The following components have been fully refactored to consume `useSidebarStore` instead of relying on parent callbacks:
+1.  **`useSidebarLogic.js`**: Now dispatches actions directly to the store for folder/snippet selection.
+2.  **`SnippetSidebarRow.jsx`**: Consumes `selectedIds` and `selectedFolderId` directly from the store to render active states, removing the need to pass these props through `VirtualList`.
+3.  **`SnippetSidebar.jsx`**: Removed legacy props (`onSelectionChange`, `onSelectFolder`) and `useState` wiring. It now focuses purely on layout and event orchestration.
+
+### State Flow Diagram
+
+```mermaid
+graph TD
+    Store[Zustand Store: useSidebarStore]
+    Store -->|Provides: selectedIds, selectedFolderId| Row[SnippetSidebarRow]
+    Store -->|Provides: setSidebarSelected| Sidebar[SnippetSidebar]
+    
+    Logic[useSidebarLogic] -->|Action: setSelectedIds| Store
+    Logic -->|Action: setSelectedFolderId| Store
+    
+    Sidebar -->|Uses| Logic
+    Sidebar -->|Renders| List[VirtualList]
+    List -->|Renders| Row
+    
+    style Store fill:#f9f,stroke:#333,stroke-width:2px
+    style Row fill:#ccf,stroke:#333
+    style Logic fill:#ccf,stroke:#333
+```
+
+### Result
+*   ✅ **Cleaner Code**: Removed extensive prop-drilling chains through the Virtual List.
+*   ✅ **Performance**: Components only re-render when their specific slice of the store changes.
+*   ✅ **Maintainability**: Selection logic is centralized, making it easier to debug selection bugs.

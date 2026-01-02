@@ -94,7 +94,7 @@ const LivePreview = ({
       const normalizedLang = (language || 'markdown').toLowerCase()
       const cacheKey = { showHeader, titles: existingTitles }
       const cachedResult = parseCache.get(code, normalizedLang, cacheKey)
-      
+
       if (cachedResult && active) {
         setRenderedHtml(cachedResult)
         setParseProgress(100)
@@ -450,8 +450,10 @@ const LivePreview = ({
     <div className="w-full h-full flex flex-col bg-transparent overflow-hidden live-preview-container">
       {/* Parse Progress Bar - shows during incremental parsing */}
       {parseProgress < 100 && (
-        <div className="h-0.5 bg-gradient-to-r from-blue-500 to-blue-400 w-full" 
-             style={{ width: `${parseProgress}%`, transition: 'width 0.2s ease-out' }} />
+        <div
+          className="h-0.5 bg-gradient-to-r from-blue-500 to-blue-400 w-full"
+          style={{ width: `${parseProgress}%`, transition: 'width 0.2s ease-out' }}
+        />
       )}
       {showHeader && (
         <div
@@ -459,7 +461,7 @@ const LivePreview = ({
           style={{
             backgroundColor: 'var(--header-bg, var(--color-bg-secondary))',
             color: 'var(--header-text, var(--color-text-primary))',
-            borderBottom: '1px solid var(--color-border)'
+            borderBottom: 'none'
           }}
         >
           <div className="flex items-center gap-2 flex-shrink-0">

@@ -16,7 +16,12 @@
   --color-text-secondary: #8b949e;
   --color-text-tertiary: #6e7681;
   --color-accent-primary: #58a6ff;
-  --color-border: #30363d;
+  --color-border: transparent !important;
+  --sidebar-border: transparent !important;
+  --header-border: transparent !important;
+  --gutter-border-color: transparent !important;
+  --activity-bar-active-border: transparent !important;
+
   --hover-settings-panel: #21262d;
   --hover-text: #ffffff;
   --selected-bg: #30363d;
@@ -32,7 +37,7 @@
   --editor-bg: var(--color-bg-primary);
   --workbench-bg: var(--color-bg-secondary);
   --text-main: var(--color-text-primary);
-  --border-color: var(--color-border);
+  --border-color: transparent !important;
   --accent: var(--color-accent-primary);
   --selection-bg: rgba(88, 166, 255, 0.15);
   --primary: var(--color-accent-primary);
@@ -174,14 +179,14 @@ html,
 .overlay {
   background-color: var(--color-bg-primary) !important;
   color: var(--color-text-primary) !important;
-  border-color: var(--color-border) !important;
+  border: none !important;
 }
 
 /* All buttons */
 button:not(.theme-exempt) {
   background-color: var(--color-bg-secondary);
   color: var(--color-text-primary);
-  border-color: var(--color-border);
+  border: none !important;
   transition: all 0.2s ease;
 }
 
@@ -196,7 +201,7 @@ textarea:not(.theme-exempt),
 select:not(.theme-exempt) {
   background-color: var(--color-bg-secondary) !important;
   color: var(--color-text-primary) !important;
-  border-color: var(--color-border) !important;
+  border: none !important;
 }
 
 input:not(.theme-exempt):focus,
@@ -249,7 +254,7 @@ select:not(.theme-exempt):focus {
 [role='navigation'] {
   background-color: var(--color-bg-secondary) !important;
   color: var(--sidebar-text, var(--color-text-primary)) !important;
-  border-color: var(--color-border) !important;
+  border: none !important;
 }
 
 /* Cards and containers */
@@ -259,7 +264,7 @@ select:not(.theme-exempt):focus {
 .section {
   background-color: var(--color-bg-secondary);
   color: var(--color-text-primary);
-  border-color: var(--color-border);
+  border: none !important;
 }
 
 /* Loading states and animations */
@@ -286,7 +291,7 @@ select:not(.theme-exempt):focus {
 [role='tooltip'] {
   background-color: var(--color-bg-tertiary) !important;
   color: var(--color-text-primary) !important;
-  border-color: var(--color-border) !important;
+  border: none !important;
 }
 
 /* ===== SETTINGS PANEL SPECIFIC OVERRIDES ===== */
@@ -441,6 +446,7 @@ h6 {
 /* Workbench and layout components */
 .activity-bar {
   background-color: var(--activity-bar-bg) !important;
+  border: none !important;
 }
 
 .workbench,
@@ -455,7 +461,7 @@ h6 {
 .header-toolbar {
   background-color: var(--color-bg-secondary) !important;
   color: var(--color-text-primary) !important;
-  border-color: var(--color-border) !important;
+  border: none !important;
 }
 
 /* Ensure buttons and interactive elements work in all themes */
@@ -471,12 +477,12 @@ button:not(.theme-exempt):hover {
 /* Sidebar and Header - Let themes control glassmorphism */
 .sidebar {
   background-color: var(--sidebar-bg) !important;
-  border-right: 1px solid var(--sidebar-border);
+  border: none !important;
 }
 
 .header {
   background-color: var(--header-bg) !important;
-  border-bottom: 1px solid var(--header-border);
+  border: none !important;
 }
 
 /* Midnight Theme (neutralized to black scheme) */
@@ -646,7 +652,7 @@ body {
   width: var(--sidebar-width);
   background-color: var(--ev-c-black-soft);
   backdrop-filter: blur(12px);
-  border-right: 1px solid var(--ev-c-black-mute);
+  border: none !important;
   display: flex;
   flex-direction: column;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -678,7 +684,7 @@ body {
   width: 100%;
   padding: 0.625rem 1rem;
   background-color: rgba(30, 41, 59, 0.5);
-  border: 1px solid var(--ev-c-black-mute);
+  border: none !important;
   border-radius: 0.5rem;
   color: var(--ev-c-white);
   font-size: 0.875rem;
@@ -711,7 +717,7 @@ body {
 }
 .dark .border-slate-700,
 .dark .border-slate-800 {
-  border-color: #30363d !important;
+  border: none !important;
 }
 .dark .hover\:bg-slate-800:hover,
 .dark .hover\:bg-slate-900:hover {
@@ -771,7 +777,7 @@ body {
 .glass-panel {
   background-color: rgba(30, 41, 59, 0.4);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: none !important;
 }
 
 /* Syntax Highlighting - Enhanced */

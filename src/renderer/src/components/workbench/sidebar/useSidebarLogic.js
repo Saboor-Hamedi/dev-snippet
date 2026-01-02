@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useRef } from 'react'
+import { useSidebarStore } from '../../../store/useSidebarStore'
 
 /**
  * Custom hook to encapsulate the logic for the SnippetSidebar.
@@ -7,21 +8,24 @@ import React, { useState, useMemo, useCallback, useRef } from 'react'
 export const useSidebarLogic = ({
   folders,
   snippets,
-  selectedIds,
-  selectedFolderId,
   onSelect,
-  onSelectFolder,
-  onSelectionChange,
+  // onSelectFolder, // Handled by store
+  // onSelectionChange, // Handled by store
   onToggleFolder,
   inputRef,
   listRef,
-  setSidebarSelected,
   dirtyIds = new Set()
 }) => {
+  const { selectedIds, setSelectedIds, selectedFolderId, setSelectedFolderId, setSidebarSelected } =
+    useSidebarStore()
   const lastSelectedIdRef = useRef(null)
   const [createState, setCreateState] = useState(null) // { type: 'folder'|'snippet', parentId: string|null }
+  const [editingId, setEditingId] = useState(null)
   const [isPinnedCollapsed, setIsPinnedCollapsed] = useState(false)
   const togglePinned = useCallback(() => setIsPinnedCollapsed((prev) => !prev), [])
+
+  const startRenaming = useCallback((id) => setEditingId(id), [])
+  const cancelRenaming = useCallback(() => setEditingId(null), [])
 
   // 1. Flatten Tree Logic
   // This is a pure function that runs only when data changes.
@@ -52,7 +56,8 @@ export const useSidebarLogic = ({
             realId: snippet.id, // Reference to actual snippet
             type: 'pinned_snippet',
             data: snippet,
-            depth: 0.5 // Subtle indent
+            depth: 0.5, // Subtle indent
+            isEditing: editingId === snippet.id
           })
         })
       }
@@ -97,7 +102,8 @@ export const useSidebarLogic = ({
           type: 'folder',
           data: { ...folder, itemCount: getRecursiveSnippetCount(folder.id) },
           depth,
-          isExpanded
+          isExpanded,
+          isEditing: editingId === folder.id
         })
 
         if (isExpanded) {
@@ -128,7 +134,8 @@ export const useSidebarLogic = ({
           id: snippet.id,
           type: 'snippet',
           data: { ...snippet, is_dirty: dirtyIds.has(snippet.id) },
-          depth
+          depth,
+          isEditing: editingId === snippet.id
         })
       })
 
@@ -138,7 +145,7 @@ export const useSidebarLogic = ({
     result = result.concat(flatten(folders, snippets, 0, null))
 
     return result
-  }, [snippets, folders, createState, selectedFolderId, isPinnedCollapsed, dirtyIds])
+  }, [snippets, folders, createState, selectedFolderId, isPinnedCollapsed, dirtyIds, editingId])
 
   const startCreation = useCallback(
     (type, parentId = null) => {
@@ -203,20 +210,35 @@ export const useSidebarLogic = ({
           const snippet = snippets.find((s) => s.id === targetId)
           if (snippet) onSelect(snippet)
         } else {
-          onSelectFolder(targetId)
+          setSelectedFolderId(targetId)
         }
       }
 
       lastSelectedIdRef.current = id // Store the VIRTUAL id for range navigation
-      onSelectionChange(newSelection)
+      setSelectedIds(newSelection)
       setSidebarSelected(false)
+
+      // Handle Single Selection Specifics
+      if (newSelection.length === 1) {
+        const targetId = newSelection[0]
+        if (type === 'snippet' || type === 'pinned_snippet') {
+          const snippet = snippets.find((s) => s.id === targetId)
+          if (snippet) {
+            onSelect(snippet)
+            setSelectedFolderId(null)
+          }
+        } else {
+          setSelectedFolderId(targetId)
+          onSelect(null) // Clear snippet selection
+        }
+      }
     },
     [
       treeItems,
       selectedIds,
-      onSelectionChange,
+      setSelectedIds,
       onSelect,
-      onSelectFolder,
+      setSelectedFolderId,
       snippets,
       setSidebarSelected
     ]
@@ -341,14 +363,14 @@ export const useSidebarLogic = ({
     (e) => {
       // Only if we clicked directly on the container (virtual list container)
       if (e.target === e.currentTarget || e.target.classList.contains('virtual-list-container')) {
-        onSelectionChange([])
+        setSelectedIds([])
         onSelect(null) // Clear snippet
-        onSelectFolder(null) // Clear folder selection -> target ROOT
+        setSelectedFolderId(null) // Clear folder selection -> target ROOT
         lastSelectedIdRef.current = null
         setSidebarSelected(true)
       }
     },
-    [onSelectionChange, onSelect, onSelectFolder, setSidebarSelected]
+    [setSelectedIds, onSelect, setSelectedFolderId, setSidebarSelected]
   )
 
   return {
@@ -361,6 +383,16 @@ export const useSidebarLogic = ({
     startCreation,
     cancelCreation,
     confirmCreation,
-    togglePinned
+    togglePinned,
+    collapseAll: useCallback(() => {
+      folders.forEach((f) => {
+        if (f.collapsed === 0 || f.collapsed === false) {
+          onToggleFolder(f.id, true)
+        }
+      })
+    }, [folders, onToggleFolder]),
+    editingId,
+    startRenaming,
+    cancelRenaming
   }
 }

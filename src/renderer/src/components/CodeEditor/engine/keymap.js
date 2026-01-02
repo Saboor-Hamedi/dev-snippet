@@ -59,7 +59,7 @@ export const smartKeymap = [
       if (pos >= 2 && doc.sliceString(pos - 2, pos) === '``') {
         v.dispatch({
           changes: { from: pos, to: pos, insert: '`\n\n```' },
-          selection: { anchor: pos + 2 }
+          selection: { anchor: pos + 1 }
         })
         return true
       }

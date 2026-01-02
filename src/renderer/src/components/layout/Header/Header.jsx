@@ -57,7 +57,7 @@ const Header = ({
       className="relative flex items-end h-[38px] select-none transition-colors duration-200"
       style={{
         backgroundColor: 'var(--header-bg)', // Use themeable header-bg
-        borderBottom: '1px solid var(--header-border)', // Use themeable header-border
+        borderBottom: 'none',
         gap: 0,
         color: 'var(--header-text)',
         boxSizing: 'border-box'
@@ -69,7 +69,7 @@ const Header = ({
         style={{
           width: sidebarAreaWidth,
           backgroundColor: 'transparent',
-          borderRight: '1px solid var(--header-border)', // Use themeable header-border
+          borderRight: 'none',
           WebkitAppRegion: 'drag'
         }}
       >
@@ -105,8 +105,7 @@ const Header = ({
                 "
                 style={{
                   WebkitAppRegion: 'no-drag',
-                  boxShadow:
-                    '0 -1px 0 var(--color-border), 1px 0 0 var(--color-border), -1px 0 0 var(--color-border)',
+                  boxShadow: 'none',
                   marginBottom: '0px'
                 }}
                 onDoubleClick={() => onRename && onRename()}

@@ -7,10 +7,10 @@
   min-height: 24px;
   flex-shrink: 0;
   user-select: none;
-  border-top-width: 1px;
+  border-top: none !important;
   background-color: var(--footer-bg);
   color: var(--statusbar-text, var(--header-text));
-  border-color: var(--color-border);
+  border-color: transparent;
   width: 100%;
 }
 
@@ -54,7 +54,7 @@
   position: fixed;
   z-index: 9999;
   background-color: rgba(var(--color-bg-primary-rgb, 13, 17, 23), 0.98);
-  border: 1px solid var(--color-border);
+  border: none !important;
   border-radius: 6px;
   padding: 0.375rem;
   min-width: 200px;
