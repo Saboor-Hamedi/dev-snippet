@@ -1,6 +1,6 @@
 {
   "name": "dev-snippet",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "An Electron application with React",
   "author": "example.com",
   "homepage": "https://electron-vite.org",

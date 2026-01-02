@@ -529,12 +529,6 @@ const SnippetSidebar = ({
         onClick={(e) => {
           // Force background selection on any click in this container
           // that hasn't been stopped by a child.
-          try {
-            console.debug('[SnippetSidebar] container click', {
-              target: e.target,
-              currentTarget: e.currentTarget
-            })
-          } catch (err) {}
 
           if (e.target !== e.currentTarget && e.target.closest('[draggable]')) {
             return

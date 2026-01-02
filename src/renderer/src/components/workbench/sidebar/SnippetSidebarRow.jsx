@@ -130,11 +130,18 @@ const CreationInputRow = ({
     if (e.key === 'Enter') {
       e.preventDefault()
       e.stopPropagation()
-      if (inputRef.current.value.trim()) {
-        onConfirm(inputRef.current.value.trim(), itemData.type, itemData.parentId)
-      } else {
-        onCancel()
-      }
+      const raw = inputRef.current.value
+
+      // Sanitize: Smart Logic
+      let safe = raw.replace(/\.md$/i, '').trim()
+      // Remove punctuation, replace separators
+      safe = safe.replace(/[?*"><]/g, '')
+      safe = safe.replace(/[:/\\|]/g, '-')
+      safe = safe.trim()
+
+      if (!safe) safe = isFolder ? 'Untitled Folder' : 'Untitled Snippet'
+
+      onConfirm(safe, itemData.type, itemData.parentId)
     } else if (e.key === 'Escape') {
       e.preventDefault()
       e.stopPropagation()

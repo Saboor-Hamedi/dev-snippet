@@ -1,6 +1,7 @@
-import { hoverTooltip, EditorView } from '@codemirror/view'
+import { hoverTooltip, EditorView, ViewPlugin, MatchDecorator, Decoration } from '@codemirror/view'
 import { markdownToHtml } from '../../../utils/markdownParser'
 import mermaid from 'mermaid'
+import { useSidebarStore } from '../../../store/useSidebarStore' // For instant cache lookup
 
 // Initialize Mermaid (compact, neutral theme matching tooltip)
 mermaid.initialize({
@@ -62,8 +63,54 @@ export const linkPreviewTooltip = hoverTooltip(
 
     if (!title) return null
 
-    // Pre-fetch snippet to avoid flicker and enable fast render
-    const snippet = await window.api.invoke('db:getSnippetByTitle', title)
+    // 1. INSTANT CACHE LOOKUP (0ms Latency)
+    const { snippetIndex } = useSidebarStore.getState()
+    const norm = title.trim().toLowerCase()
+    const cached =
+      snippetIndex[norm] || snippetIndex[`${norm}.md`] || snippetIndex[norm.replace(/\.md$/, '')]
+
+    let snippet = null
+
+    if (cached) {
+      snippet = await window.api.invoke('db:getSnippetById', cached.id)
+    } else {
+      // 2. DEAD LINK -> Show "Create" Tooltip
+      return {
+        pos: start,
+        end,
+        create(view) {
+          const container = document.createElement('div')
+          container.className = 'cm-link-preview-tooltip'
+          // Styles moved to inner or CSS, wrapper is transparent bridge
+
+          const inner = document.createElement('div')
+          inner.className = 'preview-container-inner'
+          inner.style.minHeight = 'auto'
+          inner.style.width = 'auto'
+          inner.style.cursor = 'pointer'
+
+          inner.innerHTML = `
+            <div class="preview-header" style="justify-content:center; padding: 6px 12px; border:none; background:transparent;">
+              <span class="preview-title-text" style="font-style:normal; color: var(--color-accent-primary);">
+                ✨ Click to create <b>"${title}"</b>
+              </span>
+            </div>
+          `
+          container.onmousedown = (e) => {
+            e.preventDefault()
+            e.stopPropagation()
+          }
+          container.onclick = (e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            window.dispatchEvent(new CustomEvent('app:open-snippet', { detail: { title } }))
+          }
+          container.appendChild(inner)
+          return { dom: container, offset: { x: 0, y: 0 } }
+        }
+      }
+    }
+
     if (!snippet) return null
 
     // Pre-render HTML to avoid layout jumps during tooltip display
@@ -136,6 +183,10 @@ export const linkPreviewTooltip = hoverTooltip(
       create(view) {
         const container = document.createElement('div')
         container.className = 'cm-link-preview-tooltip'
+        // CSS handles bridge
+
+        const inner = document.createElement('div')
+        inner.className = 'preview-container-inner'
 
         // Header: Title + Language Pill (tight layout)
         const header = document.createElement('div')
@@ -148,7 +199,16 @@ export const linkPreviewTooltip = hoverTooltip(
         // Make title clickable to open snippet
         titleSpan.style.cursor = 'pointer'
         titleSpan.style.textDecoration = 'underline'
+        titleSpan.style.userSelect = 'none' // Prevent selection
         titleSpan.title = 'Click to open snippet'
+
+        // Prevent selection/focus on mousedown
+        titleSpan.onmousedown = (e) => {
+          e.preventDefault()
+          e.stopPropagation()
+        }
+
+        // Trigger action on click (standard behavior)
         titleSpan.onclick = (e) => {
           e.preventDefault()
           e.stopPropagation()
@@ -165,7 +225,7 @@ export const linkPreviewTooltip = hoverTooltip(
           langPill.textContent = snippet.language.toUpperCase()
           header.appendChild(langPill)
         }
-        container.appendChild(header)
+        inner.appendChild(header)
 
         // Body: Main content (markdown/mermaid/code)
         const body = document.createElement('div')
@@ -178,7 +238,7 @@ export const linkPreviewTooltip = hoverTooltip(
         if (intel) intel.remove()
         const content = tempDiv.querySelector('.markdown-content') || tempDiv
         body.innerHTML = content.innerHTML
-        container.appendChild(body)
+        inner.appendChild(body)
 
         // Footer: Last modified (compact)
         const footer = document.createElement('div')
@@ -191,13 +251,58 @@ export const linkPreviewTooltip = hoverTooltip(
             })
           : '—'
         footer.textContent = `Modified: ${dateStr}`
-        container.appendChild(footer)
+        inner.appendChild(footer)
 
-        return { dom: container, offset: { x: 0, y: 5 } } // Handl the position of the tooltip
+        container.appendChild(inner)
+
+        return { dom: container, offset: { x: 0, y: 0 } } // Zero offset, bridging via CSS
       }
     }
   },
-  { hoverTime: 600 }
+  { hoverTime: 300 }
+)
+
+/**
+ * Double-click to navigate to linked snippet
+ */
+// Decoration Plugin: Applies .cm-wiki-link class to all [[links]]
+// This ensures reliable cursor styling via CSS instead of JS events
+// which can be flaky when tooltips are involved.
+const wikiLinkMatcher = new MatchDecorator({
+  regexp: /\[\[(.*?)\]\]/g,
+  decoration: (match) => {
+    const title = match[1].trim()
+    const { snippetIndex } = useSidebarStore.getState()
+
+    // Check existence using the normalized cache
+    const norm = title.toLowerCase()
+    const exists = !!(
+      snippetIndex[norm] ||
+      snippetIndex[`${norm}.md`] ||
+      snippetIndex[norm.replace(/\.md$/, '')]
+    )
+
+    return Decoration.mark({
+      class: exists ? 'cm-wiki-link' : 'cm-wiki-link-dead',
+      attributes: {
+        title: exists ? 'Click to open' : 'Double-click to create'
+      }
+    })
+  }
+})
+
+export const wikiLinkPlugin = ViewPlugin.fromClass(
+  class {
+    constructor(view) {
+      this.decorations = wikiLinkMatcher.createDeco(view)
+    }
+    update(update) {
+      this.decorations = wikiLinkMatcher.updateDeco(update, this.decorations)
+    }
+  },
+  {
+    decorations: (v) => v.decorations
+  }
 )
 
 /**
@@ -223,27 +328,5 @@ export const wikiLinkWarp = EditorView.domEventHandlers({
       }
     }
     return false
-  },
-
-  mouseover(event, view) {
-    const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
-    if (pos === null) return false
-
-    const { from, text } = view.state.doc.lineAt(pos)
-    const relPos = pos - from
-
-    const wikiRegex = /\[\[(.*?)\]\]/g
-    let match
-    let isLink = false
-    while ((match = wikiRegex.exec(text)) !== null) {
-      if (relPos >= match.index && relPos <= match.index + match[0].length) {
-        isLink = true
-        break
-      }
-    }
-
-    if (view.contentDOM) {
-      view.contentDOM.style.cursor = isLink ? 'pointer' : 'default'
-    }
   }
 })

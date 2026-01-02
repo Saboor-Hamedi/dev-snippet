@@ -421,10 +421,14 @@ WikiLinks (`[[Link]]`) were visually parsed but non-functional for navigation. U
 4. Robust handling of `.md` extensions in titles.
 
 ### The Solution
-* **Navigation Engine**: Implemented `wikiLinkWarp` extension to handle double-clicks. It dispatchs an `app:open-snippet` event, which the `SnippetLibraryInner` listens for.
-* **Smart Matching**: The navigation logic now correctly handles snippet titles with or without the `.md` extension, ensuring that `[[MyFile.md]]` finds `MyFile.md` correctly in the database.
-* **Non-Blocking Preview**: The hover tooltip (`linkPreviewTooltip`) now has a `600ms` delay to prevent accidental blocking of text selection or double-clicks. It is also offset by `5px` to avoid overlapping the link text.
-* **Interactive Tooltip**: The title header within the preview tooltip is now clickable, offering a secondary navigation method.
+* **Navigation Engine**: Implemented `wikiLinkWarp` extension to handle double-clicks. It dispatches an `app:open-snippet` event, which the `SnippetLibraryInner` listens for.
+* **Smart Caching (0ms Latency)**: Implemented a client-side `snippetIndex` in `useSidebarStore`. The tooltip now checks this cache synchronously instead of making slow IPC calls, resulting in instant validation and UI response.
+* **Robust Cursor (Decoration Plugin)**: Replaced flaky `mouseover` events with a native CodeMirror `ViewPlugin` (`wikiLinkPlugin`). This robustly renders `cursor: pointer` via CSS class `.cm-wiki-link` directly on the text parser stream, ensuring the cursor never reverts to "text" even when tooltips are active.
+* **Non-Blocking Preview (Layout Hardening)**: 
+    * **Pass-Through Clicks**: Added `pointer-events: none` to the tooltip container to allow clicks to pass through to the underlying editor, fixing the "dead zone" issue.
+    * **Visual Offset**: Increased tooltip offset to `10px` to prevent physical overlap.
+    * **Delay**: Optimized to `300ms` for a snappy yet non-intrusive experience.
+* **Interactive Tooltip**: The title header within the preview tooltip is now clickable (using robust `onclick`/`mousedown` separation), offering a secondary navigation method.
 
 ### Result
 * ✅ **Seamless Navigation**: Double-click works reliably.

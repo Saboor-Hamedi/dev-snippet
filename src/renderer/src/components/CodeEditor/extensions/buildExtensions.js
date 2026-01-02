@@ -73,8 +73,9 @@ const buildExtensions = async (options, handlers = {}) => {
   exts.push(zenFocusExtension(zenFocus))
 
   // 2.6 DOUBLE-CLICK WARP - Navigation Speed Feature
-  const { wikiLinkWarp } = await import('./linkPreview')
+  const { wikiLinkWarp, wikiLinkPlugin } = await import('./linkPreview')
   exts.push(wikiLinkWarp)
+  exts.push(wikiLinkPlugin)
   const completionSources = []
   if (!isLargeFile) {
     try {

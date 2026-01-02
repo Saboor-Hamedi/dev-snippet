@@ -1,19 +1,33 @@
 /* Link Preview Tooltip - Premium Compact Aesthetic */
 .cm-link-preview-tooltip {
-  background-color: var(--color-tooltip-bg, #1e1e1e) !important;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
+  /* Bridge Wrapper */
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
   padding: 0;
   width: 270px;
+  padding-top: 15px; /* THE BRIDGE */
+  display: flex !important;
+  flex-direction: column;
+  z-index: 99999999 !important;
+  overflow: visible !important;
+  pointer-events: auto;
+}
+
+.preview-container-inner {
+  /* Visual Content */
+  border: 1px solid var(--color-border, #444);
+  border-radius: 8px;
+  padding: 0;
+  width: 100%;
   min-height: 24px;
   display: flex;
   flex-direction: column;
-  z-index: 99999999 !important;
   overflow: hidden;
+  background-color: var(--color-tooltip-bg, #1e1e1e);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
   animation: tooltipFadeIn 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.05s backwards;
-  transform-origin: bottom center;
-  pointer-events: auto;
+  transform-origin: top center;
 }
 
 @keyframes tooltipFadeIn {
@@ -240,4 +254,37 @@
 
 .cm-link-preview-tooltip .code-actions {
   gap: 4px !important;
+}
+
+/* Editor WikiLink Styles (Applied by wikiLinkPlugin) */
+.cm-wiki-link {
+  color: var(--color-accent-primary, #646cff);
+  text-decoration: none;
+  border-bottom: 1px dotted rgba(100, 108, 255, 0.4);
+  transition: all 0.2s ease;
+}
+
+.cm-wiki-link:hover {
+  text-decoration: none;
+  border-bottom: 1px solid var(--color-accent-primary, #646cff);
+  background-color: rgba(100, 108, 255, 0.1);
+  border-radius: 3px;
+}
+
+/* Dead Link (Not Created Yet) */
+.cm-wiki-link-dead {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(128, 128, 128, 0.5);
+  transition: all 0.2s ease;
+  opacity: 0.9;
+}
+
+.cm-wiki-link-dead:hover {
+  color: var(--color-accent-primary, #646cff);
+  border-bottom: 1px dashed var(--color-accent-primary, #646cff);
+  background-color: rgba(100, 108, 255, 0.05);
+  opacity: 1;
+  border-radius: 3px;
+  cursor: pointer;
 }

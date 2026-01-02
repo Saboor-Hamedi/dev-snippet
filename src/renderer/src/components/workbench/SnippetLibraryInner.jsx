@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useToast } from '../../hook/useToast'
 import ToastNotification from '../../utils/ToastNotification'
 import Workbench from './Workbench'
@@ -91,8 +91,16 @@ const SnippetLibraryInner = ({ snippetData }) => {
     selectedIds,
     setSelectedIds,
     searchQuery,
-    setSearchQuery
+    setSearchQuery,
+    updateSnippetIndex
   } = useSidebarStore()
+
+  // Keep the WikiLink index fresh
+  useEffect(() => {
+    if (snippets && snippets.length > 0) {
+      updateSnippetIndex(snippets)
+    }
+  }, [snippets, updateSnippetIndex])
 
   const [dirtySnippetIds, setDirtySnippetIds] = useState(new Set())
   const [pinPopover, setPinPopover] = useState({ visible: false, x: 0, y: 0, snippetId: null })
@@ -192,12 +200,6 @@ const SnippetLibraryInner = ({ snippetData }) => {
 
   const handleSelectSnippet = useCallback(
     (s) => {
-      try {
-        console.debug(
-          '[handleSelectSnippet] called with:',
-          s && { id: s.id, title: s.title, is_draft: s.is_draft }
-        )
-      } catch (e) {}
       if (!s) {
         setSelectedSnippet(null)
         setSelectedFolderId(null)
@@ -349,14 +351,6 @@ const SnippetLibraryInner = ({ snippetData }) => {
   }
 
   const createDraftSnippet = (initialTitle = '', folderId = null, options = {}) => {
-    try {
-      console.debug('[createDraftSnippet] called', {
-        initialTitle,
-        folderId,
-        options,
-        stack: new Error().stack.split('\n').slice(1, 6)
-      })
-    } catch (e) {}
     if (!initialTitle && !folderId) {
       const existingBlank = snippets.find(
         (s) =>
@@ -598,17 +592,67 @@ const SnippetLibraryInner = ({ snippetData }) => {
     window.addEventListener('app:ping-snippet', onCommandPing)
 
     // Listen for wiki-link navigation events
-    const onOpenSnippet = (e) => {
-      const { title } = e.detail || {}
-      if (!title) return
+    const onOpenSnippet = async (e) => {
+      const rawTitle = e.detail?.title
+      if (!rawTitle) return
 
-      const target = snippets.find(
-        (s) => (s.title || '').trim().toLowerCase() === title.trim().toLowerCase()
-      )
+      // Normalize: remove .md extension
+      const textTitle = rawTitle.replace(/\.md$/i, '').trim()
+      const searchTitle = textTitle.toLowerCase()
+
+      // Debounce: Prevent double-creation if event fires multiple times
+      if (window.__wikiLock === searchTitle) return
+
+      // Smart Search: Match "Title" OR "Title.md"
+      const target = snippets.find((s) => {
+        const t = (s.title || '').trim().toLowerCase()
+        return t === searchTitle || t === `${searchTitle}.md`
+      })
+
       if (target) {
         handleSelectSnippet(target)
       } else {
-        showToast(`Snippet "${title}" not found`, 'warning')
+        // Lock creation for 1s to prevent duplicates
+        window.__wikiLock = searchTitle
+        setTimeout(() => {
+          window.__wikiLock = null
+        }, 1000)
+
+        // Robustness: Smart Sanitize
+        // 1. Remove chars that imply punctuation (?*"><)
+        let safeTitle = textTitle.replace(/[?*"><]/g, '')
+        // 2. Replace structural chars (: / \ |) with hyphens
+        safeTitle = safeTitle.replace(/[:/\\|]/g, '-')
+        safeTitle = safeTitle.trim()
+
+        if (!safeTitle) safeTitle = 'Untitled Wiki Note'
+
+        // Create persistent snippet
+        const newSnippet = createDraftSnippet(safeTitle, null, {
+          initialCode: `# New Snippet ${safeTitle}\n\n`,
+          skipNavigation: true,
+          isDraft: false
+        })
+
+        if (newSnippet) {
+          try {
+            await saveSnippet(newSnippet) // Persist to DB immediately
+
+            // Critical Fix: Force navigation to the new snippet
+            // We use a timeout to ensure this executes after any potential re-renders from saveSnippet
+            handleSelectSnippet(newSnippet)
+
+            setTimeout(() => {
+              setSelectedSnippet(newSnippet)
+              navigateTo('editor')
+            }, 50)
+
+            showToast(`New Snippet "${safeTitle}"`, 'success')
+          } catch (error) {
+            console.error('[WikiLink] Creation failed:', error)
+            showToast('Failed to save new snippet', 'error')
+          }
+        }
       }
     }
     window.addEventListener('app:open-snippet', onOpenSnippet)

@@ -39,6 +39,39 @@ export const useSidebarStore = create((set) => ({
       ...(selected ? { selectedFolderId: null, selectedIds: [] } : {})
     }),
 
+  // Add Snippet Index for WikiLinks
+  snippetIndex: {}, // Map<normalizedTitle, { title, id, language }>
+
+  updateSnippetIndex: (snippets) => {
+    const newIndex = {}
+    snippets.forEach((s) => {
+      if (s.title) {
+        // Normalize: lowercase, trim.
+        // We map both "title" and "title.md" (if not present) to this snippet for easy lookup
+        const normTokens = [s.title.trim().toLowerCase()]
+
+        // If title does not end in .md, add a .md alias to the index too
+        // so [[MyFile.md]] finds [[MyFile]]
+        if (!normTokens[0].endsWith('.md')) {
+          normTokens.push(normTokens[0] + '.md')
+        }
+
+        normTokens.forEach((key) => {
+          // Priority: if an exact file exists with .md name, don't overwrite it with an alias
+          if (!newIndex[key] || newIndex[key].isAlias) {
+            newIndex[key] = {
+              title: s.title,
+              id: s.id,
+              language: s.language,
+              isAlias: key !== s.title.trim().toLowerCase()
+            }
+          }
+        })
+      }
+    })
+    set({ snippetIndex: newIndex })
+  },
+
   // Clear all selections
   clearSelection: () =>
     set({
