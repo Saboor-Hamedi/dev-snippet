@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import { useSettings } from '../../hook/useSettingsContext'
 import { Smartphone, Tablet, Monitor, Layers } from 'lucide-react'
 import { SplitPaneContext } from '../splitPanels/SplitPaneContext'
+import { markdownToHtml, codeToHtml } from '../../utils/markdownParser'
 import { useMarkdownWorker } from '../../hook/useMarkdownWorker'
 import previewStyles from '../../assets/preview.css?raw'
 import markdownStyles from '../../assets/markdown.css?raw'
@@ -62,9 +63,9 @@ const LivePreview = ({
   // --- Specialized Hooks ---
   const { handleQuickCopyMermaid } = useMermaidCapture(fontFamily)
   const { openImageExportModal } = useModal()
-  const { parseMarkdown, parseCode, isParsing: isWorkerParsing } = useMarkdownWorker()
+  const { parseMarkdown: parseMarkdownWorker, parseCode: parseCodeWorker, isParsing: isWorkerParsing } = useMarkdownWorker()
 
-  // --- 1. Parsing Engine ---
+  // --- 1. Parsing Engine (Smart Conditional: Inline for Small, Worker for Large) ---
   useEffect(() => {
     let active = true
     let timeoutId = null
@@ -88,34 +89,62 @@ const LivePreview = ({
         let result = ''
 
         if (normalizedLang === 'markdown' || normalizedLang === 'md') {
-          result = await parseMarkdown(visibleCode, {
-            renderMetadata: showHeader,
-            titles: existingTitles
-          })
+          // SMART CONDITIONAL PARSING
+          // < 10k: inline (instant feedback, no worker overhead)
+          // >= 10k: worker (non-blocking for large files)
+          const codeLength = visibleCode.length
+          if (codeLength < 10000) {
+            result = await markdownToHtml(visibleCode, {
+              renderMetadata: showHeader,
+              titles: existingTitles
+            })
+          } else {
+            // Use worker for medium/large files
+            result = await parseMarkdownWorker(visibleCode, {
+              renderMetadata: showHeader,
+              titles: existingTitles
+            })
+          }
+          
           if (isTooLarge && result) {
             result +=
               '<div class="preview-performance-notice">Preview truncated for performance.</div>'
           }
         } else {
-          result = await parseCode(visibleCode, normalizedLang)
+          // Code blocks: inline for small, worker for large
+          const codeLength = visibleCode.length
+          if (codeLength < 10000) {
+            result = await codeToHtml(visibleCode, normalizedLang)
+          } else {
+            result = await parseCodeWorker(visibleCode, normalizedLang)
+          }
         }
 
         if (active && result) setRenderedHtml(result)
       } catch (err) {
-        console.error('Offloaded parsing error:', err)
+        console.error('Parsing error:', err)
       }
     }
 
-    // --- DEBOUNCE LOGIC ---
-    // For large files, we use a longer debounce to keep typing butter-smooth
-    const debounceMs = (code || '').length > 100000 ? 500 : 150
+    // --- DEBOUNCE LOGIC (Size-Aware) ---
+    // Small files: 150ms (instant feedback)
+    // Medium files (10k-50k): 200ms (balance speed and responsiveness)
+    // Large files (50k+): 500ms (prevent CPU saturation)
+    const codeLength = (code || '').length
+    let debounceMs = 150
+    if (codeLength > 50000) {
+      debounceMs = 500
+    } else if (codeLength > 10000) {
+      debounceMs = 200
+    }
+    
     timeoutId = setTimeout(parse, debounceMs)
 
     return () => {
       active = false
       if (timeoutId) clearTimeout(timeoutId)
     }
-  }, [code, language, showHeader, existingTitles, disabled, parseMarkdown, parseCode])
+  }, [code, language, showHeader, existingTitles, disabled, parseMarkdownWorker, parseCodeWorker])
 
   // Sync isParsing state from worker hook
   useEffect(() => {

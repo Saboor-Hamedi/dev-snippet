@@ -50,11 +50,15 @@ const SnippetSidebar = ({
   onCut,
   onPaste,
   onSelectAll,
-  onDailyNote
+  onDailyNote,
+  dirtyIds
 }) => {
   const [filter, setFilter] = useState('')
   const [contextMenu, setContextMenu] = useState(null)
   const [showLocationModal, setShowLocationModal] = useState(false)
+
+  const now = new Date()
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
   const [pendingCreationType, setPendingCreationType] = useState(null)
   const [sidebarSelected, setSidebarSelected] = useState(false)
   const [isDragOver, setIsDragOver] = useState(false) // State for root drop target visual
@@ -84,7 +88,8 @@ const SnippetSidebar = ({
     onToggleFolder,
     inputRef,
     listRef,
-    setSidebarSelected
+    setSidebarSelected,
+    dirtyIds
   })
 
   // --- Creation Handlers ---
@@ -324,51 +329,46 @@ const SnippetSidebar = ({
       className="h-full flex flex-col w-full"
       style={{ backgroundColor: 'var(--sidebar-bg)', color: 'var(--sidebar-text)' }}
     >
-      <SidebarHeader className="gap-2 z-10 relative pr-0.5" onToggle={onToggle}>
+      <SidebarHeader className="gap-2 z-10 relative pr-1 border-b border-white/[0.03] pb-2">
         <div className="relative group flex-1">
-          <Search
-            className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 opacity-50"
-            style={{ color: 'var(--color-text-secondary)' }}
-          />
           <input
             ref={inputRef}
             type="text"
-            placeholder="Search..."
+            placeholder="Search Snippets..."
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="w-full rounded-md py-1.5 pl-8 pr-4 text-[12px] outline-none ring-1 ring-transparent focus:ring-[var(--color-accent-primary)] bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] placeholder:text-xtiny placeholder-[var(--color-text-secondary)] transition-all"
+            className="w-full rounded-[8px] py-1.5 px-3 text-[12px] outline-none border border-transparent focus:border-[var(--color-accent-primary)]/30 bg-white/[0.03] hover:bg-white/[0.05] focus:bg-white/[0.08] text-[var(--color-text-primary)] placeholder:text-[11px] placeholder:opacity-40 transition-all focus:shadow-[0_0_15px_rgba(var(--color-accent-primary-rgb),0.1)]"
           />
         </div>
-
         {/* Action Icons - Obsidian Style */}
-        <div className="flex items-center gap-0.5">
+        <div className="flex items-center gap-0.5 bg-white/[0.03] p-0.5 rounded-[8px] border border-white/[0.03]">
           <button
             onClick={() => handleSmartCreation('snippet')}
-            className="p-1 rounded opacity-60 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all"
+            className="p-1.5 rounded-[6px] opacity-40 hover:opacity-100 hover:bg-white/[0.08] transition-all"
             title="New Snippet"
-            style={{ color: 'var(--sidebar-icon-color, var(--sidebar-text))' }}
+            style={{ color: 'var(--color-text-primary)' }}
           >
-            <FilePlus size={16} strokeWidth={2} />
+            <FilePlus size={14} strokeWidth={2.5} />
           </button>
           <button
             onClick={() => handleSmartCreation('folder')}
-            className="p-1 rounded opacity-60 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all"
+            className="p-1.5 rounded-[6px] opacity-40 hover:opacity-100 hover:bg-white/[0.08] transition-all"
             title="New Folder"
-            style={{ color: 'var(--sidebar-icon-color, var(--sidebar-text))' }}
+            style={{ color: 'var(--color-text-primary)' }}
           >
-            <FolderPlus size={16} strokeWidth={2} />
+            <FolderPlus size={14} strokeWidth={2.5} />
           </button>
+          <div className="w-[1px] h-3 bg-white/[0.05] mx-0.5" />
           <button
             onClick={() => {
-              // Collapse all folders logic (mock or real)
-              onSelect(null) // Deselect
+              onSelect(null)
               setSidebarSelected(true)
             }}
-            className="p-1 rounded opacity-60 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all"
+            className="p-1.5 rounded-[6px] opacity-40 hover:opacity-100 hover:bg-white/[0.08] transition-all"
             title="Collapse / Deselect All"
-            style={{ color: 'var(--sidebar-icon-color, var(--sidebar-text))' }}
+            style={{ color: 'var(--color-text-primary)' }}
           >
-            <ChevronsUp size={16} strokeWidth={2} />
+            <ChevronsUp size={14} strokeWidth={2.5} />
           </button>
         </div>
       </SidebarHeader>
@@ -456,8 +456,18 @@ const SnippetSidebar = ({
         }}
       >
         {treeItems.length === 0 ? (
-          <div className="p-4 text-center opacity-50 text-xs mt-4">
-            {filter ? 'No results found' : 'No snippets yet'}
+          <div className="flex flex-col items-center justify-center h-full px-6 text-center animate-in fade-in zoom-in-95 duration-500">
+            <div className="w-12 h-12 rounded-full bg-white/[0.02] border border-white/[0.05] flex items-center justify-center mb-4">
+              <RefreshCw className="w-5 h-5 opacity-20" />
+            </div>
+            <h3 className="text-[13px] font-bold text-[var(--color-text-primary)] opacity-80 mb-1">
+              {filter ? 'No Matches Found' : 'Initialize Library'}
+            </h3>
+            <p className="text-[11px] leading-relaxed text-[var(--color-text-secondary)] opacity-40">
+              {filter
+                ? `No snippets match "${filter}". Try a different keyword.`
+                : 'Start organizing your knowledge by creating your first snippet or folder.'}
+            </p>
           </div>
         ) : (
           <VirtualList
@@ -491,7 +501,8 @@ const SnippetSidebar = ({
               searchQuery,
               // Creation Props
               onConfirmCreation: handleConfirmCreation,
-              onCancelCreation: cancelCreation
+              onCancelCreation: cancelCreation,
+              todayStr
             }}
           >
             {SnippetSidebarRow}

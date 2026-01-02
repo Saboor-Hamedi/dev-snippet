@@ -43,19 +43,40 @@ const SnippetEditor = ({
   setPinPopover,
   onPing,
   onFavorite,
-  isFlow = false
+  isFlow = false,
+  onDirtyStateChange
 }) => {
   const [code, setCode] = useState(initialSnippet?.code || '')
-  const handleCodeChange = useCallback((val) => {
-    setCode((prev) => {
-      if (val !== prev) {
-        setIsDirty(true)
-        return val || ''
-      }
-      return prev
-    })
-  }, [])
   const [isDirty, setIsDirty] = useState(false)
+
+  // PERFORMANCE: Ref to block redundant dirty updates during rapid typing
+  const isDirtyRef = useRef(false)
+  useEffect(() => {
+    isDirtyRef.current = isDirty
+  }, [isDirty])
+
+  const codeRef = useRef(initialSnippet?.code || '')
+
+  const handleCodeChange = useCallback(
+    (val) => {
+      const newVal = val || ''
+      if (newVal !== codeRef.current) {
+        codeRef.current = newVal
+        setCode(newVal)
+
+        // Only broadcast if not already known as dirty (prevents sidebar sway/lag)
+        if (!isDirtyRef.current) {
+          setIsDirty(true)
+          isDirtyRef.current = true // Block subsequent broadcasts
+
+          if (initialSnippet?.id && onDirtyStateChange) {
+            onDirtyStateChange(initialSnippet.id, true)
+          }
+        }
+      }
+    },
+    [initialSnippet, onDirtyStateChange]
+  )
   const [zoomLevel, setZoom] = useZoomLevel()
   const [editorZoom, setEditorZoom] = useEditorZoomLevel()
   const { settings, getSetting, updateSetting } = useSettings()
@@ -353,6 +374,20 @@ const SnippetEditor = ({
     return () => clearTimeout(timer)
   }, [code, detectedLang, initialSnippet?.id, isDirty])
 
+  // Restore setWindowDirty effect
+  useEffect(() => {
+    if (window.api?.setWindowDirty) {
+      window.api.setWindowDirty(isDirty)
+    }
+  }, [isDirty])
+
+  // SYNC DIRTY STATE WITH PARENT (For Sidebar Dot)
+  useEffect(() => {
+    if (initialSnippet?.id && onDirtyStateChange) {
+      onDirtyStateChange(initialSnippet.id, isDirty)
+    }
+  }, [isDirty, initialSnippet?.id, onDirtyStateChange])
+
   // SILENT DRAFT SYNC: Ensures "Modified" (Yellow Dot) appears in the sidebar.
   useEffect(() => {
     if (initialSnippet?.id && isDirty && window.api?.saveSnippetDraft) {
@@ -417,6 +452,13 @@ const SnippetEditor = ({
       async () => {
         const id = initialSnippet?.id
         if (!id) return
+
+        // DISCARD PROTECTION: Don't autosave if it's a brand new untitled snippet with no content
+        const isUntitled = !title || title.toLowerCase() === 'untitled'
+        const hasNoContent = !code || code.trim() === ''
+        if (isUntitled && hasNoContent && initialSnippet?.is_draft) {
+          return
+        }
 
         const updatedSnippet = {
           ...initialSnippet,
@@ -947,47 +989,6 @@ const SnippetEditor = ({
     }
   }, [generateFullHtml, code, title, showToast])
 
-  useKeyboardShortcuts({
-    onSave: () => {
-      if (!title || title.toLowerCase() === 'untitled') {
-        setNamePrompt({ isOpen: true, initialName: '' })
-      } else {
-        handleSave(true)
-      }
-    },
-    onToggleCompact: onToggleCompactHandler,
-    onDelete: () => {
-      if (onDelete) onDelete(initialSnippet?.id)
-    },
-    onCloseEditor: () => {
-      if (onCancel) onCancel()
-    },
-    onToggleMode: cycleMode,
-    onCopyToClipboard: handleCopyToClipboard,
-    onEscapeMenusOnly: (e) => {
-      // 1. Close Pin Popover if open
-      if (pinPopover?.visible) {
-        setPinPopover?.({ ...pinPopover, visible: false })
-        return true
-      }
-      // 2. Close Universal Modal if open
-      if (isUniOpen && closeModal) {
-        closeModal()
-        return true
-      }
-      if (isUniOpen && closeUni) {
-        closeUni()
-        return true
-      }
-
-      // 3. Dispatch to CodeEditor to close internal tooltips (link preview, autocomplete)
-      window.dispatchEvent(new CustomEvent('app:close-tooltips'))
-
-      // Return false so we don't block other Escape behaviors (like clearing selection)
-      return false
-    }
-  })
-
   const handleSave = async (forceSave = false, customTitle = null) => {
     const finalTitle = customTitle || title
 
@@ -1035,11 +1036,109 @@ const SnippetEditor = ({
       lastSavedCode.current = code
       lastSavedTitle.current = finalTitle
       setTitle(finalTitle) // Sync state
+
+      if (initialSnippet?.id && onDirtyStateChange) {
+        onDirtyStateChange(initialSnippet.id, false)
+      }
     } catch (err) {
       onAutosave && onAutosave('error')
       window.dispatchEvent(new CustomEvent('autosave-status', { detail: { status: null } }))
     }
   }
+
+  const handleTriggerCloseCheck = useCallback(() => {
+    // IF UNSAVED: Prompt user using the custom modal
+    if (isDirty) {
+      openModal({
+        title: 'Unsaved Changes',
+        width: '320px',
+        content: (
+          <div className="p-4 text-[var(--color-text-secondary)] text-sm">
+            <p>
+              Save changes to "
+              <span className="text-[var(--color-text-primary)] font-semibold">
+                {title || 'Untitled'}
+              </span>
+              "?
+            </p>
+          </div>
+        ),
+        footer: (
+          <div className="flex justify-end gap-2 w-full px-4 pb-3">
+            <button
+              className="px-3 py-1.5 text-xs font-medium rounded-md hover:bg-white/10 text-[var(--color-text-secondary)] transition-colors"
+              onClick={() => closeUni()}
+            >
+              Cancel
+            </button>
+            <button
+              className="px-3 py-1.5 text-xs font-medium rounded-md bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
+              onClick={() => {
+                closeUni()
+                if (onCancel) onCancel(true)
+              }}
+            >
+              Discard
+            </button>
+            <button
+              className="px-3 py-1.5 text-xs font-medium rounded-md bg-[var(--color-accent-primary)] text-white hover:opacity-90 transition-colors shadow-sm"
+              onClick={() => {
+                handleSave(false).then(() => {
+                  closeUni()
+                  // Force close after save
+                  if (onCancel) onCancel(true)
+                })
+              }}
+            >
+              Save
+            </button>
+          </div>
+        )
+      })
+      return
+    }
+
+    if (onCancel) onCancel()
+  }, [isDirty, title, openModal, closeUni, onCancel, handleSave])
+
+  useKeyboardShortcuts({
+    onSave: () => {
+      if (!title || title.toLowerCase() === 'untitled') {
+        setNamePrompt({ isOpen: true, initialName: '' })
+      } else {
+        handleSave(true)
+      }
+    },
+    onToggleCompact: onToggleCompactHandler,
+    onDelete: () => {
+      if (onDelete) onDelete(initialSnippet?.id)
+    },
+    onCloseEditor: handleTriggerCloseCheck,
+    onToggleMode: cycleMode,
+    onCopyToClipboard: handleCopyToClipboard,
+    onEscapeMenusOnly: (e) => {
+      // 1. Close Pin Popover if open
+      if (pinPopover?.visible) {
+        setPinPopover?.({ ...pinPopover, visible: false })
+        return true
+      }
+      // 2. Close Universal Modal if open
+      if (isUniOpen && closeModal) {
+        closeModal()
+        return true
+      }
+      if (isUniOpen && closeUni) {
+        closeUni()
+        return true
+      }
+
+      // 3. Dispatch to CodeEditor to close internal tooltips (link preview, autocomplete)
+      window.dispatchEvent(new CustomEvent('app:close-tooltips'))
+
+      // Return false so we don't block other Escape behaviors (like clearing selection)
+      return false
+    }
+  })
 
   useEffect(() => {
     if (justRenamed && !namePrompt.isOpen) {
@@ -1054,15 +1153,26 @@ const SnippetEditor = ({
     const fn = () => handleSave(true) // Force save on manual trigger
     const pdfFn = () => handleExportPDF()
     const wordFn = () => handleExportWord()
+    const closeCheckFn = () => handleTriggerCloseCheck()
     window.addEventListener('force-save', fn)
     window.addEventListener('app:trigger-export-pdf', pdfFn)
     window.addEventListener('app:trigger-export-word', wordFn)
+    window.addEventListener('app:trigger-close-check', closeCheckFn)
     return () => {
       window.removeEventListener('force-save', fn)
       window.removeEventListener('app:trigger-export-pdf', pdfFn)
       window.removeEventListener('app:trigger-export-word', wordFn)
+      window.removeEventListener('app:trigger-close-check', closeCheckFn)
     }
-  }, [code, title, initialSnippet, handleExportPDF, handleExportWord, handleCopyToClipboard])
+  }, [
+    code,
+    title,
+    initialSnippet,
+    handleExportPDF,
+    handleExportWord,
+    handleCopyToClipboard,
+    handleTriggerCloseCheck
+  ])
 
   return (
     <>
@@ -1092,7 +1202,10 @@ const SnippetEditor = ({
                       onChange={handleCodeChange}
                       onLargeFileChange={setIsLargeFile}
                       onKeyDown={(e) => {
-                        if (e.key === 'Escape') onCancel?.()
+                        if (e.key === 'Escape') {
+                          // Trigger the close logic which now handles the warning
+                          handlers.onCloseEditor()
+                        }
                         if ((e.ctrlKey || e.metaKey) && e.key === ',') {
                           e.preventDefault()
                           onToggleCompactHandler()

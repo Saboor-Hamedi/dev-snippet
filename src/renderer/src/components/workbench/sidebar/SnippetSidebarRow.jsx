@@ -16,6 +16,14 @@ import {
 
 import { getBaseTitle, isDateTitle } from '../../../utils/snippetUtils'
 
+// Optimized Dot Component
+const UnsavedDot = React.memo(() => (
+  <div
+    className="w-2 h-2 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,1)] flex-shrink-0 animate-pulse border border-yellow-200/20"
+    title="Modified (Unsaved Changes)"
+  />
+))
+
 // Helper to highlight matching text
 const HighlightText = ({ text, highlight }) => {
   if (!highlight || !highlight.trim()) return <span>{text}</span>
@@ -85,15 +93,20 @@ const PinnedHeaderRow = ({ style, data, togglePinned }) => {
   return (
     <div style={style} className="select-none outline-none focus:outline-none relative">
       <div
-        className="group flex items-center gap-[4px] w-full h-full pr-2 relative rounded-[4px] hover:bg-white/[0.02] cursor-pointer"
-        style={{ paddingLeft: '8px', width: 'calc(100% - 8px)', margin: '0 4px' }}
+        className="group flex items-center gap-[6px] w-full h-full pr-2 relative rounded-[6px] transition-all duration-200 cursor-pointer"
+        style={{
+          marginLeft: '4px',
+          width: 'calc(100% - 8px)',
+          backgroundColor: isCollapsed ? 'transparent' : 'rgba(255, 255, 255, 0.03)',
+          borderBottom: isCollapsed ? 'none' : '1px solid rgba(255, 255, 255, 0.05)'
+        }}
         onClick={(e) => {
           e.stopPropagation()
           togglePinned()
         }}
       >
         <button
-          className="flex-shrink-0 flex items-center justify-center rounded w-4 h-4 opacity-40 hover:opacity-100"
+          className="flex-shrink-0 flex items-center justify-center rounded w-4 h-4 opacity-40 group-hover:opacity-100 transition-opacity"
           onClick={(e) => {
             e.stopPropagation()
             togglePinned()
@@ -101,18 +114,18 @@ const PinnedHeaderRow = ({ style, data, togglePinned }) => {
         >
           <ChevronRight
             size={12}
-            className={`transition-transform duration-200 ${!isCollapsed ? 'rotate-90' : ''}`}
+            className={`transition-transform duration-300 ${!isCollapsed ? 'rotate-90' : ''}`}
           />
         </button>
         <div
-          className="flex-shrink-0 opacity-70 group-hover:opacity-100 px-0.5"
+          className="flex-shrink-0 opacity-80 group-hover:opacity-100 px-0.5"
           style={{ color: 'var(--color-accent-primary)' }}
         >
-          <Pin size={14} className="fill-current" />
+          <Pin size={12} className="fill-current" />
         </div>
         <span
-          className="flex-1 truncate font-medium text-[12px] opacity-80 group-hover:opacity-100 pl-1"
-          style={{ color: 'var(--sidebar-header-text)' }}
+          className="flex-1 truncate font-bold text-[10px] uppercase tracking-widest opacity-60 group-hover:opacity-90 pl-1"
+          style={{ color: 'var(--color-text-secondary)' }}
         >
           Pinned
         </span>
@@ -196,8 +209,8 @@ const IndentGuides = ({ depth }) => {
       {Array.from({ length: depth }).map((_, i) => (
         <div
           key={i}
-          className="absolute top-0 bottom-0 w-[1px] bg-[var(--color-border)] opacity-30"
-          style={{ left: `${i * 16 + 12}px` }}
+          className="absolute top-0 bottom-0 w-[1px] bg-white opacity-10"
+          style={{ left: `${i * 16 + 13}px` }}
         />
       ))}
     </div>
@@ -372,8 +385,8 @@ const SnippetSidebarRow = ({ index, style, data }) => {
     return (
       <div
         id={`sidebar-item-${index}`}
-        className="outline-none focus:outline-none relative"
-        style={style}
+        className="outline-none focus:outline-none relative animate-in fade-in slide-in-from-left-2 duration-500 fill-mode-backwards"
+        style={{ ...style, animationDelay: `${Math.min(index * 15, 300)}ms` }}
         draggable
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
@@ -385,16 +398,19 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         onContextMenu={(e) => onContextMenu(e, 'folder', itemData)}
       >
         <IndentGuides depth={depth} />
+        {isSelected && (
+          <div className="absolute left-1 top-1 bottom-1 w-[2px] bg-[var(--color-accent-primary)] rounded-full z-10" />
+        )}
         <div
-          className={`group flex items-center gap-[4px] w-full h-full select-none transition-all duration-150 pr-2 relative rounded-[4px] ${
+          className={`group flex items-center gap-[6px] w-full h-full select-none transition-all duration-200 pr-2 relative rounded-[6px] ${
             isDragOver
               ? 'bg-[var(--color-accent-primary)] bg-opacity-20'
               : isSelected
-                ? 'bg-[var(--selected-bg)]'
-                : 'hover:bg-white/[0.02]'
+                ? 'bg-white/[0.06] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]'
+                : 'hover:bg-white/[0.03]'
           }`}
           style={{
-            color: isSelected ? 'var(--selected-text)' : 'var(--sidebar-header-text)',
+            color: isSelected ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
             paddingLeft: `${depth * 16 + 8}px`,
             width: 'calc(100% - 8px)',
             margin: '0 4px'
@@ -405,16 +421,18 @@ const SnippetSidebarRow = ({ index, style, data }) => {
               e.stopPropagation()
               onToggleFolder(itemData.id, !itemData.collapsed)
             }}
-            className={`flex-shrink-0 flex items-center justify-center rounded w-4 h-4 ${
-              isSelected ? 'bg-white/10' : 'opacity-40 hover:opacity-100'
+            className={`flex-shrink-0 flex items-center justify-center rounded transition-all ${
+              isSelected ? 'opacity-100' : 'opacity-40 hover:opacity-100'
             }`}
           >
             <ChevronRight
               size={isCompact ? 10 : 12}
-              className={`transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}
+              className={`transition-transform duration-300 ${isOpen ? 'rotate-90 text-[var(--color-accent-primary)]' : ''}`}
             />
           </button>
-          <div className="flex-shrink-0 opacity-70 group-hover:opacity-100 px-0.5">
+          <div
+            className={`flex-shrink-0 px-0.5 transition-colors ${isSelected ? 'text-[var(--color-accent-primary)] opacity-100' : 'opacity-60 group-hover:opacity-100'}`}
+          >
             {itemData.name === '📥 Inbox' ? (
               <Inbox size={14} className="text-indigo-400" />
             ) : isOpen ? (
@@ -423,9 +441,16 @@ const SnippetSidebarRow = ({ index, style, data }) => {
               <Folder size={14} />
             )}
           </div>
-          <span className="flex-1 truncate font-medium text-[12px] opacity-80 group-hover:opacity-100 pl-1">
+          <span
+            className={`flex-1 truncate text-[12px] pl-1 tracking-tight ${isSelected ? 'font-bold' : 'font-medium opacity-80 group-hover:opacity-100'}`}
+          >
             {itemData.name}
           </span>
+          {itemData.itemCount > 0 && (
+            <span className="text-[10px] opacity-20 group-hover:opacity-50 pr-1 tabular-nums font-mono">
+              {itemData.itemCount}
+            </span>
+          )}
         </div>
       </div>
     )
@@ -439,13 +464,19 @@ const SnippetSidebarRow = ({ index, style, data }) => {
   const isSearchMatch =
     searchQuery && safeTitle.toLowerCase().includes(searchQuery.toLowerCase().trim())
 
-  const todayStr = new Date().toISOString().split('T')[0]
+  const { todayStr } = data
   // Strict match for Today's Daily Note (ISO format)
   const isTodayLog = getBaseTitle(itemData.title) === todayStr
 
   return (
-    <div style={style} className="relative group/row">
+    <div
+      style={{ ...style, animationDelay: `${Math.min(index * 15, 300)}ms` }}
+      className="relative group/row animate-in fade-in slide-in-from-left-2 duration-500 fill-mode-backwards"
+    >
       <IndentGuides depth={depth} />
+      {isSelected && (
+        <div className="absolute left-1 top-1.5 bottom-1.5 w-[2px] bg-[var(--color-accent-primary)] rounded-full z-10" />
+      )}
       <button
         id={`sidebar-item-${index}`}
         data-snippet-id={itemData.id}
@@ -453,50 +484,55 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         onClick={handleItemClick}
         onKeyDown={(e) => handleItemKeyDown(e, index)}
         onContextMenu={(e) => onContextMenu(e, 'snippet', itemData)}
-        className={`flex items-center gap-[4px] w-full h-full select-none pr-2 relative ${
+        className={`flex items-center gap-[6px] w-full h-full select-none pr-3 relative transition-all duration-150 ${
           isCompact ? 'text-[11px]' : 'text-[12px]'
         } ${
           isSelected
-            ? 'bg-black/[0.04] dark:bg-white/[0.06]'
+            ? 'bg-white/[0.06] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]'
             : isSearchMatch
-              ? 'bg-black/[0.02] dark:bg-white/[0.04]'
-              : 'hover:bg-black/[0.02] dark:hover:bg-white/[0.04]'
-        } rounded-[4px]`}
+              ? 'bg-[var(--color-accent-primary)]/5 border-l-2 border-[var(--color-accent-primary)]'
+              : 'hover:bg-white/[0.03]'
+        } rounded-[6px]`}
         style={{
-          color: isSelected ? 'var(--color-text-primary)' : 'var(--sidebar-text)',
+          color: isSelected ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
           paddingLeft: `${depth * 16 + 24}px`,
           width: 'calc(100% - 8px)',
-          margin: '0 4px'
+          margin: '0 4px',
+          fontFamily: 'inherit'
         }}
       >
         <div
-          className={`flex-shrink-0 flex items-center justify-center px-0.5 ${
-            !isSelected ? 'opacity-60' : ''
+          className={`flex-shrink-0 flex items-center justify-center px-0.5 transition-all ${
+            isSelected ? 'scale-110 opacity-100' : 'opacity-50 group-hover/row:opacity-100'
           }`}
-          style={{ color: isSelected ? 'inherit' : color }}
+          style={{ color: isSelected ? 'var(--color-accent-primary)' : color }}
         >
           <Icon size={14} />
         </div>
-        <span className="flex-1 truncate opacity-80 group-hover/row:opacity-100 pl-1 text-left flex items-center gap-2">
+        <span
+          className={`flex-1 truncate pl-1 text-left flex items-center gap-2 ${
+            isSelected || itemData.is_modified
+              ? 'font-bold'
+              : 'font-medium opacity-80 group-hover/row:opacity-100'
+          }`}
+          style={{
+            textShadow: itemData.is_modified ? '0 0 12px rgba(234, 179, 8, 0.3)' : 'none'
+          }}
+        >
           <HighlightText text={safeTitle || 'Untitled'} highlight={searchQuery} />
           {isTodayLog && (
-            <span className="text-[8px] px-1 py-0 rounded bg-[var(--color-accent-primary)]/10 text-[var(--color-accent-primary)] font-bold uppercase tracking-tighter">
-              Today
+            <span className="text-[8px] px-1 py-0 rounded bg-indigo-500/20 text-indigo-400 font-black uppercase tracking-widest border border-indigo-500/20">
+              Live
             </span>
           )}
         </span>
 
         <div className="flex items-center gap-1.5 flex-shrink-0">
-          {/* Status Indicators (Proposed DevSnippet Evolution Feature) */}
-          {!!itemData.is_modified && (
-            <div
-              className="w-1.5 h-1.5 rounded-full bg-yellow-500 shadow-[0_0_5px_rgba(234,179,8,0.5)] flex-shrink-0"
-              title="Modified (Unsaved Changes)"
-            />
-          )}
+          {/* Status Indicators, the dot */}
+          {(itemData.is_modified || itemData.is_dirty) && <UnsavedDot />}
           {!!itemData.is_draft && (
             <div
-              className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)] flex-shrink-0"
+              className="w-1 h-1 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)] flex-shrink-0"
               title="New (Draft)"
             />
           )}

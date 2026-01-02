@@ -85,6 +85,7 @@ const api = {
     electronAPI.ipcRenderer.invoke('window:openMiniBrowser', htmlContent),
   resetWindow: () => electronAPI.ipcRenderer.invoke('window:reset'),
   toggleQuickCapture: () => electronAPI.ipcRenderer.invoke('quickCapture:toggle'),
+  setWindowDirty: (isDirty) => electronAPI.ipcRenderer.invoke('window:set-dirty', isDirty),
   // Backup Management
   listBackups: () => electronAPI.ipcRenderer.invoke('backup:list'),
   restoreBackup: (backupPath) => electronAPI.ipcRenderer.invoke('backup:restore', backupPath),

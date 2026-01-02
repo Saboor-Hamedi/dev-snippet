@@ -84,6 +84,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
   const [editorZoom, setEditorZoom] = useEditorZoomLevel()
   const [selectedFolderId, setSelectedFolderId] = useState(null)
   const [selectedIds, setSelectedIds] = useState([])
+  const [dirtySnippetIds, setDirtySnippetIds] = useState(new Set())
   const [pinPopover, setPinPopover] = useState({ visible: false, x: 0, y: 0, snippetId: null })
   const { overlayMode, setOverlayMode } = useAdvancedSplitPane()
 
@@ -128,6 +129,15 @@ const SnippetLibraryInner = ({ snippetData }) => {
     },
     [setSelectedFolderId]
   )
+
+  const handleDirtyStateChange = useCallback((id, isDirty) => {
+    setDirtySnippetIds((prev) => {
+      const next = new Set(prev)
+      if (isDirty) next.add(id)
+      else next.delete(id)
+      return next
+    })
+  }, [])
 
   // Lifted Sidebar State - defaults to closed, remembers last state
   const isSidebarOpen = settings?.ui?.showSidebar !== false
@@ -213,11 +223,14 @@ const SnippetLibraryInner = ({ snippetData }) => {
 
   const createDailyNote = async () => {
     const now = new Date()
-    // Standard ISO title: e.g. "2025-12-27"
-    const dateTitle = now.toISOString().split('T')[0]
+    // FIX: Use local date instead of UTC to avoid timezone alignment issues (e.g. 2026-01-02)
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    const dateTitle = `${year}-${month}-${day}`
     const targetBase = getBaseTitle(dateTitle)
 
-    // Find if a note for today already exists (with robust normalization)
+    // Check if a note for today already exists
     const existing = snippets.find((s) => getBaseTitle(s.title) === targetBase && !s.is_deleted)
 
     if (existing) {
@@ -1003,12 +1016,48 @@ const SnippetLibraryInner = ({ snippetData }) => {
           onRestoreItem={restoreItem}
           onPermanentDeleteItem={permanentDeleteItem}
           onLoadTrash={loadTrash}
-          onCloseSnippet={() => {
+          onCloseSnippet={(force = false) => {
+            // UNSAVED CHANGES CHECK
+            if (!force && selectedSnippet && dirtySnippetIds.has(selectedSnippet.id)) {
+              // Dispatch event to Editor to show the Unsaved Modal
+              window.dispatchEvent(new CustomEvent('app:trigger-close-check'))
+              return
+            }
+
+            // If forced (Discard), clear dirty state immediately
+            if (force && selectedSnippet) {
+              setDirtySnippetIds((prev) => {
+                const next = new Set(prev)
+                next.delete(selectedSnippet.id)
+                return next
+              })
+            }
+
+            // DISCARD GHOST DRAFTS: Only remove if it's a clean, empty ghost
+            const freshSnippet = snippets.find((s) => s.id === selectedSnippet?.id)
+            if (freshSnippet && freshSnippet.is_draft && !freshSnippet.is_modified) {
+              const isEmpty = !freshSnippet.code || freshSnippet.code.trim() === ''
+              const isUntitled =
+                !freshSnippet.title || freshSnippet.title.toLowerCase() === 'untitled'
+              if (isEmpty && isUntitled) {
+                setSnippets((prev) => prev.filter((s) => s.id !== freshSnippet.id))
+              }
+            }
             setIsCreatingSnippet(false)
+            setSelectedIds([])
             setSelectedSnippet(null)
             navigateTo('snippets')
           }}
           onCancelEditor={() => {
+            // DISCARD GHOST DRAFTS: Only remove if truly a blank ghost
+            if (selectedSnippet && selectedSnippet.is_draft) {
+              const isEmpty = !selectedSnippet.code || selectedSnippet.code.trim() === ''
+              const isUntitled =
+                !selectedSnippet.title || selectedSnippet.title.toLowerCase() === 'untitled'
+              if (isEmpty && isUntitled) {
+                setSnippets((prev) => prev.filter((s) => s.id !== selectedSnippet.id))
+              }
+            }
             setIsCreatingSnippet(false)
             navigateTo('snippets')
           }}
@@ -1017,6 +1066,8 @@ const SnippetLibraryInner = ({ snippetData }) => {
           showPreview={showPreview}
           onTogglePreview={togglePreview}
           showToast={showToast}
+          dirtyIds={dirtySnippetIds}
+          onDirtyStateChange={handleDirtyStateChange}
           hideWelcomePage={settings?.welcome?.hideWelcomePage || false}
           autosaveStatus={autosaveStatus}
           onAutosave={(s) => setAutosaveStatus(s)}
@@ -1052,18 +1103,15 @@ const SnippetLibraryInner = ({ snippetData }) => {
           onNewRequest={() => createDraftSnippet()}
           onDeleteRequest={handleDeleteRequest}
           onBulkDeleteRequest={handleBulkDelete}
-          onNewSnippet={async (title, folderId, options) => {
+          onNewSnippet={(title, folderId, options) => {
             try {
               const parentId = folderId || selectedFolderId || selectedSnippet?.folder_id || null
-              // Ensure uniqueness right before creation
-              const uniqueTitle = getUniqueTitle(title || 'Untitled', parentId)
+              const uniqueTitle = getUniqueTitle(title || '', parentId)
               const draft = createDraftSnippet(uniqueTitle, parentId, options)
-              if (uniqueTitle && uniqueTitle.trim()) {
-                await saveSnippet({ ...draft, is_draft: false }, { skipSelectedUpdate: true })
-              }
+              // We no longer force-save here. Snippet stays a 'Draft' in-memory
+              // until the user either manually saves or autosave triggers.
             } catch (e) {
-              console.error('[SnippetLibrary] Failed to create split part:', e)
-              showToast('Automated naming conflict resolved.', 'info')
+              console.error('[SnippetLibrary] Failed to create snippet:', e)
             }
           }}
           onRenameSnippet={handleRenameSnippetRequest}

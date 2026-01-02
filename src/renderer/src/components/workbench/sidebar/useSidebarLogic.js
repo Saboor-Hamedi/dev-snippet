@@ -15,7 +15,8 @@ export const useSidebarLogic = ({
   onToggleFolder,
   inputRef,
   listRef,
-  setSidebarSelected
+  setSidebarSelected,
+  dirtyIds = new Set()
 }) => {
   const lastSelectedIdRef = useRef(null)
   const [createState, setCreateState] = useState(null) // { type: 'folder'|'snippet', parentId: string|null }
@@ -58,6 +59,15 @@ export const useSidebarLogic = ({
     }
 
     // 2. MAIN FOLDER TREE
+    const getRecursiveSnippetCount = (fid) => {
+      let count = snippets.filter((s) => (s.folder_id || null) === (fid || null)).length
+      const children = folders.filter((f) => (f.parent_id || null) === (fid || null))
+      children.forEach((c) => {
+        count += getRecursiveSnippetCount(c.id)
+      })
+      return count
+    }
+
     const flatten = (currentFolders, currentSnippets, depth = 0, parentId = null) => {
       let levelResult = []
 
@@ -85,7 +95,7 @@ export const useSidebarLogic = ({
         levelResult.push({
           id: folder.id,
           type: 'folder',
-          data: folder,
+          data: { ...folder, itemCount: getRecursiveSnippetCount(folder.id) },
           depth,
           isExpanded
         })
@@ -117,7 +127,7 @@ export const useSidebarLogic = ({
         levelResult.push({
           id: snippet.id,
           type: 'snippet',
-          data: snippet,
+          data: { ...snippet, is_dirty: dirtyIds.has(snippet.id) },
           depth
         })
       })
@@ -128,7 +138,7 @@ export const useSidebarLogic = ({
     result = result.concat(flatten(folders, snippets, 0, null))
 
     return result
-  }, [snippets, folders, createState, selectedFolderId, isPinnedCollapsed])
+  }, [snippets, folders, createState, selectedFolderId, isPinnedCollapsed, dirtyIds])
 
   const startCreation = useCallback(
     (type, parentId = null) => {

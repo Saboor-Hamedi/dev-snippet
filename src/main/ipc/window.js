@@ -287,4 +287,35 @@ export const registerWindowHandlers = (app, mainWindow) => {
       return false
     }
   })
+
+  // EXIT PROTECTION: Track dirty state and warn on close
+  let isAppDirty = false
+  ipcMain.handle('window:set-dirty', (event, dirty) => {
+    isAppDirty = !!dirty
+    return true
+  })
+
+  if (mainWindow) {
+    mainWindow.on('close', async (e) => {
+      if (isAppDirty) {
+        e.preventDefault()
+        const { dialog } = require('electron')
+        const result = await dialog.showMessageBox(mainWindow, {
+          type: 'warning',
+          buttons: ['Stay', 'Discard and Exit'],
+          defaultId: 0,
+          cancelId: 0,
+          title: 'Unsaved Changes',
+          message: 'You have unsaved changes. Are you sure you want to leave?',
+          detail: 'Changes you made may not be saved.',
+          noLink: true
+        })
+
+        if (result.response === 1) {
+          isAppDirty = false // Reset to avoid loop
+          mainWindow.close()
+        }
+      }
+    })
+  }
 }

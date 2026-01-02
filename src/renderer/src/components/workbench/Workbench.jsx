@@ -73,7 +73,9 @@ const Workbench = ({
   pinPopover,
   setPinPopover,
   onPing,
-  onFavorite
+  onFavorite,
+  onDirtyStateChange,
+  dirtyIds
 }) => {
   const { currentTheme } = useTheme()
   const handleSave = (snippet) => {
@@ -114,11 +116,9 @@ const Workbench = ({
     }
   }
 
-  const handleCloseSnippet = () => {
-    onCloseSnippet()
+  const handleCloseSnippet = (...args) => {
+    onCloseSnippet(...args)
     // Explicitly deselect in sidebar when closing
-    if (onSelectionChange) onSelectionChange([])
-    if (onSelectSnippet) onSelectSnippet(null)
   }
 
   const getHeaderTitle = () => {
@@ -162,6 +162,7 @@ const Workbench = ({
           onPing={onPing}
           onFavorite={onFavorite}
           isFlow={isFlow}
+          onDirtyStateChange={onDirtyStateChange}
         />
       )
     }
@@ -186,6 +187,7 @@ const Workbench = ({
           onPing={onPing}
           onFavorite={onFavorite}
           isFlow={isFlow}
+          onDirtyStateChange={onDirtyStateChange}
         />
       )
     }
@@ -338,6 +340,7 @@ const Workbench = ({
                 onCut={onCut}
                 onPaste={onPaste}
                 onSelectAll={onSelectAll}
+                dirtyIds={dirtyIds}
               />
             )}
 
