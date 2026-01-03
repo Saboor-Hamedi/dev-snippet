@@ -153,16 +153,18 @@ const SnippetEditor = ({
     openModal
   } = useUniversalModal()
 
-  // LIVE SYNC FOR VIRTUAL FILES (settings.json)
-  // If the background state changes (e.g. sidebar toggled via UI) and the user
-  // hasn't edited the text yet, update the buffer immediately.
-  // LIVE SYNC FOR VIRTUAL FILES (settings.json)
-  // DISABLE SYNC to prevent cursor jumps after save (reformatting)
   useEffect(() => {
+    // Only update the editor if the user is NOT focused on it.
+    // This prevents jumps while looking at/editing the file, but allows UI changes (like theme clicks) to show up.
+    const isFocused =
+      document.activeElement &&
+      (document.activeElement.classList.contains('cm-content') ||
+        document.activeElement.tagName === 'TEXTAREA')
+
     if (
-      false && // DISABLED
       initialSnippet?.id === 'system:settings' &&
       !isDirty &&
+      !isFocused && // Focus Gate
       initialSnippet.code !== code
     ) {
       setCode(initialSnippet.code)
@@ -550,7 +552,7 @@ const SnippetEditor = ({
           window.dispatchEvent(new CustomEvent('autosave-status', { detail: { status: 'error' } }))
         }
       },
-      getSetting('behavior.autoSaveDelay') || 2000
+      initialSnippet?.id === 'system:settings' ? 800 : getSetting('behavior.autoSaveDelay') || 2000
     )
   }, [code, title, initialSnippet, autoSaveEnabled, onSave])
 

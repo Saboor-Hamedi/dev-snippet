@@ -480,9 +480,9 @@ const LivePreview = ({
         <div
           className="flex items-center justify-between px-3 py-2 z-10 sticky top-0 transition-colors duration-300 overflow-x-auto"
           style={{
-            backgroundColor: 'var(--header-bg, var(--color-bg-secondary))',
-            color: 'var(--header-text, var(--color-text-primary))',
-            borderBottom: 'none'
+            backgroundColor: 'var(--color-bg-secondary)',
+            color: 'var(--color-text-primary)',
+            borderBottom: '1px solid var(--color-border)'
           }}
         >
           <div className="flex items-center gap-2 flex-shrink-0">

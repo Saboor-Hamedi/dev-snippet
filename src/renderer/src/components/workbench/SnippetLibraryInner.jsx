@@ -185,7 +185,6 @@ const SnippetLibraryInner = ({ snippetData }) => {
   // User must reopen settings.json to see UI-triggered changes.
   useEffect(() => {
     if (
-      false && // DISABLED
       selectedSnippet?.id === 'system:settings' &&
       !dirtySnippetIds.has('system:settings') &&
       settings
