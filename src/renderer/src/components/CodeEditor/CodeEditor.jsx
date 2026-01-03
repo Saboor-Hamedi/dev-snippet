@@ -28,6 +28,32 @@ const debounce = (func, wait) => {
 
 import { saveCursorPosition, getCursorPosition } from '../../utils/persistentPosition'
 
+/**
+ * ╔══════════════════════════════════════════════════════════════════════════╗
+ * ║                            CODE EDITOR                                    ║
+ * ╚══════════════════════════════════════════════════════════════════════════╝
+ *
+ * CORE RESPONSIBILITY:
+ * The primary text manipulation engine of the application. Wraps CodeMirror 6
+ * with a custom extension stack and high-performance state synchronization.
+ *
+ * PERFORMANCE ARCHITECTURE:
+ * 1. Semi-controlled state: We only push 'value' updates to CodeMirror when
+ *    the snippet ID changes or on manual save. This avoids the expensive
+ *    Reconciliation loop during rapid typing.
+ * 2. Asynchronous Engine: Extensions (Markdown, SQL, etc.) are loaded
+ *    lazily and offloaded to prevent blocking the UI thread.
+ * 3. Performance Barrier: Automatically switches to 'plaintext' mode for
+ *    extremely large files to maintain 60fps typing.
+ *
+ * STABILITY & CURSOR JUMP PREVENTION:
+ * CodeMirror can reset its internal view (losing cursor/scroll) if its
+ * extensions array changes reference unexpectedly.
+ * - We stabilize snippet titles with deep-comparison.
+ * - We use a global save-shield (window.__isSavingSettings) to freeze
+ *   extension rebuilds during manual saves.
+ */
+
 const CodeEditor = ({
   value,
   onChange,
@@ -52,11 +78,27 @@ const CodeEditor = ({
   // Individual components consume the result via CSS variables.
   const editorDomRef = useRef(null)
   // 1. PERFORMANCE: Stabilize snippet list comparison to avoid map/join on every keystroke
+  // 1. PERFORMANCE: Stabilize snippet list comparison
+  // We use a ref to keep the array identity stable unless content actually changes.
+  /**
+   * snippetTitles - MEMOIZED STABILITY
+   * Used by WikiLinks and Autocomplete. We use a deep-compare ref to
+   * ensure that background snippet updates (saving OTHER files) don't
+   * trigger a full extension rebuild in the current editor.
+   */
+  const lastTitlesRef = useRef([])
   const snippetTitles = useMemo(() => {
-    if (!Array.isArray(snippets)) return []
-    return snippets.map((s) => (s.title || '').trim()).filter(Boolean)
-    // Only re-calculate if the number of snippets changes or the entire array reference changes.
-    // This is significant for 100k+ typing performance.
+    if (!Array.isArray(snippets)) return lastTitlesRef.current
+    const newTitles = snippets.map((s) => (s.title || '').trim()).filter(Boolean)
+
+    // Deep compare to avoid triggering extension rebuilds on every save
+    const isSame =
+      newTitles.length === lastTitlesRef.current.length &&
+      newTitles.every((t, i) => t === lastTitlesRef.current[i])
+
+    if (isSame) return lastTitlesRef.current
+    lastTitlesRef.current = newTitles
+    return newTitles
   }, [snippets])
 
   // CONSUME SETTINGS VIA REFACTOR HOOKS (SOLID)
@@ -194,12 +236,14 @@ const CodeEditor = ({
   const lastZoom = useRef(zoomLevel)
   const lastEditorZoom = useRef(editorZoom)
 
-  // Force cursor update when zoom changes (fixes caret staying on screen during mouse wheel zoom)
+  // Force cursor update when zoom changes
   useEffect(() => {
     if (!viewRef.current) return
 
-    // PERFORMANCE: Only trigger measure/scroll if the value actually changed numerically.
-    // This stops the "whole editor jump" when saving settings.json (which re-triggers the context).
+    // PERFORMANCE: Stop the "whole editor jump" when saving or changing themes.
+    // If the window shield is active, we strictly ignore background re-measures.
+    if (window.__isSavingSettings) return
+
     if (lastZoom.current === zoomLevel && lastEditorZoom.current === editorZoom) return
 
     lastZoom.current = zoomLevel
@@ -422,6 +466,10 @@ const CodeEditor = ({
     let timeoutId = null
 
     const loadFullEditorEngine = async () => {
+      // PERFORMANCE: Skip engine rebuild if we are in the middle of a manual save
+      // This is the source of the "Jump" - the engine reconfigures as titles update
+      if (window.__isSavingSettings) return
+
       try {
         // Build the configuration object
         const isBlinking = Boolean(cursorBlinking) // Explicit cast

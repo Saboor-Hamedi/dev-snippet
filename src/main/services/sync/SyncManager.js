@@ -1,10 +1,30 @@
 import GitHubService from './GitHubService'
 import { app } from 'electron'
 
-const GIST_DESCRIPTION = 'Dev-Snippet-Backup-v1' // Signature to identify our gist
+/**
+ * SyncManager - Core service for GitHub Gist Backup & Restore
+ *
+ * ARCHITECTURE:
+ * This manager coordinates the flow of data between the local SQLite database
+ * and private GitHub Gists. It handles authentication via personal access tokens,
+ * gather local snippets/folders, and persists them remotely.
+ *
+ * VERSIONING STRATEGY:
+ * - GIST_DESCRIPTION: Used as a signature to find the specific backup gist among user gists.
+ * - BACKUP_FILENAME: Primary payload containing all snippets and folders.
+ * - SETTINGS_FILENAME: Parallel payload for application configuration.
+ */
+
+const APP_VERSION = app.getVersion()
+const GIST_DESCRIPTION = `Dev-Snippet-Backup-v${APP_VERSION.split('.')[0]}` // signature versioned by major release
 const BACKUP_FILENAME = 'dev-snippet-data.json'
 const SETTINGS_FILENAME = 'dev-snippet-config.json'
 const SENSITIVE_SETTINGS_KEYS = new Set(['github.token'])
+
+/**
+ * Status Keys for SQLite persistence
+ * Keeps track of sync history without exposing data to the UI on every query.
+ */
 const SYNC_STATUS_KEYS = {
   LAST_BACKUP_AT: 'sync.lastBackupAt',
   LAST_BACKUP_SUMMARY: 'sync.lastBackupSummary',
@@ -346,7 +366,7 @@ class SyncManager {
     }))
 
     return {
-      version: '1.0',
+      version: APP_VERSION,
       timestamp: Date.now(),
       snippets: processedSnippets,
       folders: folders

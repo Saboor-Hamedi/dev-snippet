@@ -20,9 +20,10 @@ const UpdateManager = () => {
   const [currentVersion, setCurrentVersion] = useState('Checking...')
 
   useEffect(() => {
-    // 0. Get current version from package.json/main process
-    // We can use a simple trick to get it or just assume it's stable.
-    // For now, let's keep it simple.
+    // 0. Get current version from main process
+    if (window.api?.getVersion) {
+      window.api.getVersion().then(setCurrentVersion)
+    }
 
     // Check if the update API is available
     if (!window.api?.onUpdateAvailable) {
@@ -210,7 +211,14 @@ const UpdateManager = () => {
   return (
     <>
       <SettingRow
-        label="Software Updates"
+        label={
+          <div className="flex items-center gap-2">
+            <span>Software Updates</span>
+            <span className="px-1.5 py-0.5 rounded-md bg-[var(--color-bg-tertiary)] text-[var(--color-text-tertiary)] font-mono text-[9px] border border-[var(--color-border)]">
+              v{currentVersion}
+            </span>
+          </div>
+        }
         description={
           status === 'error' ? (
             <span className="text-red-400/80">{error}</span>

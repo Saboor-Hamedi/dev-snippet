@@ -65,6 +65,33 @@ import { useSidebarStore } from '../../store/useSidebarStore'
  *
  * ═══════════════════════════════════════════════════════════════════════════
  */
+/**
+ * ╔══════════════════════════════════════════════════════════════════════════╗
+ * ║                      SNIPPET LIBRARY INNER                                ║
+ * ╚══════════════════════════════════════════════════════════════════════════╝
+ *
+ * ARCHITECTURE:
+ * This is the primary "Conductor" component of the developer workbench.
+ * It manages the high-level application state, including:
+ * 1. Global Snippet List & Search
+ * 2. Navigation (Folders vs Recent vs Favorites)
+ * 3. Settings Interface (Special 'system:settings' virtual file)
+ * 4. Command Orchestration (Saving, Deleting, Renaming)
+ *
+ * SETTINGS SYNCHRONIZATION (THE "JUMP" PREVENTION):
+ * This component handles the unique 'system:settings' virtual snippet. Unlike
+ * normal snippets, this one mirrors the actual app configuration.
+ * - SAVE: When saving settings.json, we parse the code and push it to the
+ *   global SettingsContext.
+ * - SYNC: When global settings change (e.g., via the settings modal), we
+ *   optionally push those changes BACK into the editor's text.
+ *
+ * To prevent the "Formatting Jump" (cursor resetting to top on manual save):
+ * 1. We use window.__isSavingSettings as a temporary global shield.
+ * 2. We only sync-back if the editor is NOT focused (!isFocused).
+ * 3. We perform a semantic equality check (parsed JSON) before setCode().
+ */
+
 const SnippetLibraryInner = ({ snippetData }) => {
   const {
     snippets,
@@ -109,29 +136,61 @@ const SnippetLibraryInner = ({ snippetData }) => {
   } = useSettings()
   const { toast, showToast } = useToast()
 
-  // WRAPPER: Intercepts saves to handle "Virtual" files like settings.json
+  /**
+   * saveSnippet - Handles atomic persistence of snippet content to SQLite.
+   * FOR SETTINGS: This function performs an additional step of synchronizing
+   * the JSON text with the application's runtime configuration.
+   *
+   * SECURITY/STABILITY:
+   * - Uses a global shield (window.__isSavingSettings) to block background
+   *   sync-back events during the reformatting phase.
+   * - Silent auto-save vs Manual Save toast feedback.
+   */
   const saveSnippet = useCallback(
-    async (s) => {
+    async (s, silent = false) => {
+      if (!s) return
+
+      // CRITICAL: Block background sync while this function is executing
       if (s.id === 'system:settings') {
         try {
           const parsed = JSON.parse(s.code)
           if (contextUpdateSettings) {
-            await contextUpdateSettings(parsed)
+            try {
+              window.__isSavingSettings = true // Activate Shield
+              await contextUpdateSettings(parsed)
+            } finally {
+              // Keep the shield active for a moment to allow React state to settle
+              // This is the primary defense against the Cursor Jump.
+              setTimeout(() => {
+                window.__isSavingSettings = false
+              }, 1000)
+            }
             showToast('✓ Settings synchronized to disk', 'success')
             return
           }
         } catch (e) {
-          showToast('❌ Invalid JSON: Cannot save settings', 'error')
+          // Suppress parsing errors during auto-save to avoid notification spam while typing
+          if (!silent) {
+            showToast('Invalid JSON structure. Please check your syntax.', 'error')
+          }
           return
         }
       }
-      if (s.id === 'system:default-settings') {
-        showToast('Default settings are read-only', 'info')
-        return
+
+      // Standard snippet save logic...
+      const result = await window.api.updateSnippet(s.id, {
+        title: s.title,
+        code: s.code,
+        language: s.language,
+        tags: s.tags,
+        folder_id: s.folder_id
+      })
+
+      if (!silent && result) {
+        showToast('✓ Changes saved successfully', 'success')
       }
-      return originalSaveSnippet(s)
     },
-    [originalSaveSnippet, showToast, contextUpdateSettings]
+    [contextUpdateSettings]
   )
 
   // Ensure global settings are applied when this component mounts/updates
@@ -184,14 +243,32 @@ const SnippetLibraryInner = ({ snippetData }) => {
   // Syncing causing race conditions with CodeMirror cursor state.
   // User must reopen settings.json to see UI-triggered changes.
   useEffect(() => {
+    // Determine if the user is currently interacting with the editor
+    const isFocused =
+      document.activeElement &&
+      (document.activeElement.classList.contains('cm-content') ||
+        document.activeElement.tagName === 'TEXTAREA' ||
+        document.activeElement.closest('.editor-container'))
+
     if (
       selectedSnippet?.id === 'system:settings' &&
       !dirtySnippetIds.has('system:settings') &&
+      !isFocused &&
+      !window.__isSavingSettings && // BLOCK SYNC DURING/AFTER MANUAL SAVE
       settings
     ) {
       try {
         const freshJson = JSON.stringify(settings, null, 2)
-        if (freshJson !== selectedSnippet.code) {
+        // Only update if the content is functionally different
+        // We compare the stringified version of current code to handle formatting consistency
+        let currentJson = ''
+        try {
+          currentJson = JSON.stringify(JSON.parse(selectedSnippet.code), null, 2)
+        } catch (e) {
+          currentJson = selectedSnippet.code
+        }
+
+        if (freshJson !== currentJson) {
           setSelectedSnippet((curr) => {
             if (curr?.id === 'system:settings') {
               return { ...curr, code: freshJson }
@@ -200,7 +277,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
           })
         }
       } catch (e) {
-        // Silently fail if settings can't be stringified for some reason
+        // Silently fail
       }
     }
   }, [settings, selectedSnippet?.id, dirtySnippetIds, setSelectedSnippet])

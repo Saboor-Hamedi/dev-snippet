@@ -154,23 +154,28 @@ const SnippetEditor = ({
   } = useUniversalModal()
 
   useEffect(() => {
-    // Only update the editor if the user is NOT focused on it.
-    // This prevents jumps while looking at/editing the file, but allows UI changes (like theme clicks) to show up.
+    // Improved Focus Gate: Prevent jumps if the user is focused on any part of the editor UI
     const isFocused =
       document.activeElement &&
       (document.activeElement.classList.contains('cm-content') ||
-        document.activeElement.tagName === 'TEXTAREA')
+        document.activeElement.tagName === 'TEXTAREA' ||
+        document.activeElement.closest('.editor-container'))
+
+    // Cooldown: Don't allow a sync-back immediately after a manual save (increased to 1.5s for stability)
+    const isInCooldown = window.__lastSaveTime && Date.now() - window.__lastSaveTime < 1500
 
     if (
       initialSnippet?.id === 'system:settings' &&
       !isDirty &&
-      !isFocused && // Focus Gate
+      !isFocused &&
+      !isInCooldown &&
+      !window.__isSavingSettings && // Global Save Shield
       initialSnippet.code !== code
     ) {
       setCode(initialSnippet.code)
       codeRef.current = initialSnippet.code
     }
-  }, [initialSnippet?.code, initialSnippet?.id, isDirty])
+  }, [initialSnippet?.code, initialSnippet?.id, isDirty, code])
 
   // Apply stored position on mount or when going floating
   useEffect(() => {
@@ -1099,6 +1104,7 @@ const SnippetEditor = ({
       window.dispatchEvent(new CustomEvent('autosave-status', { detail: { status: 'saved' } }))
 
       setIsDirty(false)
+      window.__lastSaveTime = Date.now() // Set cooldown timestamp
       lastSavedCode.current = code
       lastSavedTitle.current = finalTitle
       setTitle(finalTitle) // Sync state

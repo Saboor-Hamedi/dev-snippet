@@ -171,6 +171,12 @@ const StatusBar = ({
               <span className="icon-branch text-[10px]">main*</span>
             </div>
           )}
+
+          {showVersion && (
+            <div className="status-bar-item opacity-60 hover:opacity-100 transition-opacity">
+              <span className="font-mono tabular-nums text-[10px]">v{version}</span>
+            </div>
+          )}
         </div>
 
         <div className="status-bar-right flex items-center gap-0 overflow-hidden text-clip">

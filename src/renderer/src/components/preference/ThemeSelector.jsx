@@ -26,6 +26,13 @@ const ThemeSelector = ({ onClose }) => {
   const applyTheme = (theme) => {
     // Immediate local feedback for the tick mark
     setCurrentThemeId(theme.id)
+
+    // Shield the editor from the resulting settings change to prevent jumping
+    window.__isSavingSettings = true
+    setTimeout(() => {
+      window.__isSavingSettings = false
+    }, 1500)
+
     setTheme(theme.id)
   }
 
