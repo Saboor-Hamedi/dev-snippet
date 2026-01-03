@@ -157,23 +157,20 @@ export const SettingsProvider = ({ children }) => {
     // settingsManager will notify listeners, causing this component to update via subscription
   }
 
-  return (
-    <SettingsContext.Provider
-      value={{
-        settings,
-        getSetting,
-        updateSetting,
-        updateSettings,
-        resetSettings,
-        zoom,
-        setZoom,
-        editorZoom,
-        setEditorZoom
-      }}
-    >
-      {children}
-    </SettingsContext.Provider>
-  )
+  return React.createElement(SettingsContext.Provider, {
+    value: {
+      settings,
+      getSetting,
+      updateSetting,
+      updateSettings,
+      resetSettings,
+      zoom,
+      setZoom,
+      editorZoom,
+      setEditorZoom
+    },
+    children: children
+  })
 }
 
 // Custom hook to use settings
