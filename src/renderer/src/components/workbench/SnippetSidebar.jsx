@@ -13,7 +13,11 @@ import {
   Plus,
   RefreshCw
 } from 'lucide-react'
-import SidebarHeader from '../layout/SidebarHeader'
+import {
+  SidebarPane,
+  SidebarHeader as PaneHeader,
+  SidebarBody
+} from '../layout/SidebarPane/SidebarPane'
 import VirtualList from '../common/VirtualList'
 import ContextMenu from '../common/ContextMenu'
 import SnippetSidebarRow from './sidebar/SnippetSidebarRow'
@@ -394,236 +398,233 @@ const SnippetSidebar = ({
   )
 
   return (
-    <div
-      className="h-full flex flex-col w-full overflow-hidden"
-      style={{ backgroundColor: 'var(--sidebar-bg)', color: 'var(--sidebar-text)' }}
-    >
-      <SidebarHeader className="z-10 relative pr-1 border-b border-[var(--color-border)] pb-3 pt-1 px-1">
-        <div className="flex flex-col gap-2 w-full">
-          <div className="flex items-center gap-2">
-            <div className="relative group flex-1">
-              <div className="absolute left-2.5 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-70 transition-opacity text-[var(--color-text-primary)]">
-                <Search size={12} />
-              </div>
-              <input
-                ref={inputRef}
-                type="text"
-                placeholder="Search Snippets"
-                value={filter}
-                onChange={(e) => {
-                  setFilter(e.target.value)
-                  onSearch(e.target.value)
-                }}
-                className="w-full rounded-[8px] py-1.5 pl-8 pr-8 text-[12px] outline-none border border-transparent focus:border-[var(--color-accent-primary)]/30 bg-[var(--color-bg-tertiary)] hover:brightness-110 focus:brightness-125 text-[var(--color-text-primary)] placeholder:text-[11px] placeholder:opacity-30 transition-all focus:shadow-[0_0_20px_rgba(var(--color-accent-primary-rgb),0.1)]"
-              />
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                {filter ? (
-                  <button
-                    onClick={() => {
-                      setFilter('')
-                      onSearch('')
-                      inputRef.current?.focus()
-                    }}
-                    className="p-1 rounded-full hover:bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] opacity-40 hover:opacity-100 transition-all"
-                  >
-                    <RefreshCw size={10} className="rotate-45" />
-                  </button>
-                ) : (
-                  <div className="hidden sm:flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-[var(--color-border)] bg-[var(--color-bg-secondary)] text-[9px] font-bold text-[var(--color-text-primary)] opacity-20 group-hover:opacity-40 transition-opacity">
-                    <span>⌘</span>
-                    <span>F</span>
-                  </div>
-                )}
-              </div>
+    <SidebarPane className="overflow-hidden">
+      <PaneHeader className="pr-1 pb-3 pt-1 px-1">
+        <div className="flex items-center gap-2 w-full">
+          <div className="relative group flex-1 h-7">
+            <div className="absolute left-2.5 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-70 transition-opacity text-[var(--color-text-primary)] pointer-events-none">
+              <Search size={12} />
             </div>
-
-            {/* Action Icons - Obsidian Style */}
-            <div className="flex items-center gap-0 shrink-0">
-              <button
-                onClick={() => handleSmartCreation('snippet')}
-                className="p-1 rounded-[4px] opacity-40 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all group/btn"
-                title="New Snippet"
-                style={{ color: 'var(--color-text-primary)' }}
-              >
-                <FilePlus
-                  size={14}
-                  strokeWidth={2.5}
-                  className="group-hover/btn:scale-110 transition-transform"
-                />
-              </button>
-              <button
-                onClick={() => handleSmartCreation('folder')}
-                className="p-1 rounded-[4px] opacity-40 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all group/btn"
-                title="New Folder"
-                style={{ color: 'var(--color-text-primary)' }}
-              >
-                <FolderPlus
-                  size={14}
-                  strokeWidth={2.5}
-                  className="group-hover/btn:scale-110 transition-transform"
-                />
-              </button>
-              <button
-                onClick={() => {
-                  collapseAll()
-                  onSelect(null)
-                  setSelectedIds([])
-                  setSidebarSelected(true)
-                }}
-                className="p-1 rounded-[4px] opacity-40 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all group/btn"
-                title="Collapse All Folders"
-                style={{ color: 'var(--color-text-primary)' }}
-              >
-                <ChevronsUp
-                  size={14}
-                  strokeWidth={2.5}
-                  className="group-hover/btn:-translate-y-0.5 transition-transform"
-                />
-              </button>
-            </div>
-          </div>
-        </div>
-      </SidebarHeader>
-
-      <div
-        className={`flex-1 min-h-0 overflow-hidden relative outline-none`}
-        style={{
-          backgroundColor: isDragOver
-            ? 'rgba(var(--color-accent-primary-rgb), 0.05)'
-            : isSidebarSelected
-              ? 'rgba(var(--color-accent-primary-rgb), 0.02)'
-              : 'transparent',
-          // Fix: Use box-shadow (inset) for focus border to avoid layout shifts and clipping (right side issue).
-          boxShadow: isDragOver
-            ? 'inset 0 0 40px rgba(var(--color-accent-primary-rgb), 0.1), inset 0 0 0 1px var(--color-accent-primary)'
-            : isSidebarSelected
-              ? 'inset 0 0 0 1px var(--color-accent-primary)'
-              : 'none'
-        }}
-        ref={parentRef}
-        tabIndex={0} // Allow focus
-        onBlur={(e) => {
-          // Restore unselect behavior when clicking outside
-          if (!e.currentTarget.contains(e.relatedTarget)) {
-            setSidebarSelected(false)
-          }
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Escape') {
-            e.preventDefault()
-            e.stopPropagation()
-            setSidebarSelected(false)
-            onSelect(null)
-            setSelectedIds([])
-          }
-        }}
-        onClick={(e) => {
-          // Force background selection on any click in this container
-          // that hasn't been stopped by a child.
-
-          if (e.target !== e.currentTarget && e.target.closest('[draggable]')) {
-            return
-          }
-
-          setSidebarSelected(true)
-          setSelectedIds([])
-          onSelect(null)
-          setSelectedFolderId(null)
-          if (inputRef.current) inputRef.current.blur()
-        }}
-        onContextMenu={(e) => {
-          handleContextMenu(e, 'background', null)
-        }}
-        onDragOver={(e) => {
-          e.preventDefault()
-          e.dataTransfer.dropEffect = 'move'
-          if (!isDragOver) setIsDragOver(true)
-        }}
-        onDragEnter={(e) => {
-          e.preventDefault()
-          setIsDragOver(true)
-        }}
-        onDragLeave={(e) => {
-          // Prevent flickering when dragging over children
-          if (e.currentTarget.contains(e.relatedTarget)) return
-          setIsDragOver(false)
-        }}
-        onDrop={(e) => {
-          e.preventDefault()
-          setIsDragOver(false)
-          try {
-            const ids = JSON.parse(e.dataTransfer.getData('sourceIds') || '[]')
-            const types = JSON.parse(e.dataTransfer.getData('sourceTypes') || '[]')
-            const sIds = ids.filter((_, i) => types[i] === 'snippet')
-            const fIds = ids.filter((_, i) => types[i] === 'folder')
-            if (sIds.length) onMoveSnippet(sIds, null)
-            if (fIds.length) onMoveFolder(fIds, null)
-          } catch (err) {}
-        }}
-      >
-        {treeItems.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full px-6 text-center animate-in fade-in zoom-in-95 duration-500">
-            <div className="w-16 h-16 rounded-2xl bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] flex items-center justify-center mb-6 shadow-xl shadow-black/10">
-              {filter ? (
-                <RefreshCw className="w-6 h-6 text-[var(--color-text-primary)] opacity-20" />
-              ) : (
-                <Plus className="w-6 h-6 text-[var(--color-text-primary)] opacity-20" />
-              )}
-            </div>
-            <h3 className="text-[14px] font-bold text-[var(--color-text-primary)] opacity-90 mb-2">
-              {filter ? 'No Matches Found' : 'Your Library is Empty'}
-            </h3>
-            <p className="text-[12px] leading-relaxed text-[var(--color-text-secondary)] opacity-50 mb-8 max-w-[200px] mx-auto">
-              {filter
-                ? `We couldn't find any snippets matching "${filter}".`
-                : 'Start organizing your knowledge by creating your first snippet or folder.'}
-            </p>
-            <div className="flex flex-col gap-2 w-full max-w-[160px]">
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder="Search Snippets"
+              value={filter}
+              onChange={(e) => {
+                setFilter(e.target.value)
+                onSearch(e.target.value)
+              }}
+              className="w-full h-full rounded-[5px] pl-8 pr-8 text-[12px] outline-none border border-transparent focus:border-[var(--color-accent-primary)]/30 bg-[var(--color-bg-tertiary)] hover:brightness-110 focus:brightness-125 text-[var(--color-text-primary)] placeholder:text-[11px] placeholder:opacity-30 transition-all focus:shadow-[0_0_20px_rgba(var(--color-accent-primary-rgb),0.1)]"
+            />
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
               {filter ? (
                 <button
                   onClick={() => {
                     setFilter('')
                     onSearch('')
+                    inputRef.current?.focus()
                   }}
-                  className="w-full py-2 px-4 rounded-lg bg-[var(--color-bg-tertiary)] hover:brightness-110 text-[var(--color-text-primary)] text-[11px] font-medium transition-all border border-[var(--color-border)]"
+                  className="p-1 rounded-full hover:bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] opacity-40 hover:opacity-100 transition-all"
                 >
-                  Clear Search
+                  <RefreshCw size={10} className="rotate-45" />
                 </button>
               ) : (
-                <>
-                  <button
-                    onClick={() => onNew()}
-                    className="w-full py-2 px-4 rounded-lg bg-[var(--color-accent-primary)] hover:opacity-90 text-[11px] font-bold text-white transition-all shadow-lg shadow-[var(--color-accent-primary)]/20"
-                  >
-                    Create Snippet
-                  </button>
-                  <button
-                    onClick={() => startCreation('folder')}
-                    className="w-full py-2 px-4 rounded-lg bg-[var(--color-bg-tertiary)] hover:brightness-110 text-[var(--color-text-primary)] text-[11px] font-medium transition-all border border-[var(--color-border)]"
-                  >
-                    New Folder
-                  </button>
-                </>
+                <div className="hidden sm:flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-[var(--color-border)] bg-[var(--color-bg-secondary)] text-[9px] font-bold text-[var(--color-text-primary)] opacity-20 group-hover:opacity-40 transition-opacity">
+                  <span>⌘</span>
+                  <span>F</span>
+                </div>
               )}
             </div>
           </div>
-        ) : (
-          <VirtualList
-            ref={listRef}
-            height={containerHeight}
-            width="100%"
-            itemCount={treeItems.length}
-            itemSize={isCompact ? 24 : 30}
-            overscan={15} // Explicitly set overscan to 15
-            // The GPU promotion style should be applied to the individual rows (SnippetSidebarRow),
-            // not the VirtualList container itself.
-            // This style is passed down to SnippetSidebarRow via itemData.
-            itemData={itemData}
-          >
-            {SnippetSidebarRow}
-          </VirtualList>
-        )}
-      </div>
+
+          {/* Action Icons - Obsidian Style */}
+          <div className="flex items-center gap-px shrink-0">
+            <button
+              onClick={() => handleSmartCreation('snippet')}
+              className="h-7 w-7 flex items-center justify-center rounded-[5px] opacity-40 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all group/btn"
+              title="New Snippet"
+              style={{ color: 'var(--color-text-primary)' }}
+            >
+              <FilePlus
+                size={14}
+                strokeWidth={2.5}
+                className="group-hover/btn:scale-110 transition-transform"
+              />
+            </button>
+            <button
+              onClick={() => handleSmartCreation('folder')}
+              className="h-7 w-7 flex items-center justify-center rounded-[5px] opacity-40 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all group/btn"
+              title="New Folder"
+              style={{ color: 'var(--color-text-primary)' }}
+            >
+              <FolderPlus
+                size={14}
+                strokeWidth={2.5}
+                className="group-hover/btn:scale-110 transition-transform"
+              />
+            </button>
+            <button
+              onClick={() => {
+                collapseAll()
+                onSelect(null)
+                setSelectedIds([])
+                setSidebarSelected(true)
+              }}
+              className="h-7 w-7 flex items-center justify-center rounded-[5px] opacity-40 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all group/btn"
+              title="Collapse All Folders"
+              style={{ color: 'var(--color-text-primary)' }}
+            >
+              <ChevronsUp
+                size={14}
+                strokeWidth={2.5}
+                className="group-hover/btn:-translate-y-0.5 transition-transform"
+              />
+            </button>
+          </div>
+        </div>
+      </PaneHeader>
+
+      <SidebarBody noPadding>
+        <div
+          className={`w-full h-full relative outline-none`}
+          style={{
+            backgroundColor: isDragOver
+              ? 'rgba(var(--color-accent-primary-rgb), 0.05)'
+              : isSidebarSelected
+                ? 'rgba(var(--color-accent-primary-rgb), 0.02)'
+                : 'transparent',
+            // Fix: Use box-shadow (inset) for focus border to avoid layout shifts and clipping (right side issue).
+            boxShadow: isDragOver
+              ? 'inset 0 0 40px rgba(var(--color-accent-primary-rgb), 0.1), inset 0 0 0 1px var(--color-accent-primary)'
+              : isSidebarSelected
+                ? 'inset 0 0 0 1px var(--color-accent-primary)'
+                : 'none'
+          }}
+          ref={parentRef}
+          tabIndex={0} // Allow focus
+          onBlur={(e) => {
+            // Restore unselect behavior when clicking outside
+            if (!e.currentTarget.contains(e.relatedTarget)) {
+              setSidebarSelected(false)
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              e.preventDefault()
+              e.stopPropagation()
+              setSidebarSelected(false)
+              onSelect(null)
+              setSelectedIds([])
+            }
+          }}
+          onClick={(e) => {
+            // Force background selection on any click in this container
+            // that hasn't been stopped by a child.
+
+            if (e.target !== e.currentTarget && e.target.closest('[draggable]')) {
+              return
+            }
+
+            setSidebarSelected(true)
+            setSelectedIds([])
+            onSelect(null)
+            setSelectedFolderId(null)
+            if (inputRef.current) inputRef.current.blur()
+          }}
+          onContextMenu={(e) => {
+            handleContextMenu(e, 'background', null)
+          }}
+          onDragOver={(e) => {
+            e.preventDefault()
+            e.dataTransfer.dropEffect = 'move'
+            if (!isDragOver) setIsDragOver(true)
+          }}
+          onDragEnter={(e) => {
+            e.preventDefault()
+            setIsDragOver(true)
+          }}
+          onDragLeave={(e) => {
+            // Prevent flickering when dragging over children
+            if (e.currentTarget.contains(e.relatedTarget)) return
+            setIsDragOver(false)
+          }}
+          onDrop={(e) => {
+            e.preventDefault()
+            setIsDragOver(false)
+            try {
+              const ids = JSON.parse(e.dataTransfer.getData('sourceIds') || '[]')
+              const types = JSON.parse(e.dataTransfer.getData('sourceTypes') || '[]')
+              const sIds = ids.filter((_, i) => types[i] === 'snippet')
+              const fIds = ids.filter((_, i) => types[i] === 'folder')
+              if (sIds.length) onMoveSnippet(sIds, null)
+              if (fIds.length) onMoveFolder(fIds, null)
+            } catch (err) {}
+          }}
+        >
+          {treeItems.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full px-6 text-center animate-in fade-in zoom-in-95 duration-500">
+              <div className="w-16 h-16 rounded-2xl bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] flex items-center justify-center mb-6 shadow-xl shadow-black/10">
+                {filter ? (
+                  <RefreshCw className="w-6 h-6 text-[var(--color-text-primary)] opacity-20" />
+                ) : (
+                  <Plus className="w-6 h-6 text-[var(--color-text-primary)] opacity-20" />
+                )}
+              </div>
+              <h3 className="text-[14px] font-bold text-[var(--color-text-primary)] opacity-90 mb-2">
+                {filter ? 'No Matches Found' : 'Your Library is Empty'}
+              </h3>
+              <p className="text-[12px] leading-relaxed text-[var(--color-text-secondary)] opacity-50 mb-8 max-w-[200px] mx-auto">
+                {filter
+                  ? `We couldn't find any snippets matching "${filter}".`
+                  : 'Start organizing your knowledge by creating your first snippet or folder.'}
+              </p>
+              <div className="flex flex-col gap-2 w-full max-w-[160px]">
+                {filter ? (
+                  <button
+                    onClick={() => {
+                      setFilter('')
+                      onSearch('')
+                    }}
+                    className="w-full py-2 px-4 rounded-lg bg-[var(--color-bg-tertiary)] hover:brightness-110 text-[var(--color-text-primary)] text-[11px] font-medium transition-all border border-[var(--color-border)]"
+                  >
+                    Clear Search
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => onNew()}
+                      className="w-full py-2 px-4 rounded-lg bg-[var(--color-accent-primary)] hover:opacity-90 text-[11px] font-bold text-white transition-all shadow-lg shadow-[var(--color-accent-primary)]/20"
+                    >
+                      Create Snippet
+                    </button>
+                    <button
+                      onClick={() => startCreation('folder')}
+                      className="w-full py-2 px-4 rounded-lg bg-[var(--color-bg-tertiary)] hover:brightness-110 text-[var(--color-text-primary)] text-[11px] font-medium transition-all border border-[var(--color-border)]"
+                    >
+                      New Folder
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          ) : (
+            <VirtualList
+              ref={listRef}
+              height={containerHeight}
+              width="100%"
+              itemCount={treeItems.length}
+              itemSize={isCompact ? 24 : 30}
+              overscan={15} // Explicitly set overscan to 15
+              // The GPU promotion style should be applied to the individual rows (SnippetSidebarRow),
+              // not the VirtualList container itself.
+              // This style is passed down to SnippetSidebarRow via itemData.
+              itemData={itemData}
+            >
+              {SnippetSidebarRow}
+            </VirtualList>
+          )}
+        </div>
+      </SidebarBody>
 
       {contextMenu && (
         <ContextMenu
@@ -633,7 +634,7 @@ const SnippetSidebar = ({
           onClose={() => setContextMenu(null)}
         />
       )}
-    </div>
+    </SidebarPane>
   )
 }
 

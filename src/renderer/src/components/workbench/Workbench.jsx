@@ -98,13 +98,13 @@ const Workbench = ({
   const workbenchRef = React.useRef(null)
   const sidebarRef = React.useRef(null)
   const [sidebarWidth, setSidebarWidth] = React.useState(() => {
-    return getSetting('ui.sidebarWidth') || 250
+    return getSetting('sidebar.width') || 250
   })
   const [isResizing, setIsResizing] = React.useState(false)
 
   // Sync with settings if they change externally (optional, but good for reset)
   React.useEffect(() => {
-    const saved = getSetting('ui.sidebarWidth')
+    const saved = getSetting('sidebar.width')
     if (saved && !isResizing) {
       setSidebarWidth(saved)
     }
@@ -144,10 +144,11 @@ const Workbench = ({
 
     const handleMouseUp = () => {
       if (animationFrameId) cancelAnimationFrame(animationFrameId)
-      setIsResizing(false)
+
       document.body.style.cursor = ''
       document.body.style.userSelect = ''
 
+      // Read final value from DOM to ensure sync
       let finalCommittedWidth = sidebarWidth
       if (workbenchRef.current) {
         const domValue = workbenchRef.current.style.getPropertyValue('--sidebar-width')
@@ -156,14 +157,18 @@ const Workbench = ({
         }
       }
 
+      // Commit state updates atomically
       if (finalCommittedWidth < 100) {
         setIsSidebarOpen(false)
-        setSidebarWidth(250)
-        updateSetting('ui.sidebarWidth', 250)
+        setSidebarWidth(250) // Reset to default when closed
+        updateSetting('sidebar.width', 250)
       } else {
         setSidebarWidth(finalCommittedWidth)
-        updateSetting('ui.sidebarWidth', finalCommittedWidth)
+        updateSetting('sidebar.width', finalCommittedWidth)
       }
+
+      // Stop resizing flag LAST to prevent render with stale width
+      setIsResizing(false)
     }
 
     window.addEventListener('mousemove', handleMouseMove)
@@ -393,7 +398,8 @@ const Workbench = ({
         style={{
           gridTemplateColumns: 'var(--activity-bar-width) var(--sidebar-width) 1fr',
           backgroundColor: 'var(--sidebar-bg)', // Mask sub-pixel gaps with sidebar color
-          transform: 'translateZ(0)' // Hardware acceleration
+          transform: 'translateZ(0)', // Hardware acceleration
+          transition: 'none' // Prevent grid track animation
         }}
       >
         {/* Activity Bar */}
@@ -426,7 +432,8 @@ const Workbench = ({
             width: 'var(--sidebar-width)',
             backgroundColor: 'transparent', // Let parent handle BG
             willChange: isResizing ? 'width' : 'auto',
-            overflow: 'visible' // Allow Sash to protrude
+            overflow: 'visible', // Allow Sash to protrude
+            transition: 'none' // Prevent resize "push" effect
           }}
         >
           {/* CONTENT CLIPPING WRAPPER: Ensures content "slides under" instead of squashing or spilling */}

@@ -156,8 +156,15 @@ const SnippetEditor = ({
   // LIVE SYNC FOR VIRTUAL FILES (settings.json)
   // If the background state changes (e.g. sidebar toggled via UI) and the user
   // hasn't edited the text yet, update the buffer immediately.
+  // LIVE SYNC FOR VIRTUAL FILES (settings.json)
+  // DISABLE SYNC to prevent cursor jumps after save (reformatting)
   useEffect(() => {
-    if (initialSnippet?.id === 'system:settings' && !isDirty && initialSnippet.code !== code) {
+    if (
+      false && // DISABLED
+      initialSnippet?.id === 'system:settings' &&
+      !isDirty &&
+      initialSnippet.code !== code
+    ) {
       setCode(initialSnippet.code)
       codeRef.current = initialSnippet.code
     }

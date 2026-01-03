@@ -180,10 +180,12 @@ const SnippetLibraryInner = ({ snippetData }) => {
   const [pinPopover, setPinPopover] = useState({ visible: false, x: 0, y: 0, snippetId: null })
   const { overlayMode, setOverlayMode } = useAdvancedSplitPane()
 
-  // SYNC VIRTUAL SETTINGS: If the settings.json editor is open and NOT dirty,
-  // keep it in sync with global state (e.g. if theme changed via UI).
+  // SYNC VIRTUAL SETTINGS: DISABLE TO PREVENT CURSOR JUMPS
+  // Syncing causing race conditions with CodeMirror cursor state.
+  // User must reopen settings.json to see UI-triggered changes.
   useEffect(() => {
     if (
+      false && // DISABLED
       selectedSnippet?.id === 'system:settings' &&
       !dirtySnippetIds.has('system:settings') &&
       settings

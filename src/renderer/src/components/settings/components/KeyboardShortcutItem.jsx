@@ -8,7 +8,7 @@ import PropTypes from 'prop-types'
 const KeyboardShortcutItem = ({ action, description, shortcut }) => {
   return (
     <div
-      className="flex items-center justify-between px-2 py-1.5 rounded"
+      className="flex items-center justify-between   rounded"
       style={{ backgroundColor: 'var(--color-bg-primary)' }}
     >
       <div>
@@ -22,11 +22,10 @@ const KeyboardShortcutItem = ({ action, description, shortcut }) => {
         )}
       </div>
       <kbd
-        className="px-1.5 py-0.5 rounded text-xtiny"
+        className="px-1.5 py-0.5 rounded text-[8px]"
         style={{
           backgroundColor: 'var(--color-bg-tertiary)',
-          color: 'var(--color-text-secondary)',
-          border: '1px solid var(--color-border)'
+          color: 'var(--color-text-secondary)'
         }}
       >
         {shortcut}

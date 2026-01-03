@@ -42,7 +42,6 @@ const OVERRIDABLE_SETTINGS = {
   'activityBar.badgeBg': '--activity-bar-badge-bg',
   'activityBar.badgeFg': '--activity-bar-badge-fg',
 
-  // Sidebar
   // Sidebar (Separated from UI as requested)
   'sidebar.bgColor': '--sidebar-bg',
   'sidebar.iconColor': '--sidebar-icon-color',
@@ -57,8 +56,7 @@ const OVERRIDABLE_SETTINGS = {
   // Misc UI
   'ui.statusBarBg': '--statusbar-bg',
   'ui.footerBg': '--footer-bg',
-  'welcome.welcomePage': '--welcome-bg',
-  'ui.headerBg': '--header-bg'
+  'welcome.welcomePage': '--welcome-bg'
 }
 
 /**
@@ -99,27 +97,21 @@ export const applyThemeOverrides = (parsedSettings, root) => {
   })
 
   // 2. Extra Robustness: Sync common theme variables if they exist in sub-objects
-  const sidebarBg =
-    getValueByPath(parsedSettings, 'ui.sidebarBg') ||
-    getValueByPath(parsedSettings, 'sidebar.bgColor')
+  const sidebarBg = getValueByPath(parsedSettings, 'sidebar.bgColor')
   if (sidebarBg) {
     root.style.setProperty('--sidebar-bg', sidebarBg, 'important')
     const sidebar = document.querySelector('.sidebar')
     if (sidebar) sidebar.style.setProperty('background-color', sidebarBg, 'important')
   }
 
-  const activityBarBg =
-    getValueByPath(parsedSettings, 'activityBar.bgColor') ||
-    getValueByPath(parsedSettings, 'ui.activityBarBg')
+  const activityBarBg = getValueByPath(parsedSettings, 'activityBar.bgColor')
   if (activityBarBg) {
     root.style.setProperty('--activity-bar-bg', activityBarBg, 'important')
     const bar = document.querySelector('.activity-bar')
     if (bar) bar.style.setProperty('background-color', activityBarBg, 'important')
   }
 
-  const headerBg =
-    getValueByPath(parsedSettings, 'header.bgColor') ||
-    getValueByPath(parsedSettings, 'ui.headerBg')
+  const headerBg = getValueByPath(parsedSettings, 'header.bgColor')
   if (headerBg) {
     root.style.setProperty('--header-bg', headerBg, 'important')
     const header = document.querySelector('.header')
