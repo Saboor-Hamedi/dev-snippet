@@ -110,6 +110,16 @@ If you modify these, the editor will start **JUMPING** or trigger **Measure Loop
   3. **Explicit Dirty Reset**: Always `await api.setWindowDirty(false)` before calling `api.closeWindow()` to ensure the Main process allows the exit.
   4. **Ghost Draft Cleanup**: Added logic to `onCloseSnippet` to prune empty or untitled "Draft" snippets that haven't been modified yet.
 
+### ❌ Error: "Sidebar Content Cut Off / No Scroll"
+
+* **Why it happens**: 
+  1. **Flexbox Clipping**: When nested flex containers (like Sidebar wrappers) meet `h-full` and `overflow-hidden`, a child element that says `flex-1` might think it has infinite height if not strictly constrained by a parent with an explicit height (not just a percentage).
+  2. **Window Resizing**: When dragging a sidebar resizer, the parent's width changes, which might trigger a reflow where the child expands vertically, pushing content off-screen without triggering the scrollbar.
+* **The Fix (The "Absolute Inset" Pattern)**:
+  1. **Relative Wrapper**: Add a `div` with `flex-1 relative min-h-0`. This tells the flexbox layout "take up available space but establish a new coordinate system".
+  2. **Absolute Inset Child**: inside that, place the scroll container: `div.absolute.inset-0.overflow-y-auto`.
+  3. **Why it works**: The absolute child is forced to match the EXACT px dimensions of the relative parent. It cannot push the parent larger. This guarantees the scrollbar appears exactly where it should.
+
 ---
 
 ### ❌ Error: "Sidebar items flash or animate on theme switch"
@@ -131,8 +141,7 @@ If you modify these, the editor will start **JUMPING** or trigger **Measure Loop
 | **Solid UI** | `UniversalModal.jsx` | Forced `rgb()` background; no-blur overlay. |
 | **Consolidation** | `structure.js` | Single-pass Viewport walking; deduplicated line styles. |
 | **Logic** | `index.js` | Mode detection and high-level extension orchestration. |
-
----
+| **Scrolling** | `*.jsx` (Sidebars) | **Absolute Inset Pattern** (`absolute inset-0`) for 100% reliable scrolling. |
 
 ---
 

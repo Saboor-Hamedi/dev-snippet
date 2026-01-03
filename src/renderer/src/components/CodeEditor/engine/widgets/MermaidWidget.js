@@ -47,30 +47,27 @@ export class MermaidWidget extends WidgetType {
     // If neither code nor theme changed, do nothing.
     if (dom.dataset.code === this.code && !themeChanged) return true
 
+    // LOCK HEIGHT: Freeze the container at its current height to stop the "jump"
     const svgContainer = dom.querySelector('.cm-mermaid-svg-container')
-
-    // 1. HEIGHT LOCK: If theme changed, we MUST keep the current SVG and height
-    // until the new one is ready. Otherwise, it collapses to 0 and re-expands.
-    if (themeChanged && svgContainer && svgContainer.offsetHeight > 0) {
+    if (svgContainer && svgContainer.offsetHeight > 0) {
       dom.style.minHeight = `${svgContainer.offsetHeight}px`
-      svgContainer.classList.add('cm-mermaid-switching-theme')
     }
 
     dom.dataset.code = this.code
     dom.dataset.isDark = isDark ? 'true' : 'false'
 
-    // 2. CACHE CHECK: If we have the target theme in cache, swap immediately.
+    // SYNC RESTORE: Use metadata if we've seen this state before
     const cacheKey = `${this.code}::${isDark ? 'dark' : 'light'}`
     const meta = widgetMetadata.get(cacheKey)
-
-    if (meta?.svg && svgContainer) {
-      svgContainer.innerHTML = meta.svg
-      svgContainer.classList.remove('cm-mermaid-switching-theme')
-      dom.style.minHeight = '' // Sync release
-      return true
+    if (meta?.svg) {
+      if (svgContainer) {
+        svgContainer.innerHTML = meta.svg
+        svgContainer.classList.remove('cm-mermaid-switching-theme')
+        dom.style.minHeight = ''
+        return true
+      }
     }
 
-    // 3. ASYNC RENDER: If no cache, trigger a new render.
     this.startDebouncedRender(dom, this.code)
     return true
   }

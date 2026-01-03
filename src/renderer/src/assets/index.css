@@ -685,39 +685,6 @@ body {
   transition: none !important;
 }
 
-/* ======================================================================== */
-/* MERMAID STABILITY SYSTEM */
-/* ======================================================================== */
-.cm-mermaid-widget {
-  transition: min-height 0.1s ease-out;
-  contain: layout; /* Isolate rendering to prevent full-page layout jumps */
-}
-
-/* While switching theme, dim the old SVG to signal it's "outdated" but keep it as a spacer */
-.cm-mermaid-switching-theme {
-  opacity: 0.3 !important;
-  filter: blur(1px);
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-}
-
-.cm-mermaid-svg-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 20px;
-  width: 100%;
-  overflow: hidden;
-}
-
-.cm-mermaid-loading {
-  padding: 20px;
-  text-align: center;
-  font-family: var(--u-font-mono, monospace);
-  font-size: 11px;
-  opacity: 0.5;
-}
-
 /* Form Controls */
 .search-input {
   width: 100%;
