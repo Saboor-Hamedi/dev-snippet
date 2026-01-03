@@ -38,17 +38,17 @@ const SettingsForm = () => {
       <ToastNotification toast={toast} />
       <div className="max-w-2xl mx-auto py-2 px-4 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
         {/* SECTION: Global Appearance */}
-        <SettingSection title="Global Appearance" icon={Monitor}>
+        {/* <SettingSection title="Global Appearance" icon={Monitor}>
           <SettingToggle
             label="Compact Mode"
             description="Reduce padding in the sidebar and lists."
             checked={compactMode}
             onChange={handleCompactToggle}
           />
-        </SettingSection>
+        </SettingSection> */}
 
         {/* SECTION: Typography */}
-        <SettingSection title="Typography" icon={Type}>
+        {/* <SettingSection title="Typography" icon={Type}>
           <SettingSelect
             label="Editor Font Family"
             description="Monospace fonts recommended."
@@ -71,10 +71,10 @@ const SettingsForm = () => {
             checked={settings.editor?.fontLigatures !== false}
             onChange={(v) => handleUpdate('editor', 'fontLigatures', v)}
           />
-        </SettingSection>
+        </SettingSection> */}
 
         {/* SECTION: Editor Experience */}
-        <SettingSection title="Editor Experience" icon={Layout}>
+        {/* <SettingSection title="Editor Experience" icon={Layout}>
           <SettingToggle
             label="Word Wrap"
             description="Wrap long lines in the editor."
@@ -107,10 +107,10 @@ const SettingsForm = () => {
               { label: 'Solid', value: 'solid' }
             ]}
           />
-        </SettingSection>
+        </SettingSection> */}
 
         {/* SECTION: Cursor & Interaction */}
-        <SettingSection title="Cursor & Cursor Details" icon={MousePointer2}>
+        {/* <SettingSection title="Cursor & Cursor Details" icon={MousePointer2}>
           <SettingSelect
             label="Cursor Shape"
             value={cursorSettings.cursorShape}
@@ -135,10 +135,10 @@ const SettingsForm = () => {
             onChange={onSettingChange(cursorSettings.setCursorSelectionBg, 'Selection Color')}
             placeholder="#58a6ff33"
           />
-        </SettingSection>
+        </SettingSection> */}
 
         {/* SECTION: System */}
-        <SettingSection title="System" icon={SettingsIcon}>
+        {/* <SettingSection title="System" icon={SettingsIcon}>
           <SettingInput
             label="Snippets Directory"
             description="Custom path to store snippets (Coming Soon)."
@@ -147,7 +147,7 @@ const SettingsForm = () => {
             placeholder="Default application folder"
             noBorder
           />
-        </SettingSection>
+        </SettingSection> */}
       </div>
     </>
   )

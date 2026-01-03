@@ -191,18 +191,22 @@ const CodeEditor = ({
 
   const [zoomLevel] = useZoomLevel()
   const [editorZoom] = useEditorZoomLevel()
+  const lastZoom = useRef(zoomLevel)
+  const lastEditorZoom = useRef(editorZoom)
 
   // Force cursor update when zoom changes (fixes caret staying on screen during mouse wheel zoom)
   useEffect(() => {
     if (!viewRef.current) return
 
+    // PERFORMANCE: Only trigger measure/scroll if the value actually changed numerically.
+    // This stops the "whole editor jump" when saving settings.json (which re-triggers the context).
+    if (lastZoom.current === zoomLevel && lastEditorZoom.current === editorZoom) return
+
+    lastZoom.current = zoomLevel
+    lastEditorZoom.current = editorZoom
+
     const view = viewRef.current
-
-    // Trigger CodeMirror to recalculate cursor position and layout
-    // This ensures the cursor updates immediately when zoom level changes
     view.requestMeasure()
-
-    // Center the cursor after zoom to prevent the user from "losing their place"
     view.dispatch({
       effects: [EditorView.scrollIntoView(view.state.selection.main, { y: 'center' })]
     })

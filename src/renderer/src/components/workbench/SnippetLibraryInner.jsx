@@ -21,13 +21,57 @@ import { useSidebarStore } from '../../store/useSidebarStore'
 
 // #file:SnippetLibraryInner.jsx orchestrates the entire workbench experience.
 // The Core Logic Component
+
+/**
+ * ╔══════════════════════════════════════════════════════════════════════════╗
+ * ║                      SNIPPET LIBRARY INNER                                ║
+ * ╚══════════════════════════════════════════════════════════════════════════╝
+ *
+ * FILE LOCATION:
+ *   src/renderer/src/components/workbench/SnippetLibraryInner.jsx
+ *
+ * PARENT COMPONENTS:
+ *   - SnippetLibrary.jsx (src/renderer/src/components/workbench/SnippetLibrary.jsx)
+ *     └─> Wraps this component with Context Providers (View, Modal, etc.)
+ *
+ * CORE RESPONSIBILITY:
+ *   This is the "Brain" or "Controller" of the entire application. It acts as the
+ *   central hub for:
+ *   - State Management (Snippets, Folders, Trash, Selection)
+ *   - Business Logic (CRUD operations, Moving, Renaming)
+ *   - Global Event Handling (Commands, Shortcuts)
+ *   - Integration (Connecting Hooks to UI)
+ *
+ * ARCHITECTURE PATTERN:
+ *   Container/View Pattern:
+ *   - SnippetLibraryInner.jsx (Container): Handles logic, state, and data fetching.
+ *   - Workbench.jsx (View): Pure presentational component that renders the UI.
+ *
+ * PRIMARY FUNCTIONS:
+ *   1. Data Orchestration: Fetches and updates data via Electron IPC.
+ *   2. Command Handling: Centralizes logic for 'Save', 'New', 'Delete', etc.
+ *   3. Session Management: Restores previous state on load.
+ *   4. Keyboard Coordination: Maps keys to actions.
+ *
+ * RELATED FILES:
+ *   - Workbench.jsx - The UI layer receiving props from here.
+ *   - useSnippetData.js - (Likely parent hook) Data fetching logic.
+ *   - KeyboardHandler.jsx - Global key listener.
+ *
+ * MAINTENANCE NOTES:
+ *   - This file is large (~1500 lines). Avoid adding UI code here.
+ *   - Keep it focused on logic and passing props down.
+ *   - If logic becomes complex, extract into custom hooks (e.g., useSnippetOperations).
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
 const SnippetLibraryInner = ({ snippetData }) => {
   const {
     snippets,
     selectedSnippet,
     setSelectedSnippet,
     setSnippets,
-    saveSnippet,
+    saveSnippet: originalSaveSnippet,
     deleteItem,
     deleteItems,
     // Folder props
@@ -57,8 +101,38 @@ const SnippetLibraryInner = ({ snippetData }) => {
     isSettingsOpen
   } = useModal()
 
-  const { settings, getSetting, updateSetting } = useSettings()
+  const {
+    settings,
+    getSetting,
+    updateSetting,
+    updateSettings: contextUpdateSettings
+  } = useSettings()
   const { toast, showToast } = useToast()
+
+  // WRAPPER: Intercepts saves to handle "Virtual" files like settings.json
+  const saveSnippet = useCallback(
+    async (s) => {
+      if (s.id === 'system:settings') {
+        try {
+          const parsed = JSON.parse(s.code)
+          if (contextUpdateSettings) {
+            await contextUpdateSettings(parsed)
+            showToast('✓ Settings synchronized to disk', 'success')
+            return
+          }
+        } catch (e) {
+          showToast('❌ Invalid JSON: Cannot save settings', 'error')
+          return
+        }
+      }
+      if (s.id === 'system:default-settings') {
+        showToast('Default settings are read-only', 'info')
+        return
+      }
+      return originalSaveSnippet(s)
+    },
+    [originalSaveSnippet, showToast, contextUpdateSettings]
+  )
 
   // Ensure global settings are applied when this component mounts/updates
   useFontSettings()
@@ -105,6 +179,30 @@ const SnippetLibraryInner = ({ snippetData }) => {
   const [dirtySnippetIds, setDirtySnippetIds] = useState(new Set())
   const [pinPopover, setPinPopover] = useState({ visible: false, x: 0, y: 0, snippetId: null })
   const { overlayMode, setOverlayMode } = useAdvancedSplitPane()
+
+  // SYNC VIRTUAL SETTINGS: If the settings.json editor is open and NOT dirty,
+  // keep it in sync with global state (e.g. if theme changed via UI).
+  useEffect(() => {
+    if (
+      selectedSnippet?.id === 'system:settings' &&
+      !dirtySnippetIds.has('system:settings') &&
+      settings
+    ) {
+      try {
+        const freshJson = JSON.stringify(settings, null, 2)
+        if (freshJson !== selectedSnippet.code) {
+          setSelectedSnippet((curr) => {
+            if (curr?.id === 'system:settings') {
+              return { ...curr, code: freshJson }
+            }
+            return curr
+          })
+        }
+      } catch (e) {
+        // Silently fail if settings can't be stringified for some reason
+      }
+    }
+  }, [settings, selectedSnippet?.id, dirtySnippetIds, setSelectedSnippet])
 
   // Clipboard state for cut/copy/paste operations
   const [clipboard, setClipboard] = useState(null) // { type: 'cut'|'copy', items: [{id, type, data}] }
@@ -193,9 +291,9 @@ const SnippetLibraryInner = ({ snippetData }) => {
   }, [dirtySnippetIds, selectedSnippet, snippets, setSelectedSnippet, navigateTo])
 
   // Lifted Sidebar State - defaults to closed, remembers last state
-  const isSidebarOpen = settings?.ui?.showSidebar !== false
+  const isSidebarOpen = settings?.sidebar?.visible !== false
   const handleToggleSidebar = useCallback(() => {
-    updateSetting('ui.showSidebar', !isSidebarOpen)
+    updateSetting('sidebar.visible', !isSidebarOpen)
   }, [isSidebarOpen, updateSetting])
 
   const handleSelectSnippet = useCallback(
@@ -393,14 +491,13 @@ const SnippetLibraryInner = ({ snippetData }) => {
   // Toggle favorite helper used by popover and sidebar menu
   const toggleFavoriteSnippet = async (id) => {
     try {
-      console.debug('[SnippetLibraryInner] toggleFavoriteSnippet', id)
     } catch (e) {}
     try {
       const s = snippets.find((t) => t.id === id)
       if (!s) return
       const updated = { ...s, is_favorite: s.is_favorite === 1 ? 0 : 1 }
       await saveSnippet(updated)
-      console.debug('[SnippetLibraryInner] saveSnippet returned for favorite', id)
+
       setSnippets((prev) => prev.map((it) => (it.id === id ? updated : it)))
       if (selectedSnippet?.id === id) setSelectedSnippet(updated)
     } catch (err) {
@@ -412,7 +509,6 @@ const SnippetLibraryInner = ({ snippetData }) => {
   const handlePing = useCallback(
     async (id) => {
       try {
-        console.debug('[SnippetLibraryInner] Ping handler', id)
       } catch (e) {}
       const s = snippets.find((t) => t.id === id)
       if (s) {
@@ -435,10 +531,18 @@ const SnippetLibraryInner = ({ snippetData }) => {
         navigateTo('editor')
       }
     },
-    [snippets, setSelectedSnippet, navigateTo, setSnippets, saveSnippet]
+    [snippets, setSelectedSnippet, navigateTo, setSnippets, originalSaveSnippet, saveSnippet]
   )
 
   const handleRenameRequest = () => {
+    if (selectedSnippet?.id === 'system:settings') {
+      showToast('The settings.json file cannot be renamed', 'info')
+      return
+    }
+    if (selectedSnippet?.id === 'system:default-settings') {
+      // showToast('The default settings file cannot be renamed', 'info')
+      return
+    }
     openRenameModal(selectedSnippet, (newName) => {
       handleRenameSnippet({
         renameModal: { newName, item: selectedSnippet },
@@ -495,8 +599,57 @@ const SnippetLibraryInner = ({ snippetData }) => {
     }
     const onCommandSidebar = () => handleToggleSidebar()
     const onCommandPreview = () => togglePreview()
-    const onCommandSettings = () => openSettingsModal()
-    const onCommandSyncCenter = () => openSyncModal()
+    const onCommandSettings = (e) => {
+      const params = e.detail || {}
+      navigateTo('settings', params)
+    }
+
+    const onCommandJsonEditor = async () => {
+      if (window.api?.readSettingsFile) {
+        try {
+          const content = await window.api.readSettingsFile()
+          const virtual = {
+            id: 'system:settings',
+            title: 'settings.json',
+            code: content || '{}',
+            language: 'json',
+            timestamp: Date.now(),
+            is_pinned: 0,
+            is_draft: false
+          }
+          setSelectedSnippet(virtual)
+          navigateTo('editor')
+          // showToast('Opened configuration for advanced editing', 'info')
+        } catch (err) {
+          showToast('Failed to load settings from disk', 'error')
+        }
+      }
+    }
+
+    const onCommandDefaultSettingsEditor = async () => {
+      if (window.api?.readDefaultSettingsFile) {
+        try {
+          const content = await window.api.readDefaultSettingsFile()
+          const virtual = {
+            id: 'system:default-settings',
+            title: 'defaultSettings.js (Read Only)',
+            code: content || '',
+            language: 'javascript',
+            timestamp: Date.now(),
+            is_pinned: 0,
+            is_draft: false,
+            readOnly: true
+          }
+          setSelectedSnippet(virtual)
+          navigateTo('editor')
+          showToast('Opened default settings (read-only)', 'info')
+        } catch (err) {
+          showToast('Failed to load default settings', 'error')
+        }
+      }
+    }
+
+    const onCommandSyncCenter = () => openSettingsModal()
     const onCommandActivityBar = () => {
       const current = settings?.ui?.showActivityBar !== false
       updateSetting('ui.showActivityBar', !current)
@@ -506,7 +659,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
       const isActVisible = settings?.ui?.showActivityBar !== false
       const next = !isActVisible
       updateSetting('ui.showActivityBar', next)
-      updateSetting('ui.showSidebar', next)
+      updateSetting('sidebar.visible', next)
       showToast(next ? 'Workspace expanded' : 'Zen Mode enabled', 'info')
     }
     const onCommandZenFocus = () => {
@@ -517,7 +670,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
     }
     const onCommandReset = () => {
       updateSetting('ui.showFlowMode', false)
-      // updateSetting('ui.showSidebar', true)
+      // updateSetting('sidebar.visible', true)
       updateSetting('ui.showActivityBar', true)
       updateSetting('ui.showHeader', true)
       updateSetting('ui.showStatusBar', true)
@@ -545,7 +698,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
 
       // 2. Reset UI settings to defaults (Visible)
       updateSetting('ui.showActivityBar', true)
-      updateSetting('ui.showSidebar', true)
+      updateSetting('sidebar.visible', true)
       updateSetting('ui.showHeader', true)
       updateSetting('ui.showStatusBar', true)
       updateSetting('ui.showFlowMode', false)
@@ -576,6 +729,8 @@ const SnippetLibraryInner = ({ snippetData }) => {
     window.addEventListener('app:toggle-sidebar', onCommandSidebar)
     window.addEventListener('app:toggle-preview', onCommandPreview)
     window.addEventListener('app:open-settings', onCommandSettings)
+    window.addEventListener('app:open-json-editor', onCommandJsonEditor)
+    window.addEventListener('app:open-default-settings-editor', onCommandDefaultSettingsEditor)
     window.addEventListener('app:open-sync-center', onCommandSyncCenter)
     window.addEventListener('app:toggle-activity-bar', onCommandActivityBar)
     window.addEventListener('app:toggle-zen', onCommandZen)
@@ -664,6 +819,8 @@ const SnippetLibraryInner = ({ snippetData }) => {
       window.removeEventListener('app:toggle-sidebar', onCommandSidebar)
       window.removeEventListener('app:toggle-preview', onCommandPreview)
       window.removeEventListener('app:open-settings', onCommandSettings)
+      window.removeEventListener('app:open-json-editor', onCommandJsonEditor)
+      window.removeEventListener('app:open-default-settings-editor', onCommandDefaultSettingsEditor)
       window.removeEventListener('app:open-sync-center', onCommandSyncCenter)
       window.removeEventListener('app:toggle-activity-bar', onCommandActivityBar)
       window.removeEventListener('app:toggle-zen', onCommandZen)
@@ -691,7 +848,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
     selectedFolderId,
     selectedSnippet,
     settings?.ui?.showActivityBar,
-    settings?.ui?.showSidebar,
+    settings?.sidebar?.visible,
     settings?.ui?.showStatusBar,
     settings?.ui?.showHeader,
     settings?.ui?.showFlowMode,
@@ -778,6 +935,9 @@ const SnippetLibraryInner = ({ snippetData }) => {
   }
 
   const handleDeleteRequest = (id) => {
+    if (id === 'system:settings' || id === 'system:default-settings') {
+      return
+    }
     openDeleteModal(id, async (targetId) => {
       await deleteItem(targetId)
     })
@@ -1052,7 +1212,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
   }
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white overflow-hidden transition-colors duration-200">
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white overflow-hidden">
       <ToastNotification toast={toast} />
       <KeyboardHandler
         showFlowMode={settings?.ui?.showFlowMode}
@@ -1073,12 +1233,10 @@ const SnippetLibraryInner = ({ snippetData }) => {
           let x = rect?.x ?? rect?.left ?? rect?.clientX ?? window.innerWidth / 2 - 80
           let y = rect?.y ?? rect?.top ?? rect?.clientY ?? window.innerHeight / 2 - 24
           try {
-            console.debug('[SnippetLibraryInner] onOpenPinPopover', { id, origin, x, y })
           } catch (e) {}
           // Ensure idempotent open: do not close immediately if called twice quickly
           if (pinPopover.visible && pinPopover.snippetId === id) {
             try {
-              console.debug('[SnippetLibraryInner] PinPopover already open for', id)
             } catch (e) {}
             // Toggle behavior: close then reopen to refresh position when requested rapidly
             setPinPopover((prev) => ({ ...prev, visible: false }))
@@ -1141,7 +1299,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
         <Workbench
           settings={settings}
           isSidebarOpen={isSidebarOpen}
-          setIsSidebarOpen={(val) => updateSetting('ui.showSidebar', val)}
+          setIsSidebarOpen={(val) => updateSetting('sidebar.visible', val)}
           onToggleSidebar={handleToggleSidebar}
           activeView={isCreatingSnippet ? 'editor' : activeView}
           pinPopover={pinPopover}
@@ -1306,7 +1464,10 @@ const SnippetLibraryInner = ({ snippetData }) => {
           onToggleFavorite={toggleFavoriteSnippet}
           onSelectSnippet={handleSelectSnippet}
           onSearchSnippets={handleSearchSnippets}
-          onOpenSettings={() => openSettingsModal()}
+          onOpenSettings={(params = {}) => {
+            openSettingsModal() // Keep this for now if needed, but navigation is primary
+            navigateTo('settings', params)
+          }}
           isSettingsOpen={isSettingsOpen}
           onCloseSettings={() => navigateTo('snippets')}
           onInlineRename={handleInlineRename}
@@ -1325,7 +1486,6 @@ const SnippetLibraryInner = ({ snippetData }) => {
           onClose={() => {
             setPinPopover((prev) => ({ ...prev, visible: false, x: 0, y: 0, snippetId: null }))
             try {
-              console.debug('[SnippetLibraryInner] PinPopover closed')
             } catch (e) {}
             focusEditor()
           }}

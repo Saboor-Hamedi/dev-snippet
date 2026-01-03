@@ -28,6 +28,7 @@ const api = {
     // Return unsubscribe function
     return () => electronAPI.ipcRenderer.removeListener('settings:changed', subscription)
   },
+  readDefaultSettingsFile: () => electronAPI.ipcRenderer.invoke('settings:readDefault'),
 
   // Database
   getSnippets: (options) => electronAPI.ipcRenderer.invoke('db:getSnippets', options),

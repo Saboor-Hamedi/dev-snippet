@@ -187,10 +187,24 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
       },
       {
         id: 'cmd-settings',
-        title: 'Open Settings',
+        title: 'Preferences: Open User Settings (UI)',
         icon: Settings,
-        description: 'Configure preferences and shortcuts',
+        description: 'Configure preferences via Form',
         action: () => window.dispatchEvent(new CustomEvent('app:open-settings'))
+      },
+      {
+        id: 'cmd-settings-json',
+        title: 'Preferences: Open User Settings (JSON)',
+        icon: FileCode,
+        description: 'Edit settings.json directly in the main editor',
+        action: () => window.dispatchEvent(new CustomEvent('app:open-json-editor'))
+      },
+      {
+        id: 'cmd-settings-default',
+        title: 'Preferences: Open Default Settings (Read Only)',
+        icon: Settings,
+        description: 'View nominal settings options in the editor',
+        action: () => window.dispatchEvent(new CustomEvent('app:open-default-settings-editor'))
       },
       {
         id: 'cmd-copy-image',
@@ -335,10 +349,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
       return [...snippets].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)).slice(0, 5)
     }
 
-    // CASE 2: Hybrid Search (Merge Client Title Matches + Backend Content Matches)
-
-    // A. Client-Side Title Search (Instant Type-ahead)
-    // This ensures "docu" matches "documentation" immediately without waiting for FTS
+    // CASE 2: Hybrid Search (Merge Client Title Matches + Backend Content Matches + Commands)
     const clientMatches = snippets
       .map((item) => {
         const title = (item.title || '').toLowerCase()
@@ -358,28 +369,26 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
       .sort((a, b) => b.score - a.score)
       .map((res) => res.item)
 
-    // B. Backend Matches (Content & FTS)
+    // D. Command Inclusion (Unified Search)
+    const matchingCommands = commands.filter((cmd) => cmd.title.toLowerCase().includes(query))
+
+    // E. Merge Strategy
     const backendMatches = searchResults || []
-
-    // C. Merge Strategy
-    // 1. Start with Client Matches (Top correctness for Titles)
-    // 2. Enhance them with Backend Data (Context) if available
-    // 3. Append remaining Backend Matches (Content-only matches)
-
-    // Create map for fast lookup of backend results (to get 'match_context')
     const backendMap = new Map(backendMatches.map((i) => [i.id, i]))
+    const mergedSnippets = clientMatches.map((c) => backendMap.get(c.id) || c)
+    const backendOnly = backendMatches.filter((b) => !mergedSnippets.find((m) => m.id === b.id))
 
-    const merged = clientMatches.map((c) => backendMap.get(c.id) || c)
+    // COMBINE: Priority order -> Snippets (Title/Tags) -> Commands -> Snippets (Content)
+    const results = [...mergedSnippets]
 
-    const backendOnly = backendMatches.filter((b) => !merged.find((m) => m.id === b.id))
+    // Mix in matching commands if they feel relevant
+    matchingCommands.forEach((cmd) => {
+      if (!results.find((r) => r.id === cmd.id)) {
+        results.push({ ...cmd, isCommand: true })
+      }
+    })
 
-    // USER FEEDBACK: "When it finds a specific thing (Title/Tag), it shouldn't show the others (Content)."
-    // If we have strong matches (Title/Tags), show ONLY them.
-    if (merged.length > 0) {
-      return merged.slice(0, 5)
-    }
-
-    // Otherwise show content matches (Fallback)
+    if (results.length > 0) return results.slice(0, 10)
     return backendOnly.slice(0, 5)
   }, [search, snippets, searchResults, commands, isCommandMode])
 
@@ -488,7 +497,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
       {/* Main UI Container (Refined & Professional) */}
       <div
         onMouseDown={(e) => e.stopPropagation()}
-        className="relative w-full max-w-xl rounded-[5px] shadow-2xl border border-[var(--color-border)] overflow-hidden flex flex-col animate-in zoom-in-95 slide-in-from-top-4 duration-200 outline-none ring-0"
+        className="relative w-full max-w-xl rounded-[5px] shadow-2xl border border-[var(--color-border)] overflow-hidden flex flex-col animate-in zoom-in-95 slide-in-from-top-4 duration-200 outline-none ring-0 u-borderless"
         style={{ backgroundColor: 'rgb(var(--color-bg-primary-rgb))' }}
       >
         {/* Search Header Area */}
@@ -538,7 +547,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
                 const isSelected = index === selectedIndex
 
                 // --- COMMAND RENDER ---
-                if (isCommandMode) {
+                if (isCommandMode || item.isCommand) {
                   const Icon = item.icon || Terminal
                   return (
                     <div

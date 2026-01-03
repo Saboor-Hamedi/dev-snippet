@@ -41,30 +41,28 @@ const KeyboardShortcutsSection = ({ modKey = 'Ctrl' }) => {
     combos.map((combo) => combo.replaceAll(MOD_KEY_PLACEHOLDER, modKey)).join(' · ')
 
   return (
-    <SettingSection>
-      <div className="p-4 space-y-4">
-        <p className="text-xtiny" style={{ color: 'var(--color-text-tertiary)' }}>
-          Common keyboard shortcuts used across the app.
-        </p>
-        {SCOPE_ORDER.filter((scope) => grouped[scope]?.length).map((scope) => (
-          <div key={scope} className="space-y-2">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              {scope}
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {grouped[scope].map((shortcut) => (
-                <KeyboardShortcutItem
-                  key={shortcut.id}
-                  action={shortcut.action}
-                  description={shortcut.description}
-                  shortcut={formatCombos(shortcut.displayCombos)}
-                />
-              ))}
-            </div>
+    <div className="p-4 space-y-4">
+      <p className="text-xtiny" style={{ color: 'var(--color-text-tertiary)' }}>
+        Common keyboard shortcuts used across the app.
+      </p>
+      {SCOPE_ORDER.filter((scope) => grouped[scope]?.length).map((scope) => (
+        <div key={scope} className="space-y-2">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            {scope}
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {grouped[scope].map((shortcut) => (
+              <KeyboardShortcutItem
+                key={shortcut.id}
+                action={shortcut.action}
+                description={shortcut.description}
+                shortcut={formatCombos(shortcut.displayCombos)}
+              />
+            ))}
           </div>
-        ))}
-      </div>
-    </SettingSection>
+        </div>
+      ))}
+    </div>
   )
 }
 

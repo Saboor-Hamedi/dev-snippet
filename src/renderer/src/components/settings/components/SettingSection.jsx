@@ -7,12 +7,12 @@ import PropTypes from 'prop-types'
  */
 const SettingSection = ({ title, icon: Icon, iconColor, children, className = '' }) => {
   return (
-    <section className={`mb-6 ${className}`}>
+    <section className={`mb-4 ${className}`}>
       {title && (
-        <div className="flex items-center gap-2 mb-3 ml-3">
-          {Icon && <Icon size={14} style={{ color: 'var(--color-accent-primary)' }} />}
+        <div className="flex items-center gap-1.5 mb-1 ml-2">
+          {Icon && <Icon size={11} style={{ color: 'var(--color-accent-primary)' }} />}
           <h3
-            className="text-xtiny font-semibold uppercase tracking-wider"
+            className="text-[9px] font-bold uppercase tracking-wider opacity-60"
             style={{ color: 'var(--color-text-tertiary)' }}
           >
             {title}

@@ -1,7 +1,9 @@
 import { Decoration, ViewPlugin } from '@codemirror/view'
 import { RangeSetBuilder } from '@codemirror/state'
 import { sortDecorations } from './utils'
+import { EditorMode, editorModeField, activeLinesField } from './state'
 
+const hideMarkerDeco = Decoration.mark({ class: 'cm-marker-hidden' })
 const wikiLinkDeco = Decoration.mark({ class: 'cm-wikilink' })
 const mentionDeco = Decoration.mark({ class: 'cm-mention' })
 const hashtagDeco = Decoration.mark({ class: 'cm-hashtag' })
@@ -38,14 +40,31 @@ export const inlineRegexPlugin = ViewPlugin.fromClass(
       const collected = []
 
       // 1. WikiLinks
-      const wikiLinkRegex = /\[\[[^\]\n]+\]\]/g
+      const wikiLinkRegex = /\[\[([^\]\n]+)\]\]/g
+      const mode = view.state.field(editorModeField)
+      const activeLines = view.state.field(activeLinesField)
       let match
       while ((match = wikiLinkRegex.exec(text)) !== null) {
-        collected.push({
-          from: from + match.index,
-          to: from + match.index + match[0].length,
-          deco: wikiLinkDeco
-        })
+        const start = from + match.index
+        const end = from + match.index + match[0].length
+        const content = match[1]
+
+        // Reveal logic (Matches Obsidian)
+        let isRevealed = mode === EditorMode.SOURCE
+        if (mode === EditorMode.LIVE_PREVIEW) {
+          const lineNum = doc.lineAt(start).number
+          if (activeLines.has(lineNum)) isRevealed = true
+        }
+
+        if (isRevealed || mode === EditorMode.SOURCE) {
+          // In edit mode or active line, show everything normally
+          collected.push({ from: start, to: end, deco: wikiLinkDeco })
+        } else {
+          // Hide the brackets, show the content as a link
+          collected.push({ from: start, to: start + 2, deco: hideMarkerDeco }) // [[
+          collected.push({ from: start + 2, to: end - 2, deco: wikiLinkDeco }) // content
+          collected.push({ from: end - 2, to: end, deco: hideMarkerDeco }) // ]]
+        }
       }
 
       // 2. Mentions

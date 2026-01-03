@@ -14,7 +14,7 @@
 .default-button:hover {
   background: var(--color-accent-primary);
   color: white;
-  border-color: var(--color-accent-primary);
+  /* border-color: var(--color-accent-primary); */
 }
 /* this is for the tag */
 .card-language {

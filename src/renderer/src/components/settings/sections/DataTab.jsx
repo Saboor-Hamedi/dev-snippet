@@ -1,28 +1,30 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { FileDown } from 'lucide-react'
+import { FileDown, Database } from 'lucide-react'
 import { SettingSection, SettingToggle, SettingRow } from '../components'
 import BackupRestorePanel from '../../BackupRestorePanel'
 
 /**
- * Data & System Settings Section
- * Handles welcome page toggle, data export, and backup/restore
+ * DataTab Component
+ *
+ * Handles application data, welcome page visibility,
+ * local library exports, and database backups.
  */
-const DataSettings = ({ hideWelcomePage, onWelcomePageToggle, onExportData }) => {
+const DataTab = ({ settings, updateSetting, onExportData }) => {
   return (
-    <SettingSection title="">
+    <SettingSection title="System & Data" icon={Database}>
       {/* Show Welcome Page Toggle */}
       <SettingToggle
         label="Show Welcome Page"
-        description="Show the welcome page when starting the application."
-        checked={!hideWelcomePage}
-        onChange={(checked) => onWelcomePageToggle(!checked)}
+        description="Display the onboarding screen when starting the application."
+        checked={settings.welcome?.hideWelcomePage !== true}
+        onChange={(show) => updateSetting('welcome.hideWelcomePage', !show)}
       />
 
       {/* Export Library */}
       <SettingRow
         label="Export Library"
-        description="Create a JSON backup of all your snippets and projects."
+        description="Generate a portable JSON file containing all your snippets and metadata."
         noBorder
       >
         <button
@@ -41,22 +43,22 @@ const DataSettings = ({ hideWelcomePage, onWelcomePageToggle, onExportData }) =>
           }}
         >
           <FileDown size={11} />
-          Export Data
+          Export JSON
         </button>
       </SettingRow>
 
-      {/* Backup & Restore */}
-      <div className="p-4 border-t" style={{ borderColor: 'var(--color-border)' }}>
+      {/* Backup & Restore (Local Database) */}
+      <div className="mt-4 p-4 border-t" style={{ borderColor: 'var(--color-border)' }}>
         <BackupRestorePanel />
       </div>
     </SettingSection>
   )
 }
 
-DataSettings.propTypes = {
-  hideWelcomePage: PropTypes.bool.isRequired,
-  onWelcomePageToggle: PropTypes.func.isRequired,
+DataTab.propTypes = {
+  settings: PropTypes.object.isRequired,
+  updateSetting: PropTypes.func.isRequired,
   onExportData: PropTypes.func.isRequired
 }
 
-export default DataSettings
+export default DataTab

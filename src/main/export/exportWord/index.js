@@ -1,13 +1,17 @@
 // IPC handler for exporting all snippets to Word (DOCX)
-import { ipcMain, dialog, app } from 'electron'
+import { ipcMain, dialog } from 'electron'
 import fs from 'fs/promises'
 import path from 'path'
 import { exportSnippetsToWord } from './wordExporter.js'
 import { getAllSnippetsWithDiagrams } from './snippetCollector.js'
 
-export function registerWordExportHandler(app) {
+export function registerWordExportHandler(appInstance) {
+  // Use passed instance to avoid top-level 'app' import circularity
+  const getApp = () => appInstance || require('electron').app
+
   ipcMain.handle('export:word', async (event, htmlOrSnippets, defaultName = 'snippets-export') => {
     try {
+      const app = getApp()
       let filePath
       if (typeof htmlOrSnippets === 'string') {
         // Single snippet HTML export

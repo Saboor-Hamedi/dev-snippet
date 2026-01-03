@@ -15,6 +15,7 @@ import { CheckboxWidget } from './widgets/CheckboxWidget'
 
 // Decoration for hiding text while keeping its footprint perfectly stable
 const hideMarkerDeco = Decoration.mark({ class: 'cm-marker-hidden' })
+const revealedMarkerDeco = Decoration.mark({ class: 'cm-marker' })
 
 /**
  * richMarkdownStateField - The Unified Markdown Engine.
@@ -156,20 +157,24 @@ export const richMarkdownStateField = StateField.define({
             } else {
               const startLine = safeLineAt(doc, from)
               const endLine = safeLineAt(doc, to)
-              if (mode !== EditorMode.READING) {
-                collected.push({
-                  from: startLine.from,
-                  to: startLine.from,
-                  deco: Decoration.widget({
-                    widget: new CodeBlockHeaderWidget(lang),
-                    side: -1,
-                    block: true
-                  })
+
+              // ALWAYS show the header widget (contains Copy button) except in SOURCE mode
+              collected.push({
+                from: startLine.from,
+                to: startLine.from,
+                deco: Decoration.widget({
+                  widget: new CodeBlockHeaderWidget(lang),
+                  side: -1,
+                  block: true
                 })
-              }
+              })
+
               for (let i = startLine.number; i <= endLine.number; i++) {
                 if (!lineDecos.has(i)) {
-                  lineDecos.set(i, Decoration.line({ class: 'cm-code-block' }))
+                  let cls = 'cm-code-block'
+                  if (i === startLine.number) cls += ' cm-code-block-start'
+                  if (i === endLine.number) cls += ' cm-code-block-end'
+                  lineDecos.set(i, Decoration.line({ class: cls }))
                 }
               }
             }
@@ -225,17 +230,25 @@ export const richMarkdownStateField = StateField.define({
           node.name.includes('Marker') ||
           node.name.includes('Delimiter') ||
           node.name === 'URL' ||
-          node.name === 'LinkTitle'
+          node.name === 'LinkTitle' ||
+          node.name === 'ProcessingInstruction' ||
+          node.name === 'Entity'
+
         const isException = node.name === 'ListMark' || node.name === 'TaskMarker'
 
-        if (isMarker && !isException && !isRangeActive(from, to)) {
-          // If the next character is a space (standard for headings/lists),
-          // hide it too to ensure perfect left-alignment with paragraphs.
-          let actualTo = to
-          if (doc.sliceString(to, to + 1) === ' ') {
-            actualTo++
+        if (isMarker && !isException) {
+          if (!isRangeActive(from, to)) {
+            // Hide symbols (###, **, etc.)
+            // And hide all following spaces to ensure perfect alignment with paragraphs.
+            let actualTo = to
+            while (doc.sliceString(actualTo, actualTo + 1) === ' ') {
+              actualTo++
+            }
+            collected.push({ from, to: actualTo, deco: hideMarkerDeco })
+          } else {
+            // REVEAL: Apply the 'cm-marker' class so CSS can pull it into the gutter (Zero-Jump)
+            collected.push({ from, to, deco: revealedMarkerDeco })
           }
-          collected.push({ from, to: actualTo, deco: hideMarkerDeco })
         }
       }
     })

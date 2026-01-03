@@ -22,18 +22,20 @@ const buildTheme = (EditorView, options = {}) => {
         backgroundColor: 'var(--editor-bg, transparent) !important',
         color: 'var(--editor-text, var(--color-text-primary, #0f172a))',
         fontFamily: fontFamily,
-        fontSize: fontSize, // Use the explicit font size option
+        fontSize: fontSize,
         lineHeight: '1.6',
         height: '100%',
         paddingLeft: '0',
-        textAlign: 'left'
+        textAlign: 'left',
+        transition: 'none !important' // Fixed: Stop theme-switching "fades" or jumps
       },
       '.cm-line': {
         textAlign: 'left'
       },
       '.cm-content .cm-line-h1, .cm-content .cm-line-h2, .cm-content .cm-line-h3, .cm-content .cm-line-h4, .cm-content .cm-line-h5, .cm-content .cm-line-h6':
         {
-          textAlign: 'left !important'
+          textAlign: 'left !important',
+          transition: 'none !important' // Stop layout-shifts during theme change
         },
       '.cm-code-block, .cm-code-block *': {
         textAlign: 'left !important'
@@ -202,16 +204,13 @@ const buildTheme = (EditorView, options = {}) => {
       '.cm-line-h6 span:not(.cm-marker-hidden)': { fontSize: `calc(${fontSize} * 1.0) !important` },
 
       '.cm-content .cm-h1': {
-        fontWeight: '700',
-        color: 'var(--color-text-primary) !important'
+        fontWeight: '700'
       },
       '.cm-content .cm-h2': {
-        fontWeight: '700',
-        color: 'var(--color-text-primary) !important'
+        fontWeight: '700'
       },
       '.cm-content .cm-h3': {
-        fontWeight: '700',
-        color: 'var(--color-text-primary) !important'
+        fontWeight: '700'
       },
       '.cm-content .cm-h4': {
         fontWeight: '700'
@@ -278,21 +277,35 @@ const buildTheme = (EditorView, options = {}) => {
       },
 
       '.cm-md-rendered-table': {
-        borderCollapse: 'collapse',
-        padding: '1em 0',
-        border: '1px solid var(--color-border)',
-        borderRadius: '4px',
-        overflow: 'hidden'
+        display: 'table !important',
+        borderCollapse: 'collapse !important',
+        borderSpacing: '0 !important',
+        margin: '1.5rem 0',
+        border: '1px solid var(--color-border, #30363d) !important',
+        borderRadius: '6px',
+        overflow: 'hidden',
+        width: '100% !important',
+        backgroundColor: 'transparent !important',
+        fontSize: 'inherit !important' /* Sync font size with editor */
+      },
+      '.cm-md-rendered-table tr:nth-child(2n)': {
+        backgroundColor: 'rgba(255, 255, 255, 0.02) !important'
+      },
+      '.cm-md-rendered-table th': {
+        fontWeight: '600',
+        backgroundColor: 'var(--color-bg-secondary, rgba(255, 255, 255, 0.05)) !important'
       },
       '.cm-md-rendered-table th, .cm-md-rendered-table td': {
-        padding: '8px 12px',
-        border: '1px solid var(--color-border)',
+        padding: '10px 14px !important' /* Sync with markdown.css */,
+        border: '1px solid var(--color-border, #30363d) !important',
         position: 'relative',
-        minWidth: '60px'
+        minWidth: '60px',
+        color: 'var(--color-text-primary) !important'
       },
       '.cm-md-table-rendered-wrapper': {
         position: 'relative',
-        display: 'inline-block',
+        display: 'block' /* Fixed: Ensure full width sync with sidebar */,
+        width: '100%',
         padding: '1.5em 0'
       },
       '.cm-md-table-edge-plus': {

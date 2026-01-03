@@ -24,6 +24,49 @@ import TableEditorModal from '../table/TableEditorModal'
 import PerformanceBarrier from '../universal/PerformanceBarrier/PerformanceBarrier'
 import '../universal/universalStyle.css'
 
+/**
+ * ╔══════════════════════════════════════════════════════════════════════════╗
+ * ║                          SNIPPET EDITOR                                   ║
+ * ╚══════════════════════════════════════════════════════════════════════════╝
+ *
+ * FILE LOCATION:
+ *   src/renderer/src/components/workbench/SnippetEditor.jsx
+ *
+ * PARENT COMPONENTS:
+ *   - Workbench.jsx (src/renderer/src/components/workbench/Workbench.jsx)
+ *     └─> Renders this when activeView === 'editor'
+ *
+ * CORE RESPONSIBILITY:
+ *   The main workspace for editing snippets. It provides a localized environment
+ *   for modifying code/markdown with real-time preview (Split View).
+ *
+ *   CRITICAL: This component holds the "Draft" state. Changes here are NOT
+ *   persisted to the main database until internal save logic triggers `onSave`.
+ *
+ * COMPONENT STRUCTURE:
+ *   [CodeEditor (CodeMirror)]  <-- Split Pane -->  [LivePreview (Markdown)]
+ *          |                                            |
+ *          └─────────────────[Status Bar]───────────────┘
+ *
+ * FEATURES:
+ *   - Advanced Split Pane (draggable resizer)
+ *   - Auto-Save integration
+ *   - Real-time Markdown rendering
+ *   - Diagram/Table visual editing (via Modals)
+ *   - Zoom controls
+ *
+ * AUTO-SAVE LOGIC:
+ *   - Uses `useAutoSave` hook.
+ *   - Triggers `onSave` prop after N seconds of inactivity.
+ *   - Shows status (Saving... -> Saved) in Status Bar.
+ *
+ * RELATED FILES:
+ *   - CodeEditor.jsx - The actual CodeMirror wrapper.
+ *   - LivePreview.jsx - HTML renderer.
+ *   - AdvancedSplitPane.jsx - Resizable layout container.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
 const SnippetEditor = ({
   onSave,
   initialSnippet,
@@ -109,6 +152,16 @@ const SnippetEditor = ({
     closeModal: closeUni,
     openModal
   } = useUniversalModal()
+
+  // LIVE SYNC FOR VIRTUAL FILES (settings.json)
+  // If the background state changes (e.g. sidebar toggled via UI) and the user
+  // hasn't edited the text yet, update the buffer immediately.
+  useEffect(() => {
+    if (initialSnippet?.id === 'system:settings' && !isDirty && initialSnippet.code !== code) {
+      setCode(initialSnippet.code)
+      codeRef.current = initialSnippet.code
+    }
+  }, [initialSnippet?.code, initialSnippet?.id, isDirty])
 
   // Apply stored position on mount or when going floating
   useEffect(() => {
@@ -1155,6 +1208,13 @@ const SnippetEditor = ({
     },
     onToggleCompact: onToggleCompactHandler,
     onDelete: () => {
+      // Silently ignore delete for system files to avoid modal popup
+      if (
+        initialSnippet?.id === 'system:settings' ||
+        initialSnippet?.id === 'system:default-settings'
+      )
+        return
+
       if (onDelete) onDelete(initialSnippet?.id)
     },
     onCloseEditor: handleTriggerCloseCheck,
@@ -1251,6 +1311,7 @@ const SnippetEditor = ({
                       centered={true}
                       autoFocus={true}
                       snippetId={initialSnippet?.id}
+                      readOnly={initialSnippet?.readOnly || false}
                       onChange={handleCodeChange}
                       onLargeFileChange={setIsLargeFile}
                       onKeyDown={(e) => {

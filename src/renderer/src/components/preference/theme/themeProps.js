@@ -66,6 +66,13 @@ export const themeProps = () => {
         futureSettings.ui.theme = theme.id
         hasChanges = true
 
+        // 1.1 RESET SYNTAX DEFAULTS: If switching themes, ensure we don't carry over
+        // conflicting syntax overrides from a previous "default settings" state.
+        // We delete the 'syntax' block so the new theme's vars can shine through.
+        if (futureSettings.syntax) {
+          delete futureSettings.syntax
+        }
+
         if (theme.settings) {
           for (const [category, values] of Object.entries(theme.settings)) {
             if (!futureSettings[category] || typeof futureSettings[category] !== 'object') {

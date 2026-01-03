@@ -8,6 +8,20 @@ const OVERRIDABLE_SETTINGS = {
   'cursor.color': '--caret-color',
   'cursor.width': '--caret-width',
 
+  // Syntax Highlighting (The VS Code Feel)
+  'syntax.keyword': '--color-syntax-keyword',
+  'syntax.string': '--color-syntax-string',
+  'syntax.variable': '--color-syntax-variable',
+  'syntax.number': '--color-syntax-number',
+  'syntax.comment': '--color-syntax-comment',
+  'syntax.function': '--color-syntax-function',
+  'syntax.operator': '--color-syntax-punctuation',
+  'syntax.bool': '--color-syntax-boolean',
+
+  // Core Font Stability
+  'editor.fontFamily': '--editor-font-family',
+  'editor.fontSize': '--editor-font-size',
+
   // Live Preview
   'livePreview.bgColor': '--live-preview-bg-color',
   'livePreview.borderColor': '--live-preview-border-color',
@@ -29,10 +43,16 @@ const OVERRIDABLE_SETTINGS = {
   'activityBar.badgeFg': '--activity-bar-badge-fg',
 
   // Sidebar
-  'ui.sidebarBg': '--sidebar-bg',
-  'ui.sidebarIconColor': '--sidebar-icon-color',
-  'ui.sidebarText': '--sidebar-text',
-  'ui.sidebarBorder': '--sidebar-border',
+  // Sidebar (Separated from UI as requested)
+  'sidebar.bgColor': '--sidebar-bg',
+  'sidebar.iconColor': '--sidebar-icon-color',
+  'sidebar.textColor': '--sidebar-text',
+  'sidebar.borderColor': '--sidebar-border',
+
+  // Sidebar List Items (Robust Interaction States)
+  'list.hoverBackground': '--sidebar-item-hover-bg',
+  'list.activeBackground': '--sidebar-item-active-bg',
+  'list.activeForeground': '--sidebar-item-active-fg',
 
   // Misc UI
   'ui.statusBarBg': '--statusbar-bg',
@@ -65,8 +85,11 @@ export const applyThemeOverrides = (parsedSettings, root) => {
     if (value !== undefined && value !== '' && value !== null) {
       let finalValue = value
 
-      // Handle numeric units
-      if (typeof value === 'number' && (cssVar.includes('width') || cssVar.includes('round'))) {
+      // Handle numeric units (px)
+      if (
+        typeof value === 'number' &&
+        (cssVar.includes('width') || cssVar.includes('round') || cssVar.includes('size'))
+      ) {
         finalValue = `${value}px`
       }
 
@@ -112,5 +135,30 @@ export const applyThemeOverrides = (parsedSettings, root) => {
   const editorText = getValueByPath(parsedSettings, 'editor.editorTextColor')
   if (editorText) {
     root.style.setProperty('--editor-text', editorText, 'important')
+  }
+
+  // 4. Universal UI Stability (The "Scientist Mode" hammer)
+  // This ensures that the tokens created in index.css are always enforced at the root style level,
+  // making them win over any standard theme CSS rules.
+  root.style.setProperty('--u-border-width', '0px', 'important')
+  root.style.setProperty('--u-border-color', 'transparent', 'important')
+  root.style.setProperty('--u-shadow', 'none', 'important')
+  root.style.setProperty('--u-backdrop', 'none', 'important')
+  root.style.setProperty('--u-radius', '0px', 'important')
+
+  // Suppression of UI border variables is now handled via --u- prefixed tokens
+  // Avoid nuking global --color-border here as it breaks content-specific borders (like headers/tables)
+
+  // 5. Enforce Robust Sidebar Item Defaults (Prevent Transparency Issues)
+  const hoverBg = getValueByPath(parsedSettings, 'list.hoverBackground')
+  if (!hoverBg) {
+    // Default to a visible but subtle overlay if not set
+    root.style.setProperty('--sidebar-item-hover-bg', 'var(--color-bg-secondary)', 'important')
+  }
+
+  const activeBg = getValueByPath(parsedSettings, 'list.activeBackground')
+  if (!activeBg) {
+    // Default to a solid active state
+    root.style.setProperty('--sidebar-item-active-bg', 'var(--color-bg-tertiary)', 'important')
   }
 }

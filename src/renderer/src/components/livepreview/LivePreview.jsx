@@ -217,19 +217,40 @@ const LivePreview = ({
   // --- 2. Style Merging (DRY Token Engine) ---
   const combinedStyles = useMemo(() => {
     const currentThemeObj = themes.find((t) => t.id === theme) || themes[0]
+
+    // 1. Base Theme Variables
     const cssVars = Object.entries(currentThemeObj.colors)
       .filter(([key]) => key.startsWith('--'))
       .map(([key, value]) => `${key}: ${value};`)
       .join('\n')
 
+    // 2. Settings Overrides (Ensures VS Code Feel applies to Preview too)
+    const syntaxSettings = settings.syntax || {}
+    const varMap = {
+      keyword: '--color-syntax-keyword',
+      string: '--color-syntax-string',
+      variable: '--color-syntax-variable',
+      number: '--color-syntax-number',
+      comment: '--color-syntax-comment',
+      function: '--color-syntax-function',
+      operator: '--color-syntax-punctuation',
+      bool: '--color-syntax-boolean'
+    }
+
+    const overrides = Object.entries(syntaxSettings)
+      .filter(([key]) => varMap[key])
+      .map(([key, value]) => `${varMap[key]}: ${value} !important;`)
+      .join('\n')
+
     const themeVars = `:root, .shadow-wrapper {
       ${cssVars}
+      ${overrides}
       --editor-font-size: ${((fontSize || settings.editor?.fontSize || 14) * 1) / 16}rem;
       --font-sans: ${fontFamily}, sans-serif;
     }`
 
     return `${variableStyles}\n${themeVars}\n${previewStyles}\n${markdownStyles}\n${mermaidStyles}\n.markdown-body { padding-bottom: 5rem !important; }`
-  }, [theme, fontFamily, settings.editor?.fontSize])
+  }, [theme, fontFamily, settings?.editor?.fontSize, settings?.syntax])
 
   // --- 3. Shadow DOM Event Pipeline ---
   const handleShadowClick = useCallback(

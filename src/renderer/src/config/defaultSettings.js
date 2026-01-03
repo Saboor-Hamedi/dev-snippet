@@ -1,76 +1,98 @@
 // src/config/defaultSettings.js
 export const DEFAULT_SETTINGS = {
-  // Welcome settings Covers all tiny components
   welcome: {
-    welcomePage: '#232731',
+    welcomePage: '#18181b',
     hideWelcomePage: false
   },
   editor: {
-    editorBgColor: '#232731',
-    zoomLevel: 1.0,
-    fontSize: 12,
-    fontFamily: "'Outfit', 'Inter', sans-serif",
+    editorBgColor: '#09090b',
+    zoomLevel: 1,
+    fontSize: 13,
+    fontFamily: "'Inter', system-ui, sans-serif",
     fontLigatures: true,
     lineNumbers: true,
-    wordWrap: 'off',
+    wordWrap: 'on',
     tabSize: 2,
-    theme: 'dark'
+    theme: 'midnight-pro' // User JSON has 'midnight-pro' in editor block but 'nebula' in ui block. Keeping strictly as provided.
+  },
+  syntax: {
+    keyword: '#569cd6',
+    string: '#ce9178',
+    variable: '#9cdcfe',
+    number: '#b5cea8',
+    comment: '#6a9955',
+    function: '#dcdcaa',
+    operator: '#d4d4d4',
+    bool: '#569cd6'
   },
   cursor: {
-    cursorWidth: 3,
+    cursorWidth: 2,
     cursorColor: '#58a6ff',
     cursorShape: 'bar',
     cursorBlinking: true,
     cursorBlinkingSpeed: 500,
-    cursorSelectionBg: 'rgb(var(--color-accent-primary-rgb))',
+    cursorSelectionBg: 'rgba(38, 79, 120, 0.5)',
     cursorActiveLineBg: 'transparent',
-    cursorShadowBoxColor: '#58a6ff'
+    cursorShadowBoxColor: '#58a6ff',
+    color: '#d946ef'
   },
   gutter: {
-    gutterBgColor: '#232731',
-    gutterBorderColor: 'transparent',
-    gutterBorderWidth: 0,
+    gutterBgColor: '#18181b',
+    gutterBorderColor: '#27272a',
+    gutterBorderWidth: 1,
     showGutter: true
   },
   livePreview: {
-    bgColor: '#232731',
-    borderColor: '#232731',
-    borderWidth: 0,
-    borderRound: 0,
+    bgColor: '#09090b',
+    borderColor: '#27272a',
+    borderWidth: 1,
+    borderRound: 4,
     overlayMode: false
   },
   header: {
-    bgColor: '#0d1117',
-    textColor: '#c9d1d9',
-    iconColor: '#c9d1d9',
-    borderColor: '#30363d'
+    bgColor: '#09090b',
+    textColor: '#ffffff',
+    iconColor: '#ffffff',
+    borderColor: '#27272a'
   },
   ui: {
-    sidebarBg: '#252526',
-    statusBarBg: '#232731', // Editor header status bar
-    footerBg: '#232731', // System status footer
-    headerBg: '#232731', // Main header
+    statusBarBg: '#18181b',
+    footerBg: '#18181b',
+    headerBg: '#09090b',
     compactMode: false,
-    showSidebar: true,
     showActivityBar: true,
     showHeader: true,
     showStatusBar: true,
     showFlowMode: false,
     showPreview: false,
     zenFocus: false,
-    sidebarIconColor: '#c9d1d9',
-    sidebarWidth: 250,
     previewPosition: 'right',
-    previewFontSize: 12,
-    theme: 'system',
+    previewFontSize: 13,
+    theme: 'custom',
     modeSwitcher: {
-      isFloating: false, // UI State: Is the switcher currently floating?
-      disableDraggable: false, // ADMIN: Global kill-switch. If true, prevents floating entirely.
-      pos: { x: null, y: null } // SPATIAL MEMORY: Last known X/Y coordinates to restore position.
+      isFloating: false,
+      disableDraggable: false,
+      pos: {
+        x: null,
+        y: null
+      }
     },
     universalLock: {
-      modal: false // Universal Master Lock: If true, resets ALL floating elements (Modals + Switcher) to default positions and prevents moving.
+      modal: false
     }
+  },
+  sidebar: {
+    bgColor: '#09090b',
+    iconColor: '#0d1117',
+    textColor: '#0d1117',
+    borderColor: '#0d1117',
+    width: 300,
+    visible: true
+  },
+  list: {
+    hoverBackground: 'rgb(124, 58, 237,0.3)',
+    activeBackground: 'rgb(124, 58, 237,0.3)',
+    activeForeground: '#0d1117'
   },
   statusBar: {
     showSystemStatus: true,
@@ -83,16 +105,16 @@ export const DEFAULT_SETTINGS = {
     showZoom: true
   },
   activityBar: {
-    bgColor: '#18181b',
-    activeFg: '#f1be36',
+    bgColor: '#09090b',
+    activeFg: '#8778a5',
     inactiveFg: 'rgb(255, 255, 255)',
     activeBorder: '#d946ef',
-    badgeBg: '#d946ef',
-    badgeFg: '#ffffff'
+    badgeBg: '#8778a5',
+    badgeFg: '#151b20'
   },
   behavior: {
     autoSave: true,
-    autoSaveDelay: 2000,
+    autoSaveDelay: 1000,
     confirmDelete: true,
     restoreSession: true
   },
@@ -100,7 +122,7 @@ export const DEFAULT_SETTINGS = {
     enableCodeFolding: true,
     enableAutoComplete: true,
     enableLinting: false,
-    disableComplexCM: false, // Disables background highlights (active line, selection match)
-    maxFileSize: 1048576 // 1MB
+    disableComplexCM: false,
+    maxFileSize: 5242880
   }
 }

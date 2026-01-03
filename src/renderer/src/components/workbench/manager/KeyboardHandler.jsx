@@ -116,6 +116,13 @@ const KeyboardHandler = ({
 
     onDeleteSnippet: () => {
       if (selectedSnippet) {
+        // Silently ignore delete for system files
+        if (
+          selectedSnippet.id === 'system:settings' ||
+          selectedSnippet.id === 'system:default-settings'
+        )
+          return
+
         openDeleteModal(selectedSnippet.id, async (id) => {
           await deleteItem(id)
         })

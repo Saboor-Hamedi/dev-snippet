@@ -46,7 +46,6 @@ export const registerWindowHandlers = (app, mainWindow) => {
     const isMaximized = mainWindow.isMaximized()
 
     if (currentState.lastMode === 'flow') {
-      // Don't save flow state if it's maximized (though it shouldn't be)
       if (!isMaximized && !mainWindow.isFullScreen()) {
         currentState.flow = { ...bounds }
       }
@@ -105,7 +104,7 @@ export const registerWindowHandlers = (app, mainWindow) => {
     return true
   })
 
-  // Reload window (Hard Refresh)
+  // Reload window
   ipcMain.handle('window:reload', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender)
     if (win) {
@@ -143,16 +142,14 @@ export const registerWindowHandlers = (app, mainWindow) => {
     return false
   })
 
-  // Restore default size (Now used to return to "Normal Mode")
+  // Restore default size
   ipcMain.handle('window:restore-default-size', (event) => {
     try {
       const win = BrowserWindow.fromWebContents(event.sender)
       if (win) {
         currentState.lastMode = 'normal'
         debouncedSave()
-
-        // Always return to Maximized for a true "Normal" feel as requested
-        win.setMinimumSize(800, 600) // Reset to standard minimum
+        win.setMinimumSize(800, 600)
         win.maximize()
         return true
       }
@@ -162,7 +159,7 @@ export const registerWindowHandlers = (app, mainWindow) => {
     return false
   })
 
-  // RESET WINDOW (Hard reset everything)
+  // RESET WINDOW
   ipcMain.handle('window:reset', (event) => {
     try {
       const win = BrowserWindow.fromWebContents(event.sender)
@@ -186,40 +183,31 @@ export const registerWindowHandlers = (app, mainWindow) => {
     return false
   })
 
-  // Set Flow Size (800x900)
+  // Set Flow Size
   ipcMain.handle('window:set-flow-size', (event) => {
     try {
       const win = BrowserWindow.fromWebContents(event.sender)
       if (win) {
         currentState.lastMode = 'flow'
         debouncedSave()
-
-        // 1. Force Exit any restrictive OS states immediately
         if (win.isFullScreen()) win.setFullScreen(false)
         win.unmaximize()
         win.setResizable(true)
-
-        // 2. Multi-stage resize to fight OS "snapping" or delay
         setTimeout(() => {
           if (win.isDestroyed()) return
-
           const targetWidth = 750
           const targetHeight = 750
-
-          // Force the size and centering
           win.setMinimumSize(targetWidth, targetHeight)
-          win.setMaximumSize(targetWidth, targetHeight) // Temporarily lock to force it
+          win.setMaximumSize(targetWidth, targetHeight)
           win.setSize(targetWidth, targetHeight, true)
           win.center()
-
           setTimeout(() => {
             if (!win.isDestroyed()) {
-              win.setMaximumSize(9999, 9999) // Unlock but keep the size
+              win.setMaximumSize(9999, 9999)
               win.center()
             }
           }, 150)
         }, 400)
-
         return true
       }
     } catch (err) {
@@ -228,7 +216,7 @@ export const registerWindowHandlers = (app, mainWindow) => {
     return false
   })
 
-  // Set zoom factor
+  // Set zoom
   ipcMain.handle('window:setZoom', (event, factor) => {
     try {
       const win = BrowserWindow.fromWebContents(event.sender)
@@ -242,42 +230,32 @@ export const registerWindowHandlers = (app, mainWindow) => {
     return false
   })
 
-  // Get zoom factor
+  // Get zoom
   ipcMain.handle('window:getZoom', (event) => {
     try {
       const win = BrowserWindow.fromWebContents(event.sender)
-      if (win) {
-        return win.webContents.getZoomFactor()
-      }
+      if (win) return win.webContents.getZoomFactor()
     } catch (err) {}
     return 1.0
   })
 
   // Get App Version
-  ipcMain.handle('app:getVersion', () => {
-    return app.getVersion()
-  })
+  ipcMain.handle('app:getVersion', () => app.getVersion())
 
-  // Open in a Mini Browser (internal Electron window)
+  // Open in a Mini Browser
   ipcMain.handle('window:openMiniBrowser', async (event, htmlContent) => {
     const path = require('path')
     const fsPromises = require('fs/promises')
-
     try {
       const tempPath = path.join(app.getPath('temp'), 'dev-snippet-mini-preview.html')
       await fsPromises.writeFile(tempPath, htmlContent, 'utf-8')
-
       const miniWin = new BrowserWindow({
         width: 800,
         height: 900,
         title: 'Snippet Preview',
         autoHideMenuBar: true,
-        webPreferences: {
-          nodeIntegration: false,
-          contextIsolation: true
-        }
+        webPreferences: { nodeIntegration: false, contextIsolation: true }
       })
-
       miniWin.setMenu(null)
       await miniWin.loadFile(tempPath)
       miniWin.show()
@@ -288,7 +266,7 @@ export const registerWindowHandlers = (app, mainWindow) => {
     }
   })
 
-  // EXIT PROTECTION: Track dirty state and warn on close
+  // Dirty state tracking
   let isAppDirty = false
   ipcMain.handle('window:set-dirty', (event, dirty) => {
     isAppDirty = !!dirty
@@ -299,7 +277,6 @@ export const registerWindowHandlers = (app, mainWindow) => {
     mainWindow.on('close', async (e) => {
       if (isAppDirty) {
         e.preventDefault()
-        // Send request to renderer to show the custom "Unsaved Changes" modal
         mainWindow.webContents.send('app:request-close')
       }
     })

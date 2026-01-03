@@ -41,11 +41,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 16px;
-  background-color: rgba(255, 255, 255, 0.05);
-  border-bottom: none;
+  padding: 8px 16px !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border-bottom: none !important;
   min-height: 38px;
   box-sizing: border-box;
+  border-radius: 12px 12px 0 0 !important;
+  border: 1px solid var(--color-border, transparent);
+  border-bottom: none;
 }
 
 .code-language {
@@ -226,15 +229,18 @@ h6 {
 
 .markdown-body h1 {
   font-size: 1.8em !important;
-  padding-bottom: 0.3em !important;
+  padding-bottom: 0.3rem !important;
   border-bottom: 1px solid var(--color-border, #30363d) !important;
-  margin-top: 0 !important; /* Top header should be flush */
+  margin-top: 1.2em !important;
+  margin-bottom: 0.8em !important;
 }
 
 .markdown-body h2 {
   font-size: 1.4em !important;
-  padding-bottom: 0.3em !important;
+  padding-bottom: 0.2rem !important;
   border-bottom: 1px solid var(--color-border, #30363d) !important;
+  margin-top: 1em !important;
+  margin-bottom: 0.6em !important;
 }
 .markdown-body h3 {
   font-size: 1.2em !important;
@@ -406,61 +412,27 @@ h6 {
   box-shadow: 0 4px 20px rgba(88, 166, 255, 0.1);
 }
 
-/* Syntax Highlighting Colors - Theme Aware */
+/* Syntax Highlighting Colors - High-Fidelity Sync with Editor */
 .hljs-comment,
 .hljs-quote {
-  color: var(--color-syntax-comment, #5c6370) !important;
+  color: var(--color-syntax-comment, #8b949e) !important;
   font-style: italic !important;
 }
 
 .hljs-keyword,
 .hljs-selector-tag,
-.hljs-doctag {
-  color: var(--color-syntax-keyword, #c678dd) !important;
-  font-weight: 600 !important;
+.hljs-addition,
+.hljs-doctag,
+.hljs-meta,
+.hljs-modifier {
+  color: var(--color-syntax-keyword, #ff7b72) !important;
+  font-weight: bold !important;
 }
 
-.preview-tag,
-.preview-mention {
-  color: var(--color-accent-secondary, #a371f7) !important;
-  background-color: rgba(163, 113, 247, 0.1) !important;
-  padding: 1px 5px !important;
-  margin: 0 2px !important;
-  border-radius: 6px !important;
-  font-family: var(--font-mono, monospace);
-  font-size: 0.9em;
-  font-weight: 600 !important;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
-}
-
-.preview-tag:hover,
-.preview-mention:hover {
-  background-color: rgba(163, 113, 247, 0.2) !important;
-  transform: translateY(-1px);
-}
-
-.preview-mention {
-  color: var(--color-accent-primary, #58a6ff) !important;
-  background-color: rgba(88, 166, 255, 0.1) !important;
-}
-
-.hljs-string,
-.hljs-type,
-.hljs-built_in,
-.hljs-bullet,
-.hljs-addition {
-  color: var(--color-syntax-string, #98c379) !important;
-}
-
-.hljs-title,
-.hljs-section,
-.hljs-function,
-.hljs-selector-id,
-.hljs-selector-class {
-  color: var(--color-syntax-variable, #61afef) !important;
+.hljs-literal,
+.hljs-atom {
+  color: var(--color-syntax-boolean, #569cd6) !important;
+  font-weight: bold !important;
 }
 
 .hljs-variable,
@@ -470,26 +442,42 @@ h6 {
 .hljs-name,
 .hljs-regexp,
 .hljs-link,
-.hljs-name,
+.hljs-attr,
 .hljs-selector-attr,
 .hljs-selector-pseudo {
-  color: var(--color-syntax-variable, #e06c75) !important;
+  color: var(--color-syntax-variable, #79c0ff) !important;
+}
+
+.hljs-title,
+.hljs-title.function_,
+.hljs-title.class_,
+.hljs-class,
+.hljs-type,
+.hljs-built_in,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-namespace,
+.hljs-meta .hljs-string {
+  color: var(--color-syntax-function, #dcdcaa) !important;
+}
+
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+  color: var(--color-syntax-string, #a5d6ff) !important;
 }
 
 .hljs-number,
-.hljs-literal,
-.hljs-symbol,
-.hljs-bullet,
-.hljs-meta {
+.hljs-integer,
+.hljs-float {
   color: var(--color-syntax-number, #d19a66) !important;
 }
 
-.hljs-params {
-  color: var(--color-text-primary, #abb2bf) !important;
-}
-
+.hljs-params,
+.hljs-punctuation,
 .hljs-operator {
-  color: var(--color-syntax-punctuation, #56b6c2) !important;
+  color: var(--color-syntax-punctuation, #8b949e) !important;
 }
 
 .hljs-emphasis {

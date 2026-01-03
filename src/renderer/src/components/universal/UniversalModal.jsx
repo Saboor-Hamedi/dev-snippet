@@ -31,22 +31,30 @@ const UniversalModal = ({
       const modal = modalRef.current
       const header = headerRef.current
 
-      // Force solid background to remove transparency from all themes
-      // We use --color-tooltip-bg because it is guaranteed to be a solid hex/rgb in all themes
-      // We use 'background' shorthand to override any 'background: rgba(...)' in CSS
-      const solidBg = 'var(--color-tooltip-bg, #1e1e1e)'
-      const solidBorder = 'var(--color-border, #333)'
-
-      modal.style.setProperty('background', solidBg, 'important')
-      modal.style.setProperty('background-color', solidBg, 'important')
-      modal.style.setProperty('backdrop-filter', 'none', 'important')
       modal.style.setProperty('opacity', '1', 'important')
-      modal.style.setProperty('border', 'none', 'important')
-      modal.style.setProperty('box-shadow', 'none', 'important')
 
-      header.style.setProperty('background', solidBg, 'important')
-      header.style.setProperty('background-color', solidBg, 'important')
-      header.style.setProperty('border', 'none', 'important')
+      // Scientist Mode: Aggressive Reset Force
+      const forceReset = (el) => {
+        const bg = 'rgb(var(--color-bg-primary-rgb))'
+        el.style.setProperty('background', bg, 'important')
+        el.style.setProperty('background-color', bg, 'important')
+        el.style.setProperty('border', 'none', 'important')
+        el.style.setProperty('border-width', '0px', 'important')
+        el.style.setProperty('border-color', 'transparent', 'important')
+        el.style.setProperty('border-top', 'none', 'important')
+        el.style.setProperty('border-bottom', 'none', 'important')
+        el.style.setProperty('border-left', 'none', 'important')
+        el.style.setProperty('border-right', 'none', 'important')
+        el.style.setProperty('outline', 'none', 'important')
+        el.style.setProperty('box-shadow', 'none', 'important')
+        el.style.setProperty('backdrop-filter', 'none', 'important')
+      }
+
+      forceReset(modal)
+      forceReset(header)
+      if (modal.querySelector('.universal-modal-footer')) {
+        forceReset(modal.querySelector('.universal-modal-footer'))
+      }
 
       const isLocked = settings?.ui?.universalLock?.modal
 
@@ -87,13 +95,15 @@ const UniversalModal = ({
         modal.style.removeProperty('transform')
 
         if (isLocked || resetPosition) {
-          modal.style.position = isLocked ? 'relative' : 'absolute'
+          modal.style.position = isLocked ? 'fixed' : 'absolute'
+          modal.style.zIndex = '1000000'
           modal.style.width = typeof initialWidth === 'number' ? `${initialWidth}px` : initialWidth
           modal.style.height =
             typeof initialHeight === 'number' ? `${initialHeight}px` : initialHeight
           modal.style.margin = 'auto'
-          modal.style.left = ''
-          modal.style.top = ''
+          modal.style.left = '50%'
+          modal.style.top = '50%'
+          modal.style.transform = 'translate(-50%, -50%)'
         } else if (saved) {
           modal.style.position = 'absolute'
           modal.style.left = saved.left
@@ -104,6 +114,7 @@ const UniversalModal = ({
             saved.height ||
             (typeof initialHeight === 'number' ? `${initialHeight}px` : initialHeight)
           modal.style.margin = '0'
+          modal.style.transform = 'none'
         } else {
           modal.style.position = 'absolute'
           if (noOverlay) {
@@ -129,9 +140,10 @@ const UniversalModal = ({
             }
             modal.style.margin = '0'
           } else {
-            modal.style.left = ''
-            modal.style.top = ''
-            modal.style.margin = 'auto'
+            modal.style.left = '50%'
+            modal.style.top = '50%'
+            modal.style.transform = 'translate(-50%, -50%)'
+            modal.style.margin = '0'
           }
           modal.style.width = typeof initialWidth === 'number' ? `${initialWidth}px` : initialWidth
           modal.style.height =
@@ -222,22 +234,27 @@ const UniversalModal = ({
   const modalContent = (
     <div
       ref={modalRef}
-      className={`universal-modal ${isDragDisabled ? 'locked' : ''} ${className} ${noOverlay ? 'no-overlay' : ''}`}
+      className={`universal-modal u-borderless u-solid ${isDragDisabled ? 'locked' : ''} ${className} ${noOverlay ? 'no-overlay' : ''}`}
       style={{
         width: typeof initialWidth === 'number' ? `${initialWidth}px` : initialWidth,
         height: typeof initialHeight === 'number' ? `${initialHeight}px` : initialHeight,
         zIndex: noOverlay ? 100000 : 200000,
         pointerEvents: className.includes('click-through') ? 'none' : 'auto',
-        backgroundColor: 'rgb(var(--color-bg-primary-rgb))',
+        // Scientist Mode: Explicit Enforcement via Inline Styles
         background: 'rgb(var(--color-bg-primary-rgb))',
+        backgroundColor: 'rgb(var(--color-bg-primary-rgb))',
+        border: 'none',
+        borderWidth: '0px',
+        borderColor: 'transparent',
+        boxShadow: 'none',
+        outline: 'none',
         backdropFilter: 'none',
-        opacity: 1,
-        border: 'none'
+        opacity: 1
       }}
     >
       <div
         ref={headerRef}
-        className="universal-modal-header"
+        className="universal-modal-header u-borderless u-solid"
         onDoubleClick={() => {
           if (customKey === 'flow_workspace_position' && typeof isMaximized !== 'undefined') {
             // This is a bit hacky but it works for FlowWorkspace
@@ -247,9 +264,11 @@ const UniversalModal = ({
         style={{
           cursor: !isDragDisabled && !isMaximized ? 'move' : 'default',
           pointerEvents: 'auto', // Header must always be interactable for dragging
-          backgroundColor: 'rgb(var(--color-bg-primary-rgb))',
           background: 'rgb(var(--color-bg-primary-rgb))',
-          border: 'none'
+          backgroundColor: 'rgb(var(--color-bg-primary-rgb))',
+          border: 'none',
+          boxShadow: 'none',
+          outline: 'none'
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
@@ -281,11 +300,13 @@ const UniversalModal = ({
       </div>
       {footer && (
         <div
-          className="universal-modal-footer"
+          className="universal-modal-footer u-borderless u-solid"
           style={{
-            backgroundColor: 'rgb(var(--color-bg-primary-rgb))',
             background: 'rgb(var(--color-bg-primary-rgb))',
-            border: 'none'
+            backgroundColor: 'rgb(var(--color-bg-primary-rgb))',
+            border: 'none',
+            boxShadow: 'none',
+            outline: 'none'
           }}
         >
           {footer}

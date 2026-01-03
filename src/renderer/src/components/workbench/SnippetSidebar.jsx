@@ -311,15 +311,18 @@ const SnippetSidebar = ({
   }, [startCreation])
 
   // --- Resize Observer ---
-  const [size, setSize] = useState({ width: 0, height: 0 })
+  const [containerHeight, setContainerHeight] = useState(0)
   React.useLayoutEffect(() => {
     if (!parentRef.current) return
     const ro = new ResizeObserver(([entry]) => {
-      setSize({ width: entry.contentRect.width, height: entry.contentRect.height })
+      // Only trigger React update if height changes (height rarely changes during sidebar width drag)
+      if (entry.contentRect.height !== containerHeight) {
+        setContainerHeight(entry.contentRect.height)
+      }
     })
     ro.observe(parentRef.current)
     return () => ro.disconnect()
-  }, [])
+  }, [containerHeight])
 
   // --- Global Keyboard Shortcuts & Drag Cleanup ---
   React.useEffect(() => {
@@ -355,7 +358,11 @@ const SnippetSidebar = ({
     () => ({
       treeItems,
       selectedSnippet,
+      selectedFolderId, // passed directly
+      selectedIds, // passed directly
       onSelect,
+      onSelectFolder: (id) => setSelectedFolderId(id),
+      onSelectionChange: (ids) => setSelectedIds(ids),
       handleItemKeyDown,
       isCompact,
       onToggleFolder,
@@ -364,35 +371,19 @@ const SnippetSidebar = ({
       onMoveFolder,
       onContextMenu: handleContextMenu,
       lastSelectedIdRef,
-      togglePinned,
       onTogglePin,
+      searchQuery,
       onConfirmCreation: handleConfirmCreation,
-      onCancelCreation: cancelCreation,
       editingId,
-      onInlineRename,
+      onInlineRename, // pass the prop directly
       onCancelRenaming: cancelRenaming,
       startCreation,
-      handleBackgroundClick,
-      todayStr
+      setSidebarSelected,
+      handleSelectionInternal // Explicitly passed here
     }),
     [
       treeItems,
       selectedSnippet,
-      onSelect,
-      handleItemKeyDown,
-      isCompact,
-      onToggleFolder,
-      onNew,
-      onMoveSnippet,
-      onMoveFolder,
-      // handleContextMenu is a function, if it's not memoized it will cause updates.
-      // Ideally we should assume these handlers are stable or harmless to update if they are fast.
-      // Given the structure, including them here is correct for correctness.
-      lastSelectedIdRef, // ref, stable
-      togglePinned,
-      onTogglePin,
-      // handleConfirmCreation, // We need to check if this is stable. It's defined inside the component so it's NOT stable unless wrapped.
-      // cancelCreation, // from hook, hopefully stable
       editingId,
       onInlineRename,
       // cancelRenaming, // from hook
@@ -404,7 +395,7 @@ const SnippetSidebar = ({
 
   return (
     <div
-      className="h-full flex flex-col w-full"
+      className="h-full flex flex-col w-full overflow-hidden"
       style={{ backgroundColor: 'var(--sidebar-bg)', color: 'var(--sidebar-text)' }}
     >
       <SidebarHeader className="z-10 relative pr-1 border-b border-[var(--color-border)] pb-3 pt-1 px-1">
@@ -495,7 +486,7 @@ const SnippetSidebar = ({
       </SidebarHeader>
 
       <div
-        className={`flex-1 overflow-hidden relative outline-none`}
+        className={`flex-1 min-h-0 overflow-hidden relative outline-none`}
         style={{
           backgroundColor: isDragOver
             ? 'rgba(var(--color-accent-primary-rgb), 0.05)'
@@ -619,8 +610,8 @@ const SnippetSidebar = ({
         ) : (
           <VirtualList
             ref={listRef}
-            height={size.height}
-            width={size.width}
+            height={containerHeight}
+            width="100%"
             itemCount={treeItems.length}
             itemSize={isCompact ? 24 : 30}
             overscan={15} // Explicitly set overscan to 15

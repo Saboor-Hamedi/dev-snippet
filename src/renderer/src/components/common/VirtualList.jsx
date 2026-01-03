@@ -113,7 +113,7 @@ VirtualList.displayName = 'VirtualList'
 
 VirtualList.propTypes = {
   height: PropTypes.number.isRequired,
-  width: PropTypes.number.isRequired,
+  width: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
   itemCount: PropTypes.number.isRequired,
   itemSize: PropTypes.number.isRequired,
   itemData: PropTypes.object.isRequired,

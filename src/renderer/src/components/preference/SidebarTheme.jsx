@@ -1,19 +1,12 @@
-import React, { useState, memo } from 'react'
-import { Search, X, Plus } from 'lucide-react'
-import {
-  Home,
-  Layers,
-  Command,
-  Settings,
-  ChevronRight,
-  SearchCheck,
-  PlusCircle
-} from 'lucide-react' // Assuming you use lucide-react or similar icons
+import React, { memo } from 'react'
 import ThemeSelector from './ThemeSelector'
 
-// Renders the ThemeSelector to manage application styling
-const Sidebar = ({ onToggle }) => {
+/**
+ * SidebarTheme - Wrapper for ThemeSelector to match the Explorer structure (SnippetSidebar).
+ * This ensures that switching tabs maintains an identical workbench layout.
+ */
+const SidebarTheme = ({ isOpen, onToggle }) => {
   return <ThemeSelector onClose={onToggle} />
 }
 
-export default Sidebar
+export default memo(SidebarTheme)

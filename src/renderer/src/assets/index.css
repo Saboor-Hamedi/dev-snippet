@@ -22,6 +22,16 @@
   --gutter-border-color: transparent !important;
   --activity-bar-active-border: transparent !important;
 
+  /* Universal UI Tokens - The "Source of Truth" to stop the border war */
+  --u-border-width: 0px;
+  --u-border-color: transparent;
+  --u-border: var(--u-border-width) solid var(--u-border-color);
+  --u-shadow: none;
+  --u-radius: 0px;
+  --u-backdrop: none;
+  --u-font-sans: 'Inter', 'Outfit', 'Segoe UI', system-ui, sans-serif;
+  --u-font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+
   --hover-settings-panel: #21262d;
   --hover-text: #ffffff;
   --selected-bg: #30363d;
@@ -93,6 +103,18 @@
   --line-height-9xl: 1;
   --line-height-2xs: 1rem;
   --line-height-3xs: 1rem;
+
+  /* Syntax Highlighting Base (VS Code Inspired) */
+  --color-syntax-keyword: #569cd6;
+  --color-syntax-string: #ce9178;
+  --color-syntax-variable: #9cdcfe;
+  --color-syntax-number: #b5cea8;
+  --color-syntax-comment: #6a9955;
+  --color-syntax-function: #dcdcaa;
+  --color-syntax-punctuation: #d4d4d4;
+  --color-syntax-boolean: #569cd6;
+  --color-syntax-operator: #d4d4d4;
+  --color-syntax-null: #569cd6;
 }
 
 /* Comprehensive Theme System - All components use these variables */
@@ -154,9 +176,7 @@ html,
 #root {
   background-color: var(--color-bg-primary) !important;
   color: var(--color-text-primary) !important;
-  transition:
-    background-color 0.3s ease,
-    color 0.3s ease;
+  /* transition: background-color 0.3s ease, color 0.3s ease; -- REMOVED: Causes resizing lag */
 }
 
 /*
@@ -217,34 +237,26 @@ select:not(.theme-exempt):focus {
   scrollbar-color: var(--color-border) var(--color-bg-secondary);
 }
 
-/* Refined Scrollbar Styles */
-/* Refined Scrollbar Styles */
-::-webkit-scrollbar {
+/* Scrollbars handled in base.css or refined here with high priority */
+[data-theme] ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 
-::-webkit-scrollbar-track {
+[data-theme] ::-webkit-scrollbar-track {
   background: transparent;
 }
 
-::-webkit-scrollbar-thumb {
-  background: var(--color-border);
+[data-theme] ::-webkit-scrollbar-thumb {
+  background: rgba(121, 121, 121, 0);
   border: 3px solid transparent;
   background-clip: content-box;
-  border-radius: 99px;
-  background-clip: content-box;
-  opacity: 0.8;
-  transition: background-color 0.2s;
+  border-radius: 10px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background-color: var(--color-text-secondary);
-  border: 2px solid transparent; /* Slightly larger on hover */
-}
-
-::-webkit-scrollbar-corner {
-  background: transparent;
+[data-theme] *:hover > ::-webkit-scrollbar-thumb,
+[data-theme] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(121, 121, 121, 0.4);
 }
 
 /* Sidebar and navigation elements */
@@ -623,6 +635,30 @@ body {
   flex-direction: column;
 }
 
+/* ===== UNIVERSAL UTILITIES (The Border Killer) ===== */
+.u-borderless {
+  border: var(--u-border) !important;
+  border-width: var(--u-border-width) !important;
+  border-color: var(--u-border-color) !important;
+  border-top: none !important;
+  border-bottom: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  box-shadow: var(--u-shadow) !important;
+  outline: none !important;
+}
+
+.u-solid {
+  background: rgb(var(--color-bg-primary-rgb)) !important;
+  background-color: rgb(var(--color-bg-primary-rgb)) !important;
+  backdrop-filter: var(--u-backdrop) !important;
+  opacity: 1 !important;
+}
+
+.u-rounded {
+  border-radius: var(--u-radius) !important;
+}
+
 /* Refined Scrollbar Styles */
 ::-webkit-scrollbar {
   width: 10px;
@@ -643,40 +679,43 @@ body {
   background: var(--ev-c-gray-3);
 }
 
-/* Sidebar */
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: var(--activity-bar-width);
-  height: 100%;
-  width: var(--sidebar-width);
-  background-color: var(--ev-c-black-soft);
-  backdrop-filter: blur(12px);
-  border: none !important;
-  display: flex;
-  flex-direction: column;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 40;
-  color: #ffffff;
-}
-
-.sidebar.collapsed {
-  transform: translateX(-100%);
-}
-
-/* Main Content */
+/* Removed legacy sidebar/main-content styles that used fixed positioning and transitions */
+.sidebar,
 .main-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  margin-left: calc(var(--activity-bar-width) + var(--sidebar-width));
-  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background-color: var(--ev-c-black);
+  transition: none !important;
 }
 
-.main-content.sidebar-collapsed {
-  margin-left: var(--activity-bar-width);
+/* ======================================================================== */
+/* MERMAID STABILITY SYSTEM */
+/* ======================================================================== */
+.cm-mermaid-widget {
+  transition: min-height 0.1s ease-out;
+  contain: layout; /* Isolate rendering to prevent full-page layout jumps */
+}
+
+/* While switching theme, dim the old SVG to signal it's "outdated" but keep it as a spacer */
+.cm-mermaid-switching-theme {
+  opacity: 0.3 !important;
+  filter: blur(1px);
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.cm-mermaid-svg-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 20px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.cm-mermaid-loading {
+  padding: 20px;
+  text-align: center;
+  font-family: var(--u-font-mono, monospace);
+  font-size: 11px;
+  opacity: 0.5;
 }
 
 /* Form Controls */

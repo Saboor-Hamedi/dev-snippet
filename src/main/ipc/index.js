@@ -26,7 +26,7 @@ export const registerAllHandlers = (
   // Register all IPC handlers
   registerWindowHandlers(app, mainWindow)
   registerDatabaseHandlers(db, preparedStatements)
-  registerFilesystemHandlers()
+  registerFilesystemHandlers(app) // Passing app instance here
   const settingsHandlers = createSettingsHandlers(app, mainWindow)
   registerBackupHandlers(app, getDB)
   registerDialogHandlers()

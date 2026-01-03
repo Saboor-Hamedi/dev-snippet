@@ -411,29 +411,31 @@ Pasting very large snippets (50,000+ lines or characters) caused three issues:
 
 ---
 
-## ✅ SOLVED: WikiLink Navigation
+## ✅ SOLVED: WikiLink Navigation & Robustness
 
 ### The Challenge
 WikiLinks (`[[Link]]`) were visually parsed but non-functional for navigation. Users expected:
 1. Double-clicking a link to open the corresponding snippet.
-2. A hover preview that didn't interfere with interaction.
-3. The ability to click the title *inside* the preview to navigate.
-4. Robust handling of `.md` extensions in titles.
+2. **Creation Workflow**: Clicking a non-existent link (`[[New Idea]]`) should instantly create and open that snippet.
+3. **Visual Feedback**: Distinguish between "Live" (solid) and "Dead" (dashed) links.
+4. **Stable Selection**: Tooltips must bridge the gap to the cursor without closing prematurely.
 
 ### The Solution
 * **Navigation Engine**: Implemented `wikiLinkWarp` extension to handle double-clicks. It dispatches an `app:open-snippet` event, which the `SnippetLibraryInner` listens for.
-* **Smart Caching (0ms Latency)**: Implemented a client-side `snippetIndex` in `useSidebarStore`. The tooltip now checks this cache synchronously instead of making slow IPC calls, resulting in instant validation and UI response.
-* **Robust Cursor (Decoration Plugin)**: Replaced flaky `mouseover` events with a native CodeMirror `ViewPlugin` (`wikiLinkPlugin`). This robustly renders `cursor: pointer` via CSS class `.cm-wiki-link` directly on the text parser stream, ensuring the cursor never reverts to "text" even when tooltips are active.
-* **Non-Blocking Preview (Layout Hardening)**: 
-    * **Pass-Through Clicks**: Added `pointer-events: none` to the tooltip container to allow clicks to pass through to the underlying editor, fixing the "dead zone" issue.
-    * **Visual Offset**: Increased tooltip offset to `10px` to prevent physical overlap.
-    * **Delay**: Optimized to `300ms` for a snappy yet non-intrusive experience.
-* **Interactive Tooltip**: The title header within the preview tooltip is now clickable (using robust `onclick`/`mousedown` separation), offering a secondary navigation method.
+* **Instant "Create on Click"**:
+    * **Dead Link Detection**: Links pointing to missing snippets are styled with `.cm-wiki-link-dead` (dashed, muted).
+    * **Actionable Tooltip**: Hovering a dead link shows a "✨ Click to create" tooltip. Clicking it (or the link itself) creates the snippet immediately.
+    * **Auto-Save & Open**: The new snippet is persisted to DB instantly, and the view is forced to switch to it (via robust timeout-based navigation), ensuring a seamless flow.
+* **Smart Sanitization**: Implemented logic to strip punctuation (`?`, `*`) and replace separators (`/`, `:`) with hyphens. Example: `[[???]]` becomes "Untitled Wiki Note", avoiding ugly `---` filenames. This logic is applied to both WikiLinks and the Sidebar's "New Snippet" input.
+* **Smart Caching (0ms Latency)**: Implemented a client-side `snippetIndex` in `useSidebarStore`. The tooltip now checks this cache synchronously instead of making slow IPC calls, resulting in instant validation.
+* **Stable Tooltips (The "Bridge")**:
+    * **Transparent Bridge**: Added a `15px` invisible top padding to the tooltip container. This bridges the physical gap between the text link and the tooltip, preventing the "hover lost" issue where tooltips would close immediately upon cursor movement.
+    * **Refactored DOM**: Wrapped tooltip content in `.preview-container-inner` to support this structural padding without breaking visual layout.
 
 ### Result
-* ✅ **Seamless Navigation**: Double-click works reliably.
-* ✅ **Corruption Fixed**: Fixed syntax errors and redeclarations in `linkPreview.js`.
-* ✅ **UX Polish**: Preview is helpful but unobtrusive; Title is actionable.
+* ✅ **Seamless Creation**: "Create on Click" works instantly and robustly.
+* ✅ **UX Polish**: Tooltips are stable, informative, and interactive.
+* ✅ **Hygiene**: Regex sanitization prevents invalid filenames while preserving meaningful titles.
 
 ---
 
@@ -472,3 +474,31 @@ graph TD
 *   ✅ **Cleaner Code**: Removed extensive prop-drilling chains through the Virtual List.
 *   ✅ **Performance**: Components only re-render when their specific slice of the store changes.
 *   ✅ **Maintainability**: Selection logic is centralized, making it easier to debug selection bugs.
+
+---
+
+## Planned: WikiLink Robustness Phase 2
+
+To further solidify the Knowledge Graph capabilities, the following features are prioritized for the next cycle:
+
+### 1. Context-Aware Parsing (Code Block Safety)
+**Problem**: Currently, strict regex matching causes false positives inside code blocks (e.g. `[[1, 2]]` in Python arrays).
+**Solution**: Migrate from regex to a CodeMirror `ViewPlugin` that inspects the syntax tree (Lezer).
+**Goal**: Only render WikiLinks in "prose" scope, ignoring code blocks, inline code, and math boundaries.
+
+### 2. Auto-Refactoring (Rename Propagation)
+**Problem**: Renaming a snippet breaks all `[[Links]]` pointing to it.
+**Solution**: Implement a "Rename Handler" that scans the database for inbound links and updates them transactionally.
+**Goal**: Zero broken links when reorganizing content.
+
+### 3. Backlinks & Linked Mentions
+**Problem**: Navigation is currently one-way (Forward). Users cannot easily see what links *to* the current note.
+**Solution**: Add a "Backlinks" panel (Sidebar or Bottom) listing all inbound references.
+**Goal**: Enhanced discoverability and graph traversal.
+
+### 4. Workspace Health Check
+**Problem**: As the library grows, dead links and orphaned notes accumulate.
+**Solution**: Create a utility to scan and report:
+*   Dead Links (Link -> Missing Target)
+*   Orphans (Notes with 0 inbound links)
+*   Collisions (Duplicate Titles)

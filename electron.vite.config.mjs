@@ -8,7 +8,7 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()],
     build: {
       rollupOptions: {
-        external: ['electron', 'better-sqlite3']
+        // Letting externalizeDepsPlugin handle it exclusively to avoid property-access crashes
       }
     }
   },
@@ -34,21 +34,17 @@ export default defineConfig({
       postcss: './postcss.config.js'
     },
     build: {
-      // Optimize bundle size with esbuild (faster than terser)
       minify: 'esbuild',
-      // Code splitting configuration
       rollupOptions: {
         output: {
           manualChunks: {
-            // Split vendor libraries into separate chunks
             'react-vendor': ['react', 'react-dom'],
             'codemirror-vendor': ['@uiw/react-codemirror', '@codemirror/state', '@codemirror/view'],
             'ui-vendor': ['lucide-react']
           }
         }
       },
-      // Chunk size warnings
-      chunkSizeWarningLimit: 1000 // 1MB
+      chunkSizeWarningLimit: 1000
     }
   },
   test: {

@@ -198,10 +198,9 @@ class SyncManager {
       this.db.prepare('DELETE FROM settings WHERE key = ?').run(key)
       return
     }
-    this.db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(
-      key,
-      typeof value === 'string' ? value : String(value)
-    )
+    this.db
+      .prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)')
+      .run(key, typeof value === 'string' ? value : String(value))
   }
 
   getStatusValue(key) {

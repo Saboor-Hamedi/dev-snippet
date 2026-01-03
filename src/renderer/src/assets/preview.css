@@ -22,10 +22,10 @@ body {
   --transition-speed: calc((1 - var(--is-dragging-global, 0)) * 0.2s);
 }
 
-/* Force-kill all transitions and animations during drag across the shadow DOM */
+/* Global transitions are disabled during theme switching to prevent "layered" jumping/fading */
 body * {
-  animation: calc(var(--is-dragging-global, 0) * 0s) !important;
-  transition: var(--transition-speed, 0.2s) !important;
+  animation: none !important;
+  transition: none !important;
 }
 
 .preview-container {
@@ -130,24 +130,28 @@ h6::before {
 }
 
 h1 {
-  font-size: 1.8em;
-  padding: 0.8em 0 0.15em 0 !important;
+  font-size: 1.8rem !important;
+  padding-top: 28px !important;
+  padding-bottom: 12px !important;
   border-bottom: 1px solid var(--color-border);
 }
 h2 {
-  font-size: 1.5em;
-  padding: 0.7em 0 0.12em 0 !important;
+  font-size: 1.5rem !important;
+  padding-top: 20px !important;
+  padding-bottom: 8px !important;
   border-bottom: 1px solid var(--color-border);
 }
 h3 {
-  font-size: 1.25em;
-  padding: 0.6em 0 0.1em 0 !important;
+  font-size: 1.25rem !important;
+  padding-top: 16px !important;
+  padding-bottom: 6px !important;
 }
 h4,
 h5,
 h6 {
-  font-size: 1.1em;
-  padding: 0.4em 0 0.1em 0 !important;
+  font-size: 1.1rem !important;
+  padding-top: 12px !important;
+  padding-bottom: 4px !important;
 }
 
 p,
@@ -175,13 +179,15 @@ a:hover {
 }
 
 /* INLINE ELEMENTS */
-.inline-code {
-  background-color: rgba(139, 148, 158, 0.15);
-  color: var(--color-accent-primary);
-  padding: 0.2em 0.4em;
-  border-radius: 6px;
-  font-family: var(--font-mono);
-  font-size: 0.85em;
+/* INLINE ELEMENTS SYNC (Matches Editor Monospace) */
+.inline-code,
+.markdown-body code:not(pre code) {
+  background-color: rgba(139, 148, 158, 0.15) !important;
+  color: var(--color-accent-primary) !important;
+  padding: 2px 4px !important;
+  border-radius: 6px !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.9em !important;
 }
 
 .preview-quicklink {
@@ -239,51 +245,7 @@ code {
   color: var(--color-text-primary);
 }
 
-/* Syntax Tokens (Minimalist - font colors only) */
-.hljs-comment,
-.hljs-quote {
-  color: #8b949e;
-  font-style: italic;
-}
-.hljs-keyword,
-.hljs-selector-tag,
-.hljs-addition {
-  color: #ff7b72;
-}
-.hljs-number,
-.hljs-string,
-.hljs-meta .hljs-meta-string,
-.hljs-literal,
-.hljs-doctag,
-.hljs-regexp {
-  color: #a5d6ff;
-}
-.hljs-title,
-.hljs-section,
-.hljs-name,
-.hljs-selector-id,
-.hljs-selector-class {
-  color: #d2a8ff;
-}
-.hljs-variable,
-.hljs-template-variable,
-.hljs-attr,
-.hljs-operator {
-  color: #79c0ff;
-}
-.hljs-type,
-.hljs-built_in,
-.hljs-bullet,
-.hljs-params,
-.hljs-deletion {
-  color: #ffa657;
-}
-.hljs-bold {
-  font-weight: bold;
-}
-.hljs-italic {
-  font-style: italic;
-}
+/* Syntax Highlighting is handled by markdown.css to ensure parity with Editor */
 
 /* TABLES */
 .table-wrapper {

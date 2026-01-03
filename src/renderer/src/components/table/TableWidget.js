@@ -17,6 +17,25 @@ const getCells = (l) => {
 }
 
 /**
+ * Helper: Basic synchronous markdown renderer for cell contents.
+ * Used to ensure bold/italic/code look right inside the widget.
+ */
+const renderCellContent = (text) => {
+  if (!text) return ''
+  return (
+    text
+      // 1. Bold: **text** or __text__
+      .replace(/(\*\*|__)(.*?)\1/g, '<strong>$2</strong>')
+      // 2. Italic: *text* or _text_ (excluding those inside bold)
+      .replace(/(\*|_)(.*?)\1/g, '<em>$2</em>')
+      // 3. Inline code: `text`
+      .replace(/`(.*?)`/g, '<code class="inline-code">$1</code>')
+      // 4. Strikethrough: ~~text~~
+      .replace(/~~(.*?)~~/g, '<del>$1</del>')
+  )
+}
+
+/**
  * TableCreateWidget - A simple button widget that appears when the user
  * wants to insert a new table from scratch.
  */
@@ -123,7 +142,7 @@ export class TableWidget extends WidgetType {
         // Inline editing is disabled to encourage the use of the visual table modal.
         td.contentEditable = 'false'
         td.className = 'cm-md-table-cell'
-        td.textContent = text
+        td.innerHTML = renderCellContent(text)
 
         if (alignments[cIdx]) td.style.textAlign = alignments[cIdx]
         tr.appendChild(td)

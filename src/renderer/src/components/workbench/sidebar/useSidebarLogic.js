@@ -64,13 +64,46 @@ export const useSidebarLogic = ({
     }
 
     // 2. MAIN FOLDER TREE
-    const getRecursiveSnippetCount = (fid) => {
-      let count = snippets.filter((s) => (s.folder_id || null) === (fid || null)).length
-      const children = folders.filter((f) => (f.parent_id || null) === (fid || null))
+    // PRE-CALCULATION: Build a map of snippet counts per folder in O(n)
+    // This avoids recursive lookups inside the O(n) tree traversal.
+    const folderCounts = new Map()
+
+    // First pass: Count snippets directly in each folder
+    snippets.forEach((s) => {
+      const fid = s.folder_id || 'root'
+      folderCounts.set(fid, (folderCounts.get(fid) || 0) + 1)
+    })
+
+    // Second pass: Propagate counts up the folder hierarchy (folders are already loaded)
+    const getDeepCount = (fid) => {
+      let total = folderCounts.get(fid) || 0
+      const children = folders.filter(
+        (f) => (f.parent_id || null) === (fid === 'root' ? null : fid)
+      )
       children.forEach((c) => {
-        count += getRecursiveSnippetCount(c.id)
+        total += getDeepCount(c.id)
       })
-      return count
+      return total
+    }
+
+    // MEMOIZED COUNTING:
+    // We compute this once for the metadata, but we'll use a direct lookup for tree render.
+    const memoCounts = new Map()
+    const getRecursiveSnippetCount = (fid) => {
+      if (memoCounts.has(fid)) return memoCounts.get(fid)
+
+      // Count direct snippets
+      let total = snippets.filter((s) => (s.folder_id || null) === (fid || null)).length
+
+      // Traverse direct children
+      folders.forEach((f) => {
+        if ((f.parent_id || null) === (fid || null)) {
+          total += getRecursiveSnippetCount(f.id)
+        }
+      })
+
+      memoCounts.set(fid, total)
+      return total
     }
 
     const flatten = (currentFolders, currentSnippets, depth = 0, parentId = null) => {
@@ -143,6 +176,15 @@ export const useSidebarLogic = ({
     }
 
     result = result.concat(flatten(folders, snippets, 0, null))
+
+    // 3. SIDEBAR FOOTER (Dead Space for Root Interaction)
+    // This allows users to click at the bottom of a long list to deselect/target root.
+    result.push({
+      id: 'SIDEBAR_FOOTER_SPACER',
+      type: 'sidebar_footer',
+      depth: 0,
+      data: {}
+    })
 
     return result
   }, [snippets, folders, createState, selectedFolderId, isPinnedCollapsed, dirtyIds, editingId])
@@ -225,11 +267,11 @@ export const useSidebarLogic = ({
           const snippet = snippets.find((s) => s.id === targetId)
           if (snippet) {
             onSelect(snippet)
-            setSelectedFolderId(null)
+            setSelectedFolderId(null) // Ensure folder is unselected
           }
         } else {
           setSelectedFolderId(targetId)
-          onSelect(null) // Clear snippet selection
+          onSelect(null) // Ensure snippet is unselected
         }
       }
     },

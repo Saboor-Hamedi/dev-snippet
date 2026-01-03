@@ -6,7 +6,7 @@ import PropTypes from 'prop-types'
 const Prompt = lazy(() => import('../../mermaid/modal/Prompt'))
 const CommandPalette = lazy(() => import('../../CommandPalette'))
 const ImageExportModal = lazy(() => import('../../CodeEditor/ImageExport/ImageExportModal'))
-const SettingsModal = lazy(() => import('../../SettingsModal'))
+const SettingsModal = lazy(() => import('../../settings/SettingsModal'))
 const TrashModal = lazy(() => import('../../mermaid/modal/TrashModal'))
 const SyncControlModal = lazy(() => import('../../sync/SyncControlModal'))
 
@@ -19,6 +19,54 @@ const ModalLoader = () => (
   </div>
 )
 
+/**
+ * ╔══════════════════════════════════════════════════════════════════════════╗
+ * ║                          MODAL MANAGER                                    ║
+ * ╚══════════════════════════════════════════════════════════════════════════╝
+ *
+ * FILE LOCATION:
+ *   src/renderer/src/components/workbench/manager/ModalManager.jsx
+ *
+ * PARENT COMPONENTS:
+ *   - SnippetLibrary.jsx (Wraps the entire app tree)
+ *
+ * CORE RESPONSIBILITY:
+ *   Centralized state management for all global modals. It prevents "modal hell"
+ *   by lifting state up and exposing simple open/close functions via Context.
+ *
+ * MANAGED MODALS:
+ *   - SettingsModal (Lazy loaded)
+ *   - CommandPalette (Lazy loaded)
+ *   - TrashModal (Lazy loaded)
+ *   - SyncControlModal (Lazy loaded)
+ *   - ImageExportModal (Lazy loaded)
+ *   - Prompt (Rename/Confirm) (Lazy loaded)
+ *
+ * FEATURES:
+ *   - Code Splitting: All heavy modals are lazy-loaded to speed up initial app load.
+ *   - Context API: Exposes `openXModal()` functions to any child component.
+ *   - Suspense: Shows a lightweight loader while modals fetch.
+ *   - Z-Index Management: Ensures critical prompts (like delete confirmation) appear on top.
+ *
+ * HOW TO USE:
+ *   ```javascript
+ *   import { useModal } from './manager/ModalContext'
+ *
+ *   const MyComponent = () => {
+ *     const { openSettingsModal, openDeleteModal } = useModal()
+ *     // ...
+ *     return <button onClick={openSettingsModal}>Settings</button>
+ *   }
+ *   ```
+ *
+ * ARCHITECTURE NOTES:
+ *   - Modals are rendered at the root level (inside this Provider), ensuring they
+ *     are visually "on top" of the Workbench without complex z-index wars in CSS.
+ *   - State is kept local to this component to avoid re-rendering the whole tree,
+ *     except for the Context consumers.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
 export const ModalProvider = ({
   children,
   snippets,

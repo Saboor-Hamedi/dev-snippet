@@ -14,7 +14,7 @@ import {
   Calendar
 } from 'lucide-react'
 
-import { getFileIcon } from '../../../utils/iconUtils'
+import { getFileIcon, getFolderIcon } from '../../../utils/iconUtils'
 import { getBaseTitle, isDateTitle } from '../../../utils/snippetUtils'
 import { useSidebarStore } from '../../../store/useSidebarStore'
 
@@ -203,7 +203,9 @@ const IndentGuides = ({ depth }) => {
 }
 
 const SnippetSidebarRow = ({ index, style, data }) => {
+  // 1. Hooks (MUST be unconditional and always in the same order)
   const [isDragOver, setIsDragOver] = useState(false)
+  const dragExpandTimerRef = React.useRef(null)
 
   const {
     treeItems,
@@ -225,11 +227,11 @@ const SnippetSidebarRow = ({ index, style, data }) => {
     // searchQuery - from store
     onConfirmCreation,
     onCancelCreation,
-    editingId,
     onInlineRename,
     onCancelRenaming,
-    startCreation
+    startCreation,
     // setSidebarSelected - from store
+    handleSelectionInternal // Fix: Destructure this
   } = data
 
   const {
@@ -241,6 +243,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
     setSelectedFolderId
   } = useSidebarStore()
 
+  // 2. Data Retrieval
   const item = treeItems[index]
   if (!item) return null
 
@@ -264,6 +267,28 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         onCancel={onCancelCreation}
         isCompact={isCompact}
       />
+    )
+  }
+
+  if (type === 'sidebar_footer') {
+    return (
+      <div
+        style={{ ...style, height: isCompact ? '24px' : '30px' }}
+        className="cursor-default group/footer"
+        onClick={(e) => {
+          e.stopPropagation()
+          setSelectedIds([])
+          onSelect(null)
+          setSelectedFolderId(null)
+          setSidebarSelected(true)
+        }}
+        onContextMenu={(e) => {
+          if (onContextMenu) onContextMenu(e, 'background', null)
+        }}
+      >
+        {/* Subtle visual hint that this is a clickable space */}
+        <div className="mx-1 h-full rounded-[6px] transition-colors group-hover/footer:bg-[var(--color-bg-tertiary)] opacity-30" />
+      </div>
     )
   }
 
@@ -318,7 +343,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
     setTimeout(() => document.body.removeChild(ghost), 0)
   }
 
-  const dragExpandTimerRef = React.useRef(null)
+  // dragExpandTimerRef moved to top to fix hook order error
 
   const handleDragOver = (e) => {
     if (type === 'folder') {
@@ -328,7 +353,8 @@ const SnippetSidebarRow = ({ index, style, data }) => {
       e.dataTransfer.dropEffect = 'move'
 
       // Auto-expand folder on drag-over after delay
-      if (!isOpen && !dragExpandTimerRef.current) {
+      const isCurrentlyOpen = !itemData.collapsed
+      if (!isCurrentlyOpen && !dragExpandTimerRef.current) {
         dragExpandTimerRef.current = setTimeout(() => {
           onToggleFolder(itemData.id, true)
         }, 400)
@@ -378,37 +404,11 @@ const SnippetSidebarRow = ({ index, style, data }) => {
   }
 
   const handleItemClick = (e) => {
-    let newSelection = []
-    const itemId = type === 'pinned_snippet' ? item.realId : itemData.id
-
-    if (e.shiftKey && lastSelectedIdRef.current) {
-      const lastIndex = treeItems.findIndex((i) => i.id === lastSelectedIdRef.current)
-      if (lastIndex !== -1) {
-        const start = Math.min(lastIndex, index)
-        const end = Math.max(lastIndex, index)
-        newSelection = [...selectedIds]
-        for (let i = start; i <= end; i++) {
-          const id = treeItems[i].type === 'pinned_snippet' ? treeItems[i].realId : treeItems[i].id
-          if (!newSelection.includes(id)) newSelection.push(id)
-        }
-      }
-    } else if (e.ctrlKey || e.metaKey) {
-      newSelection = selectedIds.includes(itemId)
-        ? selectedIds.filter((id) => id !== itemId)
-        : [...selectedIds, itemId]
-    } else {
-      newSelection = [itemId]
-      if (type === 'snippet' || type === 'pinned_snippet') {
-        onSelect(itemData)
-      } else {
-        setSelectedFolderId(itemId)
-        onToggleFolder(itemId, !itemData.collapsed)
-      }
-    }
-
-    lastSelectedIdRef.current = treeItems[index].id
-    setSelectedIds(newSelection)
-    if (setSidebarSelected) setSidebarSelected(false)
+    // Delegate to the robust logic hook which handles:
+    // 1. Shift/Ctrl modifiers
+    // 2. Unselecting conflicting types (snippet vs folder)
+    // 3. Unselecting background (setSidebarSelected(false))
+    handleSelectionInternal(e, item.id, type)
   }
 
   if (type === 'folder') {
@@ -418,7 +418,10 @@ const SnippetSidebarRow = ({ index, style, data }) => {
           style={style}
           depth={depth}
           itemData={{ ...itemData, type: 'folder' }}
-          onConfirm={(val) => onInlineRename(itemData.id, val, 'folder')}
+          onConfirm={(val) => {
+            onInlineRename(itemData.id, val, 'folder')
+            onCancelRenaming() // Close input immediately
+          }}
           onCancel={onCancelRenaming}
           isCompact={isCompact}
           initialValue={itemData.name}
@@ -427,6 +430,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
     }
     const isSelected = selectedIds.includes(itemData.id) || selectedFolderId === itemData.id
     const isOpen = !itemData.collapsed
+    const { icon: FolderIcon, color: folderColor } = getFolderIcon(itemData.name, isOpen)
 
     return (
       <div
@@ -448,15 +452,18 @@ const SnippetSidebarRow = ({ index, style, data }) => {
           <div className="absolute left-1 top-1 bottom-1 w-[2px] bg-[var(--color-accent-primary)] rounded-full z-10" />
         )}
         <div
-          className={`group flex items-center gap-[6px] w-full h-full select-none pr-2 relative rounded-[6px] ${
+          className={`group flex items-center gap-[6px] w-full h-full select-none pr-2 relative rounded-[6px] transition-colors duration-150 ${
             isDragOver
               ? 'bg-[var(--color-accent-primary)] bg-opacity-20'
               : isSelected
-                ? 'bg-[var(--color-bg-tertiary)]'
-                : 'opacity-80 hover:opacity-100'
+                ? '' // Handled by style
+                : 'hover:bg-[var(--sidebar-item-hover-bg)]'
           }`}
           style={{
-            color: isSelected ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+            backgroundColor: isSelected ? 'var(--sidebar-item-active-bg)' : undefined,
+            color: isSelected
+              ? 'var(--sidebar-item-active-fg, var(--color-text-primary))'
+              : 'var(--sidebar-text, var(--color-text-secondary))',
             paddingLeft: `${depth * 16 + 8}px`,
             width: 'calc(100% - 8px)',
             margin: '0 4px'
@@ -465,6 +472,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
           <button
             onClick={(e) => {
               e.stopPropagation()
+              // Explicitly toggle folder only (selection is separate)
               onToggleFolder(itemData.id, !itemData.collapsed)
             }}
             className={`flex-shrink-0 flex items-center justify-center rounded ${
@@ -481,10 +489,13 @@ const SnippetSidebarRow = ({ index, style, data }) => {
           >
             {itemData.name === '📥 Inbox' ? (
               <Inbox size={14} className="text-[var(--color-accent-primary)]" />
-            ) : isOpen ? (
-              <FolderOpen size={14} />
             ) : (
-              <Folder size={14} />
+              <FolderIcon
+                size={14}
+                style={{
+                  color: isSelected ? 'var(--color-accent-primary)' : folderColor
+                }}
+              />
             )}
           </div>
           <span
@@ -520,9 +531,10 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         style={style}
         depth={depth}
         itemData={{ ...itemData, type: 'snippet' }}
-        onConfirm={(val) =>
+        onConfirm={(val) => {
           onInlineRename(type === 'pinned_snippet' ? item.realId : itemData.id, val, 'snippet')
-        }
+          onCancelRenaming() // Close input immediately
+        }}
         onCancel={onCancelRenaming}
         isCompact={isCompact}
         initialValue={itemData.title}
@@ -560,13 +572,16 @@ const SnippetSidebarRow = ({ index, style, data }) => {
           isCompact ? 'text-[11px]' : 'text-[12px]'
         } ${
           isSelected
-            ? 'bg-[var(--color-bg-tertiary)]'
+            ? '' // Handled by style
             : isSearchMatch
-              ? 'bg-[var(--color-accent-primary)]/5'
-              : 'opacity-80 hover:opacity-100'
+              ? 'bg-[var(--color-accent-primary)]/10'
+              : 'hover:bg-[var(--sidebar-item-hover-bg)]'
         } rounded-[6px]`}
         style={{
-          color: isSelected ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+          backgroundColor: isSelected ? 'var(--sidebar-item-active-bg)' : undefined,
+          color: isSelected
+            ? 'var(--sidebar-item-active-fg, var(--color-text-primary))'
+            : 'var(--sidebar-text, var(--color-text-secondary))',
           paddingLeft: `${depth * 16 + 24}px`,
           width: 'calc(100% - 8px)',
           margin: '0 4px',

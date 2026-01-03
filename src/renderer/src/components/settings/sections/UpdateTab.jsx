@@ -6,7 +6,7 @@ import UpdateManager from '../components/UpdateManager'
  * Update Settings Section
  * Dedicated tab for application updates and version information
  */
-const UpdateSettings = () => {
+const UpdateTab = () => {
   return (
     <SettingSection>
       <UpdateManager />
@@ -21,4 +21,4 @@ const UpdateSettings = () => {
   )
 }
 
-export default UpdateSettings
+export default UpdateTab

@@ -24,3 +24,63 @@ body {
   padding: 0 !important;
   margin: 0 !important;
 }
+
+/* VS Code Like Scrollbars - Zero Width unless hovered */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(121, 121, 121, 0);
+  border: 4px solid transparent;
+  background-clip: content-box;
+  border-radius: 10px;
+}
+
+/* Show scrollbars as a thin overlay only on hover */
+*:hover > ::-webkit-scrollbar-thumb,
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(121, 121, 121, 0.4);
+}
+
+/* Avoid content shifting when scrollbar appears */
+.custom-scroll {
+  overflow-y: auto !important;
+  scrollbar-gutter: stable both-edges; /* Prevents layout jump */
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: none;
+}
+
+*:hover {
+  scrollbar-width: thin;
+}
+
+.overflow-hidden {
+  overflow: hidden !important;
+}
+
+.overflow-y-auto {
+  overflow-y: auto !important;
+}
+
+/* 
+  GLOBAL RESIZE SYNC: 
+  When resizing is active, we MUST kill all transitions on relevant elements 
+  to prevent the "detach" effect where workbench moves faster than sidebar.
+*/
+.resizing * {
+  transition: none !important;
+  user-select: none !important;
+}
+
+.sidebar-container {
+  z-index: 10;
+}

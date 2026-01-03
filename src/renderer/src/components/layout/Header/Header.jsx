@@ -18,6 +18,7 @@ import {
 import iconUrl from '../../../assets/icon.png'
 import AutosaveIndicator from './AutosaveIndicator'
 import '../../../assets/css/header.css'
+import { getFileIcon } from '../../../utils/iconUtils'
 
 const Header = ({
   isCompact,
@@ -36,13 +37,18 @@ const Header = ({
   isTab,
   sidebarWidth = 250,
   onClose,
-  showPreview, // New prop
-  onTogglePreview // New prop
+  showPreview,
+  onTogglePreview,
+  isResizing // New prop
 }) => {
   const isMobile = window.innerWidth <= 768
-  const activityBarWidth = 40
-  const sidebarAreaWidth =
-    isSidebarOpen && !isMobile ? activityBarWidth + sidebarWidth : activityBarWidth
+  const activityBarWidth = 48 // Match Workbench
+
+  // Use CSS variable for ultra-smooth syncing if available
+  const sidebarSectionWidth =
+    isSidebarOpen && !isMobile
+      ? `calc(var(--sidebar-width, ${sidebarWidth}px) + ${activityBarWidth}px)`
+      : `${activityBarWidth}px`
 
   const displayTitle = (() => {
     if (snippetTitle && title) {
@@ -54,7 +60,7 @@ const Header = ({
 
   return (
     <header
-      className="relative flex items-end h-[38px] select-none transition-colors duration-200"
+      className="relative flex items-end h-[38px] select-none"
       style={{
         backgroundColor: 'var(--header-bg)', // Use themeable header-bg
         borderBottom: 'none',
@@ -65,9 +71,10 @@ const Header = ({
     >
       {/* Sidebar Header Part - Aligned with Sidebar/ActivityBar */}
       <div
-        className="h-full flex items-center px-1 transition-all duration-300 ease-in-out pb-1"
+        id="header-sidebar-section"
+        className={`h-full flex items-center px-1 pb-1 ${isResizing ? '' : 'transition-all duration-300 ease-in-out'}`}
         style={{
-          width: sidebarAreaWidth,
+          width: sidebarSectionWidth,
           backgroundColor: 'transparent',
           borderRight: 'none',
           WebkitAppRegion: 'drag'
@@ -111,11 +118,16 @@ const Header = ({
                 onDoubleClick={() => onRename && onRename()}
               >
                 <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <File
-                    size={14}
-                    className="flex-none opacity-60 group-hover:opacity-100 transition-opacity"
-                    style={{ color: 'var(--color-accent-primary)' }}
-                  />
+                  {(() => {
+                    const { icon: FileIcon, color: iconColor } = getFileIcon(null, displayTitle)
+                    return (
+                      <FileIcon
+                        size={14}
+                        className="flex-none transition-opacity"
+                        style={{ color: iconColor }}
+                      />
+                    )
+                  })()}
                   <span
                     className="text-[13px] truncate font-medium opacity-90 block normal-case"
                     style={{ color: 'var(--header-text, var(--color-text-primary))' }}

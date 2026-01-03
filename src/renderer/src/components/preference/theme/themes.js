@@ -23,14 +23,15 @@ export const themes = [
       '--sidebar-text': '#24292f',
       '--sidebar-header-text': '#586069',
       // Syntax Highlighting (Light Mode)
-      '--color-syntax-string': '#404040',
-      '--color-syntax-variable': '#171717',
-      '--color-syntax-number': '#262626',
-      '--color-syntax-boolean': '#000000',
-      '--color-syntax-null': '#525252',
-      '--color-syntax-keyword': '#000000',
-      '--color-syntax-comment': '#737373',
-      '--color-syntax-punctuation': '#404040',
+      '--color-syntax-string': '#032f62',
+      '--color-syntax-variable': '#e36209',
+      '--color-syntax-number': '#005cc5',
+      '--color-syntax-boolean': '#005cc5',
+      '--color-syntax-null': '#005cc5',
+      '--color-syntax-keyword': '#d73a49',
+      '--color-syntax-function': '#6f42c1',
+      '--color-syntax-comment': '#6a737d',
+      '--color-syntax-punctuation': '#24292f',
       // Component-specific variables
       '--editor-bg': 'rgb(255, 255, 255)',
       '--editor-text': '#000000',
@@ -97,9 +98,15 @@ export const themes = [
         iconColor: '#24292f',
         borderColor: '#d1d9e0'
       },
+      sidebar: {
+        bgColor: '#f6f8fa',
+        iconColor: '#24292f',
+        textColor: '#24292f',
+        borderColor: 'transparent',
+        width: 260,
+        visible: true
+      },
       ui: {
-        sidebarBg: '#f6f8fa',
-        sidebarIconColor: '#24292f',
         statusBarBg: '#f6f8fa',
         footerBg: '#f6f8fa',
         headerBg: '#ffffff'
@@ -128,15 +135,16 @@ export const themes = [
       '--selected-text': '#a5d6ff',
       '--sidebar-text': '#c9d1d9',
       '--sidebar-header-text': '#8b949e',
-      // Syntax Highlighting (Dark Mode)
-      '--color-syntax-string': '#f1be36',
-      '--color-syntax-variable': '#d946ef',
-      '--color-syntax-number': '#fcd34d',
-      '--color-syntax-boolean': '#d946ef',
-      '--color-syntax-null': '#fef3c7',
-      '--color-syntax-keyword': '#d946ef',
-      '--color-syntax-comment': '#71717a',
-      '--color-syntax-punctuation': '#a1a1aa',
+      // Syntax Highlighting (Midnight Pro - Vibrant & Distinct)
+      '--color-syntax-string': '#fbbf24', // Amber
+      '--color-syntax-variable': '#38bdf8', // Sky Blue
+      '--color-syntax-number': '#34d399', // Emerald
+      '--color-syntax-boolean': '#fb7185', // Rose
+      '--color-syntax-null': '#94a3b8',
+      '--color-syntax-keyword': '#d946ef', // Fuchsia
+      '--color-syntax-function': '#c084fc', // Purple
+      '--color-syntax-comment': '#64748b',
+      '--color-syntax-punctuation': '#94a3b8',
       // Component-specific variables
       '--editor-bg': 'rgb(13, 17, 23)',
       '--editor-text': '#c9d1d9',
@@ -187,9 +195,15 @@ export const themes = [
         iconColor: '#c9d1d9',
         borderColor: '#30363d'
       },
+      sidebar: {
+        bgColor: '#161b22',
+        iconColor: '#c9d1d9',
+        textColor: '#c9d1d9',
+        borderColor: 'transparent',
+        width: 260,
+        visible: true
+      },
       ui: {
-        sidebarBg: '#161b22',
-        sidebarIconColor: '#c9d1d9',
         statusBarBg: '#161b22',
         footerBg: '#161b22',
         headerBg: '#0d1117'
@@ -225,6 +239,7 @@ export const themes = [
       '--color-syntax-boolean': '#f472b6',
       '--color-syntax-null': '#94a3b8',
       '--color-syntax-keyword': '#818cf8',
+      '--color-syntax-function': '#c084fc',
       '--color-syntax-comment': '#64748b',
       '--color-syntax-punctuation': '#94a3b8',
       // Component-specific variables
@@ -293,9 +308,15 @@ export const themes = [
         iconColor: '#ffffff',
         borderColor: '#27272a'
       },
+      sidebar: {
+        bgColor: '#18181b',
+        iconColor: '#d946ef',
+        textColor: '#ffffff',
+        borderColor: 'transparent',
+        width: 260,
+        visible: true
+      },
       ui: {
-        sidebarBg: '#18181b',
-        sidebarIconColor: '#d946ef',
         statusBarBg: '#18181b',
         footerBg: '#18181b',
         headerBg: '#09090b'
@@ -331,6 +352,7 @@ export const themes = [
       '--color-syntax-boolean': '#f87171',
       '--color-syntax-null': '#d4d4d4',
       '--color-syntax-keyword': '#ef4444',
+      '--color-syntax-function': '#fbbf24',
       '--color-syntax-comment': '#737373',
       '--color-syntax-punctuation': '#a3a3a3',
       // Component-specific variables
@@ -399,9 +421,15 @@ export const themes = [
         iconColor: '#ffffff',
         borderColor: '#44403c'
       },
+      sidebar: {
+        bgColor: '#292524',
+        iconColor: '#22c55e',
+        textColor: '#ffffff',
+        borderColor: 'transparent',
+        width: 260,
+        visible: true
+      },
       ui: {
-        sidebarBg: '#292524',
-        sidebarIconColor: '#22c55e',
         statusBarBg: '#292524',
         footerBg: '#292524',
         headerBg: '#1c1917'
@@ -489,9 +517,15 @@ export const themes = [
         iconColor: '#f1be36',
         borderColor: '#3f3f46'
       },
+      sidebar: {
+        bgColor: '#27272a',
+        iconColor: '#f1be36',
+        textColor: '#ffffff',
+        borderColor: 'transparent',
+        width: 260,
+        visible: true
+      },
       ui: {
-        sidebarBg: '#27272a',
-        sidebarIconColor: '#f1be36',
         statusBarBg: '#27272a',
         footerBg: '#27272a',
         headerBg: '#18181b'
@@ -578,9 +612,15 @@ export const themes = [
         iconColor: '#f8fafc',
         borderColor: '#334155'
       },
+      sidebar: {
+        bgColor: '#1e293b',
+        iconColor: '#38bdf8',
+        textColor: '#f8fafc',
+        borderColor: 'transparent',
+        width: 260,
+        visible: true
+      },
       ui: {
-        sidebarBg: '#1e293b',
-        sidebarIconColor: '#38bdf8',
         statusBarBg: '#1e293b',
         footerBg: '#1e293b',
         headerBg: '#0f172a'
@@ -668,9 +708,15 @@ export const themes = [
         iconColor: '#fafafa',
         borderColor: '#404040'
       },
+      sidebar: {
+        bgColor: '#262626',
+        iconColor: '#f97316',
+        textColor: '#fafafa',
+        borderColor: 'transparent',
+        width: 260,
+        visible: true
+      },
       ui: {
-        sidebarBg: '#262626',
-        sidebarIconColor: '#f97316',
         statusBarBg: '#262626',
         footerBg: '#262626',
         headerBg: '#171717'
@@ -773,9 +819,15 @@ export const themes = [
         iconColor: '#000000',
         borderColor: '#e5e5e5'
       },
+      sidebar: {
+        bgColor: '#f6f6f6',
+        iconColor: '#000000',
+        textColor: '#000000',
+        borderColor: 'transparent',
+        width: 260,
+        visible: true
+      },
       ui: {
-        sidebarBg: '#f6f6f6',
-        sidebarIconColor: '#000000',
         statusBarBg: '#f6f6f6',
         footerBg: '#f6f6f6',
         headerBg: '#f6f6f6'
@@ -873,9 +925,15 @@ export const themes = [
         iconColor: '#9f67ff',
         borderColor: 'rgb(124, 58, 237)'
       },
+      sidebar: {
+        bgColor: 'rgb(32, 32, 32)',
+        iconColor: '#7c3aed',
+        textColor: '#dcddde',
+        borderColor: 'transparent',
+        width: 260,
+        visible: true
+      },
       ui: {
-        sidebarBg: 'rgb(32, 32, 32)',
-        sidebarIconColor: '#7c3aed',
         statusBarBg: 'rgb(32, 32, 32)',
         footerBg: 'rgb(32, 32, 32)',
         headerBg: 'rgb(32, 32, 32)',
@@ -980,9 +1038,15 @@ export const themes = [
         iconColor: '#60a5fa',
         borderColor: 'rgb(59, 130, 246)'
       },
+      sidebar: {
+        bgColor: 'rgb(30, 41, 59)',
+        iconColor: '#3b82f6',
+        textColor: '#f1f5f9',
+        borderColor: 'transparent',
+        width: 260,
+        visible: true
+      },
       ui: {
-        sidebarBg: 'rgb(30, 41, 59)',
-        sidebarIconColor: '#3b82f6',
         statusBarBg: 'rgb(30, 41, 59)',
         footerBg: 'rgb(30, 41, 59)',
         headerBg: 'rgb(15, 23, 42)',
@@ -990,6 +1054,50 @@ export const themes = [
       }
     },
     previewColors: ['bg-[rgba(15,23,42,0.85)]', 'bg-[rgba(30,41,59,0.75)]', 'bg-blue-500']
+  },
+  {
+    id: 'custom',
+    name: 'Custom',
+    icon: '⚡',
+    description: 'Uses user-defined settings (No Presets)',
+    colors: {
+      '--color-bg-primary': '#09090b',
+      '--color-bg-secondary': '#18181b',
+      '--color-bg-tertiary': '#27272a',
+      '--color-text-primary': '#ffffff',
+      '--color-text-secondary': '#a1a1aa',
+      '--color-text-tertiary': '#52525b',
+      '--color-accent-primary': '#3b82f6',
+      '--color-border': '#27272a',
+      '--hover-bg': '#27272a',
+      '--hover-text': '#ffffff',
+      '--selected-bg': '#3b82f6',
+      '--selected-text': '#ffffff',
+      '--sidebar-text': '#ffffff',
+      // Start Syntax Fallback
+      '--color-syntax-keyword': '#c678dd',
+      '--color-syntax-string': '#98c379',
+      '--color-syntax-variable': '#d19a66',
+      '--color-syntax-number': '#d19a66',
+      '--color-syntax-boolean': '#d19a66',
+      '--color-syntax-null': '#56b6c2',
+      '--color-syntax-comment': '#5c6370',
+      '--color-syntax-punctuation': '#abb2bf',
+      // End Syntax
+      '--sidebar-bg': '#09090b', // Fallback if not set
+      '--activity-bar-bg': '#09090b',
+
+      background: '#09090b',
+      sidebar: '#09090b',
+      text: '#ffffff',
+      accent: '#3b82f6',
+      border: '#27272a',
+      backdropFilter: 'none',
+      boxShadow: 'none'
+    },
+    // Crucially empty: Does not overwrite user settings!
+    settings: {},
+    previewColors: ['bg-[#09090b]', 'bg-[#18181b]', 'bg-blue-500']
   }
 ]
 
@@ -1062,5 +1170,11 @@ export const themeStyles = {
     selectedText: '#93c5fd',
     sidebarText: '#f1f5f9',
     sidebarHeaderText: '#cbd5e1'
+  },
+  custom: {
+    hoverBg: '#27272a',
+    hoverText: '#ffffff',
+    selectedBg: '#3b82f6',
+    selectedText: '#ffffff'
   }
 }

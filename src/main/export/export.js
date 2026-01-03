@@ -3,17 +3,19 @@
  * Handles PDF export and other file conversions
  */
 
-import { ipcMain, dialog, BrowserWindow, app } from 'electron'
+import { ipcMain, dialog, BrowserWindow } from 'electron'
 import fs from 'fs/promises'
 import path from 'path'
 
 export const registerExportHandlers = () => {
-  console.log('� [Main] Initializing PDF export handler...')
+  const getApp = () => require('electron').app
+  console.log(' [Main] Initializing PDF export handler...')
 
   ipcMain.handle('export:pdf', async (event, htmlContent, defaultName = 'snippet-export') => {
-    console.log('� [Main] Exporting to PDF:', defaultName)
+    console.log(' [Main] Exporting to PDF:', defaultName)
 
     try {
+      const app = getApp()
       // 1. Show save dialog to get destination path
       const { filePath, canceled } = await dialog.showSaveDialog({
         title: 'Export Documentation to PDF',
@@ -39,15 +41,16 @@ export const registerExportHandlers = () => {
 
       // Load content - use file URL for large content to avoid data URL size limits
       let contentUrl
-      if (htmlContent.length > 100000) { // If HTML is very large (>100KB)
+      if (htmlContent.length > 100000) {
+        // If HTML is very large (>100KB)
         const tempPath = path.join(app.getPath('temp'), `dev-snippet-export-${Date.now()}.html`)
         await fs.writeFile(tempPath, htmlContent, 'utf-8')
         contentUrl = `file://${tempPath}`
-        
+
         // Load and wait
         await printWindow.loadURL(contentUrl)
         await new Promise((resolve) => setTimeout(resolve, 3000))
-        
+
         // Clean up temp file after PDF generation
         setTimeout(() => fs.unlink(tempPath).catch(() => {}), 5000)
       } else {
