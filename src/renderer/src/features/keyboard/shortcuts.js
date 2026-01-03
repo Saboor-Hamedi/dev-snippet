@@ -115,7 +115,10 @@ export const SHORTCUT_DEFINITIONS = [
         when: (event) =>
           event.shiftKey &&
           event.altKey &&
-          (event.code === 'Space' || event.code === 'Spacebar' || event.key === ' ' || event.key === 'Spacebar')
+          (event.code === 'Space' ||
+            event.code === 'Spacebar' ||
+            event.key === ' ' ||
+            event.key === 'Spacebar')
       }
     ]
   },
@@ -226,6 +229,19 @@ export const SHORTCUT_DEFINITIONS = [
     ]
   },
   {
+    id: 'zen-focus',
+    scope: 'Workspace',
+    action: 'Zen Focus Mode',
+    description: 'Toggle immersive dim mode for focused writing.',
+    displayCombos: [`${MOD_KEY_PLACEHOLDER} + Shift + \\`],
+    handlerKey: 'onToggleZenFocus',
+    matchers: [
+      {
+        when: (event) => isModKeyPressed(event) && event.shiftKey && matchesBackslash(event)
+      }
+    ]
+  },
+  {
     id: 'zoom-in',
     scope: 'Zoom',
     action: 'Zoom in',
@@ -236,7 +252,11 @@ export const SHORTCUT_DEFINITIONS = [
       {
         when: (event) =>
           isModKeyPressed(event) &&
-          (event.key === '=' || event.key === '+' || event.code === 'Equal' || event.code === 'NumpadAdd' || event.key === 'Add')
+          (event.key === '=' ||
+            event.key === '+' ||
+            event.code === 'Equal' ||
+            event.code === 'NumpadAdd' ||
+            event.key === 'Add')
       }
     ]
   },
@@ -251,7 +271,11 @@ export const SHORTCUT_DEFINITIONS = [
       {
         when: (event) =>
           isModKeyPressed(event) &&
-          (event.key === '-' || event.key === '_' || event.code === 'Minus' || event.code === 'NumpadSubtract' || event.key === 'Subtract')
+          (event.key === '-' ||
+            event.key === '_' ||
+            event.code === 'Minus' ||
+            event.code === 'NumpadSubtract' ||
+            event.key === 'Subtract')
       }
     ]
   },
@@ -264,7 +288,9 @@ export const SHORTCUT_DEFINITIONS = [
     handlerKey: 'onZoomReset',
     matchers: [
       {
-        when: (event) => isModKeyPressed(event) && (event.key === '0' || event.code === 'Digit0' || event.code === 'Numpad0')
+        when: (event) =>
+          isModKeyPressed(event) &&
+          (event.key === '0' || event.code === 'Digit0' || event.code === 'Numpad0')
       }
     ]
   },

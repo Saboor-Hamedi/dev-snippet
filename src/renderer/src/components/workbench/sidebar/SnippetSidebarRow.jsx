@@ -598,12 +598,12 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         </div>
         <span
           className={`flex-1 truncate pl-1 text-left flex items-center gap-2 ${
-            isSelected || itemData.is_modified
+            isSelected || itemData.is_dirty
               ? 'font-bold'
               : 'font-medium opacity-80 group-hover/row:opacity-100'
           }`}
           style={{
-            textShadow: itemData.is_modified ? '0 0 12px rgba(234, 179, 8, 0.3)' : 'none'
+            textShadow: itemData.is_dirty ? '0 0 12px rgba(234, 179, 8, 0.3)' : 'none'
           }}
         >
           <HighlightText text={safeTitle || 'Untitled'} highlight={searchQuery} />
@@ -616,7 +616,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
 
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {/* Status Indicators, the dot */}
-          {(itemData.is_modified || itemData.is_dirty) && <UnsavedDot />}
+          {itemData.is_dirty && <UnsavedDot />}
           {!!itemData.is_draft && (
             <div
               className="w-1 h-1 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)] flex-shrink-0"

@@ -16,8 +16,6 @@ import LivePreview from '../livepreview/LivePreview'
 import { useTheme } from '../../hook/useTheme'
 import { useSettings } from '../../hook/useSettingsContext'
 
-// ... (JSDoc omitted for brevity) ...
-
 const Workbench = ({
   // Data Props
   activeView,
@@ -55,6 +53,7 @@ const Workbench = ({
   onSelectionChange,
   onSearchSnippets,
   onInlineRename,
+  onToggleZenFocus,
 
   // View/UI State
   showPreview,
@@ -97,91 +96,91 @@ const Workbench = ({
   // --- Resizable Sidebar Logic ---
   const workbenchRef = React.useRef(null)
   const sidebarRef = React.useRef(null)
+  const isDraggingInternal = React.useRef(false) // Instant flag for logic
+  const isSettlingRef = React.useRef(false) // Lock flag for jump-prevention
+
   const [sidebarWidth, setSidebarWidth] = React.useState(() => {
     return getSetting('sidebar.width') || 250
   })
-  const [isResizing, setIsResizing] = React.useState(false)
+  const [isResizing, setIsResizing] = React.useState(false) // State for CSS/Transitions
+  const lastValidWidth = React.useRef(sidebarWidth)
 
-  // Sync with settings if they change externally (optional, but good for reset)
+  // Sync with settings if they change externally (e.g. manual file edits)
   React.useEffect(() => {
     const saved = getSetting('sidebar.width')
-    if (saved && !isResizing) {
-      setSidebarWidth(saved)
+    if (typeof saved === 'number' && !isDraggingInternal.current && !isSettlingRef.current) {
+      if (saved !== sidebarWidth) {
+        setSidebarWidth(saved)
+        lastValidWidth.current = saved
+      }
     }
-  }, [getSetting, isResizing])
+  }, [settings, getSetting, sidebarWidth])
 
-  // Handle Dragging
+  // --- The Resizing Engine (Stable Persistent Listeners) ---
   React.useEffect(() => {
-    if (!isResizing) return
-
-    let animationFrameId
-
-    // Cache metrics at start of drag to keep the loop lightweight
     const showActivityBar = getSetting('ui.showActivityBar') !== false
     const activityBarWidth = showActivityBar || showFlowMode ? (showFlowMode ? 0 : 48) : 0
 
     const handleMouseMove = (e) => {
-      // Calculate new width relative to the activity bar
-      const newWidth = e.clientX - activityBarWidth
+      if (!isDraggingInternal.current) return
 
-      // Constraints
-      const SNAP_THRESHOLD = 50
+      const newWidth = e.clientX - activityBarWidth
+      const SNAP_CLOSE_THRESHOLD = 50
+      const MIN_WIDTH = 100
       let finalWidth = newWidth
 
-      if (newWidth < SNAP_THRESHOLD) {
+      if (newWidth < SNAP_CLOSE_THRESHOLD) {
         finalWidth = 0
-      } else if (newWidth > 600) {
-        finalWidth = 600
-      } else if (newWidth < 150) {
-        finalWidth = 0
+      } else {
+        finalWidth = Math.max(MIN_WIDTH, Math.min(newWidth, 800))
       }
 
-      // INSTANT SYNC: Direct DOM update without rAF delay
+      lastValidWidth.current = finalWidth
       if (workbenchRef.current) {
         workbenchRef.current.style.setProperty('--sidebar-width', `${finalWidth}px`)
       }
     }
 
     const handleMouseUp = () => {
-      if (animationFrameId) cancelAnimationFrame(animationFrameId)
+      if (!isDraggingInternal.current) return
+      isDraggingInternal.current = false
 
       document.body.style.cursor = ''
       document.body.style.userSelect = ''
+      document.body.classList.remove('resizing-active')
 
-      // Read final value from DOM to ensure sync
-      let finalCommittedWidth = sidebarWidth
-      if (workbenchRef.current) {
-        const domValue = workbenchRef.current.style.getPropertyValue('--sidebar-width')
-        if (domValue) {
-          finalCommittedWidth = parseInt(domValue, 10)
-        }
-      }
+      const dropWidth = lastValidWidth.current
 
-      // Commit state updates atomically
-      if (finalCommittedWidth < 100) {
+      // Commit to state immediately
+      if (dropWidth < 50) {
         setIsSidebarOpen(false)
-        setSidebarWidth(250) // Reset to default when closed
+        setSidebarWidth(250)
         updateSetting('sidebar.width', 250)
       } else {
-        setSidebarWidth(finalCommittedWidth)
-        updateSetting('sidebar.width', finalCommittedWidth)
+        setSidebarWidth(dropWidth)
+        updateSetting('sidebar.width', dropWidth)
       }
 
-      // Stop resizing flag LAST to prevent render with stale width
-      setIsResizing(false)
+      // 3. SETTLING & CSS OPTIMIZATION:
+      // We turn off the 'Dragging' flag immediately (clears overlay and cursor).
+      // But we stay in 'Resizing' state for 100ms to suppress the Header's
+      // width-transition which causes the 'Jump Back' visual.
+      isSettlingRef.current = true
+
+      setTimeout(() => {
+        isSettlingRef.current = false
+        setIsResizing(false)
+      }, 100)
     }
 
-    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mousemove', handleMouseMove, { passive: true })
     window.addEventListener('mouseup', handleMouseUp)
 
     return () => {
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
-      if (animationFrameId) cancelAnimationFrame(animationFrameId)
     }
-  }, [isResizing, sidebarWidth, updateSetting, showFlowMode, getSetting, setIsSidebarOpen])
-
-  // ... (existing logic) ...
+  }, [updateSetting, showFlowMode, getSetting, setIsSidebarOpen])
 
   const handleSave = (snippet) => {
     onSave(snippet)
@@ -203,7 +202,8 @@ const Workbench = ({
 
   const handleTabChange = (tabId) => {
     // Only 'explorer' and 'themes' should open/toggle the sidebar
-    if (tabId === 'explorer' || tabId === 'themes') {
+    if (tabId === 'explorer' || tabId === 'themes' || tabId === 'trash') {
+      // Added 'trash'
       if (activeSidebarTab === tabId) {
         setIsSidebarOpen(!isSidebarOpen)
       } else {
@@ -226,6 +226,22 @@ const Workbench = ({
     onCloseSnippet(...args)
     // Explicitly deselect in sidebar when closing
   }
+
+  // Handlers for SnippetSidebar (to avoid passing all props directly)
+  const handleSelect = (s) => {
+    if (s === null && activeView === 'editor') {
+      return // Keep editor open and selection as-is
+    }
+    if (onSelectSnippet) onSelectSnippet(s)
+    if (window.innerWidth <= 768) setIsSidebarOpen(false)
+  }
+
+  const handleRenameFolder = (...args) => onRenameFolder(...args)
+  const handleDeleteFolder = (...args) => onDeleteFolder(...args)
+  const handleDeleteSnippet = (...args) => onDeleteRequest(...args)
+  const handleBulkDelete = (...args) => onDeleteBulk(...args)
+  const handlePaste = (...args) => onPaste(...args)
+  const handleSelectAll = (...args) => onSelectAll(...args)
 
   const getHeaderTitle = () => {
     switch (activeView) {
@@ -326,21 +342,27 @@ const Workbench = ({
     )
   }
 
-  // ... (omitted) ...
+  // --- Global Metrics Synchronization ---
+  React.useLayoutEffect(() => {
+    if (!workbenchRef.current) return
 
-  // REMOVED: const sidebarWidth = settings?.ui?.sidebarWidth || 250 (Now using state)
+    // Logic for Sidebar Width
+    const targetWidth = isSidebarOpen && !showFlowMode ? sidebarWidth : 0
+
+    // CRITICAL: If we are actively resizing OR in the 150ms settling lock,
+    // we DO NOT touch the CSS variable. We let the manual mouse position stand
+    // until the React state (sidebarWidth) has definitively finished rendering.
+    if (!isResizing && !isSettlingRef.current) {
+      workbenchRef.current.style.setProperty('--sidebar-width', `${targetWidth}px`)
+    }
+
+    // Logic for Activity Bar
+    const showActivityBar = getSetting('ui.showActivityBar') !== false
+    const activityBarWidth = showActivityBar || showFlowMode ? (showFlowMode ? 0 : 48) : 0
+    workbenchRef.current.style.setProperty('--activity-bar-width', `${activityBarWidth}px`)
+  }, [sidebarWidth, isSidebarOpen, showFlowMode, getSetting, isResizing])
 
   // Initialize CSS variables on the root container
-  React.useLayoutEffect(() => {
-    if (workbenchRef.current) {
-      const showActivityBar = getSetting('ui.showActivityBar') !== false
-      const activityBarWidth = showActivityBar || showFlowMode ? (showFlowMode ? 0 : 48) : 0
-      const currentWidth = isSidebarOpen && !showFlowMode ? sidebarWidth : 0
-
-      workbenchRef.current.style.setProperty('--sidebar-width', `${currentWidth}px`)
-      workbenchRef.current.style.setProperty('--activity-bar-width', `${activityBarWidth}px`)
-    }
-  }, [sidebarWidth, isSidebarOpen, showFlowMode, getSetting])
 
   return (
     <div
@@ -355,21 +377,26 @@ const Workbench = ({
           isFavorited={headerIsFavorited}
           isTab={activeView === 'editor' || (activeView === 'snippets' && !!selectedSnippet)}
           isCompact={isCompact}
-          isResizing={isResizing}
+          isResizing={isResizing} // Pass the resizing flag to suppress transitions
           onToggleCompact={onToggleCompact}
           autosaveStatus={autosaveStatus}
           isSidebarOpen={isSidebarOpen}
-          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+          sidebarWidth={sidebarWidth} // Pass current saved width
+          onToggleSidebar={() => {
+            if (getSetting('ui.zenFocus') === true) return
+            setIsSidebarOpen(!isSidebarOpen)
+          }}
           onSave={() => selectedSnippet && onSave(selectedSnippet)}
           onNewSnippet={onNewSnippet}
           onNewFolder={onNewFolder}
+          isZenFocus={getSetting('ui.zenFocus') === true}
+          onToggleZenFocus={onToggleZenFocus}
           onSearch={() => {
             if (activeView === 'settings' && onCloseSettings) {
               onCloseSettings()
             }
             setActiveSidebarTab('explorer')
           }}
-          sidebarWidth={sidebarWidth}
           onRename={() => {
             if (selectedSnippet?.id === 'system:settings') {
               showToast('The settings.json file cannot be renamed', 'info')
@@ -384,22 +411,23 @@ const Workbench = ({
       {/* GLOBAL RESIZE OVERLAY: The "Glass Pane" technique.
           Creates a full-screen shield during resizing to prevent "detach", cursor flickering,
           or event trapping by iframes/editor. */}
-      {isResizing && (
+      {/* GLOBAL RESIZE OVERLAY: The "Glass Pane" technique.
+          Visible ONLY during active dragging to ensure cursor is responsive. */}
+      {isResizing && !isSettlingRef.current && (
         <div
-          className="fixed inset-0 z-[9999] cursor-ew-resize bg-transparent"
-          style={{ userSelect: 'none' }}
+          className="fixed inset-0 z-[9999] pointer-events-auto"
+          style={{ cursor: 'ew-resize', userSelect: 'none' }}
         />
       )}
 
       {/* Main Container - Switched to Grid for Atomic Sync (mathematically prevents detach) */}
       <div
-        className={`flex-1 grid overflow-hidden min-h-0 relative text-[var(--color-text-primary)] 
+        className={`flex-1 grid overflow-hidden min-h-0 relative text-[var(--color-text-primary)]
           ${isResizing ? 'resizing' : ''}`}
         style={{
           gridTemplateColumns: 'var(--activity-bar-width) var(--sidebar-width) 1fr',
           backgroundColor: 'var(--sidebar-bg)', // Mask sub-pixel gaps with sidebar color
-          transform: 'translateZ(0)', // Hardware acceleration
-          transition: 'none' // Prevent grid track animation
+          transform: 'translateZ(0)' // Hardware acceleration
         }}
       >
         {/* Activity Bar */}
@@ -427,24 +455,27 @@ const Workbench = ({
         {/* Sidebar */}
         <aside
           ref={sidebarRef}
-          className="flex flex-col h-full z-10 relative sidebar-container"
+          className="flex flex-col h-full z-10 relative sidebar-container bg-[var(--sidebar-bg)]"
           style={{
             width: 'var(--sidebar-width)',
-            backgroundColor: 'transparent', // Let parent handle BG
             willChange: isResizing ? 'width' : 'auto',
-            overflow: 'visible', // Allow Sash to protrude
-            transition: 'none' // Prevent resize "push" effect
+            overflow: 'hidden', // Contain content but scrollbar stays on edge
+            transition: 'none'
           }}
         >
-          {/* CONTENT CLIPPING WRAPPER: Ensures content "slides under" instead of squashing or spilling */}
+          {/* Main Content Area - Traditional Layout (Scrollbar docked to edge) */}
           <div
-            className="w-full h-full overflow-hidden flex flex-col transition-opacity duration-200"
+            className="w-full h-full flex flex-col"
             style={{
               opacity: isSidebarOpen && !showFlowMode ? 1 : 0,
-              pointerEvents: isSidebarOpen ? 'auto' : 'none'
+              // During resizing, we set pointer-events to NONE to avoid
+              // expensive hit-testing and hover calculations in the snippet list.
+              pointerEvents: isResizing ? 'none' : isSidebarOpen ? 'auto' : 'none',
+              // Standard snapping behavior for opacity only
+              transition: isResizing ? 'none' : 'opacity 0.2s ease-in-out'
             }}
           >
-            <div className="h-full flex flex-col" style={{ width: '100%', minWidth: '170px' }}>
+            <div className="h-full flex flex-col w-full">
               {activeSidebarTab === 'explorer' && (
                 <SnippetSidebar
                   isOpen={isSidebarOpen}
@@ -454,41 +485,46 @@ const Workbench = ({
                   onNew={onNewSnippet}
                   onNewFolder={onNewFolder}
                   onDailyNote={onDailyNote}
-                  onSearch={onSearchSnippets}
+                  onSearch={onSearchSnippets || (() => {})}
                   onToggleFolder={onToggleFolder}
                   onMoveSnippet={onMoveSnippet}
                   onMoveFolder={onMoveFolder}
-                  onRenameSnippet={onRenameSnippet}
-                  onRenameFolder={onRenameFolder}
-                  onDeleteFolder={onDeleteFolder}
-                  onDeleteSnippet={onDeleteRequest}
-                  onDeleteBulk={onDeleteBulk}
+                  onRenameSnippet={onInlineRename}
+                  onRenameFolder={handleRenameFolder}
+                  onDeleteFolder={handleDeleteFolder}
+                  onDeleteSnippet={handleDeleteSnippet}
+                  onDeleteBulk={handleBulkDelete}
                   onTogglePin={onTogglePin}
                   onToggleFavorite={onToggleFavorite}
-                  onSelect={(s) => {
-                    // Prevent deselecting the editor view by clicking sidebar background
-                    if (s === null && activeView === 'editor') {
-                      // keep editor open and selection as-is
-                      return
-                    }
-                    if (onSelectSnippet) onSelectSnippet(s)
-                    if (window.innerWidth <= 768) setIsSidebarOpen(false)
-                  }}
-                  onToggle={() => setIsSidebarOpen(false)}
+                  onSelect={handleSelect}
+                  onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
                   isCompact={isCompact}
                   showToast={showToast}
                   // Clipboard operations
                   onCopy={onCopy}
                   onCut={onCut}
-                  onPaste={onPaste}
-                  onSelectAll={onSelectAll}
+                  onPaste={handlePaste}
+                  onSelectAll={handleSelectAll}
                   dirtyIds={dirtyIds}
                   onInlineRename={onInlineRename}
                 />
               )}
 
               {activeSidebarTab === 'themes' && (
-                <SidebarTheme isOpen={isSidebarOpen} onToggle={() => setIsSidebarOpen(false)} />
+                <SidebarTheme
+                  isOpen={isSidebarOpen}
+                  onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+                />
+              )}
+
+              {activeSidebarTab === 'trash' && (
+                <TrashSidebar
+                  trash={trash}
+                  onRestoreItem={onRestoreItem}
+                  onPermanentDeleteItem={onPermanentDeleteItem}
+                  onLoadTrash={onLoadTrash}
+                  onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+                />
               )}
             </div>
           </div>
@@ -507,21 +543,15 @@ const Workbench = ({
               onMouseDown={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
+                isDraggingInternal.current = true
                 setIsResizing(true)
+                document.body.classList.add('resizing-active')
                 document.body.style.cursor = 'ew-resize'
                 document.body.style.userSelect = 'none'
 
-                const showActivityBar = getSetting('ui.showActivityBar') !== false
-                const currentActivityBarWidth = showActivityBar ? 48 : 0
-
-                // If it's closed, give it a head-start width
+                // If sidebar is closed, toggle it open first
                 if (!isSidebarOpen) {
-                  const startOpenWidth = Math.max(170, e.clientX - currentActivityBarWidth)
                   setIsSidebarOpen(true)
-                  setSidebarWidth(startOpenWidth)
-                  if (workbenchRef.current) {
-                    workbenchRef.current.style.setProperty('--sidebar-width', `${startOpenWidth}px`)
-                  }
                 }
               }}
             >

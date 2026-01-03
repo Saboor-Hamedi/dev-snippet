@@ -198,8 +198,8 @@ const SnippetLibraryInner = ({ snippetData }) => {
   useThemeManager()
   useFlowMode({ showPreview, togglePreview })
 
-  // Sync Zen Focus state to global UI
-  useEffect(() => {
+  // Sync Zen Focus state to global UI - useLayoutEffect for atomic sync to prevent flicker
+  React.useLayoutEffect(() => {
     if (settings?.ui?.zenFocus) {
       document.body.classList.add('zen-focus-active')
     } else {
@@ -744,7 +744,6 @@ const SnippetLibraryInner = ({ snippetData }) => {
       const current = settings?.ui?.zenFocus === true
       const next = !current
       updateSetting('ui.zenFocus', next)
-      showToast(next ? 'Zen Focus Enabled' : 'Zen Focus Disabled', 'info')
     }
     const onCommandReset = () => {
       updateSetting('ui.showFlowMode', false)
@@ -1349,6 +1348,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
         setSelectedIds={setSelectedIds}
         selectedFolderId={selectedFolderId}
         setSelectedFolderId={setSelectedFolderId}
+        onToggleZenFocus={() => window.dispatchEvent(new CustomEvent('app:toggle-zen-focus'))}
       />
 
       {/* Global Alt+P handler as a fallback so popover opens regardless of focus */}
@@ -1379,6 +1379,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
           isSidebarOpen={isSidebarOpen}
           setIsSidebarOpen={(val) => updateSetting('sidebar.visible', val)}
           onToggleSidebar={handleToggleSidebar}
+          onToggleZenFocus={() => window.dispatchEvent(new CustomEvent('app:toggle-zen-focus'))}
           activeView={isCreatingSnippet ? 'editor' : activeView}
           pinPopover={pinPopover}
           setPinPopover={setPinPopover}

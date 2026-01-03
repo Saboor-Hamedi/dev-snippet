@@ -23,7 +23,8 @@ const KeyboardHandler = ({
   setSelectedIds,
   selectedFolderId,
   setSelectedFolderId,
-  showFlowMode
+  showFlowMode,
+  onToggleZenFocus
 }) => {
   const {
     toggleCommandPalette,
@@ -192,7 +193,8 @@ const KeyboardHandler = ({
     },
     onToggleFlow: () => {
       window.dispatchEvent(new CustomEvent('app:toggle-flow'))
-    }
+    },
+    onToggleZenFocus: onToggleZenFocus
   })
 
   // Listen for custom zoom events which hook into useZoomLevel elsewhere or here?

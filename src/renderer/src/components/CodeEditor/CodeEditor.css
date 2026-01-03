@@ -635,6 +635,11 @@ body.zen-focus-active .cm-content > .cm-zen-active {
 
 /* Disclosure: Widgets touching the active paragraph (DRY & Robust) */
 /* This ensures Tables or Mermaid blocks attached to active text remain visible */
+body.zen-focus-active .cm-content > .cm-widgetBlock {
+  /* Tables/Widgets are slightly more visible by default so you can find them */
+  opacity: 0.15;
+}
+
 body.zen-focus-active .cm-content > .cm-zen-active + .cm-widgetBlock,
 body.zen-focus-active .cm-content > .cm-widgetBlock:has(+ .cm-zen-active) {
   opacity: 1 !important;
@@ -648,15 +653,30 @@ body.zen-focus-active .cm-zen-active * {
   filter: none !important;
 }
 
+/* Soft Hover: Allow quick clicks back to "reality" */
+body.zen-focus-active .cm-content:hover > * {
+  opacity: 0.15; /* Subtle hint for non-hovered items */
+}
+
+/* Explicit Hover Revelation: Fully undim the specifically hovered line/widget */
+body.zen-focus-active .cm-content > *:hover {
+  opacity: 1 !important;
+  filter: grayscale(0%);
+  transition:
+    opacity 0.2s ease,
+    filter 0.2s ease;
+}
+
+/* Fix cursor for Tables/Mermaid in Zen Focus */
+body.zen-focus-active .cm-widgetBlock:hover,
+body.zen-focus-active .cm-widgetBlock *:hover {
+  cursor: text !important;
+}
+
 /* Clean UI: Hide focus rings/gutters for background lines */
 body.zen-focus-active .cm-line:not(.cm-zen-active) .cm-activeLine,
 body.zen-focus-active .cm-line:not(.cm-zen-active) .cm-activeLineGutter {
   background-color: transparent !important;
-}
-
-/* Soft Hover: Allow quick clicks back to "reality" */
-body.zen-focus-active .cm-content:hover > * {
-  opacity: 0.15; /* Subtle hint */
 }
 
 /* ============================================================================ */

@@ -79,6 +79,9 @@ export const themeProps = () => {
               futureSettings[category] = {}
             }
             for (const [key, value] of Object.entries(values)) {
+              // PRESERVATION LOCK: Do not allow themes to overwrite layout-critical user settings
+              if (category === 'sidebar' && (key === 'width' || key === 'visible')) continue
+
               if (futureSettings[category][key] !== value) {
                 futureSettings[category][key] = value
               }

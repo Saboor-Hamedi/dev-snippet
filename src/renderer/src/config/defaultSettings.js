@@ -86,7 +86,7 @@ export const DEFAULT_SETTINGS = {
     iconColor: '#0d1117',
     textColor: '#0d1117',
     borderColor: '#0d1117',
-    width: 300,
+    width: 250,
     visible: true
   },
   list: {

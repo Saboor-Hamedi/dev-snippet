@@ -4,8 +4,8 @@
 
 :root {
   /* Layout dimensions */
-  --activity-bar-width: 60px;
-  --sidebar-width: 300px;
+  --activity-bar-width: 48px;
+  --sidebar-width: 250px;
   --toolbar-height: 40px;
 
   /* Theme variables - will be overridden by ThemeModal */
@@ -549,9 +549,21 @@ button:not(.theme-exempt):hover {
 }
 
 /* Global Drag Performance Engine */
-body.dragging-active * {
+body.dragging-active *,
+body.resizing-active * {
   pointer-events: none !important;
   user-select: none !important;
+}
+
+/* Strip transitions and animations during resize to maintain 120fps */
+body.resizing-active .sidebar-container,
+body.resizing-active .header,
+body.resizing-active .theme-exempt,
+body.resizing-active [class*='transition'],
+body.resizing-active [class*='animate'] {
+  transition: none !important;
+  animation: none !important;
+  text-shadow: none !important;
 }
 
 body.dragging-active .universal-modal-header,
@@ -560,10 +572,65 @@ body.dragging-active .universal-modal-header * {
 }
 
 /* Force stability on all icons during movement to prevent flickering */
-body.dragging-active svg {
+body.dragging-active svg,
+body.resizing-active svg {
   transition: none !important;
   animation: none !important;
   transform: translateZ(0);
+}
+
+/* Zen Focus Mode - Immersive Distraction-Free Engine */
+body.zen-focus-active {
+  --sidebar-width: 0px !important;
+  --activity-bar-width: 0px !important;
+}
+
+body.zen-focus-active .activity-bar,
+body.zen-focus-active .sidebar-container,
+body.zen-focus-active #header-sidebar-section {
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  overflow: hidden !important;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Ensure the editor area is the absolute focus */
+.flex-1.grid {
+  /* Permanent transition for the grid tracks to ensure smooth flow in/out of Zen mode */
+  transition: grid-template-columns 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.zen-focus-active .flex-1.grid {
+  grid-template-columns: 0px 0px 1fr !important;
+}
+
+/* Dim the non-essential parts of the header (window controls) without affecting the tab bar */
+body.zen-focus-active .header-window-controls {
+  opacity: 0.3;
+  transition: opacity 0.4s ease;
+}
+
+body.zen-focus-active .header-window-controls:hover {
+  opacity: 1;
+}
+
+/* Enable smooth layout shifting globally for Zen Mode, EXCEPT during active resizing */
+.sidebar-container,
+.activity-bar,
+header div[id='header-sidebar-section'] {
+  transition:
+    width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.resizing-active .sidebar-container,
+body.resizing-active .activity-bar,
+body.resizing-active header div[id='header-sidebar-section'],
+body.resizing-active .flex-1.grid {
+  transition: none !important;
 }
 /* Base Styles */
 *,

@@ -13,7 +13,8 @@ import {
   Save,
   File,
   FilePlus,
-  Star
+  Star,
+  Zap
 } from 'lucide-react'
 import iconUrl from '../../../assets/icon.png'
 import AutosaveIndicator from './AutosaveIndicator'
@@ -39,7 +40,9 @@ const Header = ({
   onClose,
   showPreview,
   onTogglePreview,
-  isResizing // New prop
+  isResizing, // New prop
+  isZenFocus,
+  onToggleZenFocus
 }) => {
   const isMobile = window.innerWidth <= 768
   const activityBarWidth = 48 // Match Workbench
@@ -72,7 +75,7 @@ const Header = ({
       {/* Sidebar Header Part - Aligned with Sidebar/ActivityBar */}
       <div
         id="header-sidebar-section"
-        className={`h-full flex items-center px-1 pb-1 ${isResizing ? '' : 'transition-all duration-300 ease-in-out'}`}
+        className={`h-full flex items-center px-1 pb-1 ${isResizing ? '' : 'transition-[width] duration-200 ease-in-out'}`}
         style={{
           width: sidebarSectionWidth,
           backgroundColor: 'transparent',
@@ -82,10 +85,21 @@ const Header = ({
       >
         <div className="flex items-center w-full gap-2 px-1" style={{ WebkitAppRegion: 'no-drag' }}>
           <button
-            onClick={onToggleSidebar}
-            className="theme-exempt bg-transparent flex items-center focus:outline-none justify-center p-1 rounded-md transition-colors cursor-pointer opacity-60 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)]"
+            onClick={isZenFocus ? null : onToggleSidebar}
+            disabled={isZenFocus}
+            className={`theme-exempt bg-transparent flex items-center focus:outline-none justify-center p-1 rounded-md transition-all ${
+              isZenFocus
+                ? 'opacity-20 cursor-not-allowed'
+                : 'opacity-60 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] cursor-pointer'
+            }`}
             style={{ color: 'var(--header-icon-color, var(--header-text))' }}
-            title={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'}
+            title={
+              isZenFocus
+                ? 'Sidebar disabled in Zen Focus'
+                : isSidebarOpen
+                  ? 'Hide Sidebar'
+                  : 'Show Sidebar'
+            }
           >
             {isSidebarOpen ? <PanelLeftClose size={16} /> : <PanelLeft size={16} />}
           </button>
@@ -182,42 +196,55 @@ const Header = ({
           className="flex ml-auto flex-none absolute top-0 right-0 h-full"
           style={{ WebkitAppRegion: 'no-drag', zIndex: 50 }}
         >
-          {/* Zen/Autosave Integration area */}
-          <div className="flex items-center h-full pr-2">
+          {/* Zen/Autosave Integration area - Always visible */}
+          <div className="flex items-center h-full pr-2 gap-1.5 relative z-[60]">
+            <button
+              onClick={onToggleZenFocus}
+              className={`theme-exempt bg-transparent p-1 rounded-md transition-all flex items-center justify-center ${
+                isZenFocus
+                  ? 'text-[var(--color-accent-primary)] opacity-100'
+                  : 'text-[var(--header-icon-color, var(--header-text))] opacity-40 hover:opacity-100 hover:bg-white/5'
+              }`}
+              title={isZenFocus ? 'Exit Focus Mode' : 'Enter Zen Focus (Dim)'}
+            >
+              <Zap size={15} fill={isZenFocus ? 'currentColor' : 'none'} />
+            </button>
             <AutosaveIndicator status={autosaveStatus} />
           </div>
 
-          {/* Custom Toggle: Compact vs Full */}
-          <button
-            onClick={() => {
-              try {
-                window.api?.minimize?.()
-              } catch (e) {}
-            }}
-            className="theme-exempt bg-transparent h-full w-10 flex items-center justify-center transition-colors opacity-60 hover:opacity-100 hover:bg-white/5"
-            style={{ color: 'var(--header-icon-color, var(--header-text))' }}
-            title="Minimize"
-          >
-            <Minus size={14} />
-          </button>
+          {/* View/Window Controls Buttons - Dimmed in Zen Focus via CSS */}
+          <div className="flex h-full header-window-controls">
+            <button
+              onClick={() => {
+                try {
+                  window.api?.minimize?.()
+                } catch (e) {}
+              }}
+              className="theme-exempt bg-transparent h-full w-10 flex items-center justify-center transition-colors opacity-60 hover:opacity-100 hover:bg-white/5"
+              style={{ color: 'var(--header-icon-color, var(--header-text))' }}
+              title="Minimize"
+            >
+              <Minus size={14} />
+            </button>
 
-          <button
-            onClick={() => window.api?.toggleMaximize?.()}
-            className="theme-exempt bg-transparent h-full w-10 flex items-center justify-center transition-colors opacity-60 hover:opacity-100 hover:bg-white/5"
-            style={{ color: 'var(--header-icon-color, var(--header-text))' }}
-            title="Maximize"
-          >
-            <Minimize size={14} />
-          </button>
+            <button
+              onClick={() => window.api?.toggleMaximize?.()}
+              className="theme-exempt bg-transparent h-full w-10 flex items-center justify-center transition-colors opacity-60 hover:opacity-100 hover:bg-white/5"
+              style={{ color: 'var(--header-icon-color, var(--header-text))' }}
+              title="Maximize"
+            >
+              <Minimize size={14} />
+            </button>
 
-          <button
-            onClick={() => window.api?.closeWindow?.()}
-            className="theme-exempt bg-transparent h-full w-12 flex items-center justify-center transition-colors opacity-60 hover:opacity-100 hover:bg-red-500 hover:text-white"
-            style={{ color: 'var(--header-icon-color, var(--header-text))' }}
-            title="Close"
-          >
-            <X size={14} />
-          </button>
+            <button
+              onClick={() => window.api?.closeWindow?.()}
+              className="theme-exempt bg-transparent h-full w-12 flex items-center justify-center transition-colors opacity-60 hover:opacity-100 hover:bg-red-500 hover:text-white"
+              style={{ color: 'var(--header-icon-color, var(--header-text))' }}
+              title="Close"
+            >
+              <X size={14} />
+            </button>
+          </div>
         </div>
       </div>
     </header>
