@@ -399,6 +399,16 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         const fIds = sourceIds.filter((_, idx) => sourceTypes[idx] === 'folder')
         if (sIds.length > 0) onMoveSnippet(sIds, itemData.id)
         if (fIds.length > 0) onMoveFolder(fIds, itemData.id)
+
+        // Fix: Reset selection after drop to clear highlights
+        setTimeout(() => {
+          onSelectionChange([]) // Clear multiple selection
+          onSelectFolder(null) // Clear folder selection
+          onSelect(null) // Clear snippet selection
+          if (document.activeElement && document.activeElement.blur) {
+            document.activeElement.blur() // Unfocus input/element
+          }
+        }, 50)
       } catch (err) {}
     }
   }
