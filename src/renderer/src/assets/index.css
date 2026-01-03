@@ -580,21 +580,9 @@ body.resizing-active svg {
 }
 
 /* Zen Focus Mode - Immersive Distraction-Free Engine */
+/* Zen Focus Mode - Immersive Distraction-Free Engine */
 body.zen-focus-active {
-  --sidebar-width: 0px !important;
-  --activity-bar-width: 0px !important;
-}
-
-body.zen-focus-active .activity-bar,
-body.zen-focus-active .sidebar-container,
-body.zen-focus-active #header-sidebar-section {
-  width: 0 !important;
-  min-width: 0 !important;
-  max-width: 0 !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  overflow: hidden !important;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  /* No longer hiding sidebar/activity bar per user request */
 }
 
 /* Ensure the editor area is the absolute focus */
@@ -603,9 +591,11 @@ body.zen-focus-active #header-sidebar-section {
   transition: grid-template-columns 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* 
 body.zen-focus-active .flex-1.grid {
   grid-template-columns: 0px 0px 1fr !important;
 }
+*/
 
 /* Dim the non-essential parts of the header (window controls) without affecting the tab bar */
 body.zen-focus-active .header-window-controls {
