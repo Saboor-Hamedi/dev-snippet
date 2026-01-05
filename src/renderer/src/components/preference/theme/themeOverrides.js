@@ -56,7 +56,12 @@ const OVERRIDABLE_SETTINGS = {
   // Misc UI
   'ui.statusBarBg': '--statusbar-bg',
   'ui.footerBg': '--footer-bg',
-  'welcome.welcomePage': '--welcome-bg'
+  'welcome.welcomePage': '--welcome-bg',
+
+  // Modals & Universal Framing
+  'ui.modalBorderColor': '--u-modal-border-color',
+  'ui.modalRadius': '--u-modal-radius',
+  'ui.modalShadow': '--u-modal-shadow'
 }
 
 /**
@@ -129,16 +134,17 @@ export const applyThemeOverrides = (parsedSettings, root) => {
     root.style.setProperty('--editor-text', editorText, 'important')
   }
 
-  // 4. Universal UI Stability (The "Scientist Mode" hammer)
-  // This ensures that the tokens created in index.css are always enforced at the root style level,
-  // making them win over any standard theme CSS rules.
-  root.style.setProperty('--u-border-width', '0px', 'important')
-  root.style.setProperty('--u-border-color', 'transparent', 'important')
-  root.style.setProperty('--u-shadow', 'none', 'important')
-  root.style.setProperty('--u-backdrop', 'none', 'important')
-  root.style.setProperty('--u-radius', '0px', 'important')
-
-  // Suppression of UI border variables is now handled via --u- prefixed tokens
+  // 4. Universal UI Stability
+  // Set defaults for the "Scientific" tokens if not specifically overridden
+  if (!getValueByPath(parsedSettings, 'ui.modalRadius')) {
+    root.style.setProperty('--u-modal-radius', '8px')
+  }
+  if (!getValueByPath(parsedSettings, 'ui.modalBorderColor')) {
+    root.style.setProperty('--u-modal-border-color', 'var(--color-border)')
+  }
+  if (!getValueByPath(parsedSettings, 'ui.modalShadow')) {
+    root.style.setProperty('--u-modal-shadow', '0 8px 30px rgba(0, 0, 0, 0.3)')
+  }
   // Avoid nuking global --color-border here as it breaks content-specific borders (like headers/tables)
 
   // 5. Enforce Robust Sidebar Item Defaults (Prevent Transparency Issues)

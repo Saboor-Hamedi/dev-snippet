@@ -7,27 +7,18 @@ import PropTypes from 'prop-types'
  */
 const SettingRow = ({ label, description, children, noBorder = false, className = '' }) => {
   return (
-    <div
-      className={`flex flex-row items-center justify-between py-1 px-2 gap-3 ${!noBorder ? 'border-t first:border-t-0' : ''} ${className}`}
-      style={{ borderColor: 'var(--color-border)' }}
-    >
-      <div className="flex-1 min-w-0">
-        <label
-          className="block text-[9px] font-bold uppercase tracking-wide truncate"
-          style={{ color: 'var(--color-text-primary)' }}
-        >
+    <div className={`grid grid-cols-[1fr_auto] gap-4 py-2 px-0 ${className}`}>
+      <div className="flex flex-col gap-0.5 justify-center">
+        <label className="text-[10px] font-medium" style={{ color: 'var(--color-text-primary)' }}>
           {label}
         </label>
         {description && (
-          <p
-            className="text-[8px] leading-none opacity-50 truncate"
-            style={{ color: 'var(--color-text-tertiary)' }}
-          >
+          <p className="text-[9px] leading-tight" style={{ color: 'var(--color-text-tertiary)' }}>
             {description}
           </p>
         )}
       </div>
-      <div className="flex-shrink-0 scale-90 origin-right">{children}</div>
+      <div className="flex items-center justify-end">{children}</div>
     </div>
   )
 }

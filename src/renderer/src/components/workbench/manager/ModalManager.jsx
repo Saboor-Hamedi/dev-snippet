@@ -9,6 +9,8 @@ const ImageExportModal = lazy(() => import('../../CodeEditor/ImageExport/ImageEx
 const SettingsModal = lazy(() => import('../../settings/SettingsModal'))
 const TrashModal = lazy(() => import('../../mermaid/modal/TrashModal'))
 const SyncControlModal = lazy(() => import('../../sync/SyncControlModal'))
+const KnowledgeGraphModal = lazy(() => import('../../Graph/KnowledgeGraphModal'))
+const AIPilotModal = lazy(() => import('../../AI/AIPilotModal'))
 
 import { ModalContext } from './ModalContext'
 
@@ -75,7 +77,8 @@ export const ModalProvider = ({
   onRestoreItem,
   onPermanentDeleteItem,
   onLoadTrash,
-  onSelectSnippet
+  onSelectSnippet,
+  selectedSnippet
 }) => {
   // useSettings intentionally not used here; modals should request their own settings if needed
   // Input State for Prompts
@@ -99,6 +102,8 @@ export const ModalProvider = ({
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isTrashOpen, setIsTrashOpen] = useState(false)
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false)
+  const [isGraphModalOpen, setIsGraphModalOpen] = useState(false)
+  const [isAIPilotOpen, setIsAIPilotOpen] = useState(false)
 
   // API exposed to consumers
   const openRenameModal = useCallback((item, onConfirm, customTitle = 'Rename Snippet') => {
@@ -124,6 +129,22 @@ export const ModalProvider = ({
 
   const openSyncModal = useCallback(() => {
     setIsSyncModalOpen(true)
+  }, [])
+
+  const openGraphModal = useCallback(() => {
+    setIsGraphModalOpen(true)
+  }, [])
+
+  const closeGraphModal = useCallback(() => {
+    setIsGraphModalOpen(false)
+  }, [])
+
+  const openAIPilot = useCallback(() => {
+    setIsAIPilotOpen(true)
+  }, [])
+
+  const closeAIPilot = useCallback(() => {
+    setIsAIPilotOpen(false)
   }, [])
 
   const toggleCommandPalette = useCallback(
@@ -165,6 +186,8 @@ export const ModalProvider = ({
     setIsSettingsOpen(false)
     setIsTrashOpen(false)
     setIsSyncModalOpen(false)
+    setIsGraphModalOpen(false)
+    setIsAIPilotOpen(false)
   }, [])
 
   return (
@@ -176,10 +199,13 @@ export const ModalProvider = ({
         openSettingsModal,
         openSyncModal,
         openTrashModal,
+        openGraphModal,
+        closeGraphModal,
         toggleCommandPalette,
         closeAll,
         isSettingsOpen,
         isTrashOpen,
+        isGraphModalOpen,
         isAnyOpen:
           renameModal.isOpen ||
           deleteModal.isOpen ||
@@ -187,10 +213,29 @@ export const ModalProvider = ({
           imageExportModal.isOpen ||
           isSettingsOpen ||
           isTrashOpen ||
-          isSyncModalOpen
+          isSyncModalOpen ||
+          isGraphModalOpen ||
+          isAIPilotOpen,
+        openAIPilot,
+        closeAIPilot
       }}
     >
       {children}
+
+      {/* Knowledge Graph Modal - Ctrl+G */}
+      <Suspense fallback={<ModalLoader />}>
+        {isGraphModalOpen && (
+          <KnowledgeGraphModal
+            isOpen={isGraphModalOpen}
+            onClose={closeGraphModal}
+            snippets={snippets}
+            onSelectSnippet={(snippet) => {
+              closeGraphModal()
+              onSelectSnippet(snippet)
+            }}
+          />
+        )}
+      </Suspense>
 
       {/* Render Modals at Root Level */}
       <Suspense fallback={<ModalLoader />}>
@@ -320,6 +365,14 @@ export const ModalProvider = ({
         {isSyncModalOpen && (
           <SyncControlModal isOpen={true} onClose={() => setIsSyncModalOpen(false)} />
         )}
+
+        {isAIPilotOpen && (
+          <AIPilotModal
+            isOpen={true}
+            onClose={() => setIsAIPilotOpen(false)}
+            selectedSnippet={selectedSnippet}
+          />
+        )}
       </Suspense>
     </ModalContext.Provider>
   )
@@ -333,7 +386,8 @@ ModalProvider.propTypes = {
   onRestoreItem: PropTypes.func,
   onPermanentDeleteItem: PropTypes.func,
   onLoadTrash: PropTypes.func,
-  onSelectSnippet: PropTypes.func
+  onSelectSnippet: PropTypes.func,
+  selectedSnippet: PropTypes.object
 }
 
 // useModal is now exported from ModalContext.js

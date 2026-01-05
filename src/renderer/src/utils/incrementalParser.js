@@ -36,7 +36,7 @@ class IncrementalParser {
         const chunkHtml = await markdownToHtml(chunks[i], options)
         accumulatedHtml += chunkHtml
         const progress = Math.round(((i + 1) / chunks.length) * 100)
-        
+
         const result = {
           html: accumulatedHtml,
           progress,
@@ -55,7 +55,8 @@ class IncrementalParser {
 
     // Add truncation notice if needed
     if (isTooLarge) {
-      accumulatedHtml += '<div class="preview-performance-notice">Preview truncated for performance.</div>'
+      accumulatedHtml +=
+        '<div class="preview-performance-notice">Preview truncated for performance.</div>'
       yield { html: accumulatedHtml, progress: 100, isComplete: true, isTruncated: true }
     }
   }
@@ -77,7 +78,7 @@ class IncrementalParser {
     try {
       const isTooLarge = code.length > 500000
       const visibleCode = isTooLarge ? code.slice(0, 500000) : code
-      
+
       const result = await markdownToHtml(visibleCode, options)
       return {
         html: result,

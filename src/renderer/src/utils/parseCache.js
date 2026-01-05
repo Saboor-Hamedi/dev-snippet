@@ -41,7 +41,7 @@ class ParseCache {
     const key = this.generateKey(code, language, options)
     if (this.cache.has(key)) {
       // Move to end (LRU)
-      this.accessOrder = this.accessOrder.filter(k => k !== key)
+      this.accessOrder = this.accessOrder.filter((k) => k !== key)
       this.accessOrder.push(key)
       return this.cache.get(key)
     }
@@ -53,7 +53,7 @@ class ParseCache {
    */
   set(code, language, result, options) {
     const key = this.generateKey(code, language, options)
-    
+
     // Evict oldest if full
     if (this.cache.size >= this.maxSize && !this.cache.has(key)) {
       const oldest = this.accessOrder.shift()
@@ -61,7 +61,7 @@ class ParseCache {
     }
 
     this.cache.set(key, result)
-    this.accessOrder = this.accessOrder.filter(k => k !== key)
+    this.accessOrder = this.accessOrder.filter((k) => k !== key)
     this.accessOrder.push(key)
   }
 

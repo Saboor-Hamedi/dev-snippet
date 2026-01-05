@@ -223,7 +223,9 @@ const SyncControlModal = ({ isOpen, onClose }) => {
               </p>
               <h3 className="text-lg font-semibold">GitHub Gist</h3>
             </div>
-            <ShieldCheck className={`h-5 w-5 ${status?.hasToken ? 'text-emerald-500' : 'text-[var(--color-text-tertiary)]'}`} />
+            <ShieldCheck
+              className={`h-5 w-5 ${status?.hasToken ? 'text-emerald-500' : 'text-[var(--color-text-tertiary)]'}`}
+            />
           </div>
 
           {!bridgeCapable && (
@@ -240,7 +242,9 @@ const SyncControlModal = ({ isOpen, onClose }) => {
                   {status.maskedToken}
                 </p>
                 {status.remoteAccount && (
-                  <p className="text-[11px] text-[var(--color-text-tertiary)]">{status.remoteAccount.login}</p>
+                  <p className="text-[11px] text-[var(--color-text-tertiary)]">
+                    {status.remoteAccount.login}
+                  </p>
                 )}
               </div>
               <div>
@@ -355,7 +359,9 @@ const SyncControlModal = ({ isOpen, onClose }) => {
             </p>
           </button>
 
-          <div className={`rounded-none-none border border-[var(--color-border)] bg-[var(--color-bg-primary)] p-4 shadow-sm ${!status?.hasToken ? 'opacity-60' : ''}`}>
+          <div
+            className={`rounded-none-none border border-[var(--color-border)] bg-[var(--color-bg-primary)] p-4 shadow-sm ${!status?.hasToken ? 'opacity-60' : ''}`}
+          >
             <div className="mb-2 flex items-center gap-2 text-rose-500">
               {activeAction === 'restore' ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

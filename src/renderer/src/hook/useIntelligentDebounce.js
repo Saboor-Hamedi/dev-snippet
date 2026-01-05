@@ -76,5 +76,9 @@ export const useWorkDebounce = (callback, delay = 150, dependencies = []) => {
     }
   }, dependencies)
 
-  return { cancel: () => { cancelRef.current = true } }
+  return {
+    cancel: () => {
+      cancelRef.current = true
+    }
+  }
 }

@@ -4,44 +4,54 @@
 
 ### **Critical Fixes**
 
-#### 1. ✅ **Removed Hardcoded Glassmorphism** 
+#### 1. ✅ **Removed Hardcoded Glassmorphism**
+
 **Problem:** `index.css` was forcing `backdrop-filter: blur(20px)` and `rgba()` backgrounds on ALL themes, making light themes (Polaris, Minimal Gray) appear washed out and semi-transparent.
 
-**Solution:** 
+**Solution:**
+
 - Removed hardcoded `backdrop-filter` from `.sidebar` and `.header` in `index.css`
 - Added conditional glassmorphism in `themeProps.js` that only applies to dark themes
 - Light themes now get solid, opaque backgrounds
 
 **Files Modified:**
+
 - `src/renderer/src/assets/index.css` (lines 526-538)
 - `src/renderer/src/components/preference/theme/themeProps.js` (lines 169-180)
 
 ---
 
 #### 2. ✅ **Eliminated Polaris Override Cascade**
+
 **Problem:** Triple-redundant CSS rules in `index.css` were creating specificity wars:
+
 - `[data-theme='polaris'] h1, h2, h3 { color: ... !important; }`
 - `[data-theme='polaris'] * { --color-text-primary: ... !important; }`
 - `[data-theme='polaris'] h1, h2, h3, p, span, div { color: ... !important; }`
 
-**Solution:** 
+**Solution:**
+
 - Removed all 54 lines of redundant Polaris-specific overrides
 - Let `themeProps.js` be the single source of truth
 - Themes now apply cleanly without CSS conflicts
 
 **Files Modified:**
+
 - `src/renderer/src/assets/index.css` (removed lines 461-514)
 
 ---
 
 #### 3. ✅ **Fixed RGB Variable Extraction**
+
 **Problem:** `--color-bg-primary-rgb` was incorrectly using `editorRGB` instead of extracting from the actual primary background color, causing light themes to have dark semi-transparent overlays.
 
 **Solution:**
+
 - Added proper `primaryBgRGB` extraction from `--color-bg-primary`
 - Ensures all `-rgb` variants are correctly calculated for each theme
 
 **Files Modified:**
+
 - `src/renderer/src/components/preference/theme/themeProps.js` (lines 154-160)
 
 ---
@@ -49,20 +59,25 @@
 ### **Medium Priority Fixes**
 
 #### 4. ✅ **Added Missing Obsidian Theme Entry**
+
 **Problem:** `themeStyles` export was missing the `obsidian` theme, potentially causing undefined behavior.
 
 **Solution:**
+
 - Added complete `obsidian` entry to `themeStyles` with proper hover/selection colors
 
 **Files Modified:**
+
 - `src/renderer/src/components/preference/theme/themes.js` (lines 1050-1058)
 
 ---
 
 #### 5. ✅ **Standardized Polaris Color Scheme**
+
 **Problem:** Conflict between `themes.js` (using `#000000`) and `THEME_OVERRIDES` (using `#586069` for secondary text).
 
 **Solution:**
+
 - Updated Polaris theme to use GitHub-style colors consistently:
   - Primary text: `#24292f` (dark slate)
   - Secondary text: `#586069` (medium gray)
@@ -70,6 +85,7 @@
 - Updated both theme definition and themeStyles export
 
 **Files Modified:**
+
 - `src/renderer/src/components/preference/theme/themes.js` (lines 14-24, 998-1005)
 
 ---
@@ -141,12 +157,12 @@ Test each theme to verify:
 
 ### **Separation of Concerns**
 
-| Component | Responsibility |
-|-----------|---------------|
-| `themes.js` | Theme color definitions and metadata |
-| `themeProps.js` | Theme application logic and CSS variable injection |
-| `index.css` | Base styles and layout (no theme-specific overrides) |
-| `CodeEditor.css` | Editor-specific styles using theme variables |
+| Component        | Responsibility                                       |
+| ---------------- | ---------------------------------------------------- |
+| `themes.js`      | Theme color definitions and metadata                 |
+| `themeProps.js`  | Theme application logic and CSS variable injection   |
+| `index.css`      | Base styles and layout (no theme-specific overrides) |
+| `CodeEditor.css` | Editor-specific styles using theme variables         |
 
 ---
 

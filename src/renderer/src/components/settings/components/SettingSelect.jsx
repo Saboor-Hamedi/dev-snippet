@@ -39,7 +39,7 @@ const SettingSelect = ({ label, description, value, onChange, options = [], noBo
 
   return (
     <SettingRow label={label} description={description} noBorder={noBorder}>
-      <div className="relative" ref={ref}>
+      <div className={`relative ${isOpen ? 'z-[101]' : 'z-auto'}`} ref={ref}>
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}

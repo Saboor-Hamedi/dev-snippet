@@ -25,15 +25,7 @@ const SettingSection = ({ title, icon: Icon, iconColor, children, className = ''
           </h3>
         </div>
       )}
-      <div
-        className="rounded-md border shadow-sm p-2"
-        style={{
-          backgroundColor: 'var(--color-bg-secondary)',
-          borderColor: 'var(--color-border)'
-        }}
-      >
-        {children}
-      </div>
+      <div className="p-0">{children}</div>
     </section>
   )
 }

@@ -11,24 +11,24 @@ Dark themes now use **larger font sizes** to compensate for subpixel rendering d
 ### **Before (All Themes Identical)**
 
 | Header | Font Size | All Themes |
-|--------|-----------|------------|
-| H1 | `1.8rem` | Same |
-| H2 | `1.5rem` | Same |
-| H3 | `1.35rem` | Same |
-| H4 | `1.25rem` | Same |
-| H5 | `1em` | Same |
-| H6 | `0.9em` | Same |
+| ------ | --------- | ---------- |
+| H1     | `1.8rem`  | Same       |
+| H2     | `1.5rem`  | Same       |
+| H3     | `1.35rem` | Same       |
+| H4     | `1.25rem` | Same       |
+| H5     | `1em`     | Same       |
+| H6     | `0.9em`   | Same       |
 
 ### **After (Compensated for Rendering)**
 
 | Header | Light Themes (Polaris, Minimal Gray) | Dark Themes (All Others) | Compensation |
-|--------|--------------------------------------|--------------------------|--------------|
-| **H1** | `1.8rem` | `2rem` | **+11%** |
-| **H2** | `1.5rem` | `1.65rem` | **+10%** |
-| **H3** | `1.35rem` | `1.5rem` | **+11%** |
-| **H4** | `1.25rem` | `1.375rem` | **+10%** |
-| **H5** | `1em` | `1.1em` | **+10%** |
-| **H6** | `0.9em` | `1em` | **+11%** |
+| ------ | ------------------------------------ | ------------------------ | ------------ |
+| **H1** | `1.8rem`                             | `2rem`                   | **+11%**     |
+| **H2** | `1.5rem`                             | `1.65rem`                | **+10%**     |
+| **H3** | `1.35rem`                            | `1.5rem`                 | **+11%**     |
+| **H4** | `1.25rem`                            | `1.375rem`               | **+10%**     |
+| **H5** | `1em`                                | `1.1em`                  | **+10%**     |
+| **H6** | `0.9em`                              | `1em`                    | **+11%**     |
 
 ---
 
@@ -57,6 +57,7 @@ Increase dark theme font sizes by **10-11%** to compensate for the rendering dif
 **Lines Changed**: 187-214
 
 **Code Example**:
+
 ```javascript
 '.cm-h1': {
   fontSize: isDark ? '2rem !important' : '1.8rem !important', // Dark: +11%
@@ -113,11 +114,13 @@ Test each theme to verify headers now appear the same size:
 ### **Subpixel Rendering Difference**
 
 **Light Themes** (Polaris, Minimal Gray):
+
 - Browser uses **RGB subpixel rendering**
 - Each letter gets **3 subpixels** (Red, Green, Blue)
 - Text appears **8-12% wider** and **bolder**
 
 **Dark Themes** (All others):
+
 - Browser uses **grayscale antialiasing**
 - Each letter gets **1 grayscale pixel**
 - Text appears **thinner** and **smaller**
@@ -132,19 +135,19 @@ Using Chrome DevTools on "Hello World" H1:
 
 ### **Before Fix**
 
-| Theme | Font Size | Rendered Width | Perceived Size |
-|-------|-----------|----------------|----------------|
-| Polaris | `1.8rem` | 142px | Large ✅ |
-| Midnight Pro | `1.8rem` | 134px | Small ❌ |
+| Theme        | Font Size | Rendered Width | Perceived Size |
+| ------------ | --------- | -------------- | -------------- |
+| Polaris      | `1.8rem`  | 142px          | Large ✅       |
+| Midnight Pro | `1.8rem`  | 134px          | Small ❌       |
 
 **Difference**: 8px (6% smaller)
 
 ### **After Fix**
 
-| Theme | Font Size | Rendered Width | Perceived Size |
-|-------|-----------|----------------|----------------|
-| Polaris | `1.8rem` | 142px | Large ✅ |
-| Midnight Pro | `2rem` | 143px | Large ✅ |
+| Theme        | Font Size | Rendered Width | Perceived Size |
+| ------------ | --------- | -------------- | -------------- |
+| Polaris      | `1.8rem`  | 142px          | Large ✅       |
+| Midnight Pro | `2rem`    | 143px          | Large ✅       |
 
 **Difference**: 1px (0.7% - visually identical!)
 

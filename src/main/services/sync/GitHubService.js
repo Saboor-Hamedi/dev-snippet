@@ -199,7 +199,9 @@ class GitHubService {
     }
 
     try {
-      const url = cacheBust ? `${rawUrl}${rawUrl.includes('?') ? '&' : '?'}ts=${Date.now()}` : rawUrl
+      const url = cacheBust
+        ? `${rawUrl}${rawUrl.includes('?') ? '&' : '?'}ts=${Date.now()}`
+        : rawUrl
       const headers = { ...this.getHeaders(), Accept: 'text/plain; charset=utf-8' }
       const response = await fetch(url, { headers })
 

@@ -104,8 +104,16 @@
         const { type } = event.data
 
         if (type === 'styles') {
-          const { theme, isDark, styles, mermaidConfig, mermaidEngine, editorZoom = 1.0, baseFontSize } = event.data
-          
+          const {
+            theme,
+            isDark,
+            styles,
+            mermaidConfig,
+            mermaidEngine,
+            editorZoom = 1.0,
+            baseFontSize
+          } = event.data
+
           // Update zoom-aware font size
           const baseSize = baseFontSize || 14
           document.documentElement.style.fontSize = `${baseSize * editorZoom}px`
@@ -133,10 +141,7 @@
         }
 
         if (type === 'render') {
-          const {
-            html,
-            initialScrollPercentage
-          } = event.data
+          const { html, initialScrollPercentage } = event.data
 
           // 3. Update Content
           const contentDiv = document.getElementById('content')
@@ -167,15 +172,15 @@
 
           // 4. Process Logic via specialized Diagram Engine
           const runLogic = async () => {
-             if (window.diagramEngine) {
-                const isDark = document.documentElement.classList.contains('dark')
-                const themeStr = isDark ? 'dark' : 'neutral'
-                window.diagramEngine.init({
-                   theme: themeStr,
-                   ...(window._mermaidConfig || {})
-                })
-                await window.diagramEngine.run()
-             }
+            if (window.diagramEngine) {
+              const isDark = document.documentElement.classList.contains('dark')
+              const themeStr = isDark ? 'dark' : 'neutral'
+              window.diagramEngine.init({
+                theme: themeStr,
+                ...(window._mermaidConfig || {})
+              })
+              await window.diagramEngine.run()
+            }
           }
 
           runLogic()
@@ -199,13 +204,13 @@
 
             // Smooth Interpolation Engine
             if (window._scrollRaf) cancelAnimationFrame(window._scrollRaf)
-            
+
             const smoothScroll = () => {
               const current = window.scrollY || document.documentElement.scrollTop
               const diff = scrollTarget - current
               if (Math.abs(diff) < 1) {
-                 window.scrollTo(0, scrollTarget)
-                 return
+                window.scrollTo(0, scrollTarget)
+                return
               }
               // Rapid convergence (0.3 step) for high-responsiveness
               window.scrollTo(0, current + diff * 0.3)
@@ -232,9 +237,9 @@
               .replace(/&gt;/g, '>')
               .replace(/&quot;/g, '"')
           }
-          
+
           window.parent.postMessage({ type: 'app:copy-text', text: raw }, '*')
-          
+
           const old = btn.innerHTML
           btn.classList.add('success')
           btn.innerHTML =
@@ -251,18 +256,18 @@
         if (imgBtn) {
           let raw = ''
           try {
-             raw = decodeURIComponent(imgBtn.dataset.code)
+            raw = decodeURIComponent(imgBtn.dataset.code)
           } catch (e) {
-             raw = imgBtn.dataset.code
-               .replace(/&amp;/g, '&')
-               .replace(/&lt;/g, '<')
-               .replace(/&gt;/g, '>')
-               .replace(/&quot;/g, '"')
+            raw = imgBtn.dataset.code
+              .replace(/&amp;/g, '&')
+              .replace(/&lt;/g, '<')
+              .replace(/&gt;/g, '>')
+              .replace(/&quot;/g, '"')
           }
 
           const lang = imgBtn.dataset.lang || 'text'
           window.parent.postMessage({ type: 'app:copy-as-image', code: raw, language: lang }, '*')
-          
+
           // Add visual feedback
           const old = imgBtn.innerHTML
           imgBtn.classList.add('success')

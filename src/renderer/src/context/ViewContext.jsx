@@ -48,7 +48,7 @@ const ViewContext = createContext()
  * ═══════════════════════════════════════════════════════════════════════════
  */
 export const ViewProvider = ({ children }) => {
-  const [activeView, setActiveView] = useState('snippets') // 'snippets' | 'editor' | 'welcome' | 'settings' | 'markdown'
+  const [activeView, setActiveView] = useState('snippets') // 'snippets' | 'editor' | 'welcome' | 'settings' | 'markdown' | 'graph'
   const [viewParams, setViewParams] = useState({})
   const [previousViews, setPreviousViews] = useState([])
   const [showPreview, setShowPreview] = useState(() => {

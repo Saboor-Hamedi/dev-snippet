@@ -77,9 +77,9 @@ const UpdateManager = () => {
   }, [])
 
   // Auto-check on mount
-  useEffect(() => {
-    handleCheck(true)
-  }, [])
+  // useEffect(() => {
+  //   handleCheck(true)
+  // }, [])
 
   const handleCheck = async (silent = false) => {
     if (!window.api?.checkForUpdates) {

@@ -75,6 +75,9 @@ module.exports = {
           '0%': { transform: 'translateX(-10px)', opacity: '0' },
           '100%': { transform: 'translateX(0)', opacity: '1' }
         }
+      },
+      borderRadius: {
+        xxtiny: '5px'
       }
     }
   },

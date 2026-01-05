@@ -371,6 +371,10 @@ export const markdownToHtml = async (text, options = {}) => {
       </div>`
   }
 
+  if (options.minimal) {
+    return `<div class="markdown-content ${isRTL ? 'is-rtl' : ''}">${html}</div>`
+  }
+
   const finalHtml = `
     <div class="${isRTL ? 'is-rtl' : 'is-ltr'}">
       ${intelHeader}

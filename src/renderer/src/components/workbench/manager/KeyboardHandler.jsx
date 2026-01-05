@@ -33,7 +33,9 @@ const KeyboardHandler = ({
     isAnyOpen,
     closeAll,
     openSettingsModal,
-    isSettingsOpen
+    isSettingsOpen,
+    openGraphModal,
+    openAIPilot
   } = useModal()
   const { activeView, navigateTo, togglePreview, showPreview } = useView()
 
@@ -194,7 +196,9 @@ const KeyboardHandler = ({
     onToggleFlow: () => {
       window.dispatchEvent(new CustomEvent('app:toggle-flow'))
     },
-    onToggleZenFocus: onToggleZenFocus
+    onToggleZenFocus: onToggleZenFocus,
+    onToggleGraph: openGraphModal, // Ctrl+G / Cmd+G to open Knowledge Graph
+    onToggleAIPilot: openAIPilot // Ctrl+Shift+A to open AI Pilot
   })
 
   // Listen for custom zoom events which hook into useZoomLevel elsewhere or here?

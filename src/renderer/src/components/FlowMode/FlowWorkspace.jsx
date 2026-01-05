@@ -301,7 +301,7 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
           <RotateCcw size={13} />
         </button>
 
-        <button
+        {/* <button
           onClick={(e) => {
             e.stopPropagation()
             onExit()
@@ -310,7 +310,7 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
           title="Terminate Station"
         >
           <LogOut size={13} />
-        </button>
+        </button> */}
       </div>
     </div>
   )
@@ -338,7 +338,11 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
       noOverlay={true}
       customKey="flow_workspace_position"
       isMaximized={isStationMaximized || isZenFocused}
+      allowMaximize={false}
       className={`flow-ghost-modal no-padding ${!isZenFocused ? 'snap-frame' : ''}`}
+      hideHeaderBorder={true}
+      hideCloseButton={true}
+      noTab={true}
     >
       {isStationMaximized && (
         <div

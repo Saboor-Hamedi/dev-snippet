@@ -71,8 +71,19 @@ const api = {
   maximize: () => electronAPI.ipcRenderer.invoke('window:maximize'),
   unmaximize: () => electronAPI.ipcRenderer.invoke('window:unmaximize'),
   toggleMaximize: () => electronAPI.ipcRenderer.invoke('window:toggle-maximize'),
+  isMaximized: () => electronAPI.ipcRenderer.invoke('window:isMaximized'),
   closeWindow: () => electronAPI.ipcRenderer.invoke('window:close'),
   reloadWindow: () => electronAPI.ipcRenderer.invoke('window:reload'),
+  onMaximized: (callback) => {
+    const sub = () => callback()
+    electronAPI.ipcRenderer.on('window:maximized', sub)
+    return () => electronAPI.ipcRenderer.removeListener('window:maximized', sub)
+  },
+  onUnmaximized: (callback) => {
+    const sub = () => callback()
+    electronAPI.ipcRenderer.on('window:unmaximized', sub)
+    return () => electronAPI.ipcRenderer.removeListener('window:unmaximized', sub)
+  },
   relaunch: () => electronAPI.ipcRenderer.invoke('window:relaunch'),
   getVersion: () => electronAPI.ipcRenderer.invoke('app:getVersion'),
   // Bounds helpers for custom resize handles (renderer will call these)

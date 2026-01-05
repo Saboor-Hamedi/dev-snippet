@@ -15,7 +15,9 @@ import {
   History,
   RefreshCw,
   Database,
-  Cloud
+  Cloud,
+  Sparkles,
+  Brain
 } from 'lucide-react'
 import { DEFAULT_SETTINGS } from '../../config/defaultSettings'
 
@@ -28,7 +30,8 @@ import {
   ShortcutsTab,
   SyncTab,
   DataTab,
-  UpdateTab
+  UpdateTab,
+  AITab
 } from './sections'
 
 import { useSettings } from '../../hook/useSettingsContext'
@@ -206,11 +209,11 @@ const SettingsModal = ({ isOpen, onClose }) => {
    * When modal opens, trigger a background check for updates.
    * This ensures we always show the latest update status.
    */
-  useEffect(() => {
-    if (isOpen && window.api?.checkForUpdates) {
-      window.api.checkForUpdates().catch(() => {})
-    }
-  }, [isOpen])
+  // useEffect(() => {
+  //   if (isOpen && window.api?.checkForUpdates) {
+  //     window.api.checkForUpdates().catch(() => {})
+  //   }
+  // }, [isOpen])
 
   /**
    * Sync local settings copy with global settings state.
@@ -285,6 +288,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
     { id: 'behavior', label: 'Behavior', icon: Zap },
     { id: 'shortcuts', label: 'Shortcuts', icon: Keyboard },
     { id: 'sync', label: 'Sync', icon: Cloud },
+    { id: 'ai', label: 'AI Pilot', icon: Sparkles },
     { id: 'system', label: 'System & Data', icon: Database },
     { id: 'advanced', label: 'Advanced', icon: Command },
     { id: 'history', label: 'History', icon: History }
@@ -314,6 +318,10 @@ const SettingsModal = ({ isOpen, onClose }) => {
       height="85vh"
       className="settings-modal no-padding"
       customKey="settings_modal_position"
+      noTab={true}
+      hideHeaderBorder={true}
+      noRadius={false}
+      hideBorder={true}
       footer={
         <div className="flex items-stretch w-full h-10">
           <div className="w-16 md:w-64 border-r border-[var(--color-border)] flex items-center px-3 bg-[var(--color-bg-secondary)]/30">
@@ -446,7 +454,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
                 className="text-[9px] font-bold uppercase tracking-[0.15em]"
                 style={{ lineHeight: 1 }}
               >
-                {activeTab}
+                {sections.find((s) => s.id === activeTab)?.label || activeTab}
               </h3>
             </div>
           </div>
@@ -475,6 +483,9 @@ const SettingsModal = ({ isOpen, onClose }) => {
                 )}
                 {activeTab === 'shortcuts' && <ShortcutsTab />}
                 {activeTab === 'sync' && <SyncTab />}
+                {activeTab === 'ai' && (
+                  <AITab settings={localSettings} updateSetting={updateSetting} />
+                )}
                 {activeTab === 'system' && (
                   <DataTab
                     settings={localSettings}

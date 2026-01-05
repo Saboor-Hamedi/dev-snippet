@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useLayoutEffect } from 'react'
+import React, { useEffect, useRef, useLayoutEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
 import { GripHorizontal, X } from 'lucide-react'
+import WindowControls from './WindowControls'
 import { makeDraggable } from '../../utils/draggable'
 import { useSettings } from '../../hook/useSettingsContext'
 import { getPersistentPosition, savePersistentPosition } from '../../utils/persistentPosition'
@@ -18,50 +19,44 @@ const UniversalModal = ({
   resetPosition = false,
   noOverlay = false,
   customKey = 'universal_modal',
-  isMaximized: initialMaximized = false,
-  onMaximize: onMaximizeExternal
+  onMaximize,
+  isMaximized: isMaximizedExternal,
+  isLocked: isLockedProp = false,
+  allowMaximize = true,
+  headerHeight,
+  hideHeaderBorder = false,
+  headerContent = null,
+  hideBorder = false,
+  noTab = false,
+  noRadius = false,
+  hideCloseButton = false
 }) => {
-  const [internalMaximized, setInternalMaximized] = React.useState(initialMaximized)
-  const isMaximized = initialMaximized || internalMaximized
+  const [isMaximizedInternal, setIsMaximizedInternal] = useState(false)
+  const isMaximized = isMaximizedExternal !== undefined ? isMaximizedExternal : isMaximizedInternal
   const modalRef = useRef(null)
   const headerRef = useRef(null)
   const dragHandleRef = useRef(null)
   const isFirstRender = useRef(true)
+  const isDraggingInternal = useRef(false)
   const { settings } = useSettings()
 
   useLayoutEffect(() => {
+    // Prevent layout fighting during drag
+    if (isDraggingInternal.current) return
+
     if (isOpen && modalRef.current && headerRef.current) {
       const modal = modalRef.current
       const header = headerRef.current
 
       modal.style.setProperty('opacity', '1', 'important')
 
-      // Scientist Mode: Aggressive Reset Force
-      const forceReset = (el) => {
-        const bg = 'rgb(var(--color-bg-primary-rgb))'
-        el.style.setProperty('background', bg, 'important')
-        el.style.setProperty('background-color', bg, 'important')
-        el.style.setProperty('border', 'none', 'important')
-        el.style.setProperty('border-width', '0px', 'important')
-        el.style.setProperty('border-color', 'transparent', 'important')
-        el.style.setProperty('border-top', 'none', 'important')
-        el.style.setProperty('border-bottom', 'none', 'important')
-        el.style.setProperty('border-left', 'none', 'important')
-        el.style.setProperty('border-right', 'none', 'important')
-        el.style.setProperty('outline', 'none', 'important')
-        el.style.setProperty('box-shadow', 'none', 'important')
-        el.style.setProperty('backdrop-filter', 'none', 'important')
-      }
-
-      forceReset(modal)
-      forceReset(header)
-      if (modal.querySelector('.universal-modal-footer')) {
-        forceReset(modal.querySelector('.universal-modal-footer'))
-      }
-
-      const isLocked = settings?.ui?.universalLock?.modal
+      const isLocked = isLockedProp || settings?.ui?.universalLock?.modal
 
       // 1. Position & Size Setup
+      if (headerHeight) {
+        header.style.height = typeof headerHeight === 'number' ? `${headerHeight}px` : headerHeight
+      }
+
       const saved = getPersistentPosition(customKey, null)
 
       // Disable transitions for the initial positioning to prevent "shaking"
@@ -98,16 +93,23 @@ const UniversalModal = ({
         modal.style.removeProperty('transform')
 
         if (isLocked || resetPosition) {
-          modal.style.position = isLocked ? 'fixed' : 'absolute'
+          if (noOverlay) {
+            modal.style.position = 'absolute'
+            modal.style.left = '50%'
+            modal.style.top = '50%'
+            modal.style.transform = 'translate(-50%, -50%)'
+          } else {
+            modal.style.position = 'relative'
+            modal.style.left = 'auto'
+            modal.style.top = 'auto'
+          }
           modal.style.zIndex = '1000000'
           modal.style.width = typeof initialWidth === 'number' ? `${initialWidth}px` : initialWidth
           modal.style.height =
             typeof initialHeight === 'number' ? `${initialHeight}px` : initialHeight
-          modal.style.margin = 'auto'
-          modal.style.left = '50%'
-          modal.style.top = '50%'
-          modal.style.transform = 'translate(-50%, -50%)'
-        } else if (saved) {
+          modal.style.margin = '0'
+        } else if (saved && (customKey.includes('graph') || customKey.includes('flow'))) {
+          // Persistence only for workstations/graphs
           modal.style.position = 'absolute'
           modal.style.left = saved.left
           modal.style.top = saved.top
@@ -119,8 +121,9 @@ const UniversalModal = ({
           modal.style.margin = '0'
           modal.style.transform = 'none'
         } else {
-          modal.style.position = 'absolute'
+          // Default: Centered all the time
           if (noOverlay) {
+            modal.style.position = 'absolute'
             if (customKey === 'flow_editor_position') {
               modal.style.left = '60px'
               modal.style.top = '100px'
@@ -128,26 +131,19 @@ const UniversalModal = ({
               modal.style.right = '60px'
               modal.style.top = '100px'
               modal.style.left = 'auto'
-            } else if (customKey === 'flow_workspace_position') {
-              // Center the workspace by default
-              const w =
-                typeof initialWidth === 'number' ? initialWidth : parseInt(initialWidth) || 800
-              const h =
-                typeof initialHeight === 'number' ? initialHeight : parseInt(initialHeight) || 700
-              modal.style.left = `${Math.max(0, (window.innerWidth - w) / 2)}px`
-              modal.style.top = `${Math.max(0, (window.innerHeight - h) / 2)}px`
             } else {
-              modal.style.right = '40px'
-              modal.style.top = '80px'
-              modal.style.left = 'auto'
+              // Centered absolute fallback for noOverlay cases
+              modal.style.left = '50%'
+              modal.style.top = '50%'
+              modal.style.transform = 'translate(-50%, -50%)'
             }
-            modal.style.margin = '0'
           } else {
-            modal.style.left = '50%'
-            modal.style.top = '50%'
-            modal.style.transform = 'translate(-50%, -50%)'
-            modal.style.margin = '0'
+            // Standard Modal: Use Relative + Overlay Flexbox for absolute center
+            modal.style.setProperty('position', 'relative', 'important')
+            modal.style.left = 'auto'
+            modal.style.top = 'auto'
           }
+          modal.style.margin = '0'
           modal.style.width = typeof initialWidth === 'number' ? `${initialWidth}px` : initialWidth
           modal.style.height =
             typeof initialHeight === 'number' ? `${initialHeight}px` : initialHeight
@@ -165,15 +161,23 @@ const UniversalModal = ({
       // 2. Enable Dragging
       let cleanupDrag
       if (!isLocked && !isMaximized && headerRef.current) {
-        cleanupDrag = makeDraggable(modal, headerRef.current, (pos) => {
-          savePersistentPosition(customKey, {
-            ...saved,
-            left: `${pos.x}px`,
-            top: `${pos.y}px`,
-            width: modal.style.width,
-            height: modal.style.height
-          })
-        })
+        cleanupDrag = makeDraggable(
+          modal,
+          headerRef.current,
+          (pos) => {
+            isDraggingInternal.current = false
+            savePersistentPosition(customKey, {
+              ...saved,
+              left: `${pos.x}px`,
+              top: `${pos.y}px`,
+              width: modal.style.width,
+              height: modal.style.height
+            })
+          },
+          () => {
+            isDraggingInternal.current = true
+          }
+        )
       }
 
       // 3. Enable Resizing (Simple bottom-right handle logic)
@@ -224,6 +228,7 @@ const UniversalModal = ({
     isOpen,
     initialWidth,
     initialHeight,
+    isLockedProp,
     settings?.ui?.universalLock?.modal,
     settings?.ui?.theme,
     resetPosition,
@@ -231,153 +236,110 @@ const UniversalModal = ({
   ])
 
   const toggleMaximized = (e) => {
-    e.stopPropagation()
-    setInternalMaximized(!isMaximized)
-    if (onMaximizeExternal) onMaximizeExternal(!isMaximized)
+    if (e && e.stopPropagation) e.stopPropagation()
+    setIsMaximizedInternal(!isMaximized)
+    if (onMaximize) onMaximize(!isMaximized)
   }
 
   if (!isOpen) return null
 
-  const isDragDisabled = settings?.ui?.universalLock?.modal
+  const isDragDisabled = isLockedProp || settings?.ui?.universalLock?.modal
 
   const modalContent = (
     <div
       ref={modalRef}
-      className={`universal-modal u-borderless u-solid ${isDragDisabled ? 'locked' : ''} ${className} ${noOverlay ? 'no-overlay' : ''}`}
+      className={`universal-modal u-solid ${!hideBorder ? 'native-frame' : ''} ${isDragDisabled ? 'locked' : ''} ${className} ${noOverlay ? 'no-overlay' : ''} ${hideBorder ? 'borderless' : ''}`}
       style={{
         width: typeof initialWidth === 'number' ? `${initialWidth}px` : initialWidth,
         height: typeof initialHeight === 'number' ? `${initialHeight}px` : initialHeight,
         zIndex: noOverlay ? 100000 : 200000,
         pointerEvents: className.includes('click-through') ? 'none' : 'auto',
-        // Scientist Mode: Explicit Enforcement via Inline Styles
-        background: 'rgb(var(--color-bg-primary-rgb))',
-        backgroundColor: 'rgb(var(--color-bg-primary-rgb))',
-        border: 'none',
-        borderWidth: '0px',
-        borderColor: 'transparent',
-        boxShadow: 'none',
-        outline: 'none',
-        backdropFilter: 'none',
-        opacity: 1
+        opacity: 1,
+        border: hideBorder ? 'none' : undefined,
+        boxShadow: hideBorder ? 'none' : undefined,
+        borderRadius: noRadius ? '0px' : undefined,
+        WebkitAppRegion: 'no-drag'
       }}
     >
       <div
         ref={headerRef}
-        className="universal-modal-header u-borderless u-solid"
-        onDoubleClick={() => {
+        className="universal-modal-header u-solid no-drag"
+        data-no-tab={noTab}
+        onDoubleClick={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
           if (customKey === 'flow_workspace_position' && typeof isMaximized !== 'undefined') {
             window.dispatchEvent(new CustomEvent('app:maximize-station'))
+          } else if (allowMaximize) {
+            toggleMaximized(e)
+          }
+        }}
+        onMouseDown={(e) => {
+          // Ensure we don't start dragging if we clicked a button
+          if (e.target.closest('button, input, .no-drag')) {
+            e.stopPropagation()
           }
         }}
         style={{
           cursor: !isDragDisabled && !isMaximized ? 'move' : 'default',
           pointerEvents: 'auto',
-          background: 'rgb(var(--color-bg-primary-rgb))',
-          backgroundColor: 'rgb(var(--color-bg-primary-rgb))',
-          border: 'none',
-          boxShadow: 'none',
-          outline: 'none',
+          height: headerHeight
+            ? typeof headerHeight === 'number'
+              ? `${headerHeight}px`
+              : headerHeight
+            : '36px',
+          borderBottom: hideHeaderBorder ? 'none' : '1px solid var(--color-border)',
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 0 0 16px',
-          height: '40px',
-          width: '100%',
-          flexShrink: 0,
-          gap: 0
+          alignItems: 'flex-end',
+          position: 'relative',
+          WebkitAppRegion: 'no-drag',
+          userSelect: 'none'
         }}
       >
+        {/* Left Side: Title */}
         <div
-          className="universal-modal-title"
-          style={{
-            fontSize: '9px',
-            fontWeight: 'bold',
-            textTransform: 'uppercase',
-            letterSpacing: '0.1em',
-            color: 'var(--color-text-primary)'
-          }}
+          className="flex items-center h-full px-2 no-drag"
+          style={{ WebkitAppRegion: 'no-drag', pointerEvents: 'auto' }}
+          onMouseDown={(e) => e.stopPropagation()}
         >
-          {title}
+          {noTab ? (
+            <div
+              className="universal-modal-title px-2 flex items-center h-full gap-2"
+              style={{ color: 'var(--color-text-primary)' }}
+            >
+              {title}
+            </div>
+          ) : (
+            <div className="universal-modal-tab">
+              <div className="universal-modal-title">{title}</div>
+              {!isMaximized && <div className="universal-modal-tab-accent" />}
+            </div>
+          )}
         </div>
-        <div style={{ display: 'flex' }}>
-          <button
-            onClick={toggleMaximized}
-            className="universal-modal-close-btn"
-            style={{
-              background: 'none',
-              border: 'none',
-              padding: '0',
-              width: '40px',
-              height: '40px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              opacity: 0.5,
-              transition: 'all 0.2s',
-              color: 'var(--color-text-primary)'
-            }}
-            title={isMaximized ? 'Restore' : 'Maximize'}
+
+        {/* Center: Customizable Content (Absolutely Centered) */}
+        {headerContent && (
+          <div
+            className="universal-modal-header-center no-drag"
+            style={{ WebkitAppRegion: 'no-drag' }}
+            onMouseDown={(e) => e.stopPropagation()}
           >
-            {isMaximized ? (
-              <svg
-                viewBox="0 0 24 24"
-                width="14"
-                height="14"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
-              </svg>
-            ) : (
-              <svg
-                viewBox="0 0 24 24"
-                width="14"
-                height="14"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
-              </svg>
-            )}
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onClose()
-            }}
-            className="universal-modal-close-btn close"
-            style={{
-              background: 'none',
-              border: 'none',
-              padding: '0',
-              width: '40px',
-              height: '40px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              opacity: 0.5,
-              transition: 'all 0.2s',
-              color: 'var(--color-text-primary)'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.opacity = '1'
-              e.currentTarget.style.backgroundColor = 'rgba(255, 0, 0, 0.1)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.opacity = '0.5'
-              e.currentTarget.style.backgroundColor = 'transparent'
-            }}
-          >
-            <X size={16} />
-          </button>
+            {headerContent}
+          </div>
+        )}
+
+        {/* Right Side: Window Controls */}
+        <div
+          className="universal-modal-controls absolute top-0 right-0 h-full flex items-center pr-1 no-drag"
+          style={{ WebkitAppRegion: 'no-drag', zIndex: 110, pointerEvents: 'auto' }}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <WindowControls
+            onMaximize={allowMaximize ? toggleMaximized : null}
+            onClose={onClose}
+            showMinimize={false}
+            showMaximize={allowMaximize}
+          />
         </div>
       </div>
       <div
@@ -389,12 +351,7 @@ const UniversalModal = ({
         <div
           className={`universal-modal-footer u-solid ${className.includes('no-padding') ? 'no-padding' : ''}`}
           style={{
-            background: 'rgb(var(--color-bg-primary-rgb))',
-            backgroundColor: 'rgb(var(--color-bg-primary-rgb))',
-            border: 'none',
             borderTop: '1px solid var(--color-border)',
-            boxShadow: 'none',
-            outline: 'none',
             flexShrink: 0,
             padding: className.includes('no-padding') ? 0 : undefined
           }}

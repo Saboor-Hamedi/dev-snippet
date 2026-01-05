@@ -7,12 +7,9 @@ import PropTypes from 'prop-types'
  */
 const KeyboardShortcutItem = ({ action, description, shortcut }) => {
   return (
-    <div
-      className="flex items-center justify-between   rounded"
-      style={{ backgroundColor: 'var(--color-bg-primary)' }}
-    >
+    <div className="flex items-center justify-between py-1">
       <div>
-        <div className="text-xtiny font-thin" style={{ color: 'var(--color-text-primary)' }}>
+        <div className="text-[10px] font-medium" style={{ color: 'var(--color-text-primary)' }}>
           {action}
         </div>
         {description && (

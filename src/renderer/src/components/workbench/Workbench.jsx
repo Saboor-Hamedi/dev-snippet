@@ -3,6 +3,18 @@ import PropTypes from 'prop-types'
 import SnippetEditor from './SnippetEditor'
 import WelcomePage from '../WelcomePage'
 import { Header } from '../layout/Header'
+import {
+  Plus,
+  Minus,
+  Maximize2,
+  RefreshCw,
+  X,
+  Share2,
+  Palette,
+  Sparkles,
+  Search
+} from 'lucide-react'
+import { generateRandomGraphTheme } from '../Graph/GraphLogic'
 
 import SidebarTheme from '../preference/SidebarTheme'
 import SnippetSidebar from './SnippetSidebar'
@@ -15,6 +27,8 @@ import '../FlowMode/FlowMode.css'
 import LivePreview from '../livepreview/LivePreview'
 import { useTheme } from '../../hook/useTheme'
 import { useSettings } from '../../hook/useSettingsContext'
+import { useView } from '../../context/ViewContext'
+import KnowledgeGraph from '../Graph/KnowledgeGraph'
 
 const Workbench = ({
   // Data Props
@@ -194,18 +208,36 @@ const Workbench = ({
     return selectedSnippet?.is_favorite === 1
   })()
 
-  const { openDeleteModal, openTrashModal } = useModal()
+  const { openDeleteModal, openTrashModal, openAIPilot } = useModal()
   const [activeSidebarTab, setActiveSidebarTab] = React.useState('explorer')
   const [showFlowPreview, setShowFlowPreview] = React.useState(false)
 
   // Listen for global commands (Command Palette) - REMOVED (Handled in SnippetLibraryInner)
 
+  const { navigateTo } = useView()
+
   const handleTabChange = (tabId) => {
+    if (tabId === 'graph') {
+      navigateTo('graph')
+      setIsSidebarOpen(false)
+      setActiveSidebarTab(tabId)
+      showToast('Navigating to Knowledge Graph...', 'info')
+      return
+    }
+
+    // If we're coming from graph back to explorer/themes/trash, restore the view
+    if (
+      activeView === 'graph' &&
+      (tabId === 'explorer' || tabId === 'themes' || tabId === 'trash')
+    ) {
+      navigateTo('snippets')
+    }
+
     // Only 'explorer' and 'themes' should open/toggle the sidebar
     if (tabId === 'explorer' || tabId === 'themes' || tabId === 'trash') {
       // Added 'trash'
-      if (activeSidebarTab === tabId) {
-        setIsSidebarOpen(!isSidebarOpen)
+      if (activeSidebarTab === tabId && isSidebarOpen) {
+        setIsSidebarOpen(false)
       } else {
         setActiveSidebarTab(tabId)
         setIsSidebarOpen(true)
@@ -251,12 +283,67 @@ const Workbench = ({
         return selectedSnippet?.title || 'Quick Snippets'
       case 'welcome':
         return 'Welcome'
+      case 'graph':
+        return 'Knowledge Graph'
       default:
         return 'Quick Snippets'
     }
   }
 
+  const [graphRefreshKey, setGraphRefreshKey] = React.useState(0)
+
+  const [graphSearchQuery, setGraphSearchQuery] = React.useState('')
+  const [debouncedSearch, setDebouncedSearch] = React.useState('')
+
+  // Debounce search for performance
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(graphSearchQuery)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [graphSearchQuery])
+
+  const renderHeaderCenter = () => {
+    if (activeView === 'graph') {
+      return (
+        <div className="flex items-center" style={{ WebkitAppRegion: 'no-drag' }}>
+          <div className="relative">
+            <Search
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/30"
+              size={12}
+            />
+            <input
+              type="text"
+              placeholder="Search Knowledge Graph..."
+              value={graphSearchQuery}
+              onChange={(e) => setGraphSearchQuery(e.target.value)}
+              className="bg-black/40 border border-white/10 rounded-[5px] px-8 py-1.5 text-[11px] w-[320px] focus:outline-none focus:border-[var(--color-accent-primary)]/50 focus:bg-black/60 transition-all text-white/80 placeholder:text-white/20 shadow-inner"
+            />
+          </div>
+        </div>
+      )
+    }
+    return null
+  }
+
+  const renderHeaderActions = () => {
+    // Graph actions are now handled internally within the KnowledgeGraph component
+    return null
+  }
+
   const renderContent = (isFlow = false) => {
+    if (activeView === 'graph') {
+      return (
+        <KnowledgeGraph
+          key={`graph-${graphRefreshKey}`} // Force remount on refresh
+          selectedSnippetId={selectedSnippet?.id}
+          searchQuery={debouncedSearch}
+          onSelectSnippet={(node) => onSelectSnippet({ id: node.id, title: node.title })}
+          onClose={() => navigateTo('snippets')}
+        />
+      )
+    }
+
     if (activeView === 'editor') {
       return (
         <SnippetEditor
@@ -405,6 +492,8 @@ const Workbench = ({
             onRename && onRename()
           }}
           onClose={handleCloseSnippet}
+          actions={renderHeaderActions()}
+          centerActions={renderHeaderCenter()}
         />
       )}
 
@@ -445,9 +534,11 @@ const Workbench = ({
               onSettings={onOpenSettings}
               onDailyNote={onDailyNote}
               onTrash={openTrashModal}
+              onAIPilot={openAIPilot}
               isSettingsOpen={isSettingsOpen}
               trashCount={trash?.length || 0}
               settings={settings}
+              showToast={showToast}
             />
           </div>
         )}

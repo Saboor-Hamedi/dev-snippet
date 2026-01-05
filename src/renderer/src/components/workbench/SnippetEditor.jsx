@@ -1593,7 +1593,7 @@ const SnippetEditor = ({
               setNamePrompt({ isOpen: false, initialName: '' })
               setJustRenamed(true)
             }}
-            placeholder="e.g. hello.js or notes"
+            placeholder="e.g. document.js or document.md"
           />
 
           <UniversalModal

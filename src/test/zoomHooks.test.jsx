@@ -66,7 +66,11 @@ vi.mock('../renderer/src/config/settingsManager.js', async () => {
 })
 
 import settingsManager from '../renderer/src/config/settingsManager.js'
-import { SettingsProvider, useZoomLevel, useEditorZoomLevel } from '../renderer/src/hook/useSettingsContext.jsx'
+import {
+  SettingsProvider,
+  useZoomLevel,
+  useEditorZoomLevel
+} from '../renderer/src/hook/useSettingsContext.jsx'
 
 const wrapper = ({ children }) => <SettingsProvider>{children}</SettingsProvider>
 

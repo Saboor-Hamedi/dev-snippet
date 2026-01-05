@@ -79,6 +79,14 @@ export const DEFAULT_SETTINGS = {
     },
     universalLock: {
       modal: false
+    },
+    graphToolbar: {
+      isFloating: true,
+      disableDraggable: false,
+      pos: {
+        x: null,
+        y: null
+      }
     }
   },
   sidebar: {
@@ -124,5 +132,11 @@ export const DEFAULT_SETTINGS = {
     enableLinting: false,
     disableComplexCM: false,
     maxFileSize: 5242880
+  },
+  ai: {
+    apiKey: '',
+    model: 'deepseek-chat',
+    temperature: 0.7,
+    pilotScale: 75 // Default to 75% height/width
   }
 }

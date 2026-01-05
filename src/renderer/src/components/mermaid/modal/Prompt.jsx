@@ -108,11 +108,16 @@ const Prompt = ({
       isOpen={isOpen}
       onClose={onClose}
       title={title}
-      width="400px"
+      width="300px"
+      height="auto"
       className="prompt-modal"
-      resetPosition={true}
+      resetPosition={false}
+      isLocked={true}
+      allowMaximize={false}
+      noTab={true}
+      noRadius={true}
     >
-      <div className="p-5 text-left bg-[var(--color-bg-primary)]">
+      <div className=" text-left bg-[var(--color-bg-primary)]">
         {/* Message */}
         {message && (
           <div className="text-[13px] text-[var(--color-text-secondary)] mb-4 leading-relaxed opacity-90">
@@ -138,7 +143,7 @@ const Prompt = ({
               onChange={(e) => onInputChange && onInputChange(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={placeholder}
-              className="w-full bg-white/5 dark:bg-black/20 border border-white/10 focus:border-[var(--color-accent-primary)] outline-none rounded-xl px-4 py-3 text-[14px] text-[var(--color-text-primary)] transition-all placeholder:text-[var(--color-text-tertiary)] shadow-inner"
+              className="w-full bg-white/5 dark:bg-black/20 border rounded-xxtiny outline-none  px-3 py-2 text-[12px] text-[var(--color-text-primary)] transition-all placeholder:text-[var(--color-text-tertiary)] shadow-inner"
               autoComplete="off"
             />
           </div>

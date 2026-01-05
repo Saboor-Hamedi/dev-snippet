@@ -1,4 +1,4 @@
-export const makeDraggable = (el, handle, onDragEnd) => {
+export const makeDraggable = (el, handle, onDragEnd, onDragStart) => {
   let startX = 0,
     startY = 0,
     initialX = 0,
@@ -16,12 +16,14 @@ export const makeDraggable = (el, handle, onDragEnd) => {
 
     // Don't drag if clicking interactive elements inside the handle
     const isInteractive = targetEl.closest(
-      'button, input, select, textarea, a, .cm-mode-btn, [role="button"]'
+      'button, input, select, textarea, a, .cm-mode-btn, [role="button"], .nexus-header-search-group'
     )
     if (isInteractive) return
 
     // Prevent default to stop text selection
     e.preventDefault()
+
+    if (onDragStart) onDragStart()
 
     // Measure exact position relative to offsetParent
     const rect = el.getBoundingClientRect()

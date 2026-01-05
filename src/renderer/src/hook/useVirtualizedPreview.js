@@ -27,9 +27,7 @@ export const useVirtualizedPreview = (totalHeight = 5000, containerHeight = 800)
     setVisibleRange({ start, end })
 
     // Calculate scroll percentage for sync
-    const percentage = scrollHeight > clientHeight 
-      ? scrollTop / (scrollHeight - clientHeight)
-      : 0
+    const percentage = scrollHeight > clientHeight ? scrollTop / (scrollHeight - clientHeight) : 0
     setScrollPercentage(percentage)
   }, [])
 
@@ -53,19 +51,8 @@ export const useVirtualizedPreview = (totalHeight = 5000, containerHeight = 800)
  * Component wrapper for virtualized content
  * Renders only visible sections
  */
-export const VirtualizedContent = ({ 
-  html, 
-  visibleRange, 
-  containerRef,
-  ...props 
-}) => {
+export const VirtualizedContent = ({ html, visibleRange, containerRef, ...props }) => {
   // For simplicity, render full HTML but with opacity control on off-screen regions
   // More advanced: split HTML into sections and conditionally render
-  return (
-    <div
-      ref={containerRef}
-      dangerouslySetInnerHTML={{ __html: html }}
-      {...props}
-    />
-  )
+  return <div ref={containerRef} dangerouslySetInnerHTML={{ __html: html }} {...props} />
 }

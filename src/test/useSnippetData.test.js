@@ -202,9 +202,11 @@ describe('useSnippetData', () => {
 
     const snippet = { id: '1', title: 'test.js', code: 'code' }
 
-    await expect(act(async () => {
-      await result.current.saveSnippet(snippet)
-    })).rejects.toThrow('Save failed')
+    await expect(
+      act(async () => {
+        await result.current.saveSnippet(snippet)
+      })
+    ).rejects.toThrow('Save failed')
 
     // Should not crash, snippets should remain empty
     expect(result.current.snippets).toEqual([])

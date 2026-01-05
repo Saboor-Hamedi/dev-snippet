@@ -124,6 +124,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
     openImageExportModal,
     openSettingsModal,
     openSyncModal,
+    openAIPilot,
     isSettingsOpen
   } = useModal()
 
@@ -146,7 +147,8 @@ const SnippetLibraryInner = ({ snippetData }) => {
    * - Silent auto-save vs Manual Save toast feedback.
    */
   const saveSnippet = useCallback(
-    async (s, silent = false) => {
+    async (s, options = false) => {
+      const silent = typeof options === 'object' ? options.silent : options
       if (!s) return
 
       // CRITICAL: Block background sync while this function is executing
@@ -177,7 +179,8 @@ const SnippetLibraryInner = ({ snippetData }) => {
       }
 
       // Standard snippet save logic...
-      const result = await window.api.updateSnippet(s.id, {
+      const result = await window.api.saveSnippet({
+        ...s,
         title: s.title,
         code: s.code,
         language: s.language,
@@ -247,6 +250,12 @@ const SnippetLibraryInner = ({ snippetData }) => {
   // SYNC VIRTUAL SETTINGS: DISABLE TO PREVENT CURSOR JUMPS
   // Syncing causing race conditions with CodeMirror cursor state.
   // User must reopen settings.json to see UI-triggered changes.
+  useEffect(() => {
+    if (activeView === 'graph' || activeView === 'settings') {
+      setIsCreatingSnippet(false)
+    }
+  }, [activeView])
+
   useEffect(() => {
     // Determine if the user is currently interacting with the editor
     const isFocused =
@@ -805,6 +814,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
       if (selectedSnippet) handlePing(selectedSnippet.id)
       else showToast('No snippet selected', 'info')
     }
+    const onCommandAIPilot = () => openAIPilot()
 
     window.addEventListener('app:command-new-snippet', onCommandNew)
     window.addEventListener('app:toggle-theme', onCommandTheme)
@@ -827,6 +837,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
     window.addEventListener('app:reset-window', onResetWindow)
     window.addEventListener('app:toggle-favorite', onCommandFavorite)
     window.addEventListener('app:ping-snippet', onCommandPing)
+    window.addEventListener('app:toggle-ai-pilot', onCommandAIPilot)
 
     // Listen for wiki-link navigation events
     const onOpenSnippet = async (e) => {

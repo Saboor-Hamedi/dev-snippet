@@ -1,0 +1,147 @@
+/* Knowledge Graph Modal Styling - Seamless Integration */
+
+/* Modal content area - seamless dark background for the cosmic graph */
+.knowledge-graph-modal-wrapper .universal-modal-content {
+  background: #0a0d14 !important;
+  padding: 0 !important;
+}
+
+.knowledge-graph-modal-wrapper {
+  z-index: 200000 !important;
+}
+
+/* Keep the internal graph toolbar visible and position it nicely */
+/* Adjusted top to 32px to match the new standardized header height */
+.knowledge-graph-modal-wrapper .nexus-header-overlay {
+  display: flex !important;
+  top: 60px; /* Lower since header is now 48px */
+  left: 14px;
+  z-index: 50 !important;
+}
+
+/* Ensure the graph container takes full space */
+.knowledge-graph-modal-wrapper .knowledge-graph-container {
+  border-radius: 0 !important;
+}
+
+/* Header Content Alignment */
+.nexus-modal-header-search {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-width: 0;
+  padding: 0 15px;
+  pointer-events: none;
+}
+
+.knowledge-graph-modal-wrapper .universal-modal-header {
+  height: 40px !important;
+  min-height: 40px !important;
+  max-height: 40px !important;
+  padding: 0 8px;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px;
+  position: relative;
+}
+
+.knowledge-graph-modal-wrapper .universal-modal-header-center {
+  position: static !important;
+  transform: none !important;
+  flex: 1;
+  width: auto !important;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+.knowledge-graph-modal-wrapper .universal-modal-controls {
+  position: static !important;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.knowledge-graph-modal-wrapper .universal-modal-title {
+  color: var(--color-accent-primary) !important;
+  font-family: var(--u-font-sans);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  gap: 10px !important;
+  flex-shrink: 0;
+  min-width: fit-content;
+  font-size: 11px !important;
+}
+
+.nexus-header-search-group {
+  display: flex;
+  align-items: center;
+  background: transparent !important; /* Force transparent always */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 0 10px;
+  height: 26px;
+  width: 100%;
+  max-width: 360px;
+  transition: all 0.2s ease;
+  cursor: text;
+  pointer-events: auto !important;
+}
+
+.nexus-header-search-group:hover,
+.nexus-header-search-group:focus-within {
+  background: transparent !important; /* NO FOCUS BACKGROUND */
+  border-color: var(--color-accent-primary);
+  box-shadow: none !important;
+}
+
+.nexus-header-search-icon {
+  color: var(--color-accent-primary);
+  margin-right: 10px;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.nexus-header-search-input {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  color: var(--color-text-primary) !important;
+  font-size: 13px !important;
+  font-weight: 500;
+  width: 100%;
+  outline: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  user-select: text !important;
+}
+
+.nexus-header-search-input:focus,
+.nexus-header-search-input:active {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+  border: none !important;
+}
+
+.nexus-header-search-input::placeholder {
+  color: var(--color-text-tertiary);
+  opacity: 0.4;
+  font-size: 11px;
+}
+
+.knowledge-graph-modal-wrapper .universal-modal-footer {
+  justify-content: flex-start !important;
+  padding: 0 !important;
+}
+
+.nexus-modal-footer-stats {
+  background: var(--color-bg-secondary);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-tertiary);
+  z-index: 10;
+  width: 100%;
+}

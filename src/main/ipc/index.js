@@ -14,6 +14,7 @@ import { registerExportHandlers } from '../export/export'
 import { registerWordExportHandler } from '../export/exportWord'
 import { registerSyncHandlers } from './sync'
 import { registerQuickCaptureHandlers } from '../QuickCapture/ipc'
+import { registerAIHandlers } from '../AI/ipc'
 
 export const registerAllHandlers = (
   app,
@@ -41,6 +42,13 @@ export const registerAllHandlers = (
   registerSyncHandlers(db)
 
   registerQuickCaptureHandlers(app, enableDevtools)
+
+  // Register AI handlers last to ensure core startup is not blocked
+  try {
+    registerAIHandlers()
+  } catch (e) {
+    console.error('FAILED TO REGISTER AI HANDLERS:', e)
+  }
 
   return {
     settingsHandlers

@@ -22,7 +22,7 @@ export async function getAllSnippetsWithDiagrams(app) {
       let diagrams = []
       try {
         const files = await fs.readdir(diagramDir)
-        diagrams = files.filter(f => f.startsWith(row.id)).map(f => path.join(diagramDir, f))
+        diagrams = files.filter((f) => f.startsWith(row.id)).map((f) => path.join(diagramDir, f))
       } catch (err) {
         // Diagrams folder doesn't exist or error reading, skip
         console.warn('Diagrams folder not found or error:', err.message)

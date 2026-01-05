@@ -295,6 +295,32 @@ export const SHORTCUT_DEFINITIONS = [
     ]
   },
   {
+    id: 'toggle-knowledge-graph',
+    scope: 'Navigation',
+    action: 'Knowledge Graph',
+    description: 'Open the interactive visual map of all snippets and connections.',
+    displayCombos: [`${MOD_KEY_PLACEHOLDER} + G`],
+    handlerKey: 'onToggleGraph',
+    matchers: [
+      {
+        when: (event) => isModKeyPressed(event) && matchesKey(event, 'g') && !event.shiftKey
+      }
+    ]
+  },
+  {
+    id: 'toggle-ai-pilot',
+    scope: 'AI',
+    action: 'AI Pilot',
+    description: 'Summon the intelligent DeepSeek AI Pilot.',
+    displayCombos: [`${MOD_KEY_PLACEHOLDER} + Shift + A`],
+    handlerKey: 'onToggleAIPilot',
+    matchers: [
+      {
+        when: (event) => isModKeyPressed(event) && event.shiftKey && matchesKey(event, 'a')
+      }
+    ]
+  },
+  {
     id: 'zoom-wheel',
     scope: 'Zoom',
     action: 'Smooth zoom',

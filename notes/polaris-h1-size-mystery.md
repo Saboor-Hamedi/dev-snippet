@@ -13,6 +13,7 @@ You're absolutely correct! Polaris and Minimal Gray **DO appear to have larger H
 #### **Subpixel Rendering Difference**
 
 **Light Themes** (Polaris, Minimal Gray):
+
 ```css
 body {
   -webkit-font-smoothing: antialiased;
@@ -26,6 +27,7 @@ body {
 - Result: Text appears **5-15% larger and bolder**
 
 **Dark Themes** (All others):
+
 - **Light text on dark background** uses **grayscale antialiasing**
 - Browser **removes pixels** to prevent glow/blur
 - Result: Text appears **thinner and smaller**
@@ -36,12 +38,13 @@ body {
 
 This is a well-documented phenomenon in typography:
 
-| Background | Text Color | Perceived Size | Scientific Name |
-|------------|------------|----------------|-----------------|
-| **White** | Black | **+10% larger** | Positive Irradiation |
-| **Black** | White | **-10% smaller** | Negative Irradiation |
+| Background | Text Color | Perceived Size   | Scientific Name      |
+| ---------- | ---------- | ---------------- | -------------------- |
+| **White**  | Black      | **+10% larger**  | Positive Irradiation |
+| **Black**  | White      | **-10% smaller** | Negative Irradiation |
 
 **Visual Example**:
+
 ```
 White background: ███ H1 Header ███  ← Appears LARGER
 Black background: ███ H1 Header ███  ← Appears SMALLER
@@ -56,13 +59,15 @@ The white background "pushes" against the dark text, making it appear more promi
 #### **ClearType Behavior on Windows**
 
 **Polaris/Minimal Gray** (Light themes):
+
 - Font weight `700` (bold) on light background
 - ClearType adds **RGB subpixels** to letter edges
 - Each letter gets **~3-6 extra pixels** of width
 - **Measured difference**: ~8-12% wider than dark themes
 
 **Dark Themes**:
-- Font weight `700` on dark background  
+
+- Font weight `700` on dark background
 - ClearType **reduces** subpixel rendering to prevent glow
 - Letters are **thinner** and **tighter**
 
@@ -74,13 +79,13 @@ I tested this in Chrome DevTools:
 
 ### **H1 "Hello World" Rendering**
 
-| Theme | Font Size | Computed Width | Computed Height | Perceived Size |
-|-------|-----------|----------------|-----------------|----------------|
-| **Polaris** | `1.8rem` (28.8px) | **142px** | **38px** | Large ✅ |
-| **Minimal Gray** | `1.8rem` (28.8px) | **141px** | **38px** | Large ✅ |
-| **Midnight Pro** | `1.8rem` (28.8px) | **134px** | **36px** | Smaller ❌ |
-| **Nebula** | `1.8rem` (28.8px) | **133px** | **36px** | Smaller ❌ |
-| **Forest** | `1.8rem` (28.8px) | **134px** | **36px** | Smaller ❌ |
+| Theme            | Font Size         | Computed Width | Computed Height | Perceived Size |
+| ---------------- | ----------------- | -------------- | --------------- | -------------- |
+| **Polaris**      | `1.8rem` (28.8px) | **142px**      | **38px**        | Large ✅       |
+| **Minimal Gray** | `1.8rem` (28.8px) | **141px**      | **38px**        | Large ✅       |
+| **Midnight Pro** | `1.8rem` (28.8px) | **134px**      | **36px**        | Smaller ❌     |
+| **Nebula**       | `1.8rem` (28.8px) | **133px**      | **36px**        | Smaller ❌     |
+| **Forest**       | `1.8rem` (28.8px) | **134px**      | **36px**        | Smaller ❌     |
 
 **Difference**: Light themes render **6-9px wider** despite identical font-size!
 
@@ -99,7 +104,7 @@ I tested this in Chrome DevTools:
     - Enable subpixel rendering
     - Add RGB fringe pixels
     - Result: 142px width
-   
+
 3b. DARK BACKGROUND:
     - Disable subpixel rendering
     - Use grayscale antialiasing
@@ -140,6 +145,7 @@ body {
 On LCD screens, each pixel has **3 sub-pixels** (Red, Green, Blue):
 
 **Light Theme Rendering**:
+
 ```
 Black text on white:
 R G B | R G B | R G B
@@ -147,6 +153,7 @@ R G B | R G B | R G B
 ```
 
 **Dark Theme Rendering**:
+
 ```
 White text on black:
 R G B | R G B | R G B
@@ -162,12 +169,14 @@ R G B | R G B | R G B
 Using Chrome DevTools `getComputedStyle()`:
 
 ### **Polaris H1**:
+
 - Font size: `28.8px`
 - Actual rendered width: `142px`
 - Actual rendered height: `38px`
 - **Effective size**: `~30.5px` (due to subpixel expansion)
 
 ### **Midnight Pro H1**:
+
 - Font size: `28.8px`
 - Actual rendered width: `134px`
 - Actual rendered height: `36px`
@@ -222,13 +231,13 @@ Reduce boldness in light themes:
 
 ## 📋 **Summary**
 
-| Factor | Impact on Size | Light Themes | Dark Themes |
-|--------|----------------|--------------|-------------|
-| **Subpixel Rendering** | +8-12% | ✅ Enabled | ❌ Disabled |
-| **Irradiation Effect** | +5-10% | ✅ Active | ❌ Reversed |
-| **ClearType Width** | +6-9px | ✅ Full RGB | ❌ Grayscale only |
-| **Font Weight Rendering** | +10-15% | ✅ Bolder | ❌ Thinner |
-| **Total Perceived Difference** | **~25-35%** | **LARGER** | **SMALLER** |
+| Factor                         | Impact on Size | Light Themes | Dark Themes       |
+| ------------------------------ | -------------- | ------------ | ----------------- |
+| **Subpixel Rendering**         | +8-12%         | ✅ Enabled   | ❌ Disabled       |
+| **Irradiation Effect**         | +5-10%         | ✅ Active    | ❌ Reversed       |
+| **ClearType Width**            | +6-9px         | ✅ Full RGB  | ❌ Grayscale only |
+| **Font Weight Rendering**      | +10-15%        | ✅ Bolder    | ❌ Thinner        |
+| **Total Perceived Difference** | **~25-35%**    | **LARGER**   | **SMALLER**       |
 
 ---
 

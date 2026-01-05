@@ -1,6 +1,6 @@
 {
   "name": "dev-snippet",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "An Electron application with React",
   "author": "example.com",
   "homepage": "https://electron-vite.org",
@@ -43,6 +43,7 @@
     "@lezer/markdown": "^1.6.2",
     "@uiw/react-codemirror": "^4.25.3",
     "better-sqlite3": "^12.5.0",
+    "d3-force": "^3.0.0",
     "docx": "^9.5.1",
     "electron-updater": "^6.6.2",
     "file-saver": "^2.0.5",
@@ -56,6 +57,7 @@
     "mermaid": "^11.12.2",
     "preact": "^10.28.0",
     "prop-types": "^15.8.1",
+    "react-force-graph-2d": "^1.29.0",
     "react-router-dom": "^7.9.6",
     "react-window": "^2.2.3",
     "rehype-highlight": "^7.0.2",

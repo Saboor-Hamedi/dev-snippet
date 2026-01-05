@@ -61,6 +61,14 @@ export const registerWindowHandlers = (app, mainWindow) => {
   if (mainWindow) {
     mainWindow.on('move', updateCurrentModeState)
     mainWindow.on('resize', updateCurrentModeState)
+    mainWindow.on('maximize', () => {
+      updateCurrentModeState()
+      mainWindow.webContents.send('window:maximized')
+    })
+    mainWindow.on('unmaximize', () => {
+      updateCurrentModeState()
+      mainWindow.webContents.send('window:unmaximized')
+    })
   }
 
   // Minimize window
@@ -126,6 +134,13 @@ export const registerWindowHandlers = (app, mainWindow) => {
     const win = BrowserWindow.fromWebContents(event.sender)
     if (!win) return null
     return win.getBounds()
+  })
+
+  // Is maximized
+  ipcMain.handle('window:isMaximized', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (!win) return false
+    return win.isMaximized()
   })
 
   // Set window bounds

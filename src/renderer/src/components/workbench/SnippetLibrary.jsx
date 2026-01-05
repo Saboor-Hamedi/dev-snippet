@@ -18,6 +18,7 @@ const SnippetLibrary = () => {
         onRestoreItem={snippetData.restoreItem}
         onPermanentDeleteItem={snippetData.permanentDeleteItem}
         onLoadTrash={snippetData.loadTrash}
+        selectedSnippet={snippetData.selectedSnippet}
         onSelectSnippet={(s) => {
           window.dispatchEvent(
             new CustomEvent('app:open-snippet', {

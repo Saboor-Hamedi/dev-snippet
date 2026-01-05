@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { Sliders, Keyboard as KeyboardIcon, Code } from 'lucide-react'
-import { SettingSection, KeyboardShortcutItem } from '../../components/settings/components'
+import { KeyboardShortcutItem } from '../../components/settings/components'
 import { SHORTCUT_DEFINITIONS, MOD_KEY_PLACEHOLDER } from './shortcuts'
 
 export const MODE_CONFIG = [
@@ -25,7 +25,7 @@ export const MODE_CONFIG = [
   }
 ]
 
-const SCOPE_ORDER = ['Navigation', 'Workspace', 'Editing', 'Preview', 'Zoom']
+const SCOPE_ORDER = ['Navigation', 'Workspace', 'AI', 'Editing', 'Preview', 'Zoom']
 
 const KeyboardShortcutsSection = ({ modKey = 'Ctrl' }) => {
   const visibleShortcuts = SHORTCUT_DEFINITIONS.filter((shortcut) => !shortcut.hideInSettings)
@@ -41,16 +41,16 @@ const KeyboardShortcutsSection = ({ modKey = 'Ctrl' }) => {
     combos.map((combo) => combo.replaceAll(MOD_KEY_PLACEHOLDER, modKey)).join(' · ')
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="space-y-8">
       <p className="text-xtiny" style={{ color: 'var(--color-text-tertiary)' }}>
         Common keyboard shortcuts used across the app.
       </p>
       {SCOPE_ORDER.filter((scope) => grouped[scope]?.length).map((scope) => (
-        <div key={scope} className="space-y-2">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+        <div key={scope} className="grid grid-cols-[100px_1fr] gap-4">
+          <div className="text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400 py-1 sticky top-0">
             {scope}
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          </div>
+          <div className="grid grid-cols-1 gap-1">
             {grouped[scope].map((shortcut) => (
               <KeyboardShortcutItem
                 key={shortcut.id}

@@ -21,7 +21,7 @@ describe('usePagination', () => {
     { id: '3', title: 'Snippet 3', code: 'code3', timestamp: 3000, is_pinned: 0, folder_id: null },
     { id: '4', title: 'Snippet 4', code: 'code4', timestamp: 4000, is_pinned: 0, folder_id: null },
     { id: '5', title: 'Snippet 5', code: 'code5', timestamp: 5000, is_pinned: 0, folder_id: null },
-    { id: '6', title: 'Snippet 6', code: 'code6', timestamp: 6000, is_pinned: 0, folder_id: null },
+    { id: '6', title: 'Snippet 6', code: 'code6', timestamp: 6000, is_pinned: 0, folder_id: null }
   ]
 
   it('should paginate snippets correctly', () => {

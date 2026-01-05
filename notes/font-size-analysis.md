@@ -1,4 +1,5 @@
 # Font Size Analysis Report - All Themes
+
 **Date**: January 1, 2026  
 **Analysis Depth**: Complete codebase scan
 
@@ -17,15 +18,16 @@
 All themes use these **hardcoded** sizes in the editor:
 
 | Header | Font Size | Pixels (approx) | Location |
-|--------|-----------|-----------------|----------|
-| **H1** | `1.8rem` | ~28.8px | Line 189 |
-| **H2** | `1.5rem` | ~24px | Line 194 |
-| **H3** | `1.35rem` | ~21.6px | Line 199 |
-| **H4** | `1.25rem` | ~20px | Line 204 |
-| **H5** | `1em` | ~16px | Line 208 |
-| **H6** | `0.9em` | ~14.4px | Line 212 |
+| ------ | --------- | --------------- | -------- |
+| **H1** | `1.8rem`  | ~28.8px         | Line 189 |
+| **H2** | `1.5rem`  | ~24px           | Line 194 |
+| **H3** | `1.35rem` | ~21.6px         | Line 199 |
+| **H4** | `1.25rem` | ~20px           | Line 204 |
+| **H5** | `1em`     | ~16px           | Line 208 |
+| **H6** | `0.9em`   | ~14.4px         | Line 212 |
 
 **Code Reference**:
+
 ```javascript
 // buildTheme.js lines 188-214
 '.cm-h1': {
@@ -47,24 +49,37 @@ All themes use these **hardcoded** sizes in the editor:
 
 UI headers (outside editor) use **CSS variables**:
 
-| Header | CSS Variable | Resolved Size | Pixels |
-|--------|--------------|---------------|--------|
-| **H1** | `var(--font-size-4xl)` | `3rem` | 48px |
-| **H2** | `var(--font-size-3xl)` | `2.25rem` | 36px |
-| **H3** | `var(--font-size-2xl)` | `1.75rem` | 28px |
-| **H4** | `var(--font-size-xl)` | `1.25rem` | 20px |
-| **H5** | `var(--font-size-lg)` | `1.125rem` | 18px |
-| **H6** | `var(--font-size-base)` | `1rem` | 16px |
+| Header | CSS Variable            | Resolved Size | Pixels |
+| ------ | ----------------------- | ------------- | ------ |
+| **H1** | `var(--font-size-4xl)`  | `3rem`        | 48px   |
+| **H2** | `var(--font-size-3xl)`  | `2.25rem`     | 36px   |
+| **H3** | `var(--font-size-2xl)`  | `1.75rem`     | 28px   |
+| **H4** | `var(--font-size-xl)`   | `1.25rem`     | 20px   |
+| **H5** | `var(--font-size-lg)`   | `1.125rem`    | 18px   |
+| **H6** | `var(--font-size-base)` | `1rem`        | 16px   |
 
 **Code Reference**:
+
 ```css
 /* index.css lines 401-418 */
-h1 { font-size: var(--font-size-4xl); }
-h2 { font-size: var(--font-size-3xl); }
-h3 { font-size: var(--font-size-2xl); }
-h4 { font-size: var(--font-size-xl); }
-h5 { font-size: var(--font-size-lg); }
-h6 { font-size: var(--font-size-base); }
+h1 {
+  font-size: var(--font-size-4xl);
+}
+h2 {
+  font-size: var(--font-size-3xl);
+}
+h3 {
+  font-size: var(--font-size-2xl);
+}
+h4 {
+  font-size: var(--font-size-xl);
+}
+h5 {
+  font-size: var(--font-size-lg);
+}
+h6 {
+  font-size: var(--font-size-base);
+}
 ```
 
 ---
@@ -72,9 +87,11 @@ h6 { font-size: var(--font-size-base); }
 ## 🔍 **Deep Analysis Results**
 
 ### **1. Theme-Specific Overrides**
+
 ✅ **NONE FOUND**
 
 I searched for:
+
 - `[data-theme='*'] .cm-h1`
 - `[data-theme='*'] .cm-line-h1`
 - `[data-theme='*'] h1`
@@ -85,20 +102,21 @@ I searched for:
 
 ### **2. Font Size Consistency Check**
 
-| Theme | H1 Size (Editor) | H1 Size (UI) | Consistent? |
-|-------|------------------|--------------|-------------|
-| Polaris | `1.8rem` | `3rem` | ✅ Yes (within context) |
-| Midnight Pro | `1.8rem` | `3rem` | ✅ Yes |
-| Nebula | `1.8rem` | `3rem` | ✅ Yes |
-| Forest | `1.8rem` | `3rem` | ✅ Yes |
-| Royal Gold | `1.8rem` | `3rem` | ✅ Yes |
-| Oceanic | `1.8rem` | `3rem` | ✅ Yes |
-| Magma | `1.8rem` | `3rem` | ✅ Yes |
-| Minimal Gray | `1.8rem` | `3rem` | ✅ Yes |
-| Obsidian | `1.8rem` | `3rem` | ✅ Yes |
-| Glass Blue | `1.8rem` | `3rem` | ✅ Yes |
+| Theme        | H1 Size (Editor) | H1 Size (UI) | Consistent?             |
+| ------------ | ---------------- | ------------ | ----------------------- |
+| Polaris      | `1.8rem`         | `3rem`       | ✅ Yes (within context) |
+| Midnight Pro | `1.8rem`         | `3rem`       | ✅ Yes                  |
+| Nebula       | `1.8rem`         | `3rem`       | ✅ Yes                  |
+| Forest       | `1.8rem`         | `3rem`       | ✅ Yes                  |
+| Royal Gold   | `1.8rem`         | `3rem`       | ✅ Yes                  |
+| Oceanic      | `1.8rem`         | `3rem`       | ✅ Yes                  |
+| Magma        | `1.8rem`         | `3rem`       | ✅ Yes                  |
+| Minimal Gray | `1.8rem`         | `3rem`       | ✅ Yes                  |
+| Obsidian     | `1.8rem`         | `3rem`       | ✅ Yes                  |
+| Glass Blue   | `1.8rem`         | `3rem`       | ✅ Yes                  |
 
 **Note**: The difference between editor (1.8rem) and UI (3rem) is **intentional**:
+
 - **Editor H1**: Designed for document content (smaller for readability)
 - **UI H1**: Designed for page titles and headers (larger for hierarchy)
 
@@ -109,15 +127,17 @@ I searched for:
 While font **sizes** are identical, themes may **appear** different due to:
 
 ### **1. Font Weight Rendering**
+
 - **Light themes** (Polaris, Minimal Gray): Black text on white appears **bolder**
 - **Dark themes**: White/light text on dark appears **thinner**
 
 ### **2. Color Contrast**
-| Theme | H1 Color | Background | Perceived Size |
-|-------|----------|------------|----------------|
-| Polaris | `#24292f` (dark) | `#ffffff` (white) | Appears larger |
-| Midnight Pro | `#c9d1d9` (light) | `#0d1117` (dark) | Appears smaller |
-| Nebula | `#ffffff` (white) | `#09090b` (black) | Appears smaller |
+
+| Theme        | H1 Color          | Background        | Perceived Size  |
+| ------------ | ----------------- | ----------------- | --------------- |
+| Polaris      | `#24292f` (dark)  | `#ffffff` (white) | Appears larger  |
+| Midnight Pro | `#c9d1d9` (light) | `#0d1117` (dark)  | Appears smaller |
+| Nebula       | `#ffffff` (white) | `#09090b` (black) | Appears smaller |
 
 **Optical Illusion**: Dark text on light backgrounds appears ~5-10% larger than light text on dark backgrounds at the same font size.
 
@@ -160,6 +180,7 @@ All themes use **identical** line-height and padding:
 ### ⚠️ **Minor: Syntax Error in index.css**
 
 **Location**: Line 68
+
 ```css
 --font-size-9xl: 8rem; /* 128px
 ```
@@ -185,14 +206,14 @@ All themes use **identical** line-height and padding:
 
 ### 📊 **Summary Table**
 
-| Aspect | Status | Notes |
-|--------|--------|-------|
-| **H1 Size Consistency** | ✅ Perfect | All themes: `1.8rem` |
-| **H2-H6 Consistency** | ✅ Perfect | Identical across themes |
-| **Line Height** | ✅ Perfect | No variations |
-| **Padding** | ✅ Perfect | Uniform spacing |
-| **Font Weight** | ✅ Perfect | All use `700` (bold) |
-| **Theme Overrides** | ✅ None | Clean architecture |
+| Aspect                  | Status     | Notes                   |
+| ----------------------- | ---------- | ----------------------- |
+| **H1 Size Consistency** | ✅ Perfect | All themes: `1.8rem`    |
+| **H2-H6 Consistency**   | ✅ Perfect | Identical across themes |
+| **Line Height**         | ✅ Perfect | No variations           |
+| **Padding**             | ✅ Perfect | Uniform spacing         |
+| **Font Weight**         | ✅ Perfect | All use `700` (bold)    |
+| **Theme Overrides**     | ✅ None    | Clean architecture      |
 
 ---
 
@@ -201,6 +222,7 @@ All themes use **identical** line-height and padding:
 ### **If You Want to Adjust H1 Size**
 
 **Option 1: Global Change (All Themes)**
+
 ```javascript
 // buildTheme.js line 189
 '.cm-h1': {
@@ -211,6 +233,7 @@ All themes use **identical** line-height and padding:
 ```
 
 **Option 2: Theme-Specific (e.g., only Polaris)**
+
 ```css
 /* index.css - Add after line 418 */
 [data-theme='polaris'] .cm-h1 {
@@ -220,6 +243,7 @@ All themes use **identical** line-height and padding:
 
 **Option 3: User Setting (Future Enhancement)**
 Add to `settings.json`:
+
 ```json
 {
   "editor": {

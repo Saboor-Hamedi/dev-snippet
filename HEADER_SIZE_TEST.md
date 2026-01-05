@@ -27,11 +27,13 @@ This is a test document to verify header sizes across themes.
 ## What You Should See
 
 ### Before the Fix (OLD behavior):
+
 - Polaris H1: **LARGE** (1.8rem but looks big due to subpixel rendering)
 - Midnight Pro H1: **SMALL** (1.8rem but looks small due to grayscale)
 - **Result**: Polaris looked bigger ❌
 
 ### After the Fix (NEW behavior):
+
 - Polaris H1: **LARGE** (1.8rem with subpixel rendering)
 - Midnight Pro H1: **LARGE** (2rem with grayscale = visually matches Polaris)
 - **Result**: Both look the same size ✅
@@ -43,11 +45,13 @@ This is a test document to verify header sizes across themes.
 Check the browser console (F12) when switching themes:
 
 **Polaris**:
+
 ```
 📏 H1 Font Size: 1.8rem !important (isDark: false)
 ```
 
 **Midnight Pro**:
+
 ```
 📏 H1 Font Size: 2rem !important (isDark: true)
 ```

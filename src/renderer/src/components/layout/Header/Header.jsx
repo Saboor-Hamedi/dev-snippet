@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import iconUrl from '../../../assets/icon.png'
 import AutosaveIndicator from './AutosaveIndicator'
+import WindowControls from '../../universal/WindowControls'
 import '../../../assets/css/header.css'
 import { getFileIcon } from '../../../utils/iconUtils'
 
@@ -42,7 +43,9 @@ const Header = ({
   onTogglePreview,
   isResizing, // New prop
   isZenFocus,
-  onToggleZenFocus
+  onToggleZenFocus,
+  actions, // New: slot for custom view-specific buttons (Right)
+  centerActions // New: slot for central search/controls
 }) => {
   const isMobile = window.innerWidth <= 768
   const activityBarWidth = 48 // Match Workbench
@@ -52,6 +55,30 @@ const Header = ({
     isSidebarOpen && !isMobile
       ? `calc(var(--sidebar-width, ${sidebarWidth}px) + ${activityBarWidth}px)`
       : `${activityBarWidth}px`
+
+  const [isMaximized, setIsMaximized] = useState(false)
+
+  useEffect(() => {
+    // Check initial state
+    const checkState = async () => {
+      if (window.api?.isMaximized) {
+        const result = await window.api.isMaximized()
+        setIsMaximized(result)
+      }
+    }
+    checkState()
+
+    // Listen for changes
+    let unsubs = []
+    if (window.api?.onMaximized) {
+      unsubs.push(window.api.onMaximized(() => setIsMaximized(true)))
+    }
+    if (window.api?.onUnmaximized) {
+      unsubs.push(window.api.onUnmaximized(() => setIsMaximized(false)))
+    }
+
+    return () => unsubs.forEach((unsub) => unsub())
+  }, [])
 
   const displayTitle = (() => {
     if (snippetTitle && title) {
@@ -63,10 +90,10 @@ const Header = ({
 
   return (
     <header
-      className="relative flex items-end h-[38px] select-none"
+      className="relative flex items-end h-[32px] select-none"
       style={{
-        backgroundColor: 'var(--header-bg)', // Use themeable header-bg
-        borderBottom: 'none',
+        backgroundColor: 'var(--color-bg-secondary)', // Unified with modal headers
+        borderBottom: '1px solid var(--color-border)', // Standardized native-like border
         gap: 0,
         color: 'var(--header-text)',
         boxSizing: 'border-box'
@@ -75,7 +102,7 @@ const Header = ({
       {/* Sidebar Header Part - Aligned with Sidebar/ActivityBar */}
       <div
         id="header-sidebar-section"
-        className={`h-full flex items-center px-1 pb-1 ${isResizing ? '' : 'transition-[width] duration-200 ease-in-out'}`}
+        className={`h-full flex items-center px-1 pb-1 overflow-hidden ${isResizing ? '' : 'transition-[width] duration-200 ease-in-out'}`}
         style={{
           width: sidebarSectionWidth,
           backgroundColor: 'transparent',
@@ -83,8 +110,21 @@ const Header = ({
           WebkitAppRegion: 'drag'
         }}
       >
-        <div className="flex items-center w-full gap-2 px-1" style={{ WebkitAppRegion: 'no-drag' }}>
-          <button
+        <div className="flex items-center w-full gap-1 px-1" style={{ WebkitAppRegion: 'no-drag' }}>
+          {/* App Icon/Logo - Top Left */}
+          <div
+            className="flex items-center justify-center mr-1 transition-opacity duration-200"
+            style={{ opacity: 1 }}
+          >
+            <img
+              src={iconUrl}
+              alt="App Icon"
+              className="w-4 h-4 object-contain"
+              style={{}} // Remove filters to show original colors
+            />
+          </div>
+
+          {/* <button
             onClick={isZenFocus ? null : onToggleSidebar}
             disabled={isZenFocus}
             className={`theme-exempt bg-transparent flex items-center focus:outline-none justify-center p-1 rounded-md transition-all ${
@@ -102,7 +142,7 @@ const Header = ({
             }
           >
             {isSidebarOpen ? <PanelLeftClose size={16} /> : <PanelLeft size={16} />}
-          </button>
+          </button> */}
         </div>
       </div>
 
@@ -114,11 +154,11 @@ const Header = ({
               <div
                 className="
                   group relative flex items-center gap-2 px-3 mx-0
-                  h-[calc(100%-4px)] /* Leave space at top */
-                  mt-[4px] /* Push down from top edge */
+                  h-[28px] /* Compact tab height */
+                  mt-auto /* Push to bottom */
                   min-w-[140px] max-w-[220px]
                   bg-[var(--color-bg-primary)] 
-                  rounded-t-lg
+                  rounded-t-md
                   rounded-b-none
                   cursor-default
                   select-none
@@ -136,7 +176,7 @@ const Header = ({
                     const { icon: FileIcon, color: iconColor } = getFileIcon(null, displayTitle)
                     return (
                       <FileIcon
-                        size={14}
+                        size={13}
                         className="flex-none transition-opacity"
                         style={{ color: iconColor }}
                       />
@@ -191,6 +231,15 @@ const Header = ({
           </div>
         </div>
 
+        {/* Center Area (e.g. Graph Search) */}
+        {centerActions && (
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-end h-full pointer-events-none pb-1 z-[70]">
+            <div className="pointer-events-auto" style={{ WebkitAppRegion: 'no-drag' }}>
+              {centerActions}
+            </div>
+          </div>
+        )}
+
         {/* Window Controls area - Absolute Top Right or Flex */}
         <div
           className="flex ml-auto flex-none absolute top-0 right-0 h-full"
@@ -198,6 +247,9 @@ const Header = ({
         >
           {/* Zen/Autosave Integration area - Always visible */}
           <div className="flex items-center h-full pr-2 gap-1.5 relative z-[60]">
+            {/* View-specific actions (e.g. Magic Color for Graph) */}
+            {actions && <div className="flex items-center gap-1 pr-1">{actions}</div>}
+
             <button
               onClick={onToggleZenFocus}
               className={`theme-exempt bg-transparent p-1 rounded-md transition-all flex items-center justify-center ${
@@ -212,39 +264,18 @@ const Header = ({
             <AutosaveIndicator status={autosaveStatus} />
           </div>
 
-          {/* View/Window Controls Buttons - Dimmed in Zen Focus via CSS */}
-          <div className="flex h-full header-window-controls">
-            <button
-              onClick={() => {
-                try {
-                  window.api?.minimize?.()
-                } catch (e) {}
-              }}
-              className="theme-exempt bg-transparent h-full w-10 flex items-center justify-center transition-colors opacity-60 hover:opacity-100 hover:bg-white/5"
-              style={{ color: 'var(--header-icon-color, var(--header-text))' }}
-              title="Minimize"
-            >
-              <Minus size={14} />
-            </button>
-
-            <button
-              onClick={() => window.api?.toggleMaximize?.()}
-              className="theme-exempt bg-transparent h-full w-10 flex items-center justify-center transition-colors opacity-60 hover:opacity-100 hover:bg-white/5"
-              style={{ color: 'var(--header-icon-color, var(--header-text))' }}
-              title="Maximize"
-            >
-              <Minimize size={14} />
-            </button>
-
-            <button
-              onClick={() => window.api?.closeWindow?.()}
-              className="theme-exempt bg-transparent h-full w-12 flex items-center justify-center transition-colors opacity-60 hover:opacity-100 hover:bg-red-500 hover:text-white"
-              style={{ color: 'var(--header-icon-color, var(--header-text))' }}
-              title="Close"
-            >
-              <X size={14} />
-            </button>
-          </div>
+          {/* View/Window Controls Buttons - Standardized via WindowControls */}
+          <WindowControls
+            onMinimize={() => {
+              try {
+                window.api?.minimize?.()
+              } catch (e) {}
+            }}
+            onMaximize={() => window.api?.toggleMaximize?.()}
+            onClose={() => window.api?.closeWindow?.()}
+            isMaximized={isMaximized}
+            variant="app"
+          />
         </div>
       </div>
     </header>
