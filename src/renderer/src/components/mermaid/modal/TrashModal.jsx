@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import { File, Trash2, RotateCcw, Search, Folder, X, Trash } from 'lucide-react'
 import VirtualList from '../../common/VirtualList'
 import ContextMenu from '../../common/ContextMenu'
+import UniversalModal from '../../universal/UniversalModal'
 
 const getFileIcon = (type) => {
   if (type === 'folder') return { icon: Folder, color: '#facc15' }
@@ -121,70 +122,38 @@ const TrashModal = ({
     }
   }
 
-  if (!isOpen) return null
-
   return (
-    <div
-      className="fixed inset-0 z-[200000] flex items-center justify-center px-4 overflow-hidden"
-      onMouseDown={onClose}
-    >
-      {/* Background Overlay */}
-      <div className="absolute inset-0 bg-black/90 animate-in fade-in duration-300" />
-
-      {/* Modal Container */}
-      <div
-        onMouseDown={(e) => e.stopPropagation()}
-        className="relative w-full max-w-md bg-[var(--color-bg-primary)] rounded-2xl shadow-[0_30px_90px_-20px_rgba(0,0,0,0.8)] border border-[var(--color-border)] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 ring-1 ring-white/5"
-        style={{ height: '50vh', backgroundColor: 'rgb(var(--color-bg-primary-rgb))' }}
-      >
-        {/* Header - Seamless Compact Design */}
-        <div className="px-5 py-3 border-b border-[var(--color-border)] flex items-center justify-between bg-[var(--color-bg-secondary)]">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-[var(--color-error)]/10 flex items-center justify-center text-[var(--color-error)] flex-shrink-0 cursor-default shadow-inner">
-              <Trash size={18} strokeWidth={2.5} />
-            </div>
-            <div className="flex flex-col">
-              <h3 className="text-[14px] font-bold text-[var(--color-text-primary)] leading-tight">
-                Recycle Bin
-              </h3>
-              <p className="text-[10px] text-[var(--color-text-tertiary)] leading-tight font-medium uppercase tracking-widest mt-0.5">
-                {items.length} item{items.length !== 1 ? 's' : ''} in trash
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {items.length > 0 && (
-              <button
-                onClick={(e) => {
-                  e.currentTarget.blur()
-                  handleEmptyTrash()
-                }}
-                className="h-7 px-3 text-[11px] font-bold bg-[var(--color-error)] text-white hover:opacity-90 rounded-lg transition-all flex items-center gap-2"
-              >
-                <Trash2 size={12} strokeWidth={2.5} />
-                Empty Trash
-              </button>
-            )}
+    <UniversalModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Recycle Bin"
+      width="450px"
+      height="60vh"
+      footer={
+        items.length > 0 && (
+          <div className="flex justify-end w-full">
             <button
               onClick={(e) => {
                 e.currentTarget.blur()
-                onClose()
+                handleEmptyTrash()
               }}
-              className="p-2 hover:bg-white/10 rounded-lg text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition-all"
+              className="h-8 px-4 text-[12px] font-bold bg-[var(--color-error)] text-white hover:opacity-90 rounded-lg transition-all flex items-center gap-2"
             >
-              <X size={16} />
+              <Trash2 size={14} strokeWidth={2.5} />
+              Empty Trash
             </button>
           </div>
-        </div>
-
+        )
+      }
+    >
+      <div className="flex flex-col h-full bg-[var(--color-bg-primary)]">
         {/* Search - Compact */}
-        <div className="px-6 py-3 bg-[var(--color-bg-primary)] border-b border-[var(--color-border)]">
+        <div className="px-6 py-3 border-b border-[var(--color-border)]">
           <div className="relative group">
             <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-tertiary)] group-focus-within:text-[var(--color-accent-primary)] transition-colors" />
             <input
               type="text"
-              placeholder="Search deleted items..."
+              placeholder={`Search ${items.length} deleted items...`}
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
               className="w-full h-9 rounded-xl pl-10 pr-4 text-[13px] outline-none border border-[var(--color-border)] focus:border-[var(--color-accent-primary)] bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] transition-all placeholder:text-[var(--color-text-tertiary)] shadow-inner"
@@ -245,7 +214,7 @@ const TrashModal = ({
           />
         )}
       </div>
-    </div>
+    </UniversalModal>
   )
 }
 

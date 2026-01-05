@@ -33,6 +33,7 @@ import {
 
 import { useSettings } from '../../hook/useSettingsContext'
 import { useView } from '../../context/ViewContext'
+import UniversalModal from '../universal/UniversalModal'
 
 /**
  * ╔══════════════════════════════════════════════════════════════════════════╗
@@ -184,6 +185,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
    * Used to show a notification badge on the "Updates" tab.
    */
   const [hasUpdate, setHasUpdate] = useState(false)
+  const [resetConfirmation, setResetConfirmation] = useState(false)
 
   // ============================================================================
   // UPDATE DETECTION
@@ -304,180 +306,207 @@ const SettingsModal = ({ isOpen, onClose }) => {
   // ============================================================================
 
   return (
-    <>
-      <div className="fixed inset-0 z-[50000] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-300 p-4">
-        <div
-          className="w-full max-w-5xl h-full md:h-[85vh] bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-xl shadow-3xl flex flex-col relative overflow-hidden ring-1 ring-white/5"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* UNIFIED GLOBAL HEADER (Spans whole top) */}
-          <header className="w-full h-12 md:h-14 flex items-center justify-between px-4 md:px-6 border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)] flex-shrink-0">
-            <div className="flex items-center gap-2.5">
-              <div className="w-6 h-6 rounded-md bg-[var(--color-accent-primary)] flex items-center justify-center shadow-sm">
-                <Settings size={12} className="text-white" />
-              </div>
-              <h2 className="text-xs font-bold tracking-tight">Settings</h2>
+    <UniversalModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Settings"
+      width="min(1024px, 95vw)"
+      height="85vh"
+      className="settings-modal no-padding"
+      customKey="settings_modal_position"
+      footer={
+        <div className="flex items-stretch w-full h-10">
+          <div className="w-16 md:w-64 border-r border-[var(--color-border)] flex items-center px-3 bg-[var(--color-bg-secondary)]/30">
+            <button
+              onClick={() => {
+                if (!resetConfirmation) {
+                  setResetConfirmation(true)
+                  setTimeout(() => setResetConfirmation(false), 3000)
+                  return
+                }
+                setLocalSettings(DEFAULT_SETTINGS)
+                updateSettings(DEFAULT_SETTINGS)
+                setResetConfirmation(false)
+              }}
+              className={`w-full flex items-center justify-center md:justify-start gap-2 py-1.5 px-2 rounded text-[9px] font-bold uppercase tracking-wider transition-all duration-200 border ${
+                resetConfirmation
+                  ? 'bg-red-500 text-white border-red-600 opacity-100 shadow-sm shadow-red-500/20'
+                  : 'opacity-40 hover:opacity-100 hover:bg-red-500/10 hover:text-red-500 border-transparent hover:border-red-500/20'
+              }`}
+            >
+              <RotateCcw
+                size={10}
+                className={`transition-transform duration-500 ${resetConfirmation ? 'rotate-180' : ''}`}
+              />
+              <span className="hidden md:block">
+                {resetConfirmation ? 'Confirm Reset?' : 'Reset to Defaults'}
+              </span>
+            </button>
+          </div>
+          <div className="flex-1 flex items-center justify-between px-6 md:px-10 bg-[var(--color-bg-primary)]">
+            <div className="flex items-center gap-2 opacity-30">
+              <Settings size={10} />
+              <span className="text-[9px] font-bold uppercase tracking-[0.1em]">
+                Settings Manager v{pkg.version}
+              </span>
             </div>
-
-            {/* Global Search Center */}
-            <div className="flex-1 max-w-sm mx-4 md:mx-12 relative group">
+            <div className="text-[9px] font-medium opacity-10 uppercase tracking-widest hidden sm:block">
+              Dev-Snippet Pro
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <div className="flex-1 flex overflow-hidden h-full">
+        {/* SIDEBAR NAVIGATION */}
+        <aside className="w-16 md:w-64 border-r border-[var(--color-border)] bg-[var(--color-bg-secondary)]/50 flex flex-col flex-shrink-0">
+          {/* Search bar header */}
+          <div className="h-10 flex items-center px-3 border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)]/5">
+            <div className="relative group">
               <Search
                 size={14}
                 className="absolute left-3 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-60 transition-opacity"
               />
               <input
                 type="text"
-                placeholder="Search settings..."
+                placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-lg py-2 pl-9 pr-3 text-xs outline-none focus:border-[var(--color-accent-primary)] focus:ring-2 focus:ring-[var(--color-accent-primary)]/10 transition-all font-medium"
+                onFocus={(e) => {
+                  e.target.style.backgroundColor = 'var(--color-bg-primary)'
+                  e.target.style.borderColor = 'var(--color-accent-primary)'
+                }}
+                onBlur={(e) => {
+                  e.target.style.backgroundColor = 'var(--color-bg-secondary)'
+                  e.target.style.borderColor = 'var(--color-border)'
+                }}
+                className="w-full bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-[5px] py-1.5 pl-8 pr-2 text-xs outline-none focus:border-[var(--color-accent-primary)] transition-all font-medium"
+                style={{ color: 'var(--color-text-primary)' }}
               />
             </div>
-
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors group"
-            >
-              <X size={18} className="opacity-50 group-hover:opacity-100 transition-opacity" />
-            </button>
-          </header>
-
-          {/* MAIN BODY (Sidebar + Content) */}
-          <div className="flex-1 flex overflow-hidden">
-            {/* SIDEBAR NAVIGATION */}
-            <aside className="w-16 md:w-64 border-r border-[var(--color-border)] bg-[var(--color-bg-secondary)]/50 flex flex-col flex-shrink-0">
-              <nav className="flex-1 p-2 md:p-3 space-y-1 overflow-y-auto custom-scrollbar">
-                {visibleSections.map((section) => {
-                  const isActive = activeTab === section.id
-                  const Icon = section.icon
-                  return (
-                    <button
-                      key={section.id}
-                      onClick={() => setActiveTab(section.id)}
-                      className={`
-                        w-full flex items-center justify-center md:justify-start gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150 group relative
-                        ${
-                          isActive
-                            ? '' // Style handled via inline styles below
-                            : 'hover:bg-[var(--sidebar-item-hover-bg)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
-                        }
-                      `}
-                      style={{
-                        backgroundColor: isActive ? 'var(--sidebar-item-active-bg)' : undefined,
-                        color: isActive
-                          ? 'var(--sidebar-item-active-fg, var(--color-text-primary))'
-                          : undefined
-                      }}
-                    >
-                      <Icon
-                        size={16}
-                        strokeWidth={2}
-                        className={
-                          isActive
-                            ? 'text-[var(--color-accent-primary)] opacity-100'
-                            : 'opacity-70 group-hover:opacity-100'
-                        }
-                      />
-                      <span className="hidden md:block">{section.label}</span>
-                      {section.id === 'updates' && hasUpdate && (
-                        <span className="absolute top-2 right-2 md:static md:ml-auto flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-                        </span>
-                      )}
-                    </button>
-                  )
-                })}
-              </nav>
-
-              <div className="p-3 border-t border-[var(--color-border)]">
-                <button
-                  onClick={() => {
-                    if (confirm('Restore all settings to factory defaults?')) {
-                      setLocalSettings(DEFAULT_SETTINGS)
-                      updateSettings(DEFAULT_SETTINGS)
-                    }
-                  }}
-                  className="w-full flex items-center justify-center md:justify-start gap-2 px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider opacity-50 hover:opacity-100 hover:bg-red-500/10 hover:text-red-500 transition-all"
-                >
-                  <RotateCcw size={14} />
-                  <span className="hidden md:block">Defaults</span>
-                </button>
-              </div>
-            </aside>
-
-            {/* CONTENT AREA */}
-            <main className="flex-1 flex flex-col min-w-0 bg-[var(--color-bg-primary)]">
-              {/* Lean Context Header */}
-              <div className="px-6 md:px-10 py-3 border-b border-[var(--color-border)]/50 bg-[var(--color-bg-primary)] flex-shrink-0">
-                <div className="flex items-center gap-2">
-                  {sections.find((s) => s.id === activeTab)?.icon &&
-                    React.createElement(sections.find((s) => s.id === activeTab).icon, {
-                      size: 12,
-                      className: 'text-[var(--color-accent-primary)] opacity-60'
-                    })}
-                  <h3 className="text-[10px] font-bold capitalize tracking-wide">{activeTab}</h3>
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-y-auto custom-scrollbar px-6 md:px-10 py-4 md:py-6">
-                <div className="max-w-3xl pb-24">
-                  <React.Suspense
-                    fallback={
-                      <div className="h-48 flex items-center justify-center">
-                        <RefreshCw className="animate-spin text-[var(--color-accent-primary)] opacity-50" />
-                      </div>
-                    }
-                  >
-                    {activeTab === 'updates' && <UpdateTab />}
-                    {activeTab === 'editor' && (
-                      <EditorTab settings={localSettings} updateSetting={updateSetting} />
-                    )}
-                    {activeTab === 'appearance' && (
-                      <AppearanceTab settings={localSettings} updateSetting={updateSetting} />
-                    )}
-                    {activeTab === 'behavior' && (
-                      <BehaviorTab settings={localSettings} updateSetting={updateSetting} />
-                    )}
-                    {activeTab === 'advanced' && (
-                      <AdvancedTab settings={localSettings} updateSetting={updateSetting} />
-                    )}
-                    {activeTab === 'shortcuts' && <ShortcutsTab />}
-                    {activeTab === 'sync' && <SyncTab />}
-                    {activeTab === 'system' && (
-                      <DataTab
-                        settings={localSettings}
-                        updateSetting={updateSetting}
-                        onExportData={async () => {
-                          if (window.api?.exportJSON && window.api?.getSnippets) {
-                            const snippets = await window.api.getSnippets({ metadataOnly: false })
-                            const data = {
-                              exportDate: new Date().toISOString(),
-                              version: pkg.version,
-                              snippets
-                            }
-                            await window.api.exportJSON(data)
-                          }
-                        }}
-                      />
-                    )}
-
-                    {['history'].includes(activeTab) && (
-                      <div className="flex flex-col items-center justify-center py-20 opacity-20 transform scale-90">
-                        <History size={64} strokeWidth={1} />
-                        <p className="mt-4 font-bold tracking-[0.2em] uppercase text-xs">
-                          Activity History Coming Soon
-                        </p>
-                      </div>
-                    )}
-                  </React.Suspense>
-                </div>
-              </div>
-            </main>
           </div>
-        </div>
+
+          <nav className="flex-1 p-2 md:p-3 space-y-1 overflow-y-auto custom-scrollbar">
+            {visibleSections.map((section) => {
+              const isActive = activeTab === section.id
+              const Icon = section.icon
+              return (
+                <button
+                  key={section.id}
+                  onClick={() => setActiveTab(section.id)}
+                  className={`
+                    w-full flex items-center justify-center md:justify-start gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150 group relative
+                    ${
+                      isActive
+                        ? '' // Style handled via inline styles below
+                        : 'hover:bg-[var(--sidebar-item-hover-bg)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
+                    }
+                  `}
+                  style={{
+                    backgroundColor: isActive ? 'var(--sidebar-item-active-bg)' : undefined,
+                    color: isActive
+                      ? 'var(--sidebar-item-active-fg, var(--color-text-primary))'
+                      : undefined
+                  }}
+                >
+                  <Icon
+                    size={16}
+                    strokeWidth={2}
+                    className={
+                      isActive
+                        ? 'text-[var(--color-accent-primary)] opacity-100'
+                        : 'opacity-70 group-hover:opacity-100'
+                    }
+                  />
+                  <span className="hidden md:block">{section.label}</span>
+                  {section.id === 'updates' && hasUpdate && (
+                    <span className="absolute top-2 right-2 md:static md:ml-auto flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </nav>
+        </aside>
+
+        {/* CONTENT AREA */}
+        <main className="flex-1 flex flex-col min-w-0 bg-[var(--color-bg-primary)]">
+          {/* Context Header */}
+          <div className="h-10 px-6 md:px-10 border-b border-[var(--color-border)] bg-[var(--color-bg-primary)] flex-shrink-0 flex items-center">
+            <div className="flex items-center gap-2">
+              {sections.find((s) => s.id === activeTab)?.icon &&
+                React.createElement(sections.find((s) => s.id === activeTab).icon, {
+                  size: 11,
+                  className:
+                    'text-[var(--color-accent-primary)] opacity-60 flex-shrink-0 relative top-[1px]'
+                })}
+              <h3
+                className="text-[9px] font-bold uppercase tracking-[0.15em]"
+                style={{ lineHeight: 1 }}
+              >
+                {activeTab}
+              </h3>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto custom-scrollbar px-6 md:px-10 py-4 md:py-6">
+            <div className="max-w-3xl pb-24">
+              <React.Suspense
+                fallback={
+                  <div className="h-48 flex items-center justify-center">
+                    <RefreshCw className="animate-spin text-[var(--color-accent-primary)] opacity-50" />
+                  </div>
+                }
+              >
+                {activeTab === 'updates' && <UpdateTab />}
+                {activeTab === 'editor' && (
+                  <EditorTab settings={localSettings} updateSetting={updateSetting} />
+                )}
+                {activeTab === 'appearance' && (
+                  <AppearanceTab settings={localSettings} updateSetting={updateSetting} />
+                )}
+                {activeTab === 'behavior' && (
+                  <BehaviorTab settings={localSettings} updateSetting={updateSetting} />
+                )}
+                {activeTab === 'advanced' && (
+                  <AdvancedTab settings={localSettings} updateSetting={updateSetting} />
+                )}
+                {activeTab === 'shortcuts' && <ShortcutsTab />}
+                {activeTab === 'sync' && <SyncTab />}
+                {activeTab === 'system' && (
+                  <DataTab
+                    settings={localSettings}
+                    updateSetting={updateSetting}
+                    onExportData={async () => {
+                      if (window.api?.exportJSON && window.api?.getSnippets) {
+                        const snippets = await window.api.getSnippets({ metadataOnly: false })
+                        const data = {
+                          exportDate: new Date().toISOString(),
+                          version: pkg.version,
+                          snippets
+                        }
+                        await window.api.exportJSON(data)
+                      }
+                    }}
+                  />
+                )}
+
+                {['history'].includes(activeTab) && (
+                  <div className="flex flex-col items-center justify-center py-20 opacity-20 transform scale-90">
+                    <History size={64} strokeWidth={1} />
+                    <p className="mt-4 font-bold tracking-[0.2em] uppercase text-xs">
+                      Activity History Coming Soon
+                    </p>
+                  </div>
+                )}
+              </React.Suspense>
+            </div>
+          </div>
+        </main>
       </div>
-    </>
+    </UniversalModal>
   )
 }
 

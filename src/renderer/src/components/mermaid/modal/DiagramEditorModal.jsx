@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 import { getMermaidConfig } from '../mermaidConfig'
 import './DiagramEditorModal.css'
+import UniversalModal from '../../universal/UniversalModal'
 
 // Initial setup with a neutral starting point
 mermaid.initialize(getMermaidConfig(true))
@@ -40,6 +41,9 @@ const DiagramEditorModal = ({ initialCode, onSave, onCancel }) => {
   const [code, setCode] = useState(initialCode || '')
   const [svg, setSvg] = useState('')
   const [error, setError] = useState(null)
+  const [isRendering, setIsRendering] = useState(false)
+  const [autoRender, setAutoRender] = useState(code.length < 3000)
+  const [lastRenderTime, setLastRenderTime] = useState(0)
 
   // Transform State
   // Transform State (Refs for performance)
@@ -50,6 +54,7 @@ const DiagramEditorModal = ({ initialCode, onSave, onCancel }) => {
 
   const isDarkThemeState = useRef(true) // Ref for immediate access in event handlers
   const [isDarkTheme, setIsDarkTheme] = useState(true)
+  const [maximizedPane, setMaximizedPane] = useState(null) // 'editor' | 'preview' | null
 
   // Sync ref
   useEffect(() => {
@@ -74,6 +79,8 @@ const DiagramEditorModal = ({ initialCode, onSave, onCancel }) => {
       return
     }
 
+    const startTs = performance.now()
+    setIsRendering(true)
     try {
       mermaid.initialize(getMermaidConfig(isDarkTheme))
       const id = `mermaid-modal-${Math.random().toString(36).substr(2, 9)}`
@@ -82,27 +89,35 @@ const DiagramEditorModal = ({ initialCode, onSave, onCancel }) => {
         await mermaid.parse(src)
       } catch (parseErr) {
         setError(parseErr.message)
+        setIsRendering(false)
         return
       }
 
       const { svg: renderedSvg } = await mermaid.render(id, src)
       setSvg(renderedSvg)
       setError(null)
+      setLastRenderTime(Math.round(performance.now() - startTs))
     } catch (err) {
       console.warn('Mermaid render error:', err)
       setError(err.message || 'Rendering failed. Check syntax.')
+    } finally {
+      setIsRendering(false)
     }
   }
 
   useEffect(() => {
-    const timer = setTimeout(
-      () => {
-        renderDiagram(code)
-      },
-      code.length > 2000 ? 800 : 300
-    )
+    if (!autoRender) return
+
+    const len = code.length
+    let delay = 300
+    if (len > 3000) delay = 1200
+    else if (len > 1000) delay = 600
+
+    const timer = setTimeout(() => {
+      renderDiagram(code)
+    }, delay)
     return () => clearTimeout(timer)
-  }, [code, isDarkTheme])
+  }, [code, isDarkTheme, autoRender])
 
   useEffect(() => {
     const container = previewRef.current
@@ -203,12 +218,17 @@ const DiagramEditorModal = ({ initialCode, onSave, onCancel }) => {
 
   return (
     <div
-      className="diagram-editor-modal"
+      className={`diagram-editor-modal h-full flex flex-col ${maximizedPane ? `maximized-${maximizedPane}` : ''}`}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
+      style={{
+        width: '100%',
+        height: '100%',
+        overflow: 'hidden'
+      }}
     >
-      <div className="diagram-editor-toolbar">
+      <div className="diagram-editor-toolbar border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)]/30">
         <div className="toolbar-left">
           <div className="template-group">
             <button className="small" onClick={() => insertTemplate('flowchart')} title="Flowchart">
@@ -252,30 +272,33 @@ const DiagramEditorModal = ({ initialCode, onSave, onCancel }) => {
             <Trash2 size={12} />
           </button>
         </div>
-
         <div className="toolbar-right">
-          <button className="btn-cancel small" onClick={onCancel}>
+          <button className="small btn-cancel" onClick={onCancel}>
             Cancel
           </button>
-          <button
-            className="btn-save small"
-            onClick={(e) => {
-              e.currentTarget.blur()
-              onSave(code)
-            }}
-            title="Save changes"
-          >
-            <Save size={16} />
+          <button className="small btn-save" onClick={() => onSave(code)}>
+            <Save size={14} /> Apply Changes
           </button>
         </div>
       </div>
 
-      <div className="diagram-editor-main">
-        <div className="diagram-editor-pane code-pane">
+      <div className="diagram-editor-main flex-1 flex overflow-hidden">
+        <div
+          className={`diagram-editor-pane code-pane border-r border-[var(--color-border)] ${maximizedPane === 'editor' ? 'is-maximized' : maximizedPane === 'preview' ? 'is-hidden' : ''}`}
+        >
           <PaneHeader title="Syntax Editor" icon={Code}>
-            <div className="syntax-info">{code.length} chars</div>
+            <div className="flex items-center gap-2">
+              <div className="syntax-info">{code.length} chars</div>
+              <button
+                className={`small icon-only ${maximizedPane === 'editor' ? 'active' : ''}`}
+                onClick={() => setMaximizedPane(maximizedPane === 'editor' ? null : 'editor')}
+                title={maximizedPane === 'editor' ? 'Restore View' : 'Maximize Editor'}
+              >
+                <Layers size={12} />
+              </button>
+            </div>
           </PaneHeader>
-          <div className="editor-inner">
+          <div className="editor-inner h-full">
             <CodeEditor
               value={code}
               height="100%"
@@ -287,9 +310,37 @@ const DiagramEditorModal = ({ initialCode, onSave, onCancel }) => {
           </div>
         </div>
 
-        <div className="diagram-editor-pane preview-pane">
+        <div
+          className={`diagram-editor-pane preview-pane ${maximizedPane === 'preview' ? 'is-maximized' : maximizedPane === 'editor' ? 'is-hidden' : ''}`}
+        >
           <PaneHeader title="Visual Preview" icon={Sparkles}>
             <div className="preview-options">
+              <button
+                className={`small icon-only ${autoRender ? 'active' : ''}`}
+                onClick={() => setAutoRender(!autoRender)}
+                title={autoRender ? 'Disable Auto-render' : 'Enable Auto-render'}
+              >
+                <Activity size={12} />
+              </button>
+              {!autoRender && (
+                <button
+                  className="small btn-primary px-2 flex items-center gap-1"
+                  onClick={() => renderDiagram(code)}
+                  disabled={isRendering}
+                >
+                  <RotateCcw size={10} className={isRendering ? 'animate-spin' : ''} />
+                  Render
+                </button>
+              )}
+              <div className="divider" />
+              <button
+                className={`small icon-only ${maximizedPane === 'preview' ? 'active' : ''}`}
+                onClick={() => setMaximizedPane(maximizedPane === 'preview' ? null : 'preview')}
+                title={maximizedPane === 'preview' ? 'Restore View' : 'Maximize Preview'}
+              >
+                <Sparkles size={12} />
+              </button>
+              <div className="divider" />
               <button
                 className={`small icon-only ${!isPanning ? 'active' : ''}`}
                 onClick={() => setIsPanning(false)}
@@ -316,35 +367,79 @@ const DiagramEditorModal = ({ initialCode, onSave, onCancel }) => {
           </PaneHeader>
 
           <div
-            className={`diagram-preview-container ${isTransparent ? 'transparent' : ''}`}
+            className={`diagram-preview-container flex-1 relative ${isPanning ? 'cursor-grab' : ''} ${isDraggingState ? 'cursor-grabbing' : ''}`}
             ref={previewRef}
             onMouseDown={handleMouseDown}
-            style={{
-              cursor: isPanning ? (isDraggingState ? 'grabbing' : 'grab') : 'default',
-              overflow: 'hidden' // Force hidden to prevent scrollbar flickering during transform
-            }}
+            style={{ overflow: 'hidden' }}
           >
+            {isRendering && (
+              <div
+                className="rendering-overlay"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: 'rgba(0,0,0,0.1)',
+                  backdropFilter: 'blur(1px)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 20
+                }}
+              >
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-6 h-6 border-2 border-[var(--color-accent-primary)] border-t-transparent rounded-full animate-spin" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">
+                    Optimizing...
+                  </span>
+                </div>
+              </div>
+            )}
+
             {error && (
-              <div className="diagram-error-overlay">
+              <div className="diagram-error-overlay" style={{ zIndex: 11 }}>
                 <div className="error-badge">Syntax Error</div>
                 <pre>{error}</pre>
               </div>
             )}
 
-            <div className="diagram-scaling-wrapper">
+            <div
+              className={`diagram-scaling-wrapper ${isTransparent ? 'is-transparent' : ''}`}
+              style={{
+                transform: `translate(${panPos.x}px, ${panPos.y}px) scale(${previewZoom})`,
+                transformOrigin: '0 0',
+                transition: isDraggingState ? 'none' : 'transform 0.15s cubic-bezier(0.2, 0, 0, 1)'
+              }}
+            >
               <div
-                id="diagram-svg-host-target"
+                id="diagram-svg-host"
                 className={`diagram-svg-host ${isDarkTheme ? 'mermaid-dark' : 'mermaid-light'}`}
                 dangerouslySetInnerHTML={{ __html: svg }}
-                style={{
-                  transform: `translate(${panPos.x}px, ${panPos.y}px) scale(${previewZoom})`,
-                  willChange: 'transform' // Optimize for GPU composition
-                }}
               />
             </div>
+
+            {lastRenderTime > 0 && !error && (
+              <div
+                className="render-stats"
+                style={{
+                  position: 'absolute',
+                  bottom: '12px',
+                  right: '12px',
+                  fontSize: '9px',
+                  opacity: 0.4,
+                  fontWeight: 'bold',
+                  letterSpacing: '0.05em',
+                  zIndex: 5
+                }}
+              >
+                RENDERED IN {lastRenderTime}MS
+              </div>
+            )}
           </div>
 
-          <div className="preview-footer">
+          <div className="preview-footer border-t border-[var(--color-border)] bg-[var(--color-bg-secondary)]/30">
             <div className="zoom-controls">
               <button
                 className="small"

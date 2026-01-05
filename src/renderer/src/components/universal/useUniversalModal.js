@@ -13,6 +13,7 @@ export const useUniversalModal = () => {
     resetPosition: false,
     width: '550px',
     height: 'auto',
+    isMaximized: false,
     data: null // For passing raw source or other state
   })
 
@@ -25,6 +26,7 @@ export const useUniversalModal = () => {
       resetPosition: !!config.resetPosition,
       width: config.width || '550px',
       height: config.height || 'auto',
+      isMaximized: !!config.isMaximized,
       data: config.data || null
     })
   }, [])
@@ -47,7 +49,8 @@ export const useUniversalModal = () => {
   return {
     ...modalState,
     openModal,
-    closeModal
+    closeModal,
+    setModalState
   }
 }
 

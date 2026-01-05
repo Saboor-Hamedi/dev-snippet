@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { createPortal } from 'react-dom'
-import { X, Download, Copy, Check, Image as ImageIcon, Loader2 } from 'lucide-react'
+import { Download, Copy, Check, Loader2 } from 'lucide-react'
 import { toBlob, toPng } from 'html-to-image'
 import { saveAs } from 'file-saver'
 import PropTypes from 'prop-types'
 import { ToggleButton } from '../../ToggleButton'
 import { markdownToHtml } from '../../../utils/markdownParser'
+import UniversalModal from '../../universal/UniversalModal'
 
 const GRADIENTS = [
   { name: 'Purple Haze', class: 'bg-gradient-to-br from-purple-600 to-blue-500' },
@@ -79,35 +79,16 @@ const ImageExportModal = ({ isOpen, onClose, snippet }) => {
     }
   }
 
-  return createPortal(
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm animate-in fade-in duration-200"
-        onMouseDown={onClose}
-      />
-      <div className="relative w-full max-w-5xl h-[85vh] bg-[var(--color-bg-primary)] rounded-2xl shadow-2xl border border-white/10 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/5 backdrop-blur-md">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-[var(--color-accent-primary)]/10 rounded-lg text-[var(--color-accent-primary)]">
-              <ImageIcon size={20} />
-            </div>
-            <div>
-              <h2 className="text-sm font-bold text-[var(--color-text-primary)]">
-                Export as Image
-              </h2>
-              <p className="text-xs text-[var(--color-text-secondary)]">
-                Create beautiful screenshots of your code
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-[var(--hover-bg)] rounded-lg text-[var(--color-text-secondary)] transition-colors"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
+  return (
+    <UniversalModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Export as Image"
+      width="min(1000px, 98vw)"
+      height="85vh"
+      className="image-export-universal"
+    >
+      <div className="flex flex-col h-full bg-[var(--color-bg-primary)]">
         <div className="flex-1 flex min-h-0">
           <div className="flex-1 overflow-auto p-12 bg-slate-50/50 dark:bg-slate-900/50 flex items-start justify-center checkered-bg">
             <div
@@ -142,9 +123,9 @@ const ImageExportModal = ({ isOpen, onClose, snippet }) => {
             </div>
           </div>
 
-          <div className="w-80 border-l border-white/10 bg-black/20 p-6 overflow-y-auto flex flex-col gap-8 backdrop-blur-md">
+          <div className="w-80 border-l border-[var(--color-border)] bg-[var(--color-bg-secondary)]/30 p-6 overflow-y-auto flex flex-col gap-8 backdrop-blur-md">
             <section>
-              <h3 className="text-xs font-bold uppercase text-[var(--color-text-tertiary)] tracking-wider mb-4">
+              <h3 className="text-[9px] font-bold uppercase text-[var(--color-text-tertiary)] tracking-widest mb-4">
                 Background
               </h3>
               <div className="grid grid-cols-3 gap-3">
@@ -164,20 +145,20 @@ const ImageExportModal = ({ isOpen, onClose, snippet }) => {
             </section>
 
             <section>
-              <h3 className="text-xs font-bold uppercase text-[var(--color-text-tertiary)] tracking-wider mb-4">
+              <h3 className="text-[9px] font-bold uppercase text-[var(--color-text-tertiary)] tracking-widest mb-4">
                 Settings
               </h3>
               <div className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-xs text-[var(--color-text-secondary)]">Padding</label>
-                  <div className="flex bg-[var(--bg-tertiary)] p-1 rounded-lg border border-[var(--color-border)]">
+                  <div className="flex bg-[var(--color-bg-tertiary)] p-1 rounded-lg border border-[var(--color-border)]">
                     {PADDINGS.map((p) => (
                       <button
                         key={p.label}
                         onClick={() => setPadding(p)}
                         className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${
                           padding.label === p.label
-                            ? 'bg-[var(--bg-primary)] text-[var(--color-text-primary)] shadow-sm'
+                            ? 'bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] shadow-sm'
                             : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
                         }`}
                       >
@@ -205,7 +186,7 @@ const ImageExportModal = ({ isOpen, onClose, snippet }) => {
               <button
                 onClick={handleCopy}
                 disabled={isExporting}
-                className="w-full h-9 flex items-center justify-center gap-2 bg-[var(--bg-secondary)] border border-[var(--color-border)] hover:bg-[var(--hover-bg)] text-[var(--color-text-primary)] font-medium rounded-lg transition-all"
+                className="w-full h-10 flex items-center justify-center gap-2 bg-[var(--color-bg-primary)] border border-[var(--color-border)] hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] font-medium rounded-lg transition-all"
               >
                 {isExporting && exportState === 'copied' ? (
                   <Loader2 className="animate-spin" size={16} />
@@ -220,7 +201,7 @@ const ImageExportModal = ({ isOpen, onClose, snippet }) => {
               <button
                 onClick={handleSave}
                 disabled={isExporting}
-                className="w-full h-9 flex items-center justify-center gap-2 bg-[var(--color-accent-primary)] hover:opacity-90 text-[var(--color-bg-primary)] font-bold rounded-lg transition-all"
+                className="w-full h-10 flex items-center justify-center gap-2 bg-[var(--color-accent-primary)] hover:opacity-90 text-white font-bold rounded-lg transition-all shadow-sm"
               >
                 {isExporting && exportState !== 'copied' ? (
                   <Loader2 className="animate-spin" size={16} />
@@ -235,8 +216,7 @@ const ImageExportModal = ({ isOpen, onClose, snippet }) => {
           </div>
         </div>
       </div>
-    </div>,
-    document.body
+    </UniversalModal>
   )
 }
 

@@ -14,21 +14,19 @@ const PinPopover = ({ x = 0, y = 0, snippet, onClose, onPing, onFavorite, isCent
   useLayoutEffect(() => {
     if (ref.current) {
       if (isCentered) {
-        // Restore last position or center via Flexbox logic (fallback)
-        const parent = ref.current.parentElement
-        if (parent) {
-          const pRect = parent.getBoundingClientRect()
-          const mRect = ref.current.getBoundingClientRect()
-          const centerDefaults = {
-            left: `${(pRect.width - mRect.width) / 2}px`,
-            top: `${pRect.height * 0.2}px`
-          }
-          const saved = getPersistentPosition('pin_popover', centerDefaults)
-          setPosition({
-            left: saved.left,
-            top: saved.top
-          })
+        // Restore last position or center via Viewport logic
+        const viewportWidth = window.innerWidth
+        const viewportHeight = window.innerHeight
+        const mRect = ref.current.getBoundingClientRect()
+        const centerDefaults = {
+          left: `${(viewportWidth - mRect.width) / 2}px`,
+          top: `${viewportHeight * 0.2}px`
         }
+        const saved = getPersistentPosition('pin_popover', centerDefaults)
+        setPosition({
+          left: saved.left,
+          top: saved.top
+        })
         return
       }
 
@@ -58,12 +56,10 @@ const PinPopover = ({ x = 0, y = 0, snippet, onClose, onPing, onFavorite, isCent
   useEffect(() => {
     if (ref.current && headerRef.current) {
       const cleanup = makeDraggable(ref.current, headerRef.current, (pos) => {
-        if (isCentered) {
-          savePersistentPosition('pin_popover', {
-            left: `${pos.x}px`,
-            top: `${pos.y}px`
-          })
-        }
+        savePersistentPosition('pin_popover', {
+          left: `${pos.x}px`,
+          top: `${pos.y}px`
+        })
       })
       return cleanup
     }
@@ -106,7 +102,7 @@ const PinPopover = ({ x = 0, y = 0, snippet, onClose, onPing, onFavorite, isCent
           left: position.left,
           top: position.top,
           transform: position.transform,
-          position: 'absolute',
+          position: 'fixed',
           pointerEvents: 'auto' /* Re-enable pointer events for the popover itself */
         }}
         onClick={(e) => e.stopPropagation()}
@@ -156,7 +152,6 @@ const PinPopover = ({ x = 0, y = 0, snippet, onClose, onPing, onFavorite, isCent
     </div>
   )
 
-  if (isCentered) return content
   return createPortal(content, document.body)
 }
 

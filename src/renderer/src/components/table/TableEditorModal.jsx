@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 
 import './TableEditorModal.css'
+import UniversalModal from '../universal/UniversalModal'
 
 const TableEditorModal = ({ initialCode, onSave, onCancel }) => {
   const [grid, setGrid] = useState([])
@@ -115,8 +116,15 @@ const TableEditorModal = ({ initialCode, onSave, onCancel }) => {
   }
 
   return (
-    <div className="table-editor-modal">
-      <div className="table-editor-toolbar">
+    <div
+      className="table-editor-modal-body h-full flex flex-col"
+      style={{
+        width: '100%',
+        height: '100%',
+        overflow: 'hidden'
+      }}
+    >
+      <div className="table-editor-toolbar border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)]/30 flex justify-between items-center px-4 py-2">
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <button
             className="btn-action small"
@@ -155,24 +163,30 @@ const TableEditorModal = ({ initialCode, onSave, onCancel }) => {
               : 'Select a cell to focus'}
           </span>
         </div>
-
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <button className="btn-cancel small" onClick={onCancel}>
+        <div className="toolbar-right flex items-center gap-3">
+          <button className="small btn-cancel" onClick={onCancel}>
             Cancel
           </button>
           <button
-            className="btn-save small"
-            onClick={(e) => {
-              e.currentTarget.blur()
-              onSave(generateMarkdownTable())
+            className="small btn-save"
+            onClick={() => onSave(generateMarkdownTable())}
+            style={{
+              padding: '0 12px',
+              backgroundColor: 'var(--color-accent-primary)',
+              color: 'white',
+              borderRadius: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontWeight: 'bold'
             }}
           >
-            <Save size={14} /> Apply
+            <Save size={14} /> Save
           </button>
         </div>
       </div>
 
-      <div className="table-editor-scroller">
+      <div className="table-editor-scroller flex-1 overflow-auto">
         <table className="visual-table">
           <thead>
             <tr>

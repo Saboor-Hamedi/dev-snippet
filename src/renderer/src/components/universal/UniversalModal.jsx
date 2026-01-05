@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useLayoutEffect } from 'react'
 import ReactDOM from 'react-dom'
-import { GripHorizontal } from 'lucide-react'
+import { GripHorizontal, X } from 'lucide-react'
 import { makeDraggable } from '../../utils/draggable'
 import { useSettings } from '../../hook/useSettingsContext'
 import { getPersistentPosition, savePersistentPosition } from '../../utils/persistentPosition'
@@ -18,8 +18,11 @@ const UniversalModal = ({
   resetPosition = false,
   noOverlay = false,
   customKey = 'universal_modal',
-  isMaximized = false
+  isMaximized: initialMaximized = false,
+  onMaximize: onMaximizeExternal
 }) => {
+  const [internalMaximized, setInternalMaximized] = React.useState(initialMaximized)
+  const isMaximized = initialMaximized || internalMaximized
   const modalRef = useRef(null)
   const headerRef = useRef(null)
   const dragHandleRef = useRef(null)
@@ -227,6 +230,12 @@ const UniversalModal = ({
     isMaximized
   ])
 
+  const toggleMaximized = (e) => {
+    e.stopPropagation()
+    setInternalMaximized(!isMaximized)
+    if (onMaximizeExternal) onMaximizeExternal(!isMaximized)
+  }
+
   if (!isOpen) return null
 
   const isDragDisabled = settings?.ui?.universalLock?.modal
@@ -257,40 +266,118 @@ const UniversalModal = ({
         className="universal-modal-header u-borderless u-solid"
         onDoubleClick={() => {
           if (customKey === 'flow_workspace_position' && typeof isMaximized !== 'undefined') {
-            // This is a bit hacky but it works for FlowWorkspace
             window.dispatchEvent(new CustomEvent('app:maximize-station'))
           }
         }}
         style={{
           cursor: !isDragDisabled && !isMaximized ? 'move' : 'default',
-          pointerEvents: 'auto', // Header must always be interactable for dragging
+          pointerEvents: 'auto',
           background: 'rgb(var(--color-bg-primary-rgb))',
           backgroundColor: 'rgb(var(--color-bg-primary-rgb))',
           border: 'none',
           boxShadow: 'none',
-          outline: 'none'
+          outline: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 0 0 16px',
+          height: '40px',
+          width: '100%',
+          flexShrink: 0,
+          gap: 0
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
-          {!isDragDisabled && (
-            <div
-              style={{
-                cursor: 'inherit',
-                padding: '4px',
-                marginLeft: '-4px',
-                display: 'flex',
-                alignItems: 'center'
-              }}
-            >
-              <GripHorizontal size={14} style={{ opacity: 0.3 }} />
-            </div>
-          )}
-          <div
-            className="universal-modal-title"
-            style={{ flex: 1, fontSize: '13px', color: 'var(--color-text-primary)' }}
+        <div
+          className="universal-modal-title"
+          style={{
+            fontSize: '9px',
+            fontWeight: 'bold',
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+            color: 'var(--color-text-primary)'
+          }}
+        >
+          {title}
+        </div>
+        <div style={{ display: 'flex' }}>
+          <button
+            onClick={toggleMaximized}
+            className="universal-modal-close-btn"
+            style={{
+              background: 'none',
+              border: 'none',
+              padding: '0',
+              width: '40px',
+              height: '40px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              opacity: 0.5,
+              transition: 'all 0.2s',
+              color: 'var(--color-text-primary)'
+            }}
+            title={isMaximized ? 'Restore' : 'Maximize'}
           >
-            {title}
-          </div>
+            {isMaximized ? (
+              <svg
+                viewBox="0 0 24 24"
+                width="14"
+                height="14"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
+              </svg>
+            ) : (
+              <svg
+                viewBox="0 0 24 24"
+                width="14"
+                height="14"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+              </svg>
+            )}
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onClose()
+            }}
+            className="universal-modal-close-btn close"
+            style={{
+              background: 'none',
+              border: 'none',
+              padding: '0',
+              width: '40px',
+              height: '40px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              opacity: 0.5,
+              transition: 'all 0.2s',
+              color: 'var(--color-text-primary)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.opacity = '1'
+              e.currentTarget.style.backgroundColor = 'rgba(255, 0, 0, 0.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.opacity = '0.5'
+              e.currentTarget.style.backgroundColor = 'transparent'
+            }}
+          >
+            <X size={16} />
+          </button>
         </div>
       </div>
       <div
@@ -300,13 +387,16 @@ const UniversalModal = ({
       </div>
       {footer && (
         <div
-          className="universal-modal-footer u-borderless u-solid"
+          className={`universal-modal-footer u-solid ${className.includes('no-padding') ? 'no-padding' : ''}`}
           style={{
             background: 'rgb(var(--color-bg-primary-rgb))',
             backgroundColor: 'rgb(var(--color-bg-primary-rgb))',
             border: 'none',
+            borderTop: '1px solid var(--color-border)',
             boxShadow: 'none',
-            outline: 'none'
+            outline: 'none',
+            flexShrink: 0,
+            padding: className.includes('no-padding') ? 0 : undefined
           }}
         >
           {footer}

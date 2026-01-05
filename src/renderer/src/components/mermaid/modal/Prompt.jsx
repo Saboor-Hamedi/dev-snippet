@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 import PropTypes from 'prop-types'
 import { FileEdit, Trash2, AlertCircle, Info } from 'lucide-react'
+import UniversalModal from '../../universal/UniversalModal'
 
 const Prompt = ({
   isOpen,
@@ -103,85 +104,74 @@ const Prompt = ({
   const displayIcon = CustomIcon ? <CustomIcon size={16} strokeWidth={2.5} /> : config.icon
 
   return (
-    <div
-      className="fixed inset-0 flex items-center justify-center px-4 overflow-hidden"
-      style={{ zIndex }}
-      onMouseDown={onClose}
+    <UniversalModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={title}
+      width="400px"
+      className="prompt-modal"
+      resetPosition={true}
     >
-      {/* Background Overlay */}
-      <div className="absolute inset-0 bg-black/90 animate-in fade-in duration-300" />
-
-      {/* Modal Container */}
-      <div
-        onMouseDown={(e) => e.stopPropagation()}
-        className="relative w-full max-w-sm bg-[var(--color-bg-primary)] rounded-2xl shadow-[0_30px_90px_-20px_rgba(0,0,0,0.8)] border border-[var(--color-border)] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 ring-1 ring-white/5"
-        style={{ backgroundColor: 'rgb(var(--color-bg-primary-rgb))' }}
-      >
-        <div className="p-5 text-left">
-          {/* Header */}
-          <div className="flex items-center gap-4 mb-3">
-            <div
-              className={`w-10 h-10 rounded-xl ${config.iconBg} flex items-center justify-center ${config.iconColor} shadow-inner bg-opacity-20`}
-            >
-              {React.cloneElement(displayIcon, { size: 20 })}
+      <div className="p-5 text-left bg-[var(--color-bg-primary)]">
+        {/* Message */}
+        {message && (
+          <div className="text-[13px] text-[var(--color-text-secondary)] mb-4 leading-relaxed opacity-90">
+            <div className="flex items-center gap-3 mb-2">
+              <div
+                className={`w-8 h-8 rounded-lg ${config.iconBg} flex items-center justify-center ${config.iconColor} bg-opacity-20`}
+              >
+                {React.cloneElement(displayIcon, { size: 16 })}
+              </div>
+              <span className="font-semibold text-[var(--color-text-primary)]">{title}</span>
             </div>
-            <h3 className="text-[16px] font-bold text-[var(--color-text-primary)] tracking-tight">
-              {title}
-            </h3>
+            {message}
           </div>
+        )}
 
-          {/* Message */}
-          {message && (
-            <div className="text-[13px] text-[var(--color-text-secondary)] mb-4 leading-relaxed opacity-90">
-              {message}
-            </div>
-          )}
-
-          {/* Optional Input */}
-          {showInput && (
-            <div className="mb-2">
-              <input
-                ref={inputRef}
-                type="text"
-                value={inputValue}
-                onChange={(e) => onInputChange && onInputChange(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={placeholder}
-                className="w-full bg-white/5 dark:bg-black/20 border border-white/10 focus:border-[var(--color-accent-primary)] outline-none rounded-xl px-4 py-3 text-[14px] text-[var(--color-text-primary)] transition-all placeholder:text-[var(--color-text-tertiary)] shadow-inner"
-                autoComplete="off"
-              />
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex justify-end gap-3 mt-4">
-            <button
-              onClick={(e) => {
-                e.currentTarget.blur()
-                onClose && onClose()
-              }}
-              className="px-5 py-2 text-[12px] font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-white/5 transition-all rounded-xl outline-none"
-            >
-              {cancelLabel}
-            </button>
-            <button
-              ref={confirmBtnRef}
-              onClick={(e) => {
-                e.currentTarget.blur()
-                handleConfirm()
-              }}
-              disabled={isProcessing || (showInput && !inputValue?.trim())}
-              className={`px-8 py-2 flex items-center justify-center gap-2 text-[12px] font-bold text-white rounded-xl transition-all active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed ${config.confirmBtn} ring-1 ring-white/10 shadow-none`}
-            >
-              {isProcessing && (
-                <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              )}
-              {isProcessing ? 'Processing...' : confirmLabel}
-            </button>
+        {/* Optional Input */}
+        {showInput && (
+          <div className="mb-2">
+            <input
+              ref={inputRef}
+              type="text"
+              value={inputValue}
+              onChange={(e) => onInputChange && onInputChange(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={placeholder}
+              className="w-full bg-white/5 dark:bg-black/20 border border-white/10 focus:border-[var(--color-accent-primary)] outline-none rounded-xl px-4 py-3 text-[14px] text-[var(--color-text-primary)] transition-all placeholder:text-[var(--color-text-tertiary)] shadow-inner"
+              autoComplete="off"
+            />
           </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex justify-end gap-3 mt-4">
+          <button
+            onClick={(e) => {
+              e.currentTarget.blur()
+              onClose && onClose()
+            }}
+            className="px-5 py-2 text-[12px] font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-white/5 transition-all rounded-xl outline-none"
+          >
+            {cancelLabel}
+          </button>
+          <button
+            ref={confirmBtnRef}
+            onClick={(e) => {
+              e.currentTarget.blur()
+              handleConfirm()
+            }}
+            disabled={isProcessing || (showInput && !inputValue?.trim())}
+            className={`px-8 py-2 flex items-center justify-center gap-2 text-[12px] font-bold text-white rounded-xl transition-all active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed ${config.confirmBtn} ring-1 ring-white/10 shadow-none`}
+          >
+            {isProcessing && (
+              <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            )}
+            {isProcessing ? 'Processing...' : confirmLabel}
+          </button>
         </div>
       </div>
-    </div>
+    </UniversalModal>
   )
 }
 

@@ -18,7 +18,6 @@ import { generatePreviewHtml } from '../../utils/previewGenerator'
 import { makeDraggable } from '../../utils/draggable.js'
 import UniversalModal from '../universal/UniversalModal'
 import { useUniversalModal } from '../universal/useUniversalModal'
-import PinPopover from './sidebar/PinPopover'
 import DiagramEditorModal from '../mermaid/modal/DiagramEditorModal'
 import TableEditorModal from '../table/TableEditorModal'
 import PerformanceBarrier from '../universal/PerformanceBarrier/PerformanceBarrier'
@@ -82,8 +81,6 @@ const SnippetEditor = ({
   onToggleCompact,
   showPreview,
   snippets = [],
-  pinPopover,
-  setPinPopover,
   onPing,
   onFavorite,
   isFlow = false,
@@ -149,8 +146,10 @@ const SnippetEditor = ({
     width: uniWidth,
     height: uniHeight,
     resetPosition: uniResetPosition,
+    isMaximized: uniMaximized,
     closeModal: closeUni,
-    openModal
+    openModal,
+    setModalState: setUniState
   } = useUniversalModal()
 
   useEffect(() => {
@@ -1606,20 +1605,12 @@ const SnippetEditor = ({
             width={uniWidth}
             height={uniHeight}
             resetPosition={uniResetPosition}
+            isMaximized={uniMaximized}
+            onMaximize={(val) => setUniState((prev) => ({ ...prev, isMaximized: val }))}
+            customKey="snippet_editor_universal_modal"
           >
             {uniContent}
           </UniversalModal>
-
-          {/* Pin Popover rendered inside the editor when triggered */}
-          {pinPopover?.visible && initialSnippet && (
-            <PinPopover
-              isCentered={true}
-              snippet={initialSnippet}
-              onClose={() => setPinPopover?.({ ...pinPopover, visible: false })}
-              onPing={onPing}
-              onFavorite={onFavorite}
-            />
-          )}
         </div>
       )}
     </>

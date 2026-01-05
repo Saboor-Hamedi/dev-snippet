@@ -9,7 +9,6 @@ import { ZOOM_STEP } from '../../hook/useZoomLevel.js'
 import { useView } from '../../context/ViewContext'
 import { useModal } from './manager/ModalContext'
 import KeyboardHandler from './manager/KeyboardHandler'
-import AltPHandler from './AltPHandler'
 import PinPopover from './sidebar/PinPopover'
 import { useThemeManager } from '../../hook/useThemeManager'
 import { themeProps } from '../preference/theme/themeProps'
@@ -236,7 +235,13 @@ const SnippetLibraryInner = ({ snippetData }) => {
   }, [snippets, updateSnippetIndex])
 
   const [dirtySnippetIds, setDirtySnippetIds] = useState(new Set())
-  const [pinPopover, setPinPopover] = useState({ visible: false, x: 0, y: 0, snippetId: null })
+  const [pinPopover, setPinPopover] = useState({
+    visible: false,
+    x: 0,
+    y: 0,
+    snippetId: null,
+    isCentered: false
+  })
   const { overlayMode, setOverlayMode } = useAdvancedSplitPane()
 
   // SYNC VIRTUAL SETTINGS: DISABLE TO PREVENT CURSOR JUMPS
@@ -1309,65 +1314,63 @@ const SnippetLibraryInner = ({ snippetData }) => {
         onOpenPinPopover={(id, rect, origin = 'mouse') => {
           let x = rect?.x ?? rect?.left ?? rect?.clientX ?? window.innerWidth / 2 - 80
           let y = rect?.y ?? rect?.top ?? rect?.clientY ?? window.innerHeight / 2 - 24
-          try {
-          } catch (e) {}
-          // Ensure idempotent open: do not close immediately if called twice quickly
+          let isCentered = false
+
+          // Idempotent open: do not close immediately if called twice quickly
           if (pinPopover.visible && pinPopover.snippetId === id) {
-            try {
-            } catch (e) {}
-            // Toggle behavior: close then reopen to refresh position when requested rapidly
             setPinPopover((prev) => ({ ...prev, visible: false }))
             setTimeout(() => {
               if (origin === 'keyboard') {
-                try {
-                  window.__suppressNextMousedownClose = true
-                  setTimeout(() => (window.__suppressNextMousedownClose = false), 250)
-                } catch (e) {}
+                window.__suppressNextMousedownClose = true
+                setTimeout(() => (window.__suppressNextMousedownClose = false), 250)
               }
-              setPinPopover((prev) => ({ ...prev, visible: true, x, y, snippetId: id, origin }))
+              setPinPopover((prev) => ({
+                ...prev,
+                visible: true,
+                x,
+                y,
+                snippetId: id,
+                origin,
+                isCentered: !rect && origin === 'keyboard'
+              }))
             }, 80)
             return
           }
+
           if (origin === 'keyboard') {
             try {
               // Try to position the popover near the corresponding sidebar row (left side)
               const el = document.querySelector(`[data-snippet-id="${id}"]`)
               if (el && el.getBoundingClientRect) {
                 const r = el.getBoundingClientRect()
-                // Place popover inside the sidebar area (slightly right of the row)
                 x = Math.max(8, r.left + 8)
                 y = r.top
+              } else {
+                // If keyboard trigger but no row found (maybe focus in editor), center it
+                isCentered = true
               }
               window.__suppressNextMousedownClose = true
               setTimeout(() => (window.__suppressNextMousedownClose = false), 250)
-            } catch (e) {}
+            } catch (e) {
+              isCentered = true
+            }
           }
-          setPinPopover((prev) => ({ ...prev, visible: true, x, y, snippetId: id, origin }))
+
+          setPinPopover((prev) => ({
+            ...prev,
+            visible: true,
+            x,
+            y,
+            snippetId: id,
+            origin,
+            isCentered
+          }))
         }}
         selectedIds={selectedIds}
         setSelectedIds={setSelectedIds}
         selectedFolderId={selectedFolderId}
         setSelectedFolderId={setSelectedFolderId}
         onToggleZenFocus={() => window.dispatchEvent(new CustomEvent('app:toggle-zen-focus'))}
-      />
-
-      {/* Global Alt+P handler as a fallback so popover opens regardless of focus */}
-      <AltPHandler
-        snippets={snippets}
-        selectedSnippet={selectedSnippet}
-        selectedIds={selectedIds}
-        onOpen={(id, rect) => {
-          if (!id) return
-          let x = rect?.x ?? rect?.left ?? rect?.clientX ?? window.innerWidth / 2 - 80
-          let y = rect?.y ?? rect?.top ?? rect?.clientY ?? window.innerHeight / 2 - 24
-          // Idempotent open
-          if (pinPopover.visible && pinPopover.snippetId === id) return
-          try {
-            window.__suppressNextMousedownClose = true
-            setTimeout(() => (window.__suppressNextMousedownClose = false), 250)
-          } catch (e) {}
-          setPinPopover({ visible: true, x, y, snippetId: id })
-        }}
       />
 
       <div
@@ -1557,13 +1560,21 @@ const SnippetLibraryInner = ({ snippetData }) => {
           onSelectAll={handleSelectAll}
         />
       </div>
-      {pinPopover.visible && activeView !== 'editor' && !isCreatingSnippet && (
+      {pinPopover.visible && (
         <PinPopover
           x={pinPopover.x}
           y={pinPopover.y}
+          isCentered={pinPopover.isCentered}
           snippet={snippets.find((s) => s.id === pinPopover.snippetId)}
           onClose={() => {
-            setPinPopover((prev) => ({ ...prev, visible: false, x: 0, y: 0, snippetId: null }))
+            setPinPopover((prev) => ({
+              ...prev,
+              visible: false,
+              x: 0,
+              y: 0,
+              snippetId: null,
+              isCentered: false
+            }))
             try {
             } catch (e) {}
             focusEditor()

@@ -59,6 +59,7 @@
   display: flex;
   flex: 1;
   overflow: hidden;
+  min-height: 0; /* Crucial for nested flex scrolling */
 }
 .diagram-editor-pane {
   flex: 1;
@@ -70,9 +71,18 @@
 .code-pane {
   border-right: 1px solid var(--color-border);
 }
+.diagram-editor-pane.is-hidden {
+  display: none !important;
+}
+.diagram-editor-pane.is-maximized {
+  flex: 1 !important;
+  border: none !important;
+}
 .editor-inner {
   flex: 1;
   height: 100%;
+  min-height: 0; /* Force flex child to respect parent height */
+  overflow: hidden;
 }
 
 /* PANE HEADERS */
