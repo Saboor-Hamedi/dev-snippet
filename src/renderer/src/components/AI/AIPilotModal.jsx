@@ -24,22 +24,7 @@ const AIPilotModal = ({ isOpen, onClose, selectedSnippet }) => {
     }
   }, [settings.ai?.pilotScale])
 
-  // Security & Connectivity Check
-  useEffect(() => {
-    if (isOpen) {
-      if (!settings.ai?.apiKey) {
-        showToast('🔑 API Key Required: Please configure DeepSeek in Settings.', 'error')
-        onClose()
-        return
-      }
-
-      if (!navigator.onLine) {
-        showToast('🌐 Offline: AI Pilot requires an active internet connection.', 'error')
-        onClose()
-        return
-      }
-    }
-  }, [isOpen, settings.ai?.apiKey, onClose, showToast])
+  // Security & Connectivity Check skipped here; handled within AIPilot internally for better UX
 
   const getDimensions = () => {
     if (scale === 100) return { width: '100vw', height: '100vh', noRadius: true }

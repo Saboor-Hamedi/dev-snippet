@@ -29,11 +29,12 @@ export const SHORTCUT_DEFINITIONS = [
     scope: 'Navigation',
     action: 'Close editor',
     description: 'Return to the Snippet Library.',
-    displayCombos: [`${MOD_KEY_PLACEHOLDER} + Shift + W`],
+    displayCombos: [`${MOD_KEY_PLACEHOLDER} + W`],
     handlerKey: 'onCloseEditor',
     matchers: [
       {
-        when: (event) => isModKeyPressed(event) && event.shiftKey && matchesKey(event, 'w')
+        when: (event) => isModKeyPressed(event) && matchesKey(event, 'w') && !event.shiftKey,
+        preventDefault: () => true
       }
     ]
   },

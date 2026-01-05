@@ -169,7 +169,11 @@ const CodeEditor = ({
       if (viewRef.current) {
         requestAnimationFrame(() => {
           if (viewRef.current) {
-            viewRef.current.focus()
+            try {
+              viewRef.current.focus()
+            } catch (e) {
+              console.warn('Failed to focus editor:', e)
+            }
           }
         })
       } else {
@@ -238,7 +242,7 @@ const CodeEditor = ({
 
   // Force cursor update when zoom changes
   useEffect(() => {
-    if (!viewRef.current) return
+    if (!viewRef.current || !viewRef.current.state) return
 
     // PERFORMANCE: Stop the "whole editor jump" when saving or changing themes.
     // If the window shield is active, we strictly ignore background re-measures.
@@ -250,10 +254,16 @@ const CodeEditor = ({
     lastEditorZoom.current = editorZoom
 
     const view = viewRef.current
-    view.requestMeasure()
-    view.dispatch({
-      effects: [EditorView.scrollIntoView(view.state.selection.main, { y: 'center' })]
-    })
+    try {
+      view.requestMeasure()
+      if (view.state?.selection?.main) {
+        view.dispatch({
+          effects: [EditorView.scrollIntoView(view.state.selection.main, { y: 'center' })]
+        })
+      }
+    } catch (e) {
+      console.warn('Zoom adjustment skipped due to view state error', e)
+    }
   }, [zoomLevel, editorZoom])
 
   // 1. Permanent Static Frame (Theme + Gutters) - MUST BE DEFINED BEFORE EFFECTS THAT USE IT

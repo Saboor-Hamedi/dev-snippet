@@ -22,7 +22,11 @@ export const useFocus = (viewRef, trigger) => {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           if (viewRef.current) {
-            viewRef.current.focus()
+            try {
+              viewRef.current.focus()
+            } catch (e) {
+              console.warn('[useFocus] Failed to focus editor:', e)
+            }
             shouldFocus.current = false
           }
         })

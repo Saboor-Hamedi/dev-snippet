@@ -62,7 +62,22 @@ const AIPilot = ({ scale, selectedSnippet }) => {
       .invoke('ai:heartbeat')
       .then(() => console.log('AI System: ONLINE'))
       .catch((err) => console.error('AI System: OFFLINE', err))
-  }, [])
+
+    // Check for API Key (Reactive)
+    if (!settings?.ai?.apiKey && !messages.some((m) => m.content.includes('No API Key Found'))) {
+      const ms = [
+        ...messages,
+        {
+          role: 'assistant',
+          content:
+            '⚠️ **No API Key Found**\n\nTo start using the AI Pilot, please go to **Settings > AI** and configure your DeepSeek API Key.'
+        }
+      ]
+      setMessages(ms)
+    }
+  }, [settings?.ai?.apiKey]) // Re-run only when key changes (or on mount/hydration)
+
+  /**
 
   /**
    * Sub-component to render markdown messages asynchronously.
@@ -96,6 +111,38 @@ const AIPilot = ({ scale, selectedSnippet }) => {
     setMessages(newMessages)
     setInput('')
     setIsThinking(true)
+
+    if (!settings?.ai?.apiKey) {
+      showToast('DeepSeek API Key is missing', 'error')
+      setTimeout(() => {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content:
+              '🚫 **API Key Missing**\nPlease configure your API key in Settings to continue.'
+          }
+        ])
+        setIsThinking(false)
+      }, 600)
+      return
+    }
+
+    if (!navigator.onLine) {
+      showToast('No internet connection', 'error')
+      setTimeout(() => {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content:
+              '🌐 **Offline Mode**\nPlease check your internet connection to use the AI Pilot.'
+          }
+        ])
+        setIsThinking(false)
+      }, 600)
+      return
+    }
 
     try {
       // 1. Prepare systematic context (System prompts guide the AI's behavior)
@@ -155,6 +202,38 @@ const AIPilot = ({ scale, selectedSnippet }) => {
 
   return (
     <div className="ai-pilot-container">
+      {/* ⚠️ MISSING KEY WARNING BANNER */}
+      {(!settings?.ai?.apiKey || settings?.ai?.apiKey === '') && (
+        <div
+          style={{
+            background: 'rgba(245, 158, 11, 0.15)',
+            borderBottom: '1px solid rgba(245, 158, 11, 0.2)',
+            padding: '8px 12px',
+            fontSize: '11px',
+            color: '#fbbf24',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}
+        >
+          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Terminal size={12} />
+            <span>Connect DeepSeek API</span>
+          </span>
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('app:open-settings'))}
+            style={{
+              textDecoration: 'underline',
+              color: 'inherit',
+              fontWeight: 500,
+              cursor: 'pointer'
+            }}
+          >
+            Settings
+          </button>
+        </div>
+      )}
+
       {/* STATUS BAR */}
       <div className="ai-pilot-status-bar">
         <div className="ai-pilot-model-badge">

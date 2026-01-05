@@ -207,9 +207,13 @@ const SnippetEditor = ({
         closeUni()
         // Restore focus and selection to main editor
         requestAnimationFrame(() => {
-          view.focus()
-          if (previousSelection) {
-            view.dispatch({ selection: previousSelection })
+          try {
+            view.focus()
+            if (previousSelection) {
+              view.dispatch({ selection: previousSelection })
+            }
+          } catch (e) {
+            console.warn('Failed to restore focus/selection:', e)
           }
         })
       }
@@ -1323,7 +1327,7 @@ const SnippetEditor = ({
                       wordWrap={wordWrap}
                       theme={currentTheme}
                       centered={true}
-                      autoFocus={true}
+                      autoFocus={initialSnippet?.id !== 'system:settings'}
                       snippetId={initialSnippet?.id}
                       readOnly={initialSnippet?.readOnly || false}
                       onChange={handleCodeChange}

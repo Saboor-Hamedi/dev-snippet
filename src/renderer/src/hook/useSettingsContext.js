@@ -63,6 +63,22 @@ export const SettingsProvider = ({ children }) => {
     }
   }, [settings])
 
+  // NEW: Listen for Ctrl+0 / Cmd+0 to reset zoom state
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === '0') {
+        // We do *not* preventDefault() here because we WANT the native Electron zoom reset to happen too.
+        // We just ensure our internal state matches it.
+        setZoomInternal(1.0)
+        // Optionally reset editor font zoom too? Or keep it separation?
+        // Usually Ctrl+0 resets everything.
+        // setEditorZoomInternal(1.0)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
   // 3. Apply UI Zoom to the native window and CSS
   useEffect(() => {
     if (window.api?.setZoom) {
