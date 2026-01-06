@@ -145,9 +145,12 @@ const ActivityBar = ({
           window.api
             .checkForUpdates()
             .then((res) => {
+              cleanup()
               if (res === null) {
-                cleanup()
                 resolve({ type: 'dev-mode' })
+              } else {
+                // If it's a manual check return, simulate 'available' event
+                resolve({ type: 'available', info: res })
               }
             })
             .catch((err) => {
