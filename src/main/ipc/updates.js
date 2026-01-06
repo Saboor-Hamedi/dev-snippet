@@ -13,6 +13,13 @@ export const registerUpdatesHandlers = (mainWindow) => {
   autoUpdater.allowPrerelease = true
   autoUpdater.logger = console
 
+  // 0. Initial check on startup (Production only)
+  if (app.isPackaged) {
+    autoUpdater.checkForUpdatesAndNotify().catch((err) => {
+      console.error('[Updater] Background check failed on startup:', err)
+    })
+  }
+
   // 1. Check for updates
   ipcMain.handle('updates:check', async () => {
     try {
