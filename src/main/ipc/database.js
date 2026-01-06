@@ -1,4 +1,5 @@
 import { ipcMain, BrowserWindow } from 'electron'
+import { propagateRename } from '../database/refactor'
 
 const notifyDataChanged = () => {
   BrowserWindow.getAllWindows().forEach((win) => {
@@ -51,32 +52,41 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
     return transformRow(row)
   })
 
-  // Full-text search using FTS5
-  ipcMain.handle('db:searchSnippets', (event, query) => {
+  // Full-text search using FTS5 with robust LIKE fallback
+  ipcMain.handle('db:searchSnippets', (event, query, limit = 250) => {
     if (!query || query.trim().length === 0) {
       return preparedStatements.getMetadata.all()
     }
 
-    try {
-      const stopWords = ['a', 'an', 'the', 'of', 'in', 'on', 'at', 'to', 'for', 'with', 'and']
-      const rawTerms = query.trim().split(/\s+/)
-      // Only filter stopwords if we have other significant words
-      const terms =
-        rawTerms.length > 1
-          ? rawTerms.filter((t) => !stopWords.includes(t.toLowerCase()))
-          : rawTerms
+    const trimmedQuery = query.trim()
+    const terms = trimmedQuery.split(/\s+/).filter(Boolean)
 
-      const ftsQuery = terms.map((term) => `"${term.replace(/"/g, '""')}"*`).join(' AND ')
-
-      // --- BLAZING PERFORMANCE FTS5 OPTIMIZATION ---
-      // We use a subquery to find matched rowids and their ranks FIRST.
-      // This allows SQLite to perform the heavy lifting of sorting and limiting
-      // BEFORE it tries to generate the 'match_context' (snippet) for only
-      // the top results, drastically reducing CPU usage for large libraries.
+    // 🚀 OPTIMIZATION: Use LIKE for short single-word queries (up to 3 chars)
+    if (trimmedQuery.length < 4 && terms.length === 1) {
+      const pattern = `%${trimmedQuery}%`
       const results = db
         .prepare(
           `
-          SELECT s.id, s.title, s.language, s.timestamp, s.type, s.tags, s.is_draft, s.is_pinned, s.is_favorite, s.sort_index, 
+        SELECT id, title, code, language, timestamp, type, tags, is_draft, is_pinned, is_favorite, sort_index,
+        CASE WHEN (code_draft IS NOT NULL AND code_draft != '' AND code_draft != code) THEN 1 ELSE 0 END as is_modified
+        FROM snippets
+        WHERE (title LIKE ? OR tags LIKE ? OR code LIKE ?) AND is_deleted = 0
+        ORDER BY is_pinned DESC, timestamp DESC
+        LIMIT ?
+      `
+        )
+        .all(pattern, pattern, pattern, limit)
+      return results.map(transformRow)
+    }
+
+    try {
+      // Construct a robust FTS query: "term1"* AND "term2"* ...
+      const ftsQuery = terms.map((term) => `"${term.replace(/"/g, '""')}"*`).join(' AND ')
+
+      const results = db
+        .prepare(
+          `
+          SELECT s.id, s.title, s.code, s.language, s.timestamp, s.type, s.tags, s.is_draft, s.is_pinned, s.is_favorite, s.sort_index, 
           CASE WHEN (s.code_draft IS NOT NULL AND s.code_draft != '' AND s.code_draft != s.code) THEN 1 ELSE 0 END as is_modified,
           snippet(snippets_fts, 1, '__MARK__', '__/MARK__', '...', 20) as match_context
           FROM (
@@ -84,7 +94,7 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
             FROM snippets_fts 
             WHERE snippets_fts MATCH ? 
             ORDER BY bm25(snippets_fts, 10.0, 1.0, 5.0) 
-            LIMIT 10
+            LIMIT ?
           ) as fts
           JOIN snippets s ON s.rowid = fts.rowid
           JOIN snippets_fts ON snippets_fts.rowid = fts.rowid
@@ -92,31 +102,48 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
           ORDER BY fts.rank
         `
         )
-        .all(ftsQuery)
+        .all(ftsQuery, limit)
+
+      // Fallback if FTS is empty
+      if (results.length === 0) throw new Error('No FTS')
 
       return results.map(transformRow)
     } catch (e) {
-      console.warn('FTS search failed, falling back to LIKE:', e.message)
-      const likeQuery = `%${query}%`
-      return db
-        .prepare(
-          `
-        SELECT id, title, language, timestamp, type, tags, is_draft, is_pinned, is_favorite, sort_index,
+      // Final Fallback: Multi-term LIKE (All terms must exist in Title OR Code OR Tags)
+      let queryStr = `
+        SELECT id, title, code, language, timestamp, type, tags, is_draft, is_pinned, is_favorite, sort_index,
         CASE WHEN (code_draft IS NOT NULL AND code_draft != '' AND code_draft != code) THEN 1 ELSE 0 END as is_modified
         FROM snippets
-        WHERE (title LIKE ? OR code LIKE ? OR tags LIKE ?) AND is_deleted = 0
-        ORDER BY timestamp DESC
-        LIMIT 10
+        WHERE is_deleted = 0
       `
-        )
-        .all(likeQuery, likeQuery, likeQuery)
-        .map(transformRow)
+      const params = []
+      terms.forEach((term) => {
+        queryStr += ` AND (title LIKE ? OR code LIKE ? OR tags LIKE ?)`
+        const p = `%${term}%`
+        params.push(p, p, p)
+      })
+      queryStr += ` ORDER BY is_pinned DESC, timestamp DESC LIMIT ?`
+      params.push(limit)
+
+      const results = db.prepare(queryStr).all(...params)
+      return results.map(transformRow)
     }
   })
 
   // Save snippet
   ipcMain.handle('db:saveSnippet', (event, snippet) => {
     try {
+      // 🟢 WIKILINK REFACTORING LOGIC
+      // Before saving, check if we are renaming an existing snippet.
+      // If the title changed, we need to update all inbound links [[Old Title]] -> [[New Title]].
+      const oldSnippet = preparedStatements.getById.get(snippet.id)
+      const isRename =
+        oldSnippet &&
+        snippet.title &&
+        oldSnippet.title !== snippet.title &&
+        oldSnippet.title.trim() !== '' &&
+        !snippet.is_draft // Only propagate if the new version is not a draft (though usually renaming happens on permanent titles)
+
       // PRO-TIP: Prevent duplicate titles to keep the library clean
       // We skip empty titles to allow multiple "New Drafts"
       if (snippet.title && snippet.title.trim()) {
@@ -130,6 +157,7 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
           throw new Error('DUPLICATE_TITLE')
         }
       }
+
       const dbPayload = {
         id: snippet.id,
         title: snippet.title || '',
@@ -144,7 +172,16 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
         sort_index: snippet.sort_index ?? null,
         folder_id: snippet.folder_id ?? null
       }
-      preparedStatements.save.run(dbPayload)
+
+      // Execute Save and Propagation within a single atomic transaction
+      db.transaction(() => {
+        preparedStatements.save.run(dbPayload)
+
+        if (isRename && !snippet.is_draft) {
+          propagateRename(db, oldSnippet.title, snippet.title)
+        }
+      })()
+
       notifyDataChanged()
       return true
     } catch (err) {

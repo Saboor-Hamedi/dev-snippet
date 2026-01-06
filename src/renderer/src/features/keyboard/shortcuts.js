@@ -291,7 +291,8 @@ export const SHORTCUT_DEFINITIONS = [
       {
         when: (event) =>
           isModKeyPressed(event) &&
-          (event.key === '0' || event.code === 'Digit0' || event.code === 'Numpad0')
+          (event.key === '0' || event.code === 'Digit0' || event.code === 'Numpad0'),
+        preventDefault: false
       }
     ]
   },

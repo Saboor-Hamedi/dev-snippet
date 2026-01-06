@@ -11,59 +11,85 @@ const PinPopover = ({ x = 0, y = 0, snippet, onClose, onPing, onFavorite, isCent
   const headerRef = useRef(null)
   const [position, setPosition] = useState({ left: x, top: y + 10 })
 
-  useLayoutEffect(() => {
-    if (ref.current) {
-      if (isCentered) {
-        // Restore last position or center via Viewport logic
-        const viewportWidth = window.innerWidth
-        const viewportHeight = window.innerHeight
-        const mRect = ref.current.getBoundingClientRect()
-        const centerDefaults = {
-          left: `${(viewportWidth - mRect.width) / 2}px`,
-          top: `${viewportHeight * 0.2}px`
-        }
-        const saved = getPersistentPosition('pin_popover', centerDefaults)
-        setPosition({
-          left: saved.left,
-          top: saved.top
-        })
-        return
+const getEditorConstraints = () => {
+  const sidebar = document.querySelector('.sidebar-container')
+  const header = document.querySelector('.header')
+  const statusBar = document.querySelector('.status-bar')
+
+  // Industrial UI: Account for sidebar, header and footer
+  const left = sidebar ? sidebar.getBoundingClientRect().right : 60
+  const top = header ? header.getBoundingClientRect().bottom : 40
+  const bottom = statusBar ? statusBar.getBoundingClientRect().top : window.innerHeight - 30
+  const right = window.innerWidth
+
+  return { left, top, right, bottom }
+}
+
+useLayoutEffect(() => {
+  if (ref.current) {
+    const bounds = getEditorConstraints()
+    const rect = ref.current.getBoundingClientRect()
+    const viewportWidth = window.innerWidth
+
+    if (isCentered) {
+      const centerDefaults = {
+        left: `${Math.max(bounds.left, (viewportWidth + bounds.left - rect.width) / 2)}px`,
+        top: `${window.innerHeight * 0.2}px`
       }
-
-      const rect = ref.current.getBoundingClientRect()
-      const viewportWidth = window.innerWidth
-      const viewportHeight = window.innerHeight
-
-      let nextLeft = x
-      let nextTop = y + 10
-
-      // Viewport collision detection
-      if (nextLeft + rect.width > viewportWidth - 20) {
-        nextLeft = viewportWidth - rect.width - 20
-      }
-      if (nextTop + rect.height > viewportHeight - 20) {
-        nextTop = y - rect.height - 10 // Show above if no space below
-      }
-
-      // Ensure it's never negative
-      nextLeft = Math.max(10, nextLeft)
-      nextTop = Math.max(10, nextTop)
-
-      setPosition({ left: nextLeft, top: nextTop })
+      const saved = getPersistentPosition('pin_popover', centerDefaults)
+      setPosition({ left: saved.left, top: saved.top })
+      return
     }
-  }, [x, y, isCentered])
 
-  useEffect(() => {
-    if (ref.current && headerRef.current) {
-      const cleanup = makeDraggable(ref.current, headerRef.current, (pos) => {
-        savePersistentPosition('pin_popover', {
-          left: `${pos.x}px`,
-          top: `${pos.y}px`
-        })
-      })
-      return cleanup
+    // Contextual Positioning
+    const saved = getPersistentPosition('pin_popover', null)
+    if (saved) {
+      let sLeft = parseInt(saved.left)
+      let sTop = parseInt(saved.top)
+
+      // Clamp saved position
+      sLeft = Math.max(bounds.left + 10, Math.min(sLeft, bounds.right - rect.width - 10))
+      sTop = Math.max(bounds.top + 10, Math.min(sTop, bounds.bottom - rect.height - 10))
+
+      setPosition({ left: `${sLeft}px`, top: `${sTop}px` })
+      return
     }
-  }, [snippet, isCentered])
+
+    let nextLeft = Math.max(bounds.left + 20, x)
+    let nextTop = y + 10
+
+    // Viewport & Editor collision detection
+    if (nextLeft + rect.width > bounds.right - 20) {
+      nextLeft = bounds.right - rect.width - 20
+    }
+    if (nextTop + rect.height > bounds.bottom - 20) {
+      nextTop = y - rect.height - 10
+    }
+
+    // Final Clamping
+    nextLeft = Math.max(bounds.left + 10, nextLeft)
+    nextTop = Math.max(bounds.top + 10, nextTop)
+
+    setPosition({ left: nextLeft, top: nextTop })
+  }
+}, [x, y, isCentered])
+
+useEffect(() => {
+  if (ref.current && headerRef.current) {
+    const cleanup = makeDraggable(
+      ref.current,
+      headerRef.current,
+      (pos) => {
+        const nextPos = { left: `${pos.x}px`, top: `${pos.y}px` }
+        setPosition(nextPos)
+        savePersistentPosition('pin_popover', nextPos)
+      },
+      null, // onDragStart
+      getEditorConstraints
+    )
+    return cleanup
+  }
+}, [snippet, isCentered])
 
   useEffect(() => {
     const handleOutside = (e) => {

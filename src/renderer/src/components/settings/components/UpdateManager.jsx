@@ -158,10 +158,10 @@ const UpdateManager = () => {
         return (
           <button
             onClick={handleDownload}
-            className={`${buttonBaseClass} bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20`}
+            className={`${buttonBaseClass} bg-blue-600 border-blue-500 text-white`}
           >
             <Download size={14} />
-            Update and Download
+            Download Update
           </button>
         )
       case 'downloading':
@@ -169,21 +169,21 @@ const UpdateManager = () => {
           <div className="flex flex-col items-end gap-2">
             <div className="w-36 h-1.5 bg-black/20 dark:bg-white/10 rounded-full overflow-hidden border border-white/5">
               <div
-                className="h-full bg-[var(--color-accent-primary)] transition-all duration-300 shadow-[0_0_10px_var(--color-accent-primary)]"
+                className="h-full bg-[var(--color-accent-primary)] transition-all duration-300"
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <span className="text-[10px] opacity-60 font-mono italic">{progress}% Downloaded</span>
+            <span className="text-[10px] opacity-60 font-mono italic">{progress.toFixed(0)}% Downloaded</span>
           </div>
         )
       case 'downloaded':
         return (
           <button
             onClick={handleInstall}
-            className={`${buttonBaseClass} animate-pulse bg-emerald-600 border-emerald-500 text-white shadow-lg shadow-emerald-500/20`}
+            className={`${buttonBaseClass} bg-emerald-600 border-emerald-500 text-white`}
           >
             <RotateCcw size={14} />
-            Update and Restart
+            Restart App
           </button>
         )
       case 'no-update':
@@ -236,7 +236,7 @@ const UpdateManager = () => {
 
       {/* Restart Required Modal */}
       {showRestartModal && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/90">
           <div
             className="w-[340px] bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-xl shadow-2xl p-6 relative animate-in fade-in zoom-in duration-200"
             style={{

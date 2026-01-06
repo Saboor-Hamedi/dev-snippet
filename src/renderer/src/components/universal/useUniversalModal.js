@@ -27,6 +27,9 @@ export const useUniversalModal = () => {
       width: config.width || '550px',
       height: config.height || 'auto',
       isMaximized: !!config.isMaximized,
+      hideHeaderBorder: !!config.hideHeaderBorder,
+      noTab: !!config.noTab,
+      className: config.className || '',
       data: config.data || null
     })
   }, [])

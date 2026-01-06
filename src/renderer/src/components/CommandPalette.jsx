@@ -12,7 +12,6 @@ import {
   Command,
   Settings,
   Moon,
-  Sun,
   Sidebar,
   FilePlus,
   Monitor,
@@ -52,18 +51,19 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
     )
   }
 
-  // 1. HYBRID SEARCH ENGINE
+  // 1. HYBRID SEARCH ENGINE - Optimized for "Freaking Fast" performance
   // - Empty query: Show local Recent files (Immediate)
   // - Typing: Use Backend FTS (Scalable & Full Content Search)
   useEffect(() => {
     const query = search.trim()
     if (!query || query.startsWith('>')) {
       setSearchResults(null)
+      setIsLoading(false)
       return
     }
 
+    // High-performance debounce (50ms) for near-instant results
     const timer = setTimeout(async () => {
-      // Use Backend Search if available (supports Content Search + FTS)
       if (window.api?.searchSnippets) {
         setIsLoading(true)
         try {
@@ -75,7 +75,7 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
           setIsLoading(false)
         }
       }
-    }, 150) // 150ms debounce
+    }, 50)
 
     return () => clearTimeout(timer)
   }, [search])
@@ -334,34 +334,65 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
 
   const isCommandMode = search.startsWith('>')
 
+  // Pre-calculate searchable terms to avoid expensive work in the main search hook
+  const searchableSnippets = useMemo(() => {
+    return snippets.map((s) => ({
+      item: s,
+      lowerTitle: (s.title || '').toLowerCase(),
+      lowerCode: (s.code || '').toLowerCase(),
+      lowerLang: (s.language || '').toLowerCase(),
+      lowerTags: Array.isArray(s.tags)
+        ? s.tags.join(' ').toLowerCase()
+        : (s.tags || '').toLowerCase()
+    }))
+  }, [snippets])
+
   const filteredItems = useMemo(() => {
     const query = search.toLowerCase().trim()
 
-    // CASE 0: Command Mode
+    // ─── COMMAND MODE (Shift + Ctrl + P or starting with '>') ───
     if (isCommandMode) {
-      const cmdQuery = query.slice(1).trim()
+      const cmdQuery = query.startsWith('>') ? query.slice(1).trim() : query
       if (!cmdQuery) return commands
       return commands.filter((cmd) => cmd.title.toLowerCase().includes(cmdQuery))
     }
 
-    // CASE 1: Recents (No Query)
+    // ─── SEARCH MODE (Ctrl + P) ───
     if (!query) {
       return [...snippets].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)).slice(0, 5)
     }
 
-    // CASE 2: Hybrid Search (Merge Client Title Matches + Backend Content Matches + Commands)
-    const clientMatches = snippets
-      .map((item) => {
-        const title = (item.title || '').toLowerCase()
-        const tags = Array.isArray(item.tags)
-          ? item.tags.join(' ').toLowerCase()
-          : (item.tags || '').toLowerCase()
+    // Local Title/Tag Scoring (Instant Feedback)
+    const queryTerms = query.split(/\s+/).filter(Boolean)
+    const clientMatches = searchableSnippets
+      .map(({ item, lowerTitle, lowerCode, lowerLang, lowerTags }) => {
         let score = 0
+        if (lowerTitle === query) score += 2000
+        else if (lowerTitle.startsWith(query)) score += 1000
 
-        if (title === query) score += 1000
-        else if (title.startsWith(query)) score += 500
-        else if (title.includes(query)) score += 100
-        if (tags.includes(query)) score += 50
+        // Multi-term contribution
+        const matchesAll = queryTerms.every((term) => {
+          if (lowerTitle.includes(term)) {
+            score += 100
+            return true
+          }
+          if (lowerCode.includes(term)) {
+            score += 80
+            return true
+          }
+          if (lowerTags.includes(term)) {
+            score += 50
+            return true
+          }
+          if (lowerLang.includes(term)) {
+            score += 50
+            return true
+          }
+          return false
+        })
+
+        // Bonus if all terms match locally
+        if (matchesAll) score += 500
 
         return { item, score }
       })
@@ -369,28 +400,17 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
       .sort((a, b) => b.score - a.score)
       .map((res) => res.item)
 
-    // D. Command Inclusion (Unified Search)
-    const matchingCommands = commands.filter((cmd) => cmd.title.toLowerCase().includes(query))
-
-    // E. Merge Strategy
+    // Merge with Backend (Full Content Search)
     const backendMatches = searchResults || []
     const backendMap = new Map(backendMatches.map((i) => [i.id, i]))
-    const mergedSnippets = clientMatches.map((c) => backendMap.get(c.id) || c)
-    const backendOnly = backendMatches.filter((b) => !mergedSnippets.find((m) => m.id === b.id))
 
-    // COMBINE: Priority order -> Snippets (Title/Tags) -> Commands -> Snippets (Content)
-    const results = [...mergedSnippets]
+    // Priority: Local Title Matches -> Backend content matches
+    const results = clientMatches.map((c) => backendMap.get(c.id) || c)
+    const backendOnly = backendMatches.filter((b) => !results.some((r) => r.id === b.id))
 
-    // Mix in matching commands if they feel relevant
-    matchingCommands.forEach((cmd) => {
-      if (!results.find((r) => r.id === cmd.id)) {
-        results.push({ ...cmd, isCommand: true })
-      }
-    })
-
-    if (results.length > 0) return results.slice(0, 10)
-    return backendOnly.slice(0, 5)
-  }, [search, snippets, searchResults, commands, isCommandMode])
+    const finalResults = [...results, ...backendOnly]
+    return finalResults.slice(0, 15) // Show more results for a "pro" feel
+  }, [search, searchableSnippets, searchResults, commands, isCommandMode])
 
   // Reset index on search change
   useEffect(() => {
@@ -484,6 +504,11 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
     )
   }
 
+  HighlightText.propTypes = {
+    text: PropTypes.string,
+    highlight: PropTypes.string
+  }
+
   if (!isOpen) return null
 
   return createPortal(
@@ -491,26 +516,37 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
       className="fixed inset-0 z-[200000] flex items-start justify-center pt-[15vh] px-4 overflow-hidden"
       onMouseDown={onClose}
     >
-      {/* Background with solid overlay (Scientist Mode) */}
-      <div className="absolute inset-0 bg-slate-900/95 animate-in fade-in duration-500" />
+      {/* Background with deep, near-solid overlay */}
+      <div className="absolute inset-0 bg-slate-950/98 animate-in fade-in duration-700" />
 
       {/* Main UI Container (Refined & Professional) */}
       <div
         onMouseDown={(e) => e.stopPropagation()}
-        className="relative w-full max-w-xl rounded-[5px] shadow-2xl border border-[var(--color-border)] overflow-hidden flex flex-col animate-in zoom-in-95 slide-in-from-top-4 duration-200 outline-none ring-0 u-borderless"
-        style={{ backgroundColor: 'rgb(var(--color-bg-primary-rgb))' }}
+        className="relative w-full max-w-[640px] rounded-[12px] shadow-[0_40px_100px_-20px_rgba(0,0,0,1)] overflow-hidden flex flex-col animate-in zoom-in-95 slide-in-from-top-8 duration-300 outline-none ring-0 u-borderless"
+        style={{
+          backgroundColor: 'var(--color-bg-secondary)',
+          maxHeight: '85vh',
+          minHeight: '520px',
+          display: 'flex',
+          flexDirection: 'column',
+          border: 'none'
+        }}
       >
-        {/* Search Header Area */}
-        <div className="flex items-center px-4 py-4 bg-[var(--color-bg-secondary)] border-b border-[var(--color-border)]">
+        {/* Search Header Area - Distinguished with Tertiary Background */}
+        <div className="flex items-center h-[64px] px-6 bg-[var(--color-bg-tertiary)] select-none">
           {isCommandMode ? (
-            <Command size={18} className="text-[var(--color-accent-primary)] mr-3.5 stroke-[2]" />
+            <Command size={20} className="text-[var(--color-accent-primary)] mr-4 stroke-[2.5]" />
+          ) : isLoading ? (
+            <RefreshCw
+              size={20}
+              className="text-[var(--color-accent-primary)] mr-4 stroke-[2.5] animate-spin"
+            />
           ) : (
             <Search
-              size={18}
-              className="text-[var(--color-text-tertiary)] mr-3.5 stroke-[2] opacity-40"
+              size={20}
+              className="text-[var(--color-text-tertiary)] mr-4 stroke-[2.5] opacity-40"
             />
           )}
-
           <input
             ref={inputRef}
             autoFocus
@@ -521,247 +557,234 @@ const CommandPalette = ({ isOpen, onClose, snippets = [], onSelect, initialMode 
             placeholder={
               isCommandMode ? 'Type a command...' : 'Search files or type > for commands'
             }
-            className="flex-1 theme-exempt bg-transparent border-none border-0 outline-none outline-0 focus:outline-none focus:ring-0 focus:border-none focus:bg-transparent shadow-none p-0 text-[14px] font-normal tracking-tight placeholder:text-[var(--color-text-tertiary)]/50 text-[var(--color-text-primary)]"
+            className="flex-1 theme-exempt bg-transparent border-none border-0 outline-none outline-0 focus:outline-none focus:ring-0 focus:border-none focus:bg-transparent shadow-none p-0 text-[18px] font-medium tracking-tight placeholder:text-[var(--color-text-tertiary)]/30 text-[var(--color-text-primary)]"
             autoComplete="off"
             spellCheck={false}
           />
-          <div className="hidden sm:flex items-center gap-1.5 ml-3">
-            <kbd className="px-1.5 py-0.5 text-[9px] font-bold text-slate-400 bg-transparent rounded-[3px] border border-slate-200/50 dark:border-slate-800/50">
+          <div className="hidden sm:flex items-center gap-2 ml-4">
+            <kbd className="px-2 py-1 text-[10px] font-bold text-[var(--color-text-tertiary)] bg-[var(--color-bg-primary)] rounded-[4px] border border-[var(--color-border)] shadow-sm">
               ESC
             </kbd>
           </div>
         </div>
 
-        {/* Dynamic List */}
+        {/* Dynamic List - Stabilized against shaking */}
         <div
           ref={scrollRef}
-          className="flex-1 overflow-y-auto max-h-[60vh] p-2 custom-scrollbar transition-all outline-none"
+          className="flex-1 overflow-y-scroll p-0 custom-scrollbar outline-none relative"
+          style={{
+            minHeight: '400px',
+            maxHeight: '60vh',
+            backgroundColor: 'var(--color-bg-primary)'
+          }}
         >
-          {isLoading ? (
-            <div className="flex items-center justify-center h-48">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-accent-primary)]"></div>
-            </div>
-          ) : filteredItems.length > 0 ? (
-            <div className="space-y-0.5">
-              {filteredItems.map((item, index) => {
-                const isSelected = index === selectedIndex
+          <div
+            className={`py-1 transition-opacity duration-200 ${
+              isLoading && filteredItems.length > 0 ? 'opacity-70' : 'opacity-100'
+            }`}
+          >
+            {filteredItems.length > 0 ? (
+              <div className="space-y-0.5">
+                {filteredItems.map((item, index) => {
+                  const isSelected = index === selectedIndex
 
-                // --- COMMAND RENDER ---
-                if (isCommandMode || item.isCommand) {
-                  const Icon = item.icon || Terminal
+                  if (isCommandMode || item.isCommand) {
+                    const Icon = item.icon || Terminal
+                    return (
+                      <div
+                        key={item.id}
+                        onMouseMove={() => index !== selectedIndex && setSelectedIndex(index)}
+                        onClick={async () => {
+                          await item.action()
+                          onClose()
+                        }}
+                        className={`group relative px-6 py-4 flex items-center gap-4 cursor-pointer transition-[background-color,opacity] duration-300 ease-out outline-none ${
+                          isSelected
+                            ? 'bg-[var(--color-accent-primary)]/15'
+                            : 'hover:bg-[var(--color-bg-secondary)]'
+                        }`}
+                      >
+                        <div
+                          className={`p-1.5 rounded-none transition-all duration-300 ${
+                            isSelected
+                              ? 'text-[var(--color-accent-primary)]'
+                              : 'text-[var(--color-text-tertiary)] opacity-60'
+                          }`}
+                        >
+                          <Icon size={18} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div
+                            className={`text-[14px] font-semibold ${isSelected ? 'text-[var(--selected-text)]' : 'text-[var(--color-text-primary)]'}`}
+                          >
+                            {item.title}
+                          </div>
+                          <div
+                            className={`text-[11px] ${isSelected ? 'text-[var(--selected-text)] opacity-80' : 'text-[var(--color-text-secondary)]'}`}
+                          >
+                            {item.description}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  }
+
+                  const lang = (item.language || 'txt').toUpperCase()
+                  const query = search.toLowerCase().trim()
+                  const titleMatch = (item.title || '').toLowerCase().includes(query)
+                  const isContentMatch =
+                    query && !titleMatch && (item.code || '').toLowerCase().includes(query)
+
                   return (
                     <div
                       key={item.id}
-                      onMouseMove={() => {
-                        if (selectedIndex !== index) setSelectedIndex(index)
-                      }}
-                      onClick={async () => {
-                        await item.action()
+                      onMouseMove={() => index !== selectedIndex && setSelectedIndex(index)}
+                      onClick={() => {
+                        onSelect(item)
                         onClose()
                       }}
-                      className={`group relative px-4 py-3 rounded-[4px] flex items-center gap-3 cursor-pointer transition-all duration-200 ease-in-out outline-none border border-transparent ${
+                      className={`group relative px-6 py-4 flex items-center gap-4 cursor-pointer transition-[background-color,opacity] duration-300 ease-out outline-none ${
                         isSelected
-                          ? 'bg-blue-500/10 dark:bg-blue-400/10 ring-1 ring-blue-500/10'
+                          ? 'bg-[var(--color-accent-primary)]/15'
                           : 'hover:bg-[var(--color-bg-secondary)]'
                       }`}
                     >
                       <div
-                        className={`p-2 rounded-none transition-all duration-200 ${
+                        className={`p-2 rounded-none transition-all duration-300 ${
                           isSelected
-                            ? 'text-[var(--selected-text)]'
-                            : 'text-[var(--color-text-secondary)]'
+                            ? 'text-[var(--color-accent-primary)]'
+                            : 'text-[var(--color-text-tertiary)] opacity-50'
                         }`}
                       >
-                        <Icon size={18} />
+                        {item.title?.toLowerCase().endsWith('.md') ? (
+                          <FileCode size={20} />
+                        ) : (
+                          <Terminal size={20} />
+                        )}
                       </div>
+
                       <div className="flex-1 min-w-0">
                         <div
-                          className={`text-[14px] font-semibold ${isSelected ? 'text-[var(--selected-text)]' : 'text-[var(--color-text-primary)]'}`}
+                          className={`text-[14px] font-semibold truncate tracking-tight ${isSelected ? 'text-[var(--selected-text)]' : 'text-[var(--color-text-primary)]'}`}
                         >
-                          {item.title}
+                          <HighlightText text={item.title || 'Untitled'} highlight={search} />
                         </div>
                         <div
-                          className={`text-[11px] ${isSelected ? 'text-[var(--selected-text)] opacity-80' : 'text-[var(--color-text-secondary)]'}`}
+                          className={`flex items-center gap-4 mt-0.5 text-[11px] font-medium ${isSelected ? 'text-[var(--selected-text)] opacity-80' : 'text-[var(--color-text-secondary)]'}`}
                         >
-                          {item.description}
+                          <span className="flex items-center gap-1.5">
+                            <Clock size={12} className="opacity-60" />
+                            {item.timestamp
+                              ? new Date(item.timestamp).toLocaleDateString()
+                              : 'Draft'}
+                          </span>
+                          {item.tags && (
+                            <div className="flex items-center gap-3 truncate">
+                              {(Array.isArray(item.tags)
+                                ? item.tags
+                                : (item.tags || '').split(/[\s,]+/)
+                              )
+                                .filter(Boolean)
+                                .slice(0, 3)
+                                .map((tag, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="flex items-center text-inherit opacity-85"
+                                  >
+                                    <Hash size={10} className="opacity-40 -mr-0.5" />
+                                    {tag}
+                                  </span>
+                                ))}
+                            </div>
+                          )}
+                          {item.match_context ? (
+                            <div className="mt-1.5 text-[11px] font-mono text-[var(--color-text-tertiary)] bg-[var(--color-bg-tertiary)] px-1.5 py-0.5 w-full truncate border-l border-[var(--color-accent-primary)]/30">
+                              <span className="opacity-60">...</span>
+                              {item.match_context
+                                .split(/(__MARK__|__\/MARK__)/)
+                                .map((part, i, arr) => {
+                                  if (part === '__MARK__' || part === '__/MARK__') return null
+                                  const isHighlight = i > 0 && arr[i - 1] === '__MARK__'
+                                  return (
+                                    <span
+                                      key={i}
+                                      className={
+                                        isHighlight
+                                          ? 'text-[var(--color-accent-primary)] font-bold'
+                                          : ''
+                                      }
+                                    >
+                                      {part}
+                                    </span>
+                                  )
+                                })}
+                              <span className="opacity-60">...</span>
+                            </div>
+                          ) : (
+                            isContentMatch && (
+                              <span
+                                className={`flex items-center gap-1 opacity-70 ${isSelected ? 'text-[var(--selected-text)]' : 'text-[var(--color-accent-primary)]'}`}
+                              >
+                                <Search size={10} className="stroke-[3]" />
+                                <span>match in content</span>
+                              </span>
+                            )
+                          )}
                         </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span
+                          className={`px-1.5 py-0.5 rounded-[2px] text-[8px] font-extrabold tracking-widest ${
+                            isSelected
+                              ? 'bg-[var(--color-accent-primary)] text-white'
+                              : 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-tertiary)]'
+                          }`}
+                        >
+                          {lang}
+                        </span>
+                        {isSelected && (
+                          <ArrowRight size={14} className="text-[var(--color-accent-primary)]" />
+                        )}
                       </div>
                     </div>
                   )
-                }
-
-                // --- SNIPPET RENDER ---
-                const lang = (item.language || 'txt').toUpperCase()
-
-                // Check if this was a content-only match for visual feedback
-                const query = search.toLowerCase().trim()
-                const titleMatch = (item.title || '').toLowerCase().includes(query)
-                const isContentMatch =
-                  query && !titleMatch && (item.code || '').toLowerCase().includes(query)
-
-                return (
-                  <div
-                    key={item.id}
-                    onMouseMove={() => {
-                      if (selectedIndex !== index) setSelectedIndex(index)
-                    }}
-                    onClick={() => {
-                      onSelect(item)
-                      onClose()
-                    }}
-                    className={`group relative px-4 py-3 rounded-[4px] flex items-center gap-3 cursor-pointer transition-all duration-200 ease-in-out outline-none border border-transparent ${
-                      isSelected
-                        ? 'bg-blue-500/10 dark:bg-blue-400/10 ring-1 ring-blue-500/10'
-                        : 'hover:bg-[var(--color-bg-secondary)]'
-                    }`}
-                  >
-                    {/* Visual Icon Stack */}
-                    <div
-                      className={`p-2 rounded-none transition-all duration-200 ${
-                        isSelected
-                          ? 'text-[var(--selected-text)] scale-105'
-                          : 'text-[var(--color-text-secondary)] group-hover:text-[var(--hover-text)]'
-                      }`}
-                    >
-                      {item.title?.toLowerCase().endsWith('.md') ? (
-                        <FileCode size={18} />
-                      ) : (
-                        <Terminal size={18} />
-                      )}
-                    </div>
-
-                    {/* Metadata Content */}
-                    <div className="flex-1 min-w-0">
-                      <div
-                        className={`text-[14px] font-semibold truncate tracking-tight ${
-                          isSelected
-                            ? 'text-[var(--selected-text)]'
-                            : 'text-[var(--color-text-primary)]'
-                        }`}
-                      >
-                        <HighlightText text={item.title || 'Untitled'} highlight={search} />
-                      </div>
-                      <div
-                        className={`flex items-center gap-4 mt-0.5 text-[11px] font-medium ${
-                          isSelected
-                            ? 'text-[var(--selected-text)] opacity-80'
-                            : 'text-[var(--color-text-secondary)]'
-                        }`}
-                      >
-                        <span className="flex items-center gap-1.5">
-                          <Clock size={12} className="opacity-60" />
-                          {item.timestamp ? new Date(item.timestamp).toLocaleDateString() : 'Draft'}
-                        </span>
-                        {item.tags && (
-                          <div className="flex items-center gap-3 truncate">
-                            {(Array.isArray(item.tags)
-                              ? item.tags
-                              : (item.tags || '').split(/[\s,]+/)
-                            )
-                              .filter(Boolean)
-                              .slice(0, 3)
-                              .map((tag, idx) => (
-                                <span
-                                  key={idx}
-                                  className="flex items-center text-inherit opacity-85"
-                                >
-                                  <Hash size={10} className="opacity-40 -mr-0.5" />
-                                  {tag}
-                                </span>
-                              ))}
-                          </div>
-                        )}
-                        {item.match_context ? (
-                          <div className="mt-1.5 text-[11px] font-mono text-[var(--color-text-tertiary)] bg-[var(--color-bg-tertiary)] px-1.5 py-0.5 rounded-none w-full truncate">
-                            <span className="opacity-60">...</span>
-                            {item.match_context
-                              .split(/(__MARK__|__\/MARK__)/)
-                              .map((part, i, arr) => {
-                                if (part === '__MARK__' || part === '__/MARK__') return null
-                                const isHighlight = i > 0 && arr[i - 1] === '__MARK__'
-                                return isHighlight ? (
-                                  <span
-                                    key={i}
-                                    className="text-[var(--color-accent-primary)] font-bold bg-[var(--color-bg-secondary)] px-0.5 rounded-none"
-                                  >
-                                    {part}
-                                  </span>
-                                ) : (
-                                  <span key={i}>{part}</span>
-                                )
-                              })}
-                            <span className="opacity-60">...</span>
-                          </div>
-                        ) : (
-                          isContentMatch && (
-                            <span
-                              className={`flex items-center gap-1 opacity-70 ${isSelected ? 'text-[var(--selected-text)]' : 'text-[var(--color-accent-primary)]'}`}
-                            >
-                              <Search size={10} className="stroke-[3]" />
-                              <span>match in content</span>
-                            </span>
-                          )
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Right-side Badge & Arrow */}
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span
-                        className={`px-1.5 py-0.5 rounded-none text-[8px] font-extrabold transition-colors tracking-widest ${
-                          isSelected
-                            ? 'bg-[var(--color-accent-primary)] text-white'
-                            : 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)]'
-                        }`}
-                      >
-                        {lang}
-                      </span>
-                      {isSelected && (
-                        <ArrowRight
-                          size={16}
-                          className="text-white animate-in slide-in-from-left-2 duration-300"
-                        />
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          ) : (
-            <div className="py-12 text-center animate-in fade-in zoom-in-95 duration-500">
-              <div className="inline-flex p-3 rounded-none bg-[var(--color-bg-tertiary)] mb-3">
-                <ShieldCheck size={24} className="text-[var(--color-text-tertiary)]" />
+                })}
               </div>
-              <h3 className="text-[var(--color-text-primary)] font-bold text-[14px] tracking-tight">
-                No results found
-              </h3>
-              <p className="text-[12px] text-[var(--color-text-secondary)] mt-1 max-w-[200px] mx-auto font-medium leading-relaxed">
-                {search
-                  ? `We couldn't find anything matching "${search}"`
-                  : 'Start by creating your first code snippet'}
-              </p>
-            </div>
-          )}
+            ) : (
+              <div className="py-20 text-center animate-in fade-in zoom-in-95 duration-500">
+                <div className="inline-flex p-3 rounded-none bg-[var(--color-bg-tertiary)] mb-4">
+                  <ShieldCheck size={28} className="text-[var(--color-text-tertiary)] opacity-30" />
+                </div>
+                <h3 className="text-[14px] font-bold text-[var(--color-text-primary)] opacity-80 mb-2">
+                  {search ? `No matches for "${search}"` : 'Type to search...'}
+                </h3>
+                <p className="text-[12px] text-[var(--color-text-secondary)] opacity-40 max-w-[240px] mx-auto">
+                  Try a different keyword or use broad terms to find your snippets.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Premium Footer */}
-        <div className="px-6 py-4 bg-[var(--color-bg-tertiary)] border-t border-[var(--color-border)] flex justify-between items-center text-[10px] font-bold text-[var(--color-text-secondary)] uppercase tracking-widest">
+        {/* Substantial Pro Footer - Secondary Background */}
+        <div className="px-6 py-5 bg-[var(--color-bg-secondary)] flex justify-between items-center text-[10px] font-bold text-[var(--color-text-secondary)] uppercase tracking-[0.1em]">
           <div className="flex gap-6">
-            <span className="flex items-center gap-2">
-              <kbd className="px-1.5 py-0.5 bg-[var(--color-bg-primary)] rounded-[3px] border border-[var(--color-border)] shadow-sm text-[var(--color-text-secondary)] font-mono">
+            <span className="flex items-center gap-2 opacity-80">
+              <kbd className="px-2 py-1 bg-[var(--color-bg-primary)] rounded-[4px] border border-[var(--color-border)] shadow-md text-[var(--color-text-secondary)] font-mono text-[9px]">
                 ↑↓
               </kbd>
-              Move
+              Navigate
             </span>
-            <span className="flex items-center gap-2">
-              <kbd className="px-1.5 py-0.5 bg-[var(--color-bg-primary)] rounded-[3px] border border-[var(--color-border)] shadow-sm text-[var(--color-text-secondary)] font-mono">
+            <span className="flex items-center gap-2 opacity-80">
+              <kbd className="px-2 py-1 bg-[var(--color-bg-primary)] rounded-[4px] border border-[var(--color-border)] shadow-md text-[var(--color-text-secondary)] font-mono text-[9px]">
                 ↵
               </kbd>
-              {isCommandMode ? 'Execute' : 'Open'}
+              Select
             </span>
           </div>
-          <div className="flex items-center gap-2 tabular-nums">
-            {filteredItems.length} {filteredItems.length === 1 ? 'Result' : 'Results'}
+          <div className="flex items-center gap-3 tabular-nums font-extrabold text-[var(--color-accent-primary)]">
+            {filteredItems.length} {filteredItems.length === 1 ? 'MATCH' : 'MATCHES'}
           </div>
         </div>
       </div>
@@ -774,7 +797,8 @@ CommandPalette.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   snippets: PropTypes.array,
-  onSelect: PropTypes.func.isRequired
+  onSelect: PropTypes.func.isRequired,
+  initialMode: PropTypes.string
 }
 
 export default React.memo(CommandPalette)

@@ -11,21 +11,29 @@ import {
   Pin,
   Inbox,
   Star,
-  Calendar
+  Calendar,
+  Edit2
 } from 'lucide-react'
 
 import { getFileIcon, getFolderIcon } from '../../../utils/iconUtils'
 import { getBaseTitle, isDateTitle } from '../../../utils/snippetUtils'
 import { useSidebarStore } from '../../../store/useSidebarStore'
 
+/**
+ * UnsavedDot
+ * Visual indicator for "Dirty" state (unsaved changes).
+ */
 const UnsavedDot = React.memo(() => (
   <div
-    className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)] flex-shrink-0 animate-pulse border border-amber-300/30"
+    className="w-2.5 h-2.5 rounded-full bg-yellow-400 shadow-[0_0_8px_rgba(234,179,8,0.5)] flex-shrink-0 animate-pulse border border-yellow-300/30 ml-auto"
     title="Modified (Unsaved Changes)"
   />
 ))
 
-// Helper to highlight matching text
+/**
+ * HighlightText
+ * Splits text and wraps matches in a highlighted span for search results.
+ */
 const HighlightText = ({ text, highlight }) => {
   if (!highlight || !highlight.trim()) return <span>{text}</span>
   const terms = highlight
@@ -53,17 +61,19 @@ const HighlightText = ({ text, highlight }) => {
   )
 }
 
+/**
+ * PinnedHeaderRow
+ * The "Pinned" category header that allows collapsing the pinned section.
+ */
 const PinnedHeaderRow = ({ style, data, togglePinned }) => {
   const isCollapsed = data ? data.collapsed : false
   return (
     <div style={style} className="select-none outline-none focus:outline-none relative">
       <div
-        className="group flex items-center gap-[6px] w-full h-full pr-2 relative rounded-[6px] cursor-pointer"
+        className="group flex items-center gap-[6px] w-full h-full pr-2 relative cursor-pointer hover:bg-[var(--color-bg-tertiary)] transition-colors"
         style={{
-          marginLeft: '4px',
-          width: 'calc(100% - 8px)',
-          backgroundColor: isCollapsed ? 'transparent' : 'var(--color-bg-tertiary)',
-          borderBottom: isCollapsed ? 'none' : '1px solid var(--color-border)'
+          marginLeft: '0',
+          width: '100%'
         }}
         onClick={(e) => {
           e.stopPropagation()
@@ -99,6 +109,10 @@ const PinnedHeaderRow = ({ style, data, togglePinned }) => {
   )
 }
 
+/**
+ * CreationInputRow
+ * Floating input field for naming new folders or snippets.
+ */
 const CreationInputRow = ({
   style,
   depth,
@@ -115,7 +129,7 @@ const CreationInputRow = ({
     if (inputRef.current) {
       inputRef.current.focus()
       if (initialValue) {
-        // Select base name without extension if it's a snippet
+        // Smart Selection: Select filename but skip extension
         const dotIndex = initialValue.lastIndexOf('.')
         if (dotIndex > 0 && !isFolder) {
           inputRef.current.setSelectionRange(0, dotIndex)
@@ -132,15 +146,13 @@ const CreationInputRow = ({
       e.stopPropagation()
       const raw = inputRef.current.value
 
-      // Sanitize: Smart Logic
+      // Industrial Sanitization
       let safe = raw.replace(/\.md$/i, '').trim()
-      // Remove punctuation, replace separators
-      safe = safe.replace(/[?*"><]/g, '')
-      safe = safe.replace(/[:/\\|]/g, '-')
+      safe = safe.replace(/[?*"><]/g, '') // Remove illegal chars
+      safe = safe.replace(/[:/\\|]/g, '-') // Swap separators for dashes
       safe = safe.trim()
 
       if (!safe) safe = isFolder ? 'Untitled Folder' : 'Untitled Snippet'
-
       onConfirm(safe, itemData.type, itemData.parentId)
     } else if (e.key === 'Escape') {
       e.preventDefault()
@@ -150,32 +162,35 @@ const CreationInputRow = ({
   }
 
   return (
-    <div style={style} className="pr-2 z-20">
+    <div style={style} className="z-20">
       <div
         className="flex items-center w-full h-full pl-0 select-none animate-in fade-in slide-in-from-left-2 duration-200"
-        style={{ paddingLeft: `${depth * 16 + 8}px` }}
+        style={{ paddingLeft: `${depth * 16 + (isFolder ? 8 : 42)}px` }}
       >
-        <div className="flex-1 flex items-center bg-[var(--color-bg-primary)] border border-[var(--color-accent-primary)]/50 rounded-md h-[24px] shadow-lg shadow-black/20">
+        <div className="flex-1 flex items-center bg-[var(--color-bg-primary)] h-[22px] rounded-sm ring-1 ring-[var(--color-accent-primary)]/30 shadow-inner">
+          <div className="flex-shrink-0 flex items-center justify-center px-1.5 opacity-40">
+            {isFolder ? <ChevronRight size={10} /> : <File size={10} />}
+          </div>
           <input
             ref={inputRef}
             type="text"
             defaultValue={initialValue}
             placeholder={isFolder ? 'Folder Name' : 'Snippet Name'}
             onKeyDown={handleKeyDown}
-            onBlur={(e) => {
-              // Wait a bit to allow click on confirm button if we add one, or handle logic
-              setTimeout(() => onCancel(), 150)
-            }}
+            onBlur={() => setTimeout(() => onCancel(), 150)}
             spellCheck="false"
             autoComplete="off"
-            className={`flex-1 min-w-0 px-2 py-0.5 outline-none ring-0 focus:ring-0 focus:outline-none transition-none ${
+            className={`flex-1 min-w-0 px-0 py-0 outline-none ring-0 focus:ring-0 focus:outline-none border-none transition-none ${
               isCompact ? 'text-[11px]' : 'text-[12px]'
             }`}
             style={{
               backgroundColor: 'transparent',
               color: 'var(--color-text-primary)',
               boxShadow: 'none',
-              height: '100%'
+              height: '100%',
+              border: 'none',
+              outline: 'none',
+              marginLeft: '-2px'
             }}
           />
         </div>
@@ -184,6 +199,10 @@ const CreationInputRow = ({
   )
 }
 
+/**
+ * IndentGuides
+ * Renders vertical lines to help identify the parent/child folder hierarchy.
+ */
 const IndentGuides = ({ depth }) => {
   if (depth <= 0) return null
   return (
@@ -202,16 +221,20 @@ const IndentGuides = ({ depth }) => {
   )
 }
 
+/**
+ * SnippetSidebarRow
+ * 
+ * The atomic row component for the VirtualList.
+ * Optimized with React.memo to handle large libraries (thousands of items).
+ */
 const SnippetSidebarRow = ({ index, style, data }) => {
-  // 1. Hooks (MUST be unconditional and always in the same order)
+  // --- 1. HOOKS (Must remain top-level and unconditional) ---
   const [isDragOver, setIsDragOver] = useState(false)
   const dragExpandTimerRef = React.useRef(null)
 
   const {
     treeItems,
     selectedSnippet,
-    // selectedFolderId - from store
-    // selectedIds - from store
     onSelect,
     onSelectFolder,
     onSelectionChange,
@@ -224,39 +247,35 @@ const SnippetSidebarRow = ({ index, style, data }) => {
     onContextMenu,
     lastSelectedIdRef,
     onTogglePin,
-    // searchQuery - from store
     onConfirmCreation,
     onCancelCreation,
     onInlineRename,
     onCancelRenaming,
     startCreation,
-    // setSidebarSelected - from store
-    handleSelectionInternal // Fix: Destructure this
+    handleSelectionInternal,
+    todayStr
   } = data
 
   const {
     selectedFolderId,
     selectedIds,
     searchQuery,
-    setSidebarSelected,
-    setSelectedIds,
-    setSelectedFolderId
+    setSidebarSelected
   } = useSidebarStore()
 
-  // 2. Data Retrieval
+  // --- 2. DATA RESOLUTION ---
   const item = treeItems[index]
   if (!item) return null
 
   const { type, data: itemData, depth } = item
 
+  // Special Row Overlays (Header, Spacer, Footer)
   if (type === 'pinned_header') {
     return <PinnedHeaderRow style={style} data={itemData} togglePinned={data.togglePinned} />
   }
-
   if (type === 'section_spacer') {
     return <div style={{ ...style, height: '8px' }} className="pointer-events-none" />
   }
-
   if (type === 'creation_input') {
     return (
       <CreationInputRow
@@ -269,7 +288,6 @@ const SnippetSidebarRow = ({ index, style, data }) => {
       />
     )
   }
-
   if (type === 'sidebar_footer') {
     return (
       <div
@@ -277,29 +295,27 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         className="cursor-default group/footer"
         onClick={(e) => {
           e.stopPropagation()
-          setSelectedIds([])
+          onSelectionChange([])
           onSelect(null)
-          setSelectedFolderId(null)
+          onSelectFolder(null)
           setSidebarSelected(true)
         }}
-        onContextMenu={(e) => {
-          if (onContextMenu) onContextMenu(e, 'background', null)
-        }}
+        onContextMenu={(e) => onContextMenu && onContextMenu(e, 'background', null)}
       >
-        {/* Subtle visual hint that this is a clickable space */}
-        <div className="mx-1 h-full rounded-[6px] transition-colors group-hover/footer:bg-[var(--color-bg-tertiary)] opacity-30" />
+        <div className="h-full transition-colors group-hover/footer:bg-[var(--color-bg-tertiary)] opacity-30" />
       </div>
     )
   }
 
+  // --- 3. DRAG & DROP LOGIC ---
   const handleDragStart = (e) => {
     let dragIds = [itemData.id]
     let dragTypes = [type === 'pinned_snippet' ? 'snippet' : type]
 
-    if (selectedIds.includes(itemData.id)) {
-      dragIds = selectedIds
-      dragTypes = selectedIds.map((id) => {
-        const found = treeItems.find((i) => i.id === id || i.realId === id)
+    if (selectedIds.includes(item.id)) {
+      dragIds = selectedIds.map(sid => sid.replace(/^pinned-/, ''))
+      dragTypes = selectedIds.map(id => {
+        const found = treeItems.find(i => i.id === id)
         return found ? (found.type === 'pinned_snippet' ? 'snippet' : found.type) : 'snippet'
       })
     }
@@ -308,42 +324,14 @@ const SnippetSidebarRow = ({ index, style, data }) => {
     e.dataTransfer.setData('sourceTypes', JSON.stringify(dragTypes))
     e.dataTransfer.effectAllowed = 'move'
 
+    // Custom Drag Ghost
     const ghost = document.createElement('div')
-    ghost.style.position = 'absolute'
-    ghost.style.top = '-1000px'
-    ghost.style.left = '-1000px'
-    ghost.style.padding = '4px 8px'
-    ghost.style.background = 'var(--color-bg-secondary)'
-    ghost.style.border = '1px solid var(--color-accent-primary)'
-    ghost.style.borderRadius = '6px'
-    ghost.style.maxWidth = '250px'
-    ghost.style.display = 'flex'
-    ghost.style.alignItems = 'center'
-    ghost.style.gap = '6px'
-    ghost.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)'
-
-    const iconDiv = document.createElement('div')
-    iconDiv.innerHTML =
-      type === 'folder'
-        ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>'
-        : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>'
-    ghost.appendChild(iconDiv)
-
-    const textSpan = document.createElement('span')
-    textSpan.innerText =
-      selectedIds.length > 1
-        ? `${selectedIds.length} items`
-        : itemData.name || itemData.title || 'Untitled'
-    textSpan.style.color = 'var(--color-text-primary)'
-    textSpan.style.fontSize = '12px'
-    ghost.appendChild(textSpan)
-
+    ghost.style.cssText = 'position:absolute;top:-1000px;left:-1000px;padding:4px 8px;background:var(--color-bg-secondary);border:1px solid var(--color-accent-primary);border-radius:6px;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:999999;'
+    ghost.innerHTML = `<span>${dragIds.length > 1 ? `${dragIds.length} items` : (itemData.name || itemData.title)}</span>`
     document.body.appendChild(ghost)
     e.dataTransfer.setDragImage(ghost, 10, 10)
     setTimeout(() => document.body.removeChild(ghost), 0)
   }
-
-  // dragExpandTimerRef moved to top to fix hook order error
 
   const handleDragOver = (e) => {
     if (type === 'folder') {
@@ -352,27 +340,18 @@ const SnippetSidebarRow = ({ index, style, data }) => {
       setIsDragOver(true)
       e.dataTransfer.dropEffect = 'move'
 
-      // Auto-expand folder on drag-over after delay
       const isCurrentlyOpen = !itemData.collapsed
       if (!isCurrentlyOpen && !dragExpandTimerRef.current) {
-        dragExpandTimerRef.current = setTimeout(() => {
-          onToggleFolder(itemData.id, true)
-        }, 400)
+        dragExpandTimerRef.current = setTimeout(() => onToggleFolder(itemData.id, true), 400)
       }
     }
   }
 
   const handleDragLeave = (e) => {
-    // Prevent flickering: only trigger leave if we actually left the folder row
     if (type === 'folder') {
       const rect = e.currentTarget.getBoundingClientRect()
       const { clientX, clientY } = e
-      if (
-        clientX <= rect.left ||
-        clientX >= rect.right ||
-        clientY <= rect.top ||
-        clientY >= rect.bottom
-      ) {
+      if (clientX <= rect.left || clientX >= rect.right || clientY <= rect.top || clientY >= rect.bottom) {
         setIsDragOver(false)
         if (dragExpandTimerRef.current) {
           clearTimeout(dragExpandTimerRef.current)
@@ -395,32 +374,29 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         const sourceIds = JSON.parse(e.dataTransfer.getData('sourceIds') || '[]')
         const sourceTypes = JSON.parse(e.dataTransfer.getData('sourceTypes') || '[]')
         if (sourceIds.includes(itemData.id)) return
+        
         const sIds = sourceIds.filter((_, idx) => sourceTypes[idx] === 'snippet')
         const fIds = sourceIds.filter((_, idx) => sourceTypes[idx] === 'folder')
+        
         if (sIds.length > 0) onMoveSnippet(sIds, itemData.id)
         if (fIds.length > 0) onMoveFolder(fIds, itemData.id)
 
-        // Fix: Reset selection after drop to clear highlights
+        // Reset UX state after drop
         setTimeout(() => {
-          onSelectionChange([]) // Clear multiple selection
-          onSelectFolder(null) // Clear folder selection
-          onSelect(null) // Clear snippet selection
-          if (document.activeElement && document.activeElement.blur) {
-            document.activeElement.blur() // Unfocus input/element
-          }
+          onSelectionChange([])
+          onSelectFolder(null)
+          onSelect(null)
+          if (document.activeElement?.blur) document.activeElement.blur()
         }, 50)
       } catch (err) {}
     }
   }
 
   const handleItemClick = (e) => {
-    // Delegate to the robust logic hook which handles:
-    // 1. Shift/Ctrl modifiers
-    // 2. Unselecting conflicting types (snippet vs folder)
-    // 3. Unselecting background (setSidebarSelected(false))
     handleSelectionInternal(e, item.id, type)
   }
 
+  // --- 4. RENDER: FOLDER ROW ---
   if (type === 'folder') {
     if (item.isEditing) {
       return (
@@ -430,15 +406,17 @@ const SnippetSidebarRow = ({ index, style, data }) => {
           itemData={{ ...itemData, type: 'folder' }}
           onConfirm={(val) => {
             onInlineRename(itemData.id, val, 'folder')
-            onCancelRenaming() // Close input immediately
+            onCancelRenaming()
           }}
           onCancel={onCancelRenaming}
           isCompact={isCompact}
           initialValue={itemData.name}
+          className="py-0.5" // Improved CreationInputRow styling
         />
       )
     }
-    const isSelected = selectedIds.includes(itemData.id) || selectedFolderId === itemData.id
+
+    const isHighlight = selectedIds.includes(item.id) || selectedFolderId === itemData.id
     const isOpen = !itemData.collapsed
     const { icon: FolderIcon, color: folderColor } = getFolderIcon(itemData.name, isOpen)
 
@@ -455,72 +433,54 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         tabIndex={0}
         onClick={handleItemClick}
         onKeyDown={(e) => handleItemKeyDown(e, index)}
-        onContextMenu={(e) => onContextMenu(e, 'folder', itemData)}
+        onContextMenu={(e) => onContextMenu(e, type, itemData)}
       >
         <IndentGuides depth={depth} />
-        {isSelected && (
-          <div className="absolute left-1 top-1 bottom-1 w-[2px] bg-[var(--color-accent-primary)] rounded-full z-10" />
+        {isHighlight && (
+          <div className="absolute left-0 top-1 bottom-1 w-[2px] bg-[var(--color-accent-primary)] z-10" />
         )}
         <div
-          className={`group flex items-center gap-[6px] w-full h-full select-none pr-2 relative rounded-[6px] transition-colors duration-150 ${
-            isDragOver
-              ? 'bg-[var(--color-accent-primary)] bg-opacity-20'
-              : isSelected
-                ? '' // Handled by style
-                : 'hover:bg-[var(--sidebar-item-hover-bg)]'
+          className={`group flex items-center gap-[6px] w-full h-full select-none pr-2 relative transition-colors duration-150 ${
+            isDragOver ? 'bg-[var(--color-accent-primary)] bg-opacity-20' : 'hover:bg-[var(--sidebar-item-hover-bg)]'
           }`}
           style={{
-            backgroundColor: isSelected ? 'var(--sidebar-item-active-bg)' : undefined,
-            color: isSelected
-              ? 'var(--sidebar-item-active-fg, var(--color-text-primary))'
-              : 'var(--sidebar-text, var(--color-text-secondary))',
+            backgroundColor: isHighlight ? 'var(--sidebar-item-active-bg)' : undefined,
+            color: isHighlight ? 'var(--sidebar-item-active-fg)' : 'var(--sidebar-text)',
             paddingLeft: `${depth * 16 + 8}px`,
-            width: 'calc(100% - 8px)',
-            margin: '0 4px'
+            width: '100%',
+            margin: '0'
           }}
         >
           <button
             onClick={(e) => {
               e.stopPropagation()
-              // Explicitly toggle folder only (selection is separate)
               onToggleFolder(itemData.id, !itemData.collapsed)
             }}
-            className={`flex-shrink-0 flex items-center justify-center rounded ${
-              isSelected ? 'opacity-100' : 'opacity-40 hover:opacity-100'
-            }`}
+            className={`flex-shrink-0 flex items-center justify-center rounded ${isHighlight ? 'opacity-100' : 'opacity-40 hover:opacity-100'}`}
           >
             <ChevronRight
               size={isCompact ? 10 : 12}
               className={`transition-transform duration-300 ${isOpen ? 'rotate-90 text-[var(--color-accent-primary)]' : ''}`}
             />
           </button>
-          <div
-            className={`flex-shrink-0 px-0.5 ${isSelected ? 'text-[var(--color-accent-primary)] opacity-100' : 'opacity-60 group-hover:opacity-100'}`}
-          >
+          
+          <div className={`flex-shrink-0 px-0.5 ${isHighlight ? 'text-[var(--color-accent-primary)] opacity-100' : 'opacity-60 group-hover:opacity-100'}`}>
             {itemData.name === '📥 Inbox' ? (
               <Inbox size={14} className="text-[var(--color-accent-primary)]" />
             ) : (
-              <FolderIcon
-                size={14}
-                style={{
-                  color: isSelected ? 'var(--color-accent-primary)' : folderColor
-                }}
-              />
+              <FolderIcon size={14} style={{ color: isHighlight ? 'var(--color-accent-primary)' : folderColor }} />
             )}
           </div>
-          <span
-            className={`flex-1 truncate text-[12px] pl-1 tracking-tight ${isSelected ? 'font-bold' : 'font-medium opacity-80 group-hover:opacity-100'}`}
-          >
+
+          <span className={`flex-1 truncate text-[12px] pl-1 tracking-tight ${isHighlight ? 'font-bold' : 'font-medium opacity-80 group-hover:opacity-100'}`}>
             {itemData.name}
           </span>
+
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pr-1">
             <button
-              onClick={(e) => {
-                e.stopPropagation()
-                startCreation('snippet', itemData.id)
-              }}
-              title="New Snippet"
-              className="p-1 rounded hover:bg-white/10 text-[var(--color-text-secondary)] hover:text-[var(--color-accent-primary)] transition-colors"
+               onClick={(e) => { e.stopPropagation(); startCreation('snippet', itemData.id); }}
+               title="New Snippet"
+               className="p-1 rounded hover:bg-white/10 text-[var(--color-text-secondary)] hover:text-[var(--color-accent-primary)] transition-colors"
             >
               <Plus size={14} />
             </button>
@@ -535,6 +495,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
     )
   }
 
+  // --- 5. RENDER: SNIPPET ROW ---
   if (item.isEditing) {
     return (
       <CreationInputRow
@@ -543,7 +504,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         itemData={{ ...itemData, type: 'snippet' }}
         onConfirm={(val) => {
           onInlineRename(type === 'pinned_snippet' ? item.realId : itemData.id, val, 'snippet')
-          onCancelRenaming() // Close input immediately
+          onCancelRenaming()
         }}
         onCancel={onCancelRenaming}
         isCompact={isCompact}
@@ -553,48 +514,39 @@ const SnippetSidebarRow = ({ index, style, data }) => {
   }
 
   const itemId = type === 'pinned_snippet' ? item.realId : itemData.id
-  const isSelected =
-    selectedIds.includes(itemId) || (selectedSnippet?.id === itemId && !selectedFolderId)
+  
+  // FIX: isSelected now checks the Virtual Row ID (item.id) to prevent double highlighting
+  const isSelected = selectedIds.includes(item.id)
+  
   const safeTitle = typeof itemData.title === 'string' ? itemData.title : ''
   const { icon: Icon, color } = getFileIcon(itemData.language, safeTitle)
-  const isSearchMatch =
-    searchQuery && safeTitle.toLowerCase().includes(searchQuery.toLowerCase().trim())
-
-  const { todayStr } = data
-  // Strict match for Today's Daily Note (ISO format)
+  
+  // Daily Note Check
   const isTodayLog = getBaseTitle(itemData.title) === todayStr
 
   return (
     <div style={{ ...style }} className="relative group/row">
       <IndentGuides depth={depth} />
       {isSelected && (
-        <div className="absolute left-1 top-1.5 bottom-1.5 w-[2px] bg-[var(--color-accent-primary)] rounded-full z-10" />
+        <div className="absolute left-0 top-1.5 bottom-1.5 w-[2px] bg-[var(--color-accent-primary)] z-10" />
       )}
       <button
         id={`sidebar-item-${index}`}
-        data-snippet-id={itemData.id}
+        data-snippet-id={itemId}
         draggable
         onDragStart={handleDragStart}
         onClick={handleItemClick}
         onKeyDown={(e) => handleItemKeyDown(e, index)}
-        onContextMenu={(e) => onContextMenu(e, 'snippet', itemData)}
+        onContextMenu={(e) => onContextMenu(e, type, itemData)}
         className={`theme-exempt flex items-center gap-[6px] w-full h-full select-none pr-3 relative transition-all duration-150 ${
           isCompact ? 'text-[11px]' : 'text-[12px]'
-        } ${
-          isSelected
-            ? '' // Handled by style
-            : isSearchMatch
-              ? 'bg-[var(--color-accent-primary)]/10'
-              : 'hover:bg-[var(--sidebar-item-hover-bg)]'
-        } rounded-[6px]`}
+        } ${isSelected ? '' : 'hover:bg-[var(--sidebar-item-hover-bg)]'}`}
         style={{
           backgroundColor: isSelected ? 'var(--sidebar-item-active-bg)' : undefined,
-          color: isSelected
-            ? 'var(--sidebar-item-active-fg, var(--color-text-primary))'
-            : 'var(--sidebar-text, var(--color-text-secondary))',
+          color: isSelected ? 'var(--sidebar-item-active-fg)' : 'var(--sidebar-text)',
           paddingLeft: `${depth * 16 + 24}px`,
-          width: 'calc(100% - 8px)',
-          margin: '0 4px',
+          width: '100%',
+          margin: '0',
           fontFamily: 'inherit'
         }}
       >
@@ -606,16 +558,10 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         >
           <Icon size={14} />
         </div>
-        <span
-          className={`flex-1 truncate pl-1 text-left flex items-center gap-2 ${
-            isSelected || itemData.is_dirty
-              ? 'font-bold'
-              : 'font-medium opacity-80 group-hover/row:opacity-100'
-          }`}
-          style={{
-            textShadow: itemData.is_dirty ? '0 0 12px rgba(234, 179, 8, 0.3)' : 'none'
-          }}
-        >
+        
+        <span className={`flex-1 truncate pl-1 text-left flex items-center gap-2 ${
+           isSelected || itemData.is_dirty ? 'font-bold' : 'font-medium opacity-80 group-hover/row:opacity-100'
+        }`}>
           <HighlightText text={safeTitle || 'Untitled'} highlight={searchQuery} />
           {isTodayLog && (
             <span className="text-[8px] px-1 py-0 rounded bg-[var(--color-accent-primary)]/20 text-[var(--color-accent-primary)] font-black uppercase tracking-widest border border-[var(--color-accent-primary)]/20">
@@ -625,13 +571,9 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         </span>
 
         <div className="flex items-center gap-1.5 flex-shrink-0">
-          {/* Status Indicators, the dot */}
           {itemData.is_dirty && <UnsavedDot />}
           {!!itemData.is_draft && (
-            <div
-              className="w-1 h-1 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)] flex-shrink-0"
-              title="New (Draft)"
-            />
+            <div className="w-1 h-1 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)] flex-shrink-0" title="New (Draft)" />
           )}
           {itemData.is_pinned === 1 && (
             <div className="text-[var(--color-accent-primary)] opacity-80" title="Pinned">
@@ -650,3 +592,4 @@ const SnippetSidebarRow = ({ index, style, data }) => {
 }
 
 export default React.memo(SnippetSidebarRow)
+

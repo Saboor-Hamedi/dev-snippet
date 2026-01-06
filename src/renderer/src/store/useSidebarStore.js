@@ -10,8 +10,10 @@ export const useSidebarStore = create((set) => ({
   selectedIds: [],
   searchQuery: '',
   isSidebarSelected: false, // For root level selection (no folder/snippet selected)
+  editingId: null, // Virtual ID of the row currently being renamed
 
   // --- Actions ---
+  setEditingId: (id) => set({ editingId: id }),
   setSelectedFolderId: (id) =>
     set({
       selectedFolderId: id,

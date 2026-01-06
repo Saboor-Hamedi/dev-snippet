@@ -70,9 +70,7 @@ export const SettingsProvider = ({ children }) => {
         // We do *not* preventDefault() here because we WANT the native Electron zoom reset to happen too.
         // We just ensure our internal state matches it.
         setZoomInternal(1.0)
-        // Optionally reset editor font zoom too? Or keep it separation?
-        // Usually Ctrl+0 resets everything.
-        // setEditorZoomInternal(1.0)
+        setEditorZoomInternal(1.0)
       }
     }
     window.addEventListener('keydown', handleKeyDown)

@@ -140,6 +140,8 @@ const DiagramEditorModal = ({ initialCode, onSave, onCancel }) => {
   }, [])
 
   // Optimized Panning - Direct DOM Manipulation
+  const scalingWrapperRef = useRef(null)
+
   const handleMouseDown = useCallback(
     (e) => {
       if (!isPanning) return // Only pan if in Pan Mode
@@ -167,10 +169,9 @@ const DiagramEditorModal = ({ initialCode, onSave, onCancel }) => {
     currentTransform.current.y += deltaY
     lastActive.current = { x: e.clientX, y: e.clientY }
 
-    // Direct DOM update (High Performance)
-    const svgHost = document.getElementById('diagram-svg-host-target')
-    if (svgHost) {
-      svgHost.style.transform = `translate(${currentTransform.current.x}px, ${currentTransform.current.y}px) scale(${currentTransform.current.scale})`
+    // Direct DOM update (Buttery Smooth Performance)
+    if (scalingWrapperRef.current) {
+      scalingWrapperRef.current.style.transform = `translate(${currentTransform.current.x}px, ${currentTransform.current.y}px) scale(${currentTransform.current.scale})`
     }
   }, [])
 
@@ -178,7 +179,7 @@ const DiagramEditorModal = ({ initialCode, onSave, onCancel }) => {
     if (isDragging.current) {
       isDragging.current = false
       setIsDraggingState(false)
-      // Sync state at the end of drag
+      // Sync state at the end of drag to ensure React state reflects reality
       setPanPos({ x: currentTransform.current.x, y: currentTransform.current.y })
     }
   }, [])
@@ -228,7 +229,7 @@ const DiagramEditorModal = ({ initialCode, onSave, onCancel }) => {
         overflow: 'hidden'
       }}
     >
-      <div className="diagram-editor-toolbar border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)]/30">
+      <div className="diagram-editor-toolbar bg-[var(--color-bg-secondary)]/30">
         <div className="toolbar-left">
           <div className="template-group">
             <button className="small" onClick={() => insertTemplate('flowchart')} title="Flowchart">
@@ -406,6 +407,7 @@ const DiagramEditorModal = ({ initialCode, onSave, onCancel }) => {
             )}
 
             <div
+              ref={scalingWrapperRef}
               className={`diagram-scaling-wrapper ${isTransparent ? 'is-transparent' : ''}`}
               style={{
                 transform: `translate(${panPos.x}px, ${panPos.y}px) scale(${previewZoom})`,

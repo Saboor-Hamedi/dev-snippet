@@ -114,7 +114,8 @@ const SnippetLibraryInner = ({ snippetData }) => {
     loadTrash,
     restoreItem,
     permanentDeleteItem,
-    hasLoadedSnippets
+    hasLoadedSnippets,
+    searchSnippetList
   } = snippetData
 
   const { activeView, showPreview, togglePreview, navigateTo } = useView()
@@ -178,21 +179,11 @@ const SnippetLibraryInner = ({ snippetData }) => {
         }
       }
 
-      // Standard snippet save logic...
-      const result = await window.api.saveSnippet({
-        ...s,
-        title: s.title,
-        code: s.code,
-        language: s.language,
-        tags: s.tags,
-        folder_id: s.folder_id
-      })
-
-      if (!silent && result) {
-        showToast('✓ Changes saved successfully', 'success')
-      }
+      // Standard snippet save logic - use the hook's originalSaveSnippet
+      // to ensure global state (list & selected item) stays in sync.
+      await originalSaveSnippet(s, options)
     },
-    [contextUpdateSettings]
+    [contextUpdateSettings, originalSaveSnippet]
   )
 
   // Ensure global settings are applied when this component mounts/updates
@@ -238,6 +229,8 @@ const SnippetLibraryInner = ({ snippetData }) => {
   }, [snippets, updateSnippetIndex])
 
   const [dirtySnippetIds, setDirtySnippetIds] = useState(new Set())
+  const [sidebarSearchResults, setSidebarSearchResults] = useState(null)
+  const [isSearching, setIsSearching] = useState(false)
   const [pinPopover, setPinPopover] = useState({
     visible: false,
     x: 0,
@@ -299,38 +292,80 @@ const SnippetLibraryInner = ({ snippetData }) => {
   // Clipboard state for cut/copy/paste operations
   const [clipboard, setClipboard] = useState(null) // { type: 'cut'|'copy', items: [{id, type, data}] }
 
-  const sortedAndFilteredSnippets = useMemo(() => {
-    let filtered = [...snippets]
+  // Pre-calculate searchable terms to avoid expensive work in the main search hook
+  const searchableSnippets = useMemo(() => {
+    return snippets.map((s) => ({
+      item: s,
+      lowerTitle: (s.title || '').toLowerCase(),
+      lowerCode: (s.code || '').toLowerCase(),
+      lowerTags: Array.isArray(s.tags)
+        ? s.tags.join(' ').toLowerCase()
+        : (s.tags || '').toLowerCase(),
+      lowerLang: (s.language || '').toLowerCase()
+    }))
+  }, [snippets])
 
-    // Apply search filter
+  const sortedAndFilteredSnippets = useMemo(() => {
+    // 🔍 SEARCH MODE: Use Backend Results + Local Refinement
     if (searchQuery && searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim()
-      filtered = filtered.filter(
-        (snippet) =>
-          (snippet.title || '').toLowerCase().includes(query) ||
-          (snippet.code || '').toLowerCase().includes(query) ||
-          (snippet.language || '').toLowerCase().includes(query) ||
-          (Array.isArray(snippet.tags) ? snippet.tags.join(' ') : snippet.tags || '')
-            .toLowerCase()
-            .includes(query)
-      )
+      // HYBRID FALLBACK: Use local snippets as base if backend results haven't arrived yet
+      // This provides instant feedback for title/tag matches while awaiting code search.
+      const baseList = sidebarSearchResults || snippets
+      const lowerQuery = searchQuery.toLowerCase().trim()
+      const queryTerms = lowerQuery.split(/\s+/).filter(Boolean)
+
+      return baseList.filter(({ title, code, tags, language, match_context }) => {
+        // 1. Trust the backend: If it found it and we have it in this list, keep it
+        if (match_context) return true
+
+        // 2. Local Fallback/Refinement
+        const lowerTitle = (title || '').toLowerCase()
+        const lowerCode = (code || '').toLowerCase()
+        const lowerTags = Array.isArray(tags)
+          ? tags.join(' ').toLowerCase()
+          : (tags || '').toLowerCase()
+        const lowerLang = (language || '').toLowerCase()
+
+        return queryTerms.every((term) => {
+          return (
+            lowerTitle.includes(term) ||
+            lowerCode.includes(term) ||
+            lowerTags.includes(term) ||
+            lowerLang.includes(term)
+          )
+        })
+      })
     }
 
-    // Sort: pinned first, then by timestamp DESC (newest first)
-    filtered.sort((a, b) => {
+    // Default View: Pinned first, then by timestamp DESC (newest first)
+    const sorted = [...snippets]
+    sorted.sort((a, b) => {
       if (a.is_pinned && !b.is_pinned) return -1
       if (!a.is_pinned && b.is_pinned) return 1
       return b.timestamp - a.timestamp
     })
 
-    return filtered
-  }, [snippets, searchQuery])
+    return sorted
+  }, [snippets, searchableSnippets, searchQuery, sidebarSearchResults])
 
   const handleSearchSnippets = useCallback(
-    (query) => {
+    async (query) => {
       setSearchQuery(query)
+      if (!query.trim()) {
+        setSidebarSearchResults(null)
+        return
+      }
+      if (searchSnippetList) {
+        setIsSearching(true)
+        try {
+          const results = await searchSnippetList(query)
+          setSidebarSearchResults(results) // Updates sidebar ONLY
+        } finally {
+          setIsSearching(false)
+        }
+      }
     },
-    [setSearchQuery]
+    [setSearchQuery, searchSnippetList]
   )
 
   const handleDirtyStateChange = useCallback((id, isDirty) => {
@@ -412,7 +447,17 @@ const SnippetLibraryInner = ({ snippetData }) => {
 
       setSelectedSnippet(s)
       setSelectedFolderId(null)
-      setSelectedIds([s.id])
+      
+      // FIX: Only update selectedIds if the snippet (or its pinned variant) 
+      // is not already in the selection. This prevents "jumping" when clicking
+      // pinned items in the sidebar.
+      const isAlreadyInSelection = selectedIds.some(id => 
+        id === s.id || id === `pinned-${s.id}`
+      )
+      
+      if (!isAlreadyInSelection) {
+        setSelectedIds([s.id])
+      }
 
       navigateTo('editor')
     },
@@ -422,7 +467,8 @@ const SnippetLibraryInner = ({ snippetData }) => {
       setSelectedIds,
       navigateTo,
       selectedSnippet,
-      dirtySnippetIds
+      dirtySnippetIds,
+      selectedIds
     ]
   )
 
@@ -459,7 +505,10 @@ const SnippetLibraryInner = ({ snippetData }) => {
   useEffect(() => {
     const handleZoomIn = () => setZoomLevel((z) => z + ZOOM_STEP)
     const handleZoomOut = () => setZoomLevel((z) => z - ZOOM_STEP)
-    const handleZoomReset = () => setZoomLevel(1.0)
+    const handleZoomReset = () => {
+      setZoomLevel(1.0)
+      setEditorZoom(1.0)
+    }
     const handleEditorZoomIn = () => setEditorZoom((z) => z + ZOOM_STEP)
     const handleEditorZoomOut = () => setEditorZoom((z) => z - ZOOM_STEP)
 
@@ -816,7 +865,13 @@ const SnippetLibraryInner = ({ snippetData }) => {
     }
     const onCommandAIPilot = () => openAIPilot()
 
+    const onBulkDelete = (e) => {
+      const ids = e.detail?.ids
+      if (ids && ids.length > 0) handleBulkDelete(ids)
+    }
+
     window.addEventListener('app:command-new-snippet', onCommandNew)
+    window.addEventListener('app:command-bulk-delete', onBulkDelete)
     window.addEventListener('app:toggle-theme', onCommandTheme)
     window.addEventListener('app:toggle-sidebar', onCommandSidebar)
     window.addEventListener('app:toggle-preview', onCommandPreview)
@@ -908,6 +963,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
     return () => {
       window.removeEventListener('app:open-snippet', onOpenSnippet)
       window.removeEventListener('app:command-new-snippet', onCommandNew)
+      window.removeEventListener('app:command-bulk-delete', onBulkDelete)
       window.removeEventListener('app:toggle-theme', onCommandTheme)
       window.removeEventListener('app:toggle-sidebar', onCommandSidebar)
       window.removeEventListener('app:toggle-preview', onCommandPreview)
@@ -1397,6 +1453,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
           activeView={isCreatingSnippet ? 'editor' : activeView}
           pinPopover={pinPopover}
           setPinPopover={setPinPopover}
+          isSearching={isSearching}
           onPing={handlePing}
           onFavorite={toggleFavoriteSnippet}
           currentContext={activeView}

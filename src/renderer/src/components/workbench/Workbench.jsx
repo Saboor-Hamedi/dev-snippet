@@ -52,6 +52,7 @@ const Workbench = ({
   onDeleteBulk,
   onRestoreItem,
   onPermanentDeleteItem,
+  isSearching, // Added isSearching here
   onLoadTrash,
   onCloseSnippet,
   onCancelEditor,
@@ -463,6 +464,9 @@ const Workbench = ({
           snippetTitle={selectedSnippet?.title}
           isFavorited={headerIsFavorited}
           isTab={activeView === 'editor' || (activeView === 'snippets' && !!selectedSnippet)}
+          isDirty={
+            selectedSnippet && (dirtyIds?.has(selectedSnippet.id) || selectedSnippet.is_dirty)
+          }
           isCompact={isCompact}
           isResizing={isResizing} // Pass the resizing flag to suppress transitions
           onToggleCompact={onToggleCompact}
@@ -598,6 +602,7 @@ const Workbench = ({
                   onSelectAll={handleSelectAll}
                   dirtyIds={dirtyIds}
                   onInlineRename={onInlineRename}
+                  isSearching={isSearching}
                 />
               )}
 

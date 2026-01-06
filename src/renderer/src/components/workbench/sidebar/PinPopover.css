@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 20000;
+  z-index: 300000;
   background: transparent;
   pointer-events: none; /* Allow typing/scrolling through the overlay */
 }
@@ -24,7 +24,7 @@
   border-radius: 8px;
   min-width: 180px;
   overflow: hidden;
-  z-index: 21000;
+  z-index: 301000;
   animation: pin-pop-in 0.15s cubic-bezier(0.1, 0.9, 0.2, 1);
   display: flex;
   flex-direction: column;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import PropTypes from 'prop-types'
-import { GripVertical } from 'lucide-react'
+import { GripVertical, X } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../features/keyboard/useKeyboardShortcuts'
 import { useEditorFocus } from '../../hook/useEditorFocus.js'
 import { useZoomLevel, useEditorZoomLevel } from '../../hook/useSettingsContext'
@@ -22,6 +22,7 @@ import DiagramEditorModal from '../mermaid/modal/DiagramEditorModal'
 import TableEditorModal from '../table/TableEditorModal'
 import PerformanceBarrier from '../universal/PerformanceBarrier/PerformanceBarrier'
 import '../universal/universalStyle.css'
+import './EditorMetadata.css'
 
 /**
  * ╔══════════════════════════════════════════════════════════════════════════╗
@@ -125,18 +126,45 @@ const SnippetEditor = ({
   const { settings, getSetting, updateSetting } = useSettings()
   const { currentTheme } = useTheme()
 
-  const [title, setTitle] = useState(initialSnippet?.title || '')
+  const [title, setTitle] = useState(() => {
+    const t = initialSnippet?.title || ''
+    return t.replace(/\.md$/i, '')
+  })
+
+  // Tags state: Managed as an array for the chip system
+  const [tags, setTags] = useState(() => {
+    const rawTags = initialSnippet?.tags || []
+    return Array.isArray(rawTags) ? rawTags : []
+  })
+  const [currentTagInput, setCurrentTagInput] = useState('')
   const [justRenamed, setJustRenamed] = useState(false)
   const [isFloating, setIsFloating] = useState(
     () => settings?.ui?.modeSwitcher?.isFloating || false
   )
   const switcherRef = useRef(null)
   const dragHandleRef = useRef(null)
+
+  // Ref for debouncing live title updates to sidebar
+  const titleUpdateTimerRef = useRef(null)
+
+  // Ref for title input auto-focus
+  const titleInputRef = useRef(null)
+
   const [cursorPos, setCursorPos] = useState({ line: 1, col: 1 })
   const handleCursorChange = useCallback((pos) => {
     setCursorPos(pos)
   }, [])
   const [activeMode, setActiveMode] = useState('live_preview')
+
+  // Auto-focus title input when creating new snippet
+  useEffect(() => {
+    if (isCreateMode && titleInputRef.current) {
+      setTimeout(() => {
+        titleInputRef.current?.focus()
+        titleInputRef.current?.select()
+      }, 100)
+    }
+  }, [isCreateMode])
 
   const {
     isOpen: isUniOpen,
@@ -147,6 +175,9 @@ const SnippetEditor = ({
     height: uniHeight,
     resetPosition: uniResetPosition,
     isMaximized: uniMaximized,
+    hideHeaderBorder: uniHideHeaderBorder,
+    noTab: uniNoTab,
+    className: uniClassName,
     closeModal: closeUni,
     openModal,
     setModalState: setUniState
@@ -257,6 +288,8 @@ const SnippetEditor = ({
           height: '80vh',
           resetPosition: true,
           className: 'no-padding',
+          hideHeaderBorder: true,
+          noTab: true,
           content: (
             <DiagramEditorModal
               initialCode={innerCode}
@@ -280,6 +313,8 @@ const SnippetEditor = ({
           height: '80vh',
           resetPosition: true,
           className: 'no-padding',
+          hideHeaderBorder: true,
+          noTab: true,
           content: (
             <TableEditorModal
               initialCode={initialCode}
@@ -393,13 +428,37 @@ const SnippetEditor = ({
 
   // Update title when initialSnippet changes (e.g., after rename)
   useEffect(() => {
-    if (initialSnippet?.title && initialSnippet.title !== title) {
-      setTitle(initialSnippet.title)
+    // Only update if the ID matches (same snippet) but title is different externally
+    // AND we are not currently editing it (handled by not having 'title' in deps)
+    if (initialSnippet?.title && initialSnippet.title.replace(/\.md$/i, '') !== title) {
+      // AUTO-ECHO PROTECTION:
+      // If the incoming title matches what we JUST saved, ignore it to prevent cursor jumps.
+      // This happens because autosave completes -> updates parent -> parent pushes new prop -> we re-render.
+      if (initialSnippet.title.replace(/\.md$/i, '') === lastSavedTitle.current) {
+        return
+      }
+
+      // Check if this is a genuine external update (e.g. sidebar rename)
+      setTitle(initialSnippet.title.replace(/\.md$/i, ''))
       setJustRenamed(true)
-      // Reset justRenamed after a short delay
       setTimeout(() => setJustRenamed(false), 1000)
     }
-  }, [initialSnippet?.title, title])
+  }, [initialSnippet?.title])
+
+  // DUPLICATE DETECTION
+  const isDuplicate = useMemo(() => {
+    if (!title) return false
+    const normalized = title.trim().toLowerCase()
+    return (snippets || []).some((s) => {
+      // Skip self
+      if (s.id === initialSnippet?.id) return false
+      // Match folder scope (null/undefined treated as root)
+      if ((s.folder_id || null) !== (initialSnippet?.folder_id || null)) return false
+
+      const sTitle = (s.title || '').replace(/\.md$/i, '').trim().toLowerCase()
+      return sTitle === normalized
+    })
+  }, [title, snippets, initialSnippet])
 
   const hideWelcomePage = getSetting('ui.hideWelcomePage') || false
   const saveTimerRef = useRef(null)
@@ -540,10 +599,27 @@ const SnippetEditor = ({
           language: detectedLang || 'markdown',
           timestamp: Date.now(),
           type: initialSnippet?.type || 'snippet',
-          tags: extractTags(code),
+          // DRY: Combine explicit tags, active input, and extracted content tags
+          tags: Array.from(
+            new Set([
+              ...tags,
+              ...currentTagInput
+                .split(',')
+                .map((t) => t.trim())
+                .filter(Boolean),
+              ...extractTags(code)
+            ])
+          ).filter((t) => typeof t === 'string' && !/^\d+$/.test(t)),
           is_draft: false,
           folder_id: initialSnippet?.folder_id || null,
           is_pinned: initialSnippet?.is_pinned || 0
+        }
+
+        // DUPLICATE CHECK IN AUTOSAVE
+        // If the title is a duplicate, we DO NOT autosave.
+        // We just let the user keep typing until it's unique.
+        if (isDuplicate) {
+          return
         }
 
         try {
@@ -562,7 +638,7 @@ const SnippetEditor = ({
       },
       initialSnippet?.id === 'system:settings' ? 800 : getSetting('behavior.autoSaveDelay') || 2000
     )
-  }, [code, title, initialSnippet, autoSaveEnabled, onSave])
+  }, [code, title, tags, currentTagInput, initialSnippet, autoSaveEnabled, onSave, isDuplicate])
 
   useEffect(() => {
     const id = initialSnippet?.id
@@ -587,6 +663,15 @@ const SnippetEditor = ({
     if (initialSnippet.id !== lastSnippetId.current) {
       setCode(initialSnippet.code || '')
       setTitle(initialSnippet.title || '')
+      const rawTags = initialSnippet.tags
+      let sanitizedTags = []
+      if (Array.isArray(rawTags)) {
+        sanitizedTags = rawTags
+      } else if (typeof rawTags === 'string') {
+        sanitizedTags = rawTags.split(',').filter(Boolean)
+      }
+      setTags(sanitizedTags.map((t) => String(t)))
+      setCurrentTagInput('')
       setIsDirty(false)
       setIsInitialMount(true)
       isDiscardingRef.current = false // Reset discard flag for new snippet
@@ -1082,11 +1167,26 @@ const SnippetEditor = ({
       return
     }
 
+    if (isDuplicate) {
+      showToast?.('Snippet name already exists in this folder', 'error')
+      return
+    }
+
     const payload = {
       ...initialSnippet,
       id: initialSnippet?.id || Date.now().toString(),
       title: finalTitle,
       code: code,
+      tags: Array.from(
+        new Set([
+          ...tags,
+          ...currentTagInput
+            .split(',')
+            .map((t) => t.trim())
+            .filter(Boolean),
+          ...extractTags(code)
+        ])
+      ).filter((t) => typeof t === 'string' && !/^\d+$/.test(t)),
       is_draft: false,
       folder_id: initialSnippet?.folder_id || null,
       is_pinned: initialSnippet?.is_pinned || 0
@@ -1293,6 +1393,11 @@ const SnippetEditor = ({
       window.removeEventListener('app:trigger-export-word', wordFn)
       window.removeEventListener('app:trigger-close-check', closeCheckFn)
       if (unsubscribeClose) unsubscribeClose()
+      // Cleanup title update timer
+      if (titleUpdateTimerRef.current) {
+        clearTimeout(titleUpdateTimerRef.current)
+        titleUpdateTimerRef.current = null
+      }
     }
   }, [
     code,
@@ -1313,7 +1418,130 @@ const SnippetEditor = ({
           className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative SnippetEditor_root"
           style={{ backgroundColor: 'var(--editor-bg)' }}
         >
-          <div className="flex-1 min-h-0 overflow-hidden editor-container relative flex">
+          <div className="flex-1 min-h-0 overflow-hidden editor-container relative flex flex-col">
+            {/* SEAMLESS METADATA HEADER (Obsidian Style) */}
+            <div className="flex-none snippet-metadata-header pt-8 pb-4 border-none">
+              <div className="metadata-inner px-[30px]">
+                <input
+                  ref={titleInputRef}
+                  className={`snippet-title-input theme-exempt ${isDuplicate ? 'text-red-500' : ''}`}
+                  value={title}
+                  onChange={(e) => {
+                    // Prevent user from manually typing .md
+                    const val = e.target.value.replace(/\.md$/i, '')
+                    setTitle(val)
+                    setIsDirty(true)
+
+                    // Live sidebar update: debounced optimistic save
+                    if (initialSnippet?.id && onSave) {
+                      if (titleUpdateTimerRef.current) {
+                        clearTimeout(titleUpdateTimerRef.current)
+                      }
+                      titleUpdateTimerRef.current = setTimeout(() => {
+                        onSave(
+                          {
+                            ...initialSnippet,
+                            title: val,
+                            code: code,
+                            tags: tags,
+                            is_draft: false
+                          },
+                          true
+                        )
+                        titleUpdateTimerRef.current = null
+                      }, 300)
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      // Jump focus to tags or editor
+                      const nextInput = document.querySelector('.snippet-tags-input')
+                      if (nextInput) nextInput.focus()
+                    }
+                  }}
+                  onWheel={(e) => {
+                    // Prevent scroll from shifting text
+                    e.preventDefault()
+                    e.stopPropagation()
+                  }}
+                  spellCheck="false"
+                  placeholder="Untitled Snippet"
+                />
+                {isDuplicate && (
+                  <div className="text-[10px] text-red-500 font-bold uppercase tracking-wider mt-1">
+                    Snippet name already exists
+                  </div>
+                )}
+                <div className="snippet-tags-container">
+                  <span className="snippet-tags-label">Tags</span>
+
+                  {/* TAG CHIPS */}
+                  <div className="snippet-tags-list flex flex-wrap gap-2 items-center">
+                    {tags.map((tag, idx) => (
+                      <div key={idx} className="snippet-tag-chip group">
+                        <span>{String(tag)}</span>
+                        <button
+                          onClick={() => {
+                            setTags((prev) => prev.filter((_, i) => i !== idx))
+                            setIsDirty(true)
+                          }}
+                          className="snippet-tag-remove"
+                        >
+                          <X size={10} />
+                        </button>
+                      </div>
+                    ))}
+
+                    <input
+                      className="snippet-tags-input theme-exempt"
+                      value={currentTagInput}
+                      onChange={(e) => {
+                        const val = e.target.value
+                        if (val.endsWith(',')) {
+                          const newTag = val.replace(',', '').trim().toLowerCase()
+                          if (newTag && !tags.includes(newTag) && !/^\d+$/.test(newTag)) {
+                            setTags((prev) => [...prev, newTag])
+                            setCurrentTagInput('')
+                            setIsDirty(true)
+                          }
+                        } else {
+                          setCurrentTagInput(val)
+                          setIsDirty(true)
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          const newTag = currentTagInput.trim().toLowerCase()
+                          if (newTag) {
+                            if (!tags.includes(newTag) && !/^\d+$/.test(newTag)) {
+                              setTags((prev) => [...prev, newTag])
+                              setCurrentTagInput('')
+                            } else {
+                              setCurrentTagInput('')
+                            }
+                            setIsDirty(true)
+                          }
+ else {
+                            // Jump focus to editor content if input is empty
+                            const editorElement = document.querySelector('.cm-editor .cm-content')
+                            if (editorElement) editorElement.focus()
+                          }
+                        } else if (e.key === 'Backspace' && !currentTagInput) {
+                          if (tags.length > 0) {
+                            setTags((prev) => prev.slice(0, -1))
+                            setIsDirty(true)
+                          }
+                        }
+                      }}
+                      spellCheck="false"
+                      placeholder={tags.length === 0 ? 'add tags...' : ''}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <AdvancedSplitPane
               rightHidden={!showPreview}
               unifiedScroll={false}
@@ -1612,6 +1840,9 @@ const SnippetEditor = ({
             isMaximized={uniMaximized}
             onMaximize={(val) => setUniState((prev) => ({ ...prev, isMaximized: val }))}
             customKey="snippet_editor_universal_modal"
+            hideHeaderBorder={uniHideHeaderBorder}
+            noTab={uniNoTab}
+            className={uniClassName}
           >
             {uniContent}
           </UniversalModal>

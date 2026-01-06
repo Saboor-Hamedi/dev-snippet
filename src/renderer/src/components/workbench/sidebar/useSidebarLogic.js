@@ -2,38 +2,68 @@ import React, { useState, useMemo, useCallback, useRef } from 'react'
 import { useSidebarStore } from '../../../store/useSidebarStore'
 
 /**
- * Custom hook to encapsulate the logic for the SnippetSidebar.
- * Handles tree flattening, selection logic, keyboard navigation, and event handlers.
+ * useSidebarLogic 
+ * 
+ * The central engine for the SnippetSidebar. This hook manages:
+ * - Tree Geometry: Translating nested folders/snippets into a flat array for VirtualList.
+ * - Selection State: Handling complex multi-select, range-select, and focus rules.
+ * - Keyboard UX: VS-Code style arrow navigation and nested folder manipulation.
+ * - Inline Editing: Managing creation and renaming states without jumping focus.
  */
 export const useSidebarLogic = ({
   folders,
   snippets,
   onSelect,
-  // onSelectFolder, // Handled by store
-  // onSelectionChange, // Handled by store
   onToggleFolder,
   inputRef,
   listRef,
   dirtyIds = new Set()
 }) => {
-  const { selectedIds, setSelectedIds, selectedFolderId, setSelectedFolderId, setSidebarSelected } =
-    useSidebarStore()
+  const {
+    selectedIds,
+    setSelectedIds,
+    selectedFolderId,
+    setSelectedFolderId,
+    setSidebarSelected,
+    searchQuery,
+    editingId,
+    setEditingId
+  } = useSidebarStore()
+  
+  // Track the last clicked VIRTUAL id for Shift+Click range logic
   const lastSelectedIdRef = useRef(null)
+  
+  // Temporary states for creation/editing UI rows
   const [createState, setCreateState] = useState(null) // { type: 'folder'|'snippet', parentId: string|null }
-  const [editingId, setEditingId] = useState(null)
+  
+  // Internal state for the "Pinned" section visibility
   const [isPinnedCollapsed, setIsPinnedCollapsed] = useState(false)
   const togglePinned = useCallback(() => setIsPinnedCollapsed((prev) => !prev), [])
 
   const startRenaming = useCallback((id) => setEditingId(id), [])
   const cancelRenaming = useCallback(() => setEditingId(null), [])
 
-  // 1. Flatten Tree Logic
-  // This is a pure function that runs only when data changes.
+  /**
+   * 1. TREE FLATTENING (The Virtual List Bridge)
+   * 
+   * React-Window / VirtualList requires a flat array. We transform the 
+   * hierarchical folder/snippet data into a single array of 'treeItems'.
+   */
   const treeItems = useMemo(() => {
-    // Always show the full tree from root
+    // --- 🔍 SEARCH MODE: Flat list view ---
+    if (searchQuery && searchQuery.trim()) {
+      return snippets.map((snippet) => ({
+        id: snippet.id, // During search, ID is real ID (no duplicates possible)
+        type: 'snippet',
+        data: { ...snippet, is_dirty: dirtyIds.has(snippet.id) },
+        depth: 0,
+        isEditing: editingId === snippet.id
+      }))
+    }
+
     let result = []
 
-    // 1. PINNED SECTION (Top Level)
+    // --- 📌 PINNED SECTION (Top Level) ---
     const pinnedSnippets = snippets
       .filter((s) => s.is_pinned === 1)
       .sort((a, b) =>
@@ -41,6 +71,7 @@ export const useSidebarLogic = ({
       )
 
     if (pinnedSnippets.length > 0) {
+      // Add a header row for the Pinned category
       result.push({
         id: 'PINNED_HEADER',
         type: 'pinned_header',
@@ -50,66 +81,47 @@ export const useSidebarLogic = ({
       })
 
       if (!isPinnedCollapsed) {
+        // Add pinned rows with VIRTUAL IDs to avoid key collisions with the main tree
         pinnedSnippets.forEach((snippet) => {
           result.push({
-            id: `pinned-${snippet.id}`, // Unique ID for virtual row
-            realId: snippet.id, // Reference to actual snippet
+            id: `pinned-${snippet.id}`, // VIRTUAL ID: Prevents double-highlight and key conflicts
+            realId: snippet.id,         // Pointer to actual database ID
             type: 'pinned_snippet',
-            data: snippet,
-            depth: 0.5, // Subtle indent
-            isEditing: editingId === snippet.id
+            data: { ...snippet, is_dirty: dirtyIds.has(snippet.id) },
+            depth: 0.5,
+            isEditing: editingId === `pinned-${snippet.id}` // Check virtual ID
           })
         })
       }
     }
 
-    // 2. MAIN FOLDER TREE
-    // PRE-CALCULATION: Build a map of snippet counts per folder in O(n)
-    // This avoids recursive lookups inside the O(n) tree traversal.
-    const folderCounts = new Map()
-
-    // First pass: Count snippets directly in each folder
-    snippets.forEach((s) => {
-      const fid = s.folder_id || 'root'
-      folderCounts.set(fid, (folderCounts.get(fid) || 0) + 1)
-    })
-
-    // Second pass: Propagate counts up the folder hierarchy (folders are already loaded)
-    const getDeepCount = (fid) => {
-      let total = folderCounts.get(fid) || 0
-      const children = folders.filter(
-        (f) => (f.parent_id || null) === (fid === 'root' ? null : fid)
-      )
-      children.forEach((c) => {
-        total += getDeepCount(c.id)
-      })
-      return total
-    }
-
-    // MEMOIZED COUNTING:
-    // We compute this once for the metadata, but we'll use a direct lookup for tree render.
+    // --- 📁 MAIN FOLDER TREE ---
+    
+    /**
+     * Recursive Snipet Counter
+     * Recursively calculates how many items are within a folder for the badge UI.
+     */
     const memoCounts = new Map()
     const getRecursiveSnippetCount = (fid) => {
       if (memoCounts.has(fid)) return memoCounts.get(fid)
-
-      // Count direct snippets
       let total = snippets.filter((s) => (s.folder_id || null) === (fid || null)).length
-
-      // Traverse direct children
       folders.forEach((f) => {
         if ((f.parent_id || null) === (fid || null)) {
           total += getRecursiveSnippetCount(f.id)
         }
       })
-
       memoCounts.set(fid, total)
       return total
     }
 
+    /**
+     * Flattening Core
+     * Standard recursive traversal to turn folders -> tree rows.
+     */
     const flatten = (currentFolders, currentSnippets, depth = 0, parentId = null) => {
       let levelResult = []
 
-      // INJECTION POINT: Input Row (Top of the level)
+      // INJECTION POINT: Dynamic Creation Input Row
       if (createState && (createState.parentId || null) == (parentId || null)) {
         levelResult.push({
           id: 'TEMP_CREATION_INPUT',
@@ -119,10 +131,11 @@ export const useSidebarLogic = ({
         })
       }
 
-      // Folders
+      // Process Folders
       const levelFolders = currentFolders
         .filter((f) => (f.parent_id || null) == (parentId || null))
         .sort((a, b) => {
+          // Keep 'Inbox' at the very top of its level
           if (a.name === '📥 Inbox') return -1
           if (b.name === '📥 Inbox') return 1
           return (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
@@ -146,25 +159,21 @@ export const useSidebarLogic = ({
         }
       })
 
-      // Snippets
+      // Process Snippets
       const levelSnippets = currentSnippets
         .filter((s) => (s.folder_id || null) == (parentId || null))
         .sort((a, b) => {
-          // Priority 1: Pinned
+          // Sort Order: Pinned Items -> Drafts -> Alphabetical
           if (a.is_pinned && !b.is_pinned) return -1
           if (!a.is_pinned && b.is_pinned) return 1
-
-          // Priority 2: Drafts
           if (a.is_draft && !b.is_draft) return -1
           if (!a.is_draft && b.is_draft) return 1
-
-          // Fallback: Title
           return (a.title || '').localeCompare(b.title || '', undefined, { sensitivity: 'base' })
         })
 
       levelSnippets.forEach((snippet) => {
         levelResult.push({
-          id: snippet.id,
+          id: snippet.id, // Regular snippets use their real ID as the virtual ID
           type: 'snippet',
           data: { ...snippet, is_dirty: dirtyIds.has(snippet.id) },
           depth,
@@ -175,10 +184,11 @@ export const useSidebarLogic = ({
       return levelResult
     }
 
+    // Initialize root-level flattening
     result = result.concat(flatten(folders, snippets, 0, null))
 
-    // 3. SIDEBAR FOOTER (Dead Space for Root Interaction)
-    // This allows users to click at the bottom of a long list to deselect/target root.
+    // --- 🦶 SIDEBAR FOOTER ---
+    // Invisible interactive space at the bottom to allow root-level clicks.
     result.push({
       id: 'SIDEBAR_FOOTER_SPACER',
       type: 'sidebar_footer',
@@ -187,37 +197,19 @@ export const useSidebarLogic = ({
     })
 
     return result
-  }, [snippets, folders, createState, selectedFolderId, isPinnedCollapsed, dirtyIds, editingId])
+  }, [snippets, folders, createState, selectedFolderId, isPinnedCollapsed, dirtyIds, editingId, searchQuery])
 
-  const startCreation = useCallback(
-    (type, parentId = null) => {
-      setCreateState({ type, parentId })
-      // Ensure the folder is expanded if we are creating inside it
-      if (parentId && onToggleFolder) {
-        const parent = folders.find((f) => f.id === parentId)
-        if (parent && parent.collapsed) {
-          onToggleFolder(parentId, false) // Expand
-        }
-      }
-    },
-    [folders, onToggleFolder]
-  )
-
-  const cancelCreation = useCallback(() => {
-    setCreateState(null)
-  }, [])
-
-  const confirmCreation = useCallback(() => {
-    setCreateState(null)
-  }, [])
-
-  // 2. Selection Logic
-  // Handles Single, Multi (Ctrl), and Range (Shift) Selection
+  /**
+   * 2. SELECTION ENGINE
+   * 
+   * Orchestrates multi-selection, virtual highlighting, and data linkage.
+   * FIX: Now stores VIRTUAL IDs to prevent the "Double Highlight" bug for pinned items.
+   */
   const handleSelectionInternal = useCallback(
     (e, id, type) => {
       let newSelection = []
 
-      // SHIFT + CLICK (Range Selection)
+      // SHIFT + CLICK: Range selection between last click and current click
       if (e.shiftKey && lastSelectedIdRef.current) {
         const lastIndex = treeItems.findIndex((i) => i.id === lastSelectedIdRef.current)
         const currentIndex = treeItems.findIndex((i) => i.id === id)
@@ -228,82 +220,77 @@ export const useSidebarLogic = ({
           newSelection = [...selectedIds]
 
           for (let i = start; i <= end; i++) {
-            const row = treeItems[i]
-            const targetId = row.realId || row.id
-            if (!newSelection.includes(targetId)) newSelection.push(targetId)
+            const rowId = treeItems[i].id
+            if (!newSelection.includes(rowId)) newSelection.push(rowId)
           }
         }
       }
-      // CTRL/CMD + CLICK (Toggle Selection)
+      // CTRL / CMD + CLICK: Individual toggle
       else if (e.ctrlKey || e.metaKey) {
-        const item = treeItems.find((i) => i.id === id)
-        const targetId = item?.realId || id
-        newSelection = selectedIds.includes(targetId)
-          ? selectedIds.filter((sid) => sid !== targetId)
-          : [...selectedIds, targetId]
+        newSelection = selectedIds.includes(id)
+          ? selectedIds.filter((sid) => sid !== id)
+          : [...selectedIds, id]
       }
-      // SINGLE CLICK (Reset Selection)
+      // STANDARD CLICK: Exclusive selection
       else {
+        newSelection = [id]
+        
+        // Link logical selection to actual data
         const item = treeItems.find((i) => i.id === id)
-        const targetId = item?.realId || id
+        const realId = item?.realId || id
 
-        newSelection = [targetId]
         if (type === 'snippet' || type === 'pinned_snippet') {
-          const snippet = snippets.find((s) => s.id === targetId)
+          const snippet = snippets.find((s) => s.id === realId)
           if (snippet) onSelect(snippet)
-        } else {
-          setSelectedFolderId(targetId)
+          setSelectedFolderId(null)
+        } else if (type === 'folder') {
+          setSelectedFolderId(realId)
+          onSelect(null)
         }
       }
 
-      lastSelectedIdRef.current = id // Store the VIRTUAL id for range navigation
-      setSelectedIds(newSelection)
+      lastSelectedIdRef.current = id // Store VIRTUAL ID
+      setSelectedIds(newSelection)   // Store VIRTUAL ID for visual rows
       setSidebarSelected(false)
 
-      // Handle Single Selection Specifics
+      // Sync logical data for single selections
       if (newSelection.length === 1) {
-        const targetId = newSelection[0]
+        const virtualId = newSelection[0]
+        const item = treeItems.find((i) => i.id === virtualId)
+        const realId = item?.realId || virtualId
+
         if (type === 'snippet' || type === 'pinned_snippet') {
-          const snippet = snippets.find((s) => s.id === targetId)
+          const snippet = snippets.find((s) => s.id === realId)
           if (snippet) {
             onSelect(snippet)
-            setSelectedFolderId(null) // Ensure folder is unselected
+            setSelectedFolderId(null)
           }
-        } else {
-          setSelectedFolderId(targetId)
-          onSelect(null) // Ensure snippet is unselected
+        } else if (type === 'folder') {
+          setSelectedFolderId(realId)
+          onSelect(null)
         }
       }
     },
-    [
-      treeItems,
-      selectedIds,
-      setSelectedIds,
-      onSelect,
-      setSelectedFolderId,
-      snippets,
-      setSidebarSelected
-    ]
+    [treeItems, selectedIds, setSelectedIds, onSelect, setSelectedFolderId, snippets, setSidebarSelected]
   )
 
-  // 3. Keyboard Navigation Logic
-  // Handles Arrow Keys and Enter
-  // 3. Keyboard Navigation Logic
-  // Handles Arrow Keys (Tree Traversal) and Enter
+  /**
+   * 3. KEYBOARD ENGINE
+   * 
+   * Provides full accessibility and power-user navigation (Arrows + Enter).
+   */
   const handleItemKeyDown = useCallback(
     (e, index) => {
       const item = treeItems[index]
       if (!item) return
 
-      // Helper to select an item by index
       const selectIndex = (i) => {
         if (i < 0 || i >= treeItems.length) return
         const target = treeItems[i]
-        // Pass fake event to avoid modifier logic during simple nav, OR keep it?
-        // Usually arrow navigation resets selection unless Shift is held.
-        // handleSelectionInternal uses e.shiftKey.
         handleSelectionInternal(e, target.id, target.type)
         listRef.current?.scrollToItem(i)
+        
+        // Ensure browser focus follows selection for screen readers and tab sync
         setTimeout(() => {
           const el = document.getElementById(`sidebar-item-${i}`)
           if (el) el.focus()
@@ -327,28 +314,26 @@ export const useSidebarLogic = ({
           e.preventDefault()
           if (item.type === 'folder') {
             if (item.data.collapsed) {
-              onToggleFolder(item.id, false) // Expand
+              onToggleFolder(item.id, false) // Open
             } else {
-              selectIndex(index + 1) // Focus first child
+              selectIndex(index + 1) // Enter first child
             }
           }
           break
         case 'ArrowLeft':
           e.preventDefault()
           if (item.type === 'folder' && !item.data.collapsed) {
-            onToggleFolder(item.id, true) // Collapse
-          } else {
-            // Jump to Parent
-            if (item.depth > 0) {
-              let parentIndex = -1
-              for (let i = index - 1; i >= 0; i--) {
-                if (treeItems[i].depth < item.depth) {
-                  parentIndex = i
-                  break
-                }
+            onToggleFolder(item.id, true) // Close
+          } else if (item.depth > 0) {
+            // Jump focus to parent folder
+            let parentIndex = -1
+            for (let i = index - 1; i >= 0; i--) {
+              if (treeItems[i].depth < item.depth) {
+                parentIndex = i
+                break
               }
-              if (parentIndex !== -1) selectIndex(parentIndex)
             }
+            if (parentIndex !== -1) selectIndex(parentIndex)
           }
           break
         case 'Enter':
@@ -364,7 +349,12 @@ export const useSidebarLogic = ({
     [treeItems, handleSelectionInternal, listRef, inputRef, onSelect, onToggleFolder]
   )
 
-  // 4. Auto-scroll to selected item when selection changes externally
+  /**
+   * 4. SELECTION SYNC
+   * 
+   * Automatically scroll to the selected item if it changes from an external source 
+   * (e.g. Cmd+F search or "Daily Note" command).
+   */
   React.useEffect(() => {
     if (selectedIds.length === 1 && listRef.current) {
       const selectedId = selectedIds[0]
@@ -375,56 +365,47 @@ export const useSidebarLogic = ({
     }
   }, [selectedIds, treeItems])
 
-  // 5. Semantic Selection Recovery (Collapse -> Select Parent)
+  /**
+   * 5. SMART FOCUS RECOVERY
+   * 
+   * If a folder is collapsed, and its child was selected, the selection 
+   * should jump up to the folder itself rather than vanishing.
+   */
   React.useEffect(() => {
-    // If we have a selection that is NOT in the treeItems (visible),
-    // visual focus is lost. We should select the parent folder.
+    if (searchQuery && searchQuery.trim()) return
     if (selectedIds.length === 1) {
-      const selectedId = selectedIds[0]
-      const isVisible = treeItems.some((i) => i.id === selectedId)
+      const virtualId = selectedIds[0]
+      const isVisible = treeItems.some((i) => i.id === virtualId)
 
       if (!isVisible) {
-        // Find the item in raw data to get parent
-        const snippet = snippets.find((s) => s.id === selectedId)
-        const folder = folders.find((f) => f.id === selectedId)
+        const realId = virtualId.replace(/^pinned-/, '')
+        const snippet = snippets.find((s) => s.id === realId)
+        const folder = folders.find((f) => f.id === realId)
         const parentId = snippet ? snippet.folder_id : folder ? folder.parent_id : null
 
         if (parentId) {
-          // Select the parent folder
-          // Check if parent is visible? It should be if we just collapsed it.
           handleSelectionInternal({ shiftKey: false, ctrlKey: false }, parentId, 'folder')
-        } else {
-          // Verify if we are at root? If hidden at root (impossible usually unless filtered), do nothing.
         }
       }
     }
-  }, [treeItems, selectedIds, snippets, folders, handleSelectionInternal])
-
-  // 5. Background Click Handler
-  const handleBackgroundClick = useCallback(
-    (e) => {
-      // Only if we clicked directly on the container (virtual list container)
-      if (e.target === e.currentTarget || e.target.classList.contains('virtual-list-container')) {
-        setSelectedIds([])
-        onSelect(null) // Clear snippet
-        setSelectedFolderId(null) // Clear folder selection -> target ROOT
-        lastSelectedIdRef.current = null
-        setSidebarSelected(true)
-      }
-    },
-    [setSelectedIds, onSelect, setSelectedFolderId, setSidebarSelected]
-  )
+  }, [treeItems, selectedIds, snippets, folders, handleSelectionInternal, searchQuery])
 
   return {
     treeItems,
     lastSelectedIdRef,
     handleSelectionInternal,
     handleItemKeyDown,
-    handleBackgroundClick,
     createState,
-    startCreation,
-    cancelCreation,
-    confirmCreation,
+    startCreation: useCallback((type, parentId) => {
+      setCreateState({ type, parentId })
+      setEditingId(null) // Close any rename input
+      
+      // Auto-scroll to the creation input position
+      // This is tricky because the item only exists AFTER the state update.
+      // We rely on the VirtualList's nature and usually creators want to see it.
+    }, []),
+    cancelCreation: useCallback(() => setCreateState(null), []),
+    confirmCreation: useCallback(() => setCreateState(null), []),
     togglePinned,
     collapseAll: useCallback(() => {
       folders.forEach((f) => {
@@ -438,3 +419,4 @@ export const useSidebarLogic = ({
     cancelRenaming
   }
 }
+

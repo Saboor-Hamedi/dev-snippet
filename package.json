@@ -1,9 +1,9 @@
 {
   "name": "dev-snippet",
-  "version": "1.2.6",
-  "description": "An Electron application with React",
-  "author": "example.com",
-  "homepage": "https://electron-vite.org",
+  "version": "1.2.8",
+  "description": "A premium, lightning-fast code snippet manager and knowledge base for developers.",
+  "author": "Saboor Hamedi",
+  "homepage": "https://github.com/Saboor-Hamedi/dev-snippet",
   "main": "./out/main/index.js",
   "scripts": {
     "format": "prettier --write .",
@@ -85,7 +85,7 @@
     "@vitejs/plugin-react": "^5.0.3",
     "autoprefixer": "^10.4.22",
     "dotenv": "^17.2.3",
-    "electron": "^33.2.0",
+    "electron": "^39.2.7",
     "electron-builder": "^26.0.12",
     "electron-vite": "^4.0.1",
     "eslint": "^9.39.2",

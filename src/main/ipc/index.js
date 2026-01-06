@@ -32,13 +32,11 @@ export const registerAllHandlers = (
   registerBackupHandlers(app, getDB)
   registerDialogHandlers()
   registerUpdatesHandlers(mainWindow)
-  console.log('Registering Export Handlers...')
   registerExportHandlers()
 
   // Register Word export handler
   registerWordExportHandler(app)
 
-  console.log('Registering Sync Handlers...')
   registerSyncHandlers(db)
 
   registerQuickCaptureHandlers(app, enableDevtools)

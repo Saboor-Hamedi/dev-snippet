@@ -40,7 +40,6 @@ export const getWindowConfig = (app, ENABLE_DEVTOOLS) => {
 
       for (const fallback of fallbacks) {
         if (fsSync.existsSync(fallback)) {
-          console.log(`✅ Using fallback icon: ${fallback}`)
           iconPath = fallback
           break
         }

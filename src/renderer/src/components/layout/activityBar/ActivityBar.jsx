@@ -8,7 +8,9 @@ import {
   Calendar,
   Share2,
   Sparkles,
-  RefreshCw
+  RefreshCw,
+  Download,
+  RotateCcw
 } from 'lucide-react'
 import { useActivityBar } from './useActivityBar'
 
@@ -19,7 +21,9 @@ const ActivityButton = ({
   styles,
   onSettings,
   handleAction,
-  loading
+  loading,
+  progress = 0,
+  isDownloading = false
 }) => {
   const Icon = item.icon
 
@@ -62,7 +66,40 @@ const ActivityButton = ({
               : 'var(--activity-bar-inactive-fg, rgba(255,255,255,0.45))'
           }
         />
-        {item.badge > 0 && !loading && (
+        
+        {/* Round Progress Indicator */}
+        {isDownloading && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <svg 
+              className="w-8 h-8 -rotate-90 drop-shadow-[0_0_2px_rgba(0,0,0,0.5)]"
+              viewBox="0 0 32 32"
+            >
+              <circle
+                cx="16"
+                cy="16"
+                r="13"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                fill="transparent"
+                className="text-white/10"
+              />
+              <circle
+                cx="16"
+                cy="16"
+                r="13"
+                stroke="var(--activity-bar-active-fg, #ffffff)"
+                strokeWidth="2.5"
+                fill="transparent"
+                strokeDasharray={81.68}
+                strokeDashoffset={81.68 - (81.68 * progress) / 100}
+                strokeLinecap="round"
+                className="transition-all duration-300"
+              />
+            </svg>
+          </div>
+        )}
+
+        {item.badge > 0 && !loading && !isDownloading && (
           <div
             className="absolute top-3 right-3  min-w-[10px] h-[10px] rounded-full flex items-center justify-center font-bold shadow-sm"
             style={{
@@ -94,7 +131,36 @@ const ActivityBar = ({
 }) => {
   const { styles } = useActivityBar(settings, activeTab, trashCount)
   const [glowingTab, setGlowingTab] = useState(null)
-  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false)
+  const [updateStatus, setUpdateStatus] = useState('idle') // idle, checking, available, downloading, downloaded, error, no-update
+  const [downloadProgress, setDownloadProgress] = useState(0)
+
+  // Update Lifecycle Listeners
+  React.useEffect(() => {
+    if (!window.api?.onUpdateAvailable) return
+
+    const unsubAvailable = window.api.onUpdateAvailable(() => setUpdateStatus('available'))
+    const unsubNotAvailable = window.api.onUpdateNotAvailable(() => {
+      setUpdateStatus('no-update')
+      setTimeout(() => setUpdateStatus('idle'), 3000)
+    })
+    const unsubProgress = window.api.onDownloadProgress((p) => {
+      setUpdateStatus('downloading')
+      setDownloadProgress(p.percent)
+    })
+    const unsubDownloaded = window.api.onUpdateDownloaded(() => setUpdateStatus('downloaded'))
+    const unsubError = window.api.onUpdateError(() => {
+      setUpdateStatus('error')
+      setTimeout(() => setUpdateStatus('idle'), 3000)
+    })
+
+    return () => {
+      unsubAvailable()
+      unsubNotAvailable()
+      unsubProgress()
+      unsubDownloaded()
+      unsubError()
+    }
+  }, [])
 
   const items = useMemo(
     () => [
@@ -109,85 +175,40 @@ const ActivityBar = ({
   )
 
   const handleUpdateCheck = async () => {
-    if (isCheckingUpdate) return
-    setIsCheckingUpdate(true)
+    if (updateStatus === 'checking') return
+    
+    // Handle state transitions
+    if (updateStatus === 'available') {
+      try {
+        setUpdateStatus('downloading')
+        await window.api.downloadUpdate()
+      } catch (err) {
+        showToast('Download failed', 'error')
+        setUpdateStatus('error')
+      }
+      return
+    }
 
-    // Ensure spinner spins for at least 1.5s for better UX
-    const minTime = new Promise((resolve) => setTimeout(resolve, 1500))
+    if (updateStatus === 'downloaded') {
+      window.api.installUpdate()
+      return
+    }
+
+    // Default: Check for updates
+    setUpdateStatus('checking')
 
     try {
       if (window.api?.checkForUpdates) {
-        // Create a promise that resolves when specific update events occur
-        const checkEventPromise = new Promise((resolve, reject) => {
-          let cleaned = false
-          const cleanup = () => {
-            if (cleaned) return
-            cleaned = true
-            unsubAv && unsubAv()
-            unsubNot && unsubNot()
-            unsubErr && unsubErr()
-          }
-
-          const unsubAv = window.api.onUpdateAvailable((info) => {
-            cleanup()
-            resolve({ type: 'available', info })
-          })
-          const unsubNot = window.api.onUpdateNotAvailable(() => {
-            cleanup()
-            resolve({ type: 'not-available' })
-          })
-          const unsubErr = window.api.onUpdateError((err) => {
-            cleanup()
-            reject(err)
-          })
-
-          // Trigger the check
-          window.api
-            .checkForUpdates()
-            .then((res) => {
-              cleanup()
-              if (res === null) {
-                resolve({ type: 'dev-mode' })
-              } else {
-                // If it's a manual check return, simulate 'available' event
-                resolve({ type: 'available', info: res })
-              }
-            })
-            .catch((err) => {
-              cleanup()
-              reject(err)
-            })
-
-          // Safety timeout
-          setTimeout(() => {
-            cleanup()
-            resolve({ type: 'timeout' })
-          }, 15000)
-        })
-
-        // Wait for both the minimum timer and the event result
-        const [_, result] = await Promise.all([minTime, checkEventPromise])
-
-        if (result.type === 'available') {
-          const ver = result.info.version || 'Unknown'
-          showToast(`Update available: v${ver}`, 'success')
-        } else if (result.type === 'not-available') {
+        const info = await window.api.checkForUpdates()
+        if (!info) {
+          setUpdateStatus('no-update')
+          setTimeout(() => setUpdateStatus('idle'), 3000)
           showToast('App is up to date', 'info')
-        } else if (result.type === 'dev-mode') {
-          showToast('App is up to date (Dev Mode)', 'info')
-        } else if (result.type === 'timeout') {
-          showToast('Update check timed out', 'error')
         }
-      } else {
-        // Mock for dev
-        await minTime
-        showToast('App is up to date (Dev Mode)', 'info')
       }
     } catch (error) {
-      await minTime
-      showToast('Failed to check for updates', 'error')
-    } finally {
-      setIsCheckingUpdate(false)
+      setUpdateStatus('error')
+      showToast('Update check failed', 'error')
     }
   }
 
@@ -229,12 +250,18 @@ const ActivityBar = ({
 
       <div className="mt-auto flex flex-col w-full">
         <ActivityButton
-          item={{ id: 'update', icon: RefreshCw, label: 'Check for Updates' }}
-          isActive={false}
+          item={{ 
+            id: 'update', 
+            icon: updateStatus === 'downloaded' ? RotateCcw : updateStatus === 'available' ? Download : RefreshCw,
+            label: updateStatus === 'downloaded' ? 'Restart to Update' : updateStatus === 'available' ? 'Download Update' : 'Check for Updates'
+          }}
+          isActive={updateStatus !== 'idle'}
           styles={styles}
           onSettings={onSettings}
           handleAction={handleAction}
-          loading={isCheckingUpdate}
+          loading={updateStatus === 'checking'}
+          isDownloading={updateStatus === 'downloading'}
+          progress={downloadProgress}
         />
         <ActivityButton
           item={{ id: 'settings', icon: Settings, label: 'Settings' }}

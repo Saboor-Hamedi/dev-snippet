@@ -429,7 +429,7 @@ body.dragging-active * {
 [data-theme='solar-dawn'] .universal-modal-overlay,
 [data-theme='minimal-gray'] .universal-modal-overlay,
 [data-theme='quiet-light'] .universal-modal-overlay {
-  background: rgba(255, 255, 255, 0.5) !important; /* Less transparent */
+  background: rgba(0, 0, 0, 0.9) !important; /* Solid dark overlay for focus */
   backdrop-filter: none !important; /* No blur */
 }
 
@@ -480,24 +480,8 @@ body.dragging-active * {
 [data-theme='latte'] .universal-modal-content,
 [data-theme='solar-dawn'] .universal-modal-content,
 [data-theme='minimal-gray'] .universal-modal-content,
-[data-theme='quiet-light'] .universal-modal-content,
-[data-theme='midnight-pro'] .universal-modal-content,
-[data-theme='nebula'] .universal-modal-content,
-[data-theme='forest'] .universal-modal-content,
-[data-theme='royal-gold'] .universal-modal-content,
-[data-theme='oceanic'] .universal-modal-content,
-[data-theme='magma'] .universal-modal-content,
-[data-theme='glass-blue'] .universal-modal-content {
-  background-color: var(--color-tooltip-bg, #1e1e1e) !important;
-}
-
-[data-theme='polaris'] .universal-modal-content,
-[data-theme='latte'] .universal-modal-content,
-[data-theme='solar-dawn'] .universal-modal-content,
-[data-theme='minimal-gray'] .universal-modal-content,
 [data-theme='quiet-light'] .universal-modal-content {
   color: #1f2328 !important;
-  background-color: #ffffff !important;
 }
 
 /* VS Code-style Search Panel Refinement */

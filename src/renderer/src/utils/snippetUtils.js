@@ -27,11 +27,17 @@ export const ensureExtension = (name, ext = '.md') => {
 export const extractTags = (text) => {
   if (!text) return []
   const tags = new Set()
-  const re = /(?:^|\s)[#@]([a-zA-Z0-9_-]+)/g
+  // Improved Regex: Must start with a letter or underscore, 
+  // followed by alphanumeric/dashes. Prevents #1 or @2024 from being tags.
+  const re = /(?:^|\s)[#@]([a-zA-Z_][a-zA-Z0-9_-]*)/g
   let m
   const str = String(text)
   while ((m = re.exec(str))) {
-    tags.add(m[1].toLowerCase())
+    const tag = m[1].toLowerCase()
+    // Additional Safety: Ignore purely numeric tags (redundant with regex but safe)
+    if (!/^\d+$/.test(tag)) {
+      tags.add(tag)
+    }
   }
   return Array.from(tags)
 }
@@ -51,7 +57,16 @@ export const normalizeSnippet = (snippet) => {
     code,
     language: 'markdown', // Enforcement of project standard
     type: snippet.type || 'snippet',
-    tags: extractTags(code),
+    tags: Array.from(
+      new Set([
+        ...(Array.isArray(snippet.tags)
+          ? snippet.tags
+          : typeof snippet.tags === 'string'
+            ? snippet.tags.split(',').filter(Boolean)
+            : []),
+        ...extractTags(code)
+      ])
+    ).filter(t => typeof t === 'string' && t.length > 0 && !/^\d+$/.test(t)),
     timestamp: snippet.timestamp || Date.now(),
     is_draft: false, // Always mark as not draft when normalizing/saving
     is_pinned: snippet.is_pinned || 0,

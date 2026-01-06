@@ -11,7 +11,8 @@ import {
   Star,
   ChevronsUp,
   Plus,
-  RefreshCw
+  RefreshCw,
+  Network
 } from 'lucide-react'
 import {
   SidebarPane,
@@ -24,6 +25,18 @@ import SnippetSidebarRow from './sidebar/SnippetSidebarRow'
 import { useSidebarLogic } from './sidebar/useSidebarLogic'
 import { useSidebarStore } from '../../store/useSidebarStore'
 
+// Constant for differentiating virtual UI rows from real data rows
+const VIRTUAL_ID_PREFIX = 'pinned-'
+
+/**
+ * SnippetSidebar
+ *
+ * The primary navigation and management interface for the library.
+ * It coordinates with useSidebarLogic to render a high-performance tree
+ * that supports thousands of items via virtualization and pure JS event handling.
+ *
+ * Aesthetic: Industrial UI - Clean lines, high-density, sharp contrasts.
+ */
 const SnippetSidebar = ({
   snippets,
   folders = [],
@@ -35,7 +48,6 @@ const SnippetSidebar = ({
   onToggleFolder,
   onMoveSnippet,
   onMoveFolder,
-
   onRenameSnippet,
   onRenameFolder,
   onDeleteFolder,
@@ -47,15 +59,16 @@ const SnippetSidebar = ({
   onToggle,
   isCompact = false,
   showToast,
-  // Clipboard operations
   onCopy,
   onCut,
   onPaste,
   onSelectAll,
   onDailyNote,
   dirtyIds,
-  onInlineRename
+  onInlineRename,
+  isSearching
 }) => {
+  // Global Sidebar State (Zustand)
   const {
     searchQuery,
     setSearchQuery,
@@ -67,24 +80,38 @@ const SnippetSidebar = ({
     setSidebarSelected
   } = useSidebarStore()
 
+  // --- Local UI State ---
   const [filter, setFilter] = useState('')
   const [contextMenu, setContextMenu] = useState(null)
-  const [showLocationModal, setShowLocationModal] = useState(false)
+  const [isDragOver, setIsDragOver] = useState(false)
 
-  const now = new Date()
-  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-  const [pendingCreationType, setPendingCreationType] = useState(null)
-  const [isDragOver, setIsDragOver] = useState(false) // State for root drop target visual
+  // DOM References
   const inputRef = React.useRef(null)
   const listRef = React.useRef(null)
   const parentRef = React.useRef(null)
+
+  // System Context
+  const now = new Date()
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+
+  /**
+   * Selection Helper
+   * Utility to translate VIRTUAL UI IDs (e.g. 'pinned-123') back to DATABASE IDs ('123').
+   */
+  const resolveRealIds = (ids) => {
+    if (!ids) return []
+    // Deduplicate: If same snippet is selected in both pinned and folder, we only need the ID once.
+    const realSet = new Set(ids.map((id) => id.toString().replace(VIRTUAL_ID_PREFIX, '')))
+    return Array.from(realSet)
+  }
+
   // --- Logic Hook ---
+  // Encapsulates flattening, keyboard navigation, and tree interaction.
   const {
     treeItems,
     lastSelectedIdRef,
     handleSelectionInternal,
     handleItemKeyDown,
-    handleBackgroundClick,
     startCreation,
     cancelCreation,
     confirmCreation,
@@ -96,42 +123,37 @@ const SnippetSidebar = ({
   } = useSidebarLogic({
     folders,
     snippets,
-    selectedIds,
-    selectedFolderId,
-    selectedSnippet,
     onSelect,
     onToggleFolder,
     inputRef,
     listRef,
-    setSidebarSelected,
-    sidebarSelected: isSidebarSelected,
     dirtyIds
   })
 
-  // --- Creation Handlers ---
+  // --- 🪄 Creation Handlers ---
+
+  /**
+   * handleConfirmCreation
+   * Finalizes the inline 'New Folder' or 'New Snippet' flow.
+   */
   const handleConfirmCreation = (name, type, parentId) => {
-    // Validation
+    // 🛡️ Industrial Validation
     const validNameRegex = /^[a-zA-Z0-9_][a-zA-Z0-9_\-\. ]*$/
     if (!validNameRegex.test(name)) {
-      if (showToast)
-        showToast(
-          'Invalid Name: Must start with Letter/Number/_ and no special symbols (@#$%)',
-          'error'
-        )
+      if (showToast) showToast('Invalid Name: Use alpha-numeric characters only', 'error')
       return
     }
 
-    // Client-side duplicate check to prevent overwriting
+    // 🛡️ Duplicate Collision Check
     if (type === 'snippet') {
       const normalize = (t) => (t || '').toLowerCase().trim().replace(/\.md$/, '')
       const targetBase = normalize(name)
       const duplicate = snippets.find(
         (s) => normalize(s.title) === targetBase && (s.folder_id || null) === (parentId || null)
       )
-
       if (duplicate) {
-        if (showToast) showToast(`File "${name}" already exists`, 'error')
-        return // Keep input open
+        if (showToast) showToast(`File "${name}" already exists here`, 'error')
+        return
       }
       onNew(name, parentId, { skipNavigation: true })
     } else {
@@ -140,71 +162,66 @@ const SnippetSidebar = ({
       const duplicate = folders.find(
         (f) => normalize(f.name) === targetBase && (f.parent_id || null) === (parentId || null)
       )
-
       if (duplicate) {
-        if (showToast) showToast(`Folder "${name}" already exists`, 'error')
-        return // Keep input open
+        if (showToast) showToast(`Folder "${name}" already exists here`, 'error')
+        return
       }
       onNewFolder(name, parentId)
     }
     confirmCreation()
   }
 
-  // --- Smart Creation Logic (VS Code Style) ---
+  /**
+   * handleSmartCreation
+   * VS Code-style logic: Create new items adjacent to current selection.
+   */
   const handleSmartCreation = (type) => {
     let targetParentId = null
-
-    // 1. If we have invalid selection state, default to root
     if (selectedIds.length === 1) {
-      const selectedId = selectedIds[0]
-      // Find the item in our tree or raw data
-      const snippet = snippets.find((s) => s.id === selectedId)
-      if (snippet) {
-        // It's a snippet, create in same folder
-        targetParentId = snippet.folder_id || null
-      } else {
-        const folder = folders.find((f) => f.id === selectedId)
-        if (folder) {
-          // It's a folder, create inside it
-          targetParentId = folder.id
-        }
+      const virtualId = selectedIds[0]
+      const realId = virtualId.replace(VIRTUAL_ID_PREFIX, '')
+      const snippet = snippets.find((s) => s.id === realId)
+      if (snippet) targetParentId = snippet.folder_id || null
+      else {
+        const folder = folders.find((f) => f.id === realId)
+        if (folder) targetParentId = folder.id
       }
     } else if (selectedFolderId) {
-      // Fallback or explicit sidebar folder selection
       targetParentId = selectedFolderId
     }
-
     startCreation(type, targetParentId)
   }
 
-  // --- Debounced Search ---
+  // --- 🔍 Search Sync ---
   React.useEffect(() => {
-    // Handle empty search immediately for better UX
     if (!filter || !filter.trim()) {
       if (onSearch) onSearch('')
       return
     }
-
     const timer = setTimeout(() => {
       if (onSearch) onSearch(filter)
-    }, 300)
+    }, 150)
     return () => clearTimeout(timer)
   }, [filter, onSearch])
 
-  // --- Context Menu Logic (UI specific) ---
+  // --- 🖱️ Context Menu Engine ---
   const handleContextMenu = (e, type, itemData) => {
     e.preventDefault()
     e.stopPropagation()
 
-    // If right-clicking unselected item, select it first (unless background)
-    if (type !== 'background' && itemData && !selectedIds.includes(itemData.id)) {
-      handleSelectionInternal({ ctrlKey: false, shiftKey: false }, itemData.id, type)
+    // Deterministic ID for selection check
+    const virtualId =
+      type === 'pinned_snippet' ? `${VIRTUAL_ID_PREFIX}${itemData.id}` : itemData?.id
+
+    // Select row if not already selected
+    if (type !== 'background' && itemData && !selectedIds.includes(virtualId)) {
+      handleSelectionInternal({ ctrlKey: false, shiftKey: false }, virtualId, type)
     }
 
     const isMulti = selectedIds.length > 1
     const menuItems = []
 
-    // Clipboard operations (always available when items are selected)
+    // 📋 Clipboard Group
     if (selectedIds.length > 0) {
       menuItems.push(
         { label: 'Cut', icon: '✂️', onClick: onCut },
@@ -213,15 +230,15 @@ const SnippetSidebar = ({
       )
     }
 
-    // Paste operation (available when clipboard has items)
-    // menuItems.push({ label: 'Paste', icon: '📌', onClick: onPaste })
-    // menuItems.push({ label: 'separator' })
-
+    // 📂 Folder Group
     if (type === 'folder') {
       menuItems.push({
-        label: isMulti ? 'Delete Selected' : 'Delete',
+        label: isMulti ? `Delete ${selectedIds.length} Items` : 'Delete',
         icon: Trash2,
-        onClick: () => (isMulti ? onDeleteBulk(selectedIds) : onDeleteFolder(itemData.id)),
+        onClick: () => {
+          if (isMulti) onDeleteBulk(resolveRealIds(selectedIds))
+          else onDeleteFolder(itemData.id)
+        },
         danger: true
       })
       menuItems.push({ label: 'Paste', icon: '📌', onClick: onPaste })
@@ -238,62 +255,67 @@ const SnippetSidebar = ({
             onClick: () => startCreation('folder', itemData.id)
           },
           { label: 'separator' },
-          { label: 'Rename', icon: Edit2, onClick: () => startRenaming(itemData.id) }
+          { label: 'Rename', icon: Edit2, onClick: () => startRenaming(virtualId) }
         )
       }
-    } else if (type === 'snippet') {
+    }
+    // 📄 Snippet Group
+    else if (type === 'snippet' || type === 'pinned_snippet') {
       menuItems.push({
-        label: isMulti ? 'Delete Selected' : 'Delete',
+        label: isMulti ? `Delete ${selectedIds.length} Items` : 'Delete',
         icon: Trash2,
-        onClick: () => (isMulti ? onDeleteBulk(selectedIds) : onDeleteSnippet(itemData.id)),
-        danger: true
+        onClick: () => {
+          if (isMulti) onDeleteBulk(resolveRealIds(selectedIds))
+          else onDeleteSnippet(itemData.id)
+        },
+        danger: true,
+        shortcut: isMulti ? '' : 'Ctrl+Shift+D'
       })
       menuItems.push({ label: 'Paste', icon: '📌', onClick: onPaste })
       if (!isMulti) {
         menuItems.unshift({
-          label: itemData.is_pinned ? 'Unpin' : 'Pin',
-          icon: Pin,
-          onClick: () => onTogglePin(itemData.id)
+          label: 'Rename',
+          icon: Edit2,
+          onClick: () => startRenaming(virtualId),
+          shortcut: 'Ctrl+R'
         })
-        // Favorite toggle
+        menuItems.unshift({
+          label: 'Open in Graph',
+          icon: Network,
+          onClick: () => {
+            if (window.dispatchEvent) {
+              window.dispatchEvent(
+                new KeyboardEvent('keydown', { key: 'g', ctrlKey: true, bubbles: true })
+              )
+            }
+          },
+          shortcut: 'Ctrl+G'
+        })
         menuItems.unshift({
           label: itemData.is_favorite ? 'Unfavorite' : 'Make Favorite',
           icon: Star,
           onClick: () => onToggleFavorite && onToggleFavorite(itemData.id)
         })
         menuItems.unshift({
-          label: 'Rename',
-          icon: Edit2,
-          onClick: () => startRenaming(itemData.id)
+          label: itemData.is_pinned ? 'Unpin' : 'Pin',
+          icon: Pin,
+          onClick: () => onTogglePin(itemData.id),
+          shortcut: 'Alt+P'
         })
       }
-    } else {
-      // Background context menu
+    }
+    // 🌫️ Background / Root Group
+    else {
       menuItems.push(
         {
           label: 'New Snippet',
           icon: FilePlus,
-          onClick: () => {
-            setPendingCreationType('snippet')
-            // Default to root if no specific folder is targeted
-            if (selectedFolderId) {
-              startCreation('snippet', selectedFolderId)
-            } else {
-              startCreation('snippet', null)
-            }
-          }
+          onClick: () => startCreation('snippet', selectedFolderId || null)
         },
         {
           label: 'New Folder',
           icon: FolderPlus,
-          onClick: () => {
-            setPendingCreationType('folder')
-            if (selectedFolderId) {
-              startCreation('folder', selectedFolderId)
-            } else {
-              startCreation('folder', null)
-            }
-          }
+          onClick: () => startCreation('folder', selectedFolderId || null)
         },
         { label: 'separator' },
         { label: 'Paste', icon: '📌', onClick: onPaste },
@@ -301,69 +323,27 @@ const SnippetSidebar = ({
       )
     }
 
-    setContextMenu({ x: e.clientX, y: e.clientY, items: menuItems })
+    setContextMenu({ x: e.clientX + 2, y: e.clientY + 2, items: menuItems })
   }
 
-  // --- External Creation Command Listener ---
-  React.useEffect(() => {
-    const handler = (e) => {
-      const { type, parentId } = e.detail || {}
-      startCreation(type || 'snippet', parentId)
-    }
-    window.addEventListener('app:sidebar-start-creation', handler)
-    return () => window.removeEventListener('app:sidebar-start-creation', handler)
-  }, [startCreation])
-
-  // --- Resize Observer ---
+  // --- 📐 Responsive Engine ---
   const [containerHeight, setContainerHeight] = useState(0)
   React.useLayoutEffect(() => {
     if (!parentRef.current) return
     const ro = new ResizeObserver(([entry]) => {
-      // Only trigger React update if height changes (height rarely changes during sidebar width drag)
-      if (entry.contentRect.height !== containerHeight) {
-        setContainerHeight(entry.contentRect.height)
-      }
+      if (entry.contentRect.height !== containerHeight) setContainerHeight(entry.contentRect.height)
     })
     ro.observe(parentRef.current)
     return () => ro.disconnect()
   }, [containerHeight])
 
-  // --- Global Keyboard Shortcuts & Drag Cleanup ---
-  React.useEffect(() => {
-    const handleKeyDownGlobal = (e) => {
-      if (e.key === 'Escape') {
-        if (isSidebarSelected || isDragOver) {
-          setSidebarSelected(false)
-          setIsDragOver(false)
-          setSelectedIds([])
-          onSelect(null)
-          setSelectedFolderId(null)
-        }
-      }
-    }
-
-    const cleanupDrag = () => {
-      setIsDragOver(false)
-    }
-
-    window.addEventListener('keydown', handleKeyDownGlobal)
-    window.addEventListener('drop', cleanupDrag, true)
-    window.addEventListener('dragend', cleanupDrag, true)
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDownGlobal)
-      window.removeEventListener('drop', cleanupDrag, true)
-      window.removeEventListener('dragend', cleanupDrag, true)
-    }
-  }, [isSidebarSelected, isDragOver, onSelect])
-
-  // Optimize itemData with useMemo to prevent frequent re-renders in VirtualList
+  // --- ⚙️ Memoized Item Data (VirtualList Perf) ---
   const itemData = React.useMemo(
     () => ({
       treeItems,
       selectedSnippet,
-      selectedFolderId, // passed directly
-      selectedIds, // passed directly
+      selectedFolderId,
+      selectedIds,
       onSelect,
       onSelectFolder: (id) => setSelectedFolderId(id),
       onSelectionChange: (ids) => setSelectedIds(ids),
@@ -378,72 +358,59 @@ const SnippetSidebar = ({
       onTogglePin,
       searchQuery,
       onConfirmCreation: handleConfirmCreation,
+      onCancelCreation: cancelCreation,
       editingId,
-      onInlineRename, // pass the prop directly
+      onInlineRename,
       onCancelRenaming: cancelRenaming,
       startCreation,
       setSidebarSelected,
-      handleSelectionInternal // Explicitly passed here
+      handleSelectionInternal,
+      todayStr,
+      togglePinned
     }),
     [
       treeItems,
       selectedSnippet,
       editingId,
-      onInlineRename,
-      // cancelRenaming, // from hook
-      startCreation,
-      handleBackgroundClick,
+      selectedIds,
+      searchQuery,
+      isCompact,
+      isSidebarSelected,
+      dirtyIds,
       todayStr
     ]
   )
 
   return (
     <SidebarPane className="overflow-hidden">
+      {/* HEADER SECTION */}
       <PaneHeader className="pr-1 pb-3 pt-1 px-1">
         <div className="flex items-center gap-2 w-full">
+          {/* SEARCH INPUT */}
           <div className="relative group flex-1 h-7">
-            <div className="absolute left-2.5 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-70 transition-opacity text-[var(--color-text-primary)] pointer-events-none">
-              <Search size={12} />
+            <div className="absolute left-2.5 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-70 transition-opacity pointer-events-none">
+              {isSearching ? (
+                <RefreshCw size={12} className="animate-spin text-[var(--color-accent-primary)]" />
+              ) : (
+                <Search size={12} />
+              )}
             </div>
             <input
               ref={inputRef}
               type="text"
               placeholder="Search Snippets"
               value={filter}
-              onChange={(e) => {
-                setFilter(e.target.value)
-                onSearch(e.target.value)
-              }}
-              className="w-full h-full rounded-[5px] pl-8 pr-8 text-[12px] outline-none border border-transparent focus:border-[var(--color-accent-primary)]/30 bg-[var(--color-bg-tertiary)] hover:brightness-110 focus:brightness-125 text-[var(--color-text-primary)] placeholder:text-[11px] placeholder:opacity-30 transition-all focus:shadow-[0_0_20px_rgba(var(--color-accent-primary-rgb),0.1)]"
+              onChange={(e) => setFilter(e.target.value)}
+              className="w-full h-full rounded-[5px] pl-8 pr-8 text-[12px] outline-none border border-transparent focus:border-[var(--color-accent-primary)]/30 bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] placeholder:text-[11px] placeholder:opacity-30 transition-all focus:shadow-[0_0_20px_rgba(var(--color-accent-primary-rgb),0.1)]"
             />
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-              {filter ? (
-                <button
-                  onClick={() => {
-                    setFilter('')
-                    onSearch('')
-                    inputRef.current?.focus()
-                  }}
-                  className="p-1 rounded-full hover:bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] opacity-40 hover:opacity-100 transition-all"
-                >
-                  <RefreshCw size={10} className="rotate-45" />
-                </button>
-              ) : (
-                <div className="hidden sm:flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-[var(--color-border)] bg-[var(--color-bg-secondary)] text-[9px] font-bold text-[var(--color-text-primary)] opacity-20 group-hover:opacity-40 transition-opacity">
-                  <span>⌘</span>
-                  <span>F</span>
-                </div>
-              )}
-            </div>
           </div>
 
-          {/* Action Icons - Obsidian Style */}
+          {/* ACTION BAR */}
           <div className="flex items-center gap-px shrink-0">
             <button
               onClick={() => handleSmartCreation('snippet')}
               className="h-7 w-7 flex items-center justify-center rounded-[5px] opacity-40 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all group/btn"
               title="New Snippet"
-              style={{ color: 'var(--color-text-primary)' }}
             >
               <FilePlus
                 size={14}
@@ -455,7 +422,6 @@ const SnippetSidebar = ({
               onClick={() => handleSmartCreation('folder')}
               className="h-7 w-7 flex items-center justify-center rounded-[5px] opacity-40 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all group/btn"
               title="New Folder"
-              style={{ color: 'var(--color-text-primary)' }}
             >
               <FolderPlus
                 size={14}
@@ -466,13 +432,10 @@ const SnippetSidebar = ({
             <button
               onClick={() => {
                 collapseAll()
-                onSelect(null)
-                setSelectedIds([])
                 setSidebarSelected(true)
               }}
               className="h-7 w-7 flex items-center justify-center rounded-[5px] opacity-40 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all group/btn"
-              title="Collapse All Folders"
-              style={{ color: 'var(--color-text-primary)' }}
+              title="Collapse Folders"
             >
               <ChevronsUp
                 size={14}
@@ -484,70 +447,40 @@ const SnippetSidebar = ({
         </div>
       </PaneHeader>
 
+      {/* VIRTUALIZED BODY SECTION */}
       <SidebarBody noPadding>
         <div
-          className={`w-full h-full relative outline-none`}
+          ref={parentRef}
+          className="w-full h-full relative outline-none"
           style={{
             backgroundColor: isDragOver
               ? 'rgba(var(--color-accent-primary-rgb), 0.05)'
               : isSidebarSelected
                 ? 'rgba(var(--color-accent-primary-rgb), 0.02)'
                 : 'transparent',
-            // Fix: Use box-shadow (inset) for focus border to avoid layout shifts and clipping (right side issue).
             boxShadow: isDragOver
               ? 'inset 0 0 40px rgba(var(--color-accent-primary-rgb), 0.1), inset 0 0 0 1px var(--color-accent-primary)'
               : isSidebarSelected
                 ? 'inset 0 0 0 1px var(--color-accent-primary)'
                 : 'none'
           }}
-          ref={parentRef}
-          tabIndex={0} // Allow focus
-          onBlur={(e) => {
-            // Restore unselect behavior when clicking outside
-            if (!e.currentTarget.contains(e.relatedTarget)) {
-              setSidebarSelected(false)
-            }
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') {
-              e.preventDefault()
-              e.stopPropagation()
-              setSidebarSelected(false)
-              onSelect(null)
-              setSelectedIds([])
-            }
-          }}
+          tabIndex={0}
+          // prettier-ignore
           onClick={(e) => {
-            // Force background selection on any click in this container
-            // that hasn't been stopped by a child.
-
-            if (e.target !== e.currentTarget && e.target.closest('[draggable]')) {
-              return
+            // Background Click Logic: Reset selection if clicking empty space
+            if (e.target === e.currentTarget) {
+              setSidebarSelected(true)
+              setSelectedIds([])
+              onSelect(null)
+              setSelectedFolderId(null)
             }
-
-            setSidebarSelected(true)
-            setSelectedIds([])
-            onSelect(null)
-            setSelectedFolderId(null)
-            if (inputRef.current) inputRef.current.blur()
           }}
-          onContextMenu={(e) => {
-            handleContextMenu(e, 'background', null)
-          }}
+          onContextMenu={(e) => handleContextMenu(e, 'background', null)}
           onDragOver={(e) => {
-            e.preventDefault()
-            e.dataTransfer.dropEffect = 'move'
-            if (!isDragOver) setIsDragOver(true)
-          }}
-          onDragEnter={(e) => {
             e.preventDefault()
             setIsDragOver(true)
           }}
-          onDragLeave={(e) => {
-            // Prevent flickering when dragging over children
-            if (e.currentTarget.contains(e.relatedTarget)) return
-            setIsDragOver(false)
-          }}
+          onDragLeave={() => setIsDragOver(false)}
           onDrop={(e) => {
             e.preventDefault()
             setIsDragOver(false)
@@ -562,50 +495,9 @@ const SnippetSidebar = ({
           }}
         >
           {treeItems.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full px-6 text-center animate-in fade-in zoom-in-95 duration-500">
-              <div className="w-16 h-16 rounded-2xl bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] flex items-center justify-center mb-6 shadow-xl shadow-black/10">
-                {filter ? (
-                  <RefreshCw className="w-6 h-6 text-[var(--color-text-primary)] opacity-20" />
-                ) : (
-                  <Plus className="w-6 h-6 text-[var(--color-text-primary)] opacity-20" />
-                )}
-              </div>
-              <h3 className="text-[14px] font-bold text-[var(--color-text-primary)] opacity-90 mb-2">
-                {filter ? 'No Matches Found' : 'Your Library is Empty'}
-              </h3>
-              <p className="text-[12px] leading-relaxed text-[var(--color-text-secondary)] opacity-50 mb-8 max-w-[200px] mx-auto">
-                {filter
-                  ? `We couldn't find any snippets matching "${filter}".`
-                  : 'Start organizing your knowledge by creating your first snippet or folder.'}
-              </p>
-              <div className="flex flex-col gap-2 w-full max-w-[160px]">
-                {filter ? (
-                  <button
-                    onClick={() => {
-                      setFilter('')
-                      onSearch('')
-                    }}
-                    className="w-full py-2 px-4 rounded-lg bg-[var(--color-bg-tertiary)] hover:brightness-110 text-[var(--color-text-primary)] text-[11px] font-medium transition-all border border-[var(--color-border)]"
-                  >
-                    Clear Search
-                  </button>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => onNew()}
-                      className="w-full py-2 px-4 rounded-lg bg-[var(--color-accent-primary)] hover:opacity-90 text-[11px] font-bold text-white transition-all shadow-lg shadow-[var(--color-accent-primary)]/20"
-                    >
-                      Create Snippet
-                    </button>
-                    <button
-                      onClick={() => startCreation('folder')}
-                      className="w-full py-2 px-4 rounded-lg bg-[var(--color-bg-tertiary)] hover:brightness-110 text-[var(--color-text-primary)] text-[11px] font-medium transition-all border border-[var(--color-border)]"
-                    >
-                      New Folder
-                    </button>
-                  </>
-                )}
-              </div>
+            <div className="flex flex-col items-center justify-center h-full px-6 text-center animate-in fade-in duration-500">
+              <Plus className="w-12 h-12 text-[var(--color-text-primary)] opacity-10 mb-4" />
+              <p className="text-[12px] opacity-40">Nothing found in library.</p>
             </div>
           ) : (
             <VirtualList
@@ -614,10 +506,7 @@ const SnippetSidebar = ({
               width="100%"
               itemCount={treeItems.length}
               itemSize={isCompact ? 24 : 30}
-              overscan={15} // Explicitly set overscan to 15
-              // The GPU promotion style should be applied to the individual rows (SnippetSidebarRow),
-              // not the VirtualList container itself.
-              // This style is passed down to SnippetSidebarRow via itemData.
+              overscan={15}
               itemData={itemData}
             >
               {SnippetSidebarRow}
@@ -626,6 +515,7 @@ const SnippetSidebar = ({
         </div>
       </SidebarBody>
 
+      {/* CONTEXT MENU OVERLAY */}
       {contextMenu && (
         <ContextMenu
           x={contextMenu.x}
@@ -642,7 +532,6 @@ SnippetSidebar.propTypes = {
   snippets: PropTypes.array.isRequired,
   folders: PropTypes.array,
   selectedSnippet: PropTypes.object,
-  selectedFolderId: PropTypes.string,
   onSelect: PropTypes.func.isRequired,
   onNew: PropTypes.func.isRequired,
   onNewFolder: PropTypes.func,
@@ -655,16 +544,17 @@ SnippetSidebar.propTypes = {
   onDeleteBulk: PropTypes.func,
   onTogglePin: PropTypes.func,
   onToggleFavorite: PropTypes.func,
-  selectedIds: PropTypes.array,
   isOpen: PropTypes.bool,
   onToggle: PropTypes.func,
   isCompact: PropTypes.bool,
   showToast: PropTypes.func,
-  // Clipboard operations
   onCopy: PropTypes.func,
   onCut: PropTypes.func,
   onPaste: PropTypes.func,
-  onSelectAll: PropTypes.func
+  onSelectAll: PropTypes.func,
+  dirtyIds: PropTypes.instanceOf(Set),
+  onInlineRename: PropTypes.func,
+  isSearching: PropTypes.bool
 }
 
 export default React.memo(SnippetSidebar)

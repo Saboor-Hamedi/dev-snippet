@@ -45,7 +45,8 @@ const Header = ({
   isZenFocus,
   onToggleZenFocus,
   actions, // New: slot for custom view-specific buttons (Right)
-  centerActions // New: slot for central search/controls
+  centerActions, // New: slot for central search/controls
+  isDirty // New: show yellow dot for unsaved changes
 }) => {
   const isMobile = window.innerWidth <= 768
   const activityBarWidth = 48 // Match Workbench
@@ -190,6 +191,10 @@ const Header = ({
                       ? displayTitle.replace(/\.[^/.]+$/, '')
                       : 'Untitled'}
                   </span>
+                  {/* Dirty Dot (Yellow) */}
+                  {isDirty && (
+                    <div className="flex-shrink-0 w-2 h-2 rounded-full bg-yellow-400 shadow-[0_0_8px_rgba(234,179,8,0.6)] animate-pulse" />
+                  )}
                   {/* Favorite star next to tab title if present */}
                   {typeof isFavorited !== 'undefined' && isFavorited && (
                     <Star

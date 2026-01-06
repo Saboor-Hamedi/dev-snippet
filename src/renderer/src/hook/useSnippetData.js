@@ -18,7 +18,7 @@ export const useSnippetData = () => {
   // 2. Logic Injection from Sub-hooks
   const folderOps = useFolderData(showToast, folders, setFolders, setSnippets, setTrash)
   const trashOps = useTrashData(showToast, trash, setTrash, setSnippets, setFolders)
-  const { searchSnippetList } = useSearchLogic(setSnippets)
+  const { searchSnippetList } = useSearchLogic()
 
   // 3. Snippet-Specific Logic (Kept in main hook for now as it's the core focus)
   const setSelectedSnippet = async (item) => {
@@ -92,49 +92,58 @@ export const useSnippetData = () => {
     }
   }, [loadData])
 
-  const saveSnippet = async (snippet, options = {}) => {
-    try {
-      let snippetToNormalize = { ...snippet }
-      if (
-        snippetToNormalize &&
-        snippetToNormalize.id &&
-        typeof snippetToNormalize.code === 'undefined'
-      ) {
-        try {
-          if (window.api?.getSnippetById) {
-            const existing = await window.api.getSnippetById(snippetToNormalize.id)
-            if (existing && typeof existing.code !== 'undefined') {
-              snippetToNormalize.code = existing.code
+  const saveSnippet = useCallback(
+    async (snippet, options = {}) => {
+      try {
+        let snippetToNormalize = { ...snippet }
+        if (
+          snippetToNormalize &&
+          snippetToNormalize.id &&
+          typeof snippetToNormalize.code === 'undefined'
+        ) {
+          try {
+            if (window.api?.getSnippetById) {
+              const existing = await window.api.getSnippetById(snippetToNormalize.id)
+              if (existing && typeof existing.code !== 'undefined') {
+                snippetToNormalize.code = existing.code
+              }
             }
-          }
-        } catch (err) {}
-      }
+          } catch (err) {}
+        }
 
-      const payload = normalizeSnippet(snippetToNormalize)
-      await window.api.saveSnippet(payload)
+        const payload = normalizeSnippet(snippetToNormalize)
+        await window.api.saveSnippet(payload)
 
-      setSnippets((prev) => {
-        const exists = prev.some((s) => s.id === payload.id)
+        // Metadata for the sidebar list
         // eslint-disable-next-line no-unused-vars
         const { code, ...metadataOnly } = payload
-        return exists
-          ? prev.map((s) => (s.id === payload.id ? { ...s, ...metadataOnly } : s))
-          : [metadataOnly, ...prev]
-      })
 
-      if (!options.skipSelectedUpdate) {
-        if (selectedSnippet && selectedSnippet.id === payload.id) {
-          setSelectedSnippetState(payload)
+        setSnippets((prev) => {
+          const exists = prev.some((s) => s.id === payload.id)
+          return exists
+            ? prev.map((s) => (s.id === payload.id ? { ...s, ...metadataOnly } : s))
+            : [metadataOnly, ...prev]
+        })
+
+        if (!options.skipSelectedUpdate) {
+          setSelectedSnippetState((current) => {
+            // Even if IDs match, we want a fresh object to trigger re-renders
+            if (current && current.id === payload.id) {
+              return { ...current, ...payload }
+            }
+            return current
+          })
         }
+        showToast('✓ Snippet saved successfully')
+      } catch (error) {
+        if (!error.message?.includes('DUPLICATE')) {
+          showToast('❌ Failed to save snippet')
+        }
+        throw error
       }
-      showToast('✓ Snippet saved successfully')
-    } catch (error) {
-      if (!error.message?.includes('DUPLICATE')) {
-        showToast('❌ Failed to save snippet')
-      }
-      throw error
-    }
-  }
+    },
+    [showToast]
+  )
 
   const deleteItem = async (id) => {
     try {

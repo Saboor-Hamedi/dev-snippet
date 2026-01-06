@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useKeyboardShortcuts } from '../../../features/keyboard/useKeyboardShortcuts'
 import { useModal } from './ModalContext'
 import { useView } from '../../../context/ViewContext'
+import { useSidebarStore } from '../../../store/useSidebarStore'
 
 const KeyboardHandler = ({
   selectedSnippet,
@@ -112,20 +113,42 @@ const KeyboardHandler = ({
     },
 
     onRenameSnippet: () => {
+      const { selectedIds, setEditingId } = useSidebarStore.getState()
+      
+      // If we have a single item selected in the sidebar, trigger inline renaming
+      if (selectedIds.length === 1) {
+        setEditingId(selectedIds[0])
+        return
+      }
+
+      // Fallback: Rename via modal if in editor or list view without specific sidebar focus
       if (selectedSnippet && (activeView === 'snippets' || activeView === 'editor')) {
         handleRename()
       }
     },
 
     onDeleteSnippet: () => {
-      if (selectedSnippet) {
-        // Silently ignore delete for system files
-        if (
-          selectedSnippet.id === 'system:settings' ||
-          selectedSnippet.id === 'system:default-settings'
-        )
-          return
+      const { selectedIds, selectedFolderId } = useSidebarStore.getState()
+      
+      // Multi-select or Folder-select delete
+      if (selectedIds.length > 0 || selectedFolderId) {
+        // We'll let the existing delete logic in SnippetLibraryInner handle it via events
+        // or we can call openDeleteModal directly here if we have access to IDs
+        const idsToDelete = selectedIds.length > 0 ? selectedIds : [selectedFolderId]
+        
+        // Skip system files
+        const filteredIds = idsToDelete.filter(id => id !== 'system:settings' && id !== 'system:default-settings')
+        if (filteredIds.length === 0) return
 
+        openDeleteModal(filteredIds, async (ids) => {
+          // Dispatch a custom event that SnippetLibraryInner listens to for bulk delete
+          window.dispatchEvent(new CustomEvent('app:command-bulk-delete', { detail: { ids } }))
+        })
+        return
+      }
+
+      if (selectedSnippet) {
+        if (selectedSnippet.id === 'system:settings' || selectedSnippet.id === 'system:default-settings') return
         openDeleteModal(selectedSnippet.id, async (id) => {
           await deleteItem(id)
         })
