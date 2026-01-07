@@ -18,7 +18,9 @@ import {
   Maximize2,
   Minimize2,
   Maximize,
-  Minimize
+  Minimize,
+  Star,
+  Pin
 } from 'lucide-react'
 import AutosaveIndicator from '../layout/Header/AutosaveIndicator'
 
@@ -33,6 +35,11 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
   const [isZenFocused, setIsZenFocused] = useState(false)
   const [isStationMaximized, setIsStationMaximized] = useState(false)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  
+  // Create a derived version of the snippet to ensure we have the latest state (e.g. is_favorite toggle)
+  const latestSnippet = useMemo(() => {
+    return snippets?.find((s) => s.id === selectedSnippet?.id) || selectedSnippet
+  }, [snippets, selectedSnippet])
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768)
@@ -110,11 +117,11 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
   }, [isStationMaximized])
 
   const fileName = useMemo(() => {
-    if (!selectedSnippet?.title) return 'UNTITLED_STATION'
-    const parts = selectedSnippet.title.split('.')
-    const name = parts.length > 1 ? parts.slice(0, -1).join('.') : selectedSnippet.title
+    if (!latestSnippet?.title) return 'UNTITLED_STATION'
+    const parts = latestSnippet.title.split('.')
+    const name = parts.length > 1 ? parts.slice(0, -1).join('.') : latestSnippet.title
     return name.toUpperCase()
-  }, [selectedSnippet?.title])
+  }, [latestSnippet?.title])
 
   const stats = useMemo(() => {
     const chars = liveCode.length
@@ -173,6 +180,12 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
         <div className="hidden md:flex items-center gap-3">
           <div className="flex items-center gap-3 opacity-60">
             <Activity size={10} className="text-[var(--color-accent-primary)]" />
+            {latestSnippet?.is_favorite ? (
+              <Star size={10} className="text-yellow-500 fill-yellow-500" />
+            ) : null}
+            {latestSnippet?.is_pinned ? (
+              <Pin size={10} className="text-blue-400 fill-blue-400/20" />
+            ) : null}
             <span
               className="text-[10px] font-bold tracking-[0.2em] uppercase"
               style={{ color: 'var(--color-text-secondary)' }}

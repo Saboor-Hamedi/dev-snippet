@@ -37,7 +37,7 @@ const KnowledgeGraphModal = ({ isOpen, onClose, snippets, onSelectSnippet }) => 
       headerHeight={40}
       hideHeaderBorder={false} // border color , in the buttom
       hideBorder={true}
-      allowMaximize={false}
+      allowMaximize={true}
       noTab={true}
       noRadius={true}
       headerContent={

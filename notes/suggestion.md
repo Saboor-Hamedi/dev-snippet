@@ -483,6 +483,64 @@ graph TD
 - ✅ **Maintainability**: Selection logic is centralized, making it easier to debug selection bugs.
 
 ---
+---
+
+## ✅ SOLVED: Flow Mode Polish & Interactive Indicators
+
+### The Challenge/Request
+
+1. **Missing Status**: Users in Flow Mode (Zen) lost visibility of critical statuses like "Favorite" or "Pinned".
+2. **Hidden Controls**: The `EditorModeSwitcher` artificially hid the Favorite/Pin/Export buttons in Flow Mode, forcing users to exit the mode to toggle them.
+3. **Visual Cramping**: The toolbar buttons were too close together.
+
+### The Solution
+
+- **Live Header Indicators**: Added dynamic Star (Favorite) and Pin (Pinned) icons to the Flow Workspace header. These use real-time derived state (`latestSnippet`) to ensure instant updates without reload.
+- **Unlocked Controls**: Removed the `!isFlow` restriction from the Editor Mode Switcher, making these controls accessible in all view modes.
+- **Refined Layout**: Added a consistent `3px` gap to the switcher toolbar for better clickability and aesthetics.
+
+### Result
+
+- ✅ **Immediate Feedback**: Users can see and toggle snippet states instantly while in Flow Mode.
+- ✅ **Seamless Workflow**: No need to exit Flow Mode to "Pin" a thought.
+
+---
+
+## ✅ SOLVED: Documentation "Reading Mode"
+
+### The Challenge
+
+Documentation snippets (`doc:manual`) were displaying unnecessary editor UI components like the Title Input, Tags, and Mode Switcher, cluttering the reading experience.
+
+### The Solution
+
+- **Context-Aware Hiding**: Implemented strict conditional rendering (`!isReadOnly`) in `SnippetEditor.jsx`.
+- **Pure Content**: Hidden the `EditorMetadataHeader` and `EditorModeSwitcher` for read-only documentation.
+- **Cleaned Code**: Removed legacy `EditorMetadata.jsx` files.
+
+### Result
+
+- ✅ **Distraction-Free**: Documentation looks like a native help article, not an editable file.
+
+---
+
+## ✅ SOLVED: Integrated Update System
+
+### The Challenge
+
+The Activity Bar's "Update" button needed to match the robust functionality of the Settings Update Tab.
+
+### The Solution
+
+- **Unified Logic**: Ported the update check, download, and install logic to the Activity Bar's handler.
+- **Safety**: Added timeout guards and error handling to prevent infinite "Checking..." spinners.
+- **Feedback**: Added toast notifications for update errors.
+
+### Result
+
+- ✅ **One-Click Updates**: Users can update the app directly from the sidebar.
+
+---
 
 ## Planned: WikiLink Robustness Phase 2
 

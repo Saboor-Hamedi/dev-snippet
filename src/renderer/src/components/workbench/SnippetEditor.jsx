@@ -718,28 +718,30 @@ const SnippetEditor = ({
               left={
                 <div className="flex flex-col h-full w-full relative">
                   {/* SEAMLESS METADATA HEADER (Obsidian Style) - Absolute & Scrollable */}
-                  <div 
-                    ref={headerRef} 
-                    className="absolute top-0 left-0 right-4 z-10 transition-transform will-change-transform bg-[var(--editor-bg)] pointer-events-none"
-                  >
-                    <div className="pointer-events-auto">
-                      <EditorMetadataHeader
-                        title={title}
-                        setTitle={setTitle}
-                        tags={tags}
-                        setTags={setTags}
-                        currentTagInput={currentTagInput}
-                        setCurrentTagInput={setCurrentTagInput}
-                        isDuplicate={isDuplicate}
-                        initialSnippet={initialSnippet}
-                        onSave={onSave}
-                        code={code}
-                        setIsDirty={setIsDirty}
-                        titleInputRef={titleInputRef}
-                        readOnly={isReadOnly}
-                      />
+                  {!isReadOnly && !initialSnippet?.readOnly && (
+                    <div
+                      ref={headerRef}
+                      className="absolute top-0 left-0 right-4 z-10 transition-transform will-change-transform bg-[var(--editor-bg)] pointer-events-none"
+                    >
+                      <div className="pointer-events-auto">
+                        <EditorMetadataHeader
+                          title={title}
+                          setTitle={setTitle}
+                          tags={tags}
+                          setTags={setTags}
+                          currentTagInput={currentTagInput}
+                          setCurrentTagInput={setCurrentTagInput}
+                          isDuplicate={isDuplicate}
+                          initialSnippet={initialSnippet}
+                          onSave={onSave}
+                          code={code}
+                          setIsDirty={setIsDirty}
+                          titleInputRef={titleInputRef}
+                          readOnly={isReadOnly}
+                        />
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   <div ref={editorContainerRef} className="flex-1 w-full relative flex justify-center min-h-0">
                     <div className="w-full h-full relative">
@@ -838,19 +840,21 @@ const SnippetEditor = ({
               }
             />
 
-            <EditorModeSwitcher
-              isFloating={isFloating}
-              setIsFloating={setIsFloating}
-              switcherRef={switcherRef}
-              dragHandleRef={dragHandleRef}
-              activeMode={activeMode}
-              updateSetting={updateSetting}
-              settings={settings}
-              initialSnippet={initialSnippet}
-              onFavorite={onFavorite}
-              onPing={onPing}
-              isFlow={isFlow}
-            />
+            {!isReadOnly && !initialSnippet?.readOnly && (
+              <EditorModeSwitcher
+                isFloating={isFloating}
+                setIsFloating={setIsFloating}
+                switcherRef={switcherRef}
+                dragHandleRef={dragHandleRef}
+                activeMode={activeMode}
+                updateSetting={updateSetting}
+                settings={settings}
+                initialSnippet={initialSnippet}
+                onFavorite={onFavorite}
+                onPing={onPing}
+                isFlow={isFlow}
+              />
+            )}
           </div>
 
           <StatusBar

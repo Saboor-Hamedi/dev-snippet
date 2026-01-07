@@ -44,7 +44,7 @@ const EditorModeSwitcher = ({
       )}
 
       {/* Action Buttons Group */}
-      <div className="flex items-center">
+      <div className="flex items-center gap-[3px]">
         {/* Pin/Float Toggle - Only show if draggable is enabled */}
         {!disableDraggable && !isLocked && (
           <button
@@ -82,7 +82,7 @@ const EditorModeSwitcher = ({
         <div className="cm-mode-divider"></div>
 
         {/* Action: Image Export */}
-        {!isFlow && onImageExport && (
+        {onImageExport && (
           <button
             className="cm-mode-btn"
             title="Export as Image"
@@ -96,7 +96,7 @@ const EditorModeSwitcher = ({
         )}
 
         {/* Action: Favorite */}
-        {!isFlow && onFavorite && (
+        {onFavorite && (
           <button
             className={`cm-mode-btn ${initialSnippet?.is_favorite ? 'is-active text-yellow-500' : ''}`}
             title={initialSnippet?.is_favorite ? 'Remove from Favorites' : 'Add to Favorites'}
@@ -109,7 +109,7 @@ const EditorModeSwitcher = ({
         )}
 
         {/* Action: Ping (Pin) */}
-        {!isFlow && onPing && (
+        {onPing && (
           <button
             className={`cm-mode-btn ${initialSnippet?.is_pinned ? 'is-active text-blue-400' : ''}`}
             title={initialSnippet?.is_pinned ? 'Unpin from Top' : 'Pin to Top'}
