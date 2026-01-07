@@ -23,17 +23,18 @@
 .snippet-title-input {
   width: 100%;
   font-family: var(--font-family-header, 'Inter', 'Outfit', sans-serif);
-  /* Smaller title: 2x base size instead of 2.5x */
-  font-size: calc(var(--editor-font-size, 13px) * 2);
+  /* Smaller title: 2x base size (fixed to 26px to ignore zoom) -> Updated to 32px for robustness */
+  font-size: 32px;
   font-weight: 800;
   color: var(--color-text-primary) !important;
   /* Use editor background to match theme exactly */
   background-color: var(--editor-bg, var(--color-bg-primary)) !important;
+  caret-color: var(--caret-color, var(--color-accent-primary)) !important;
   border: none !important;
   outline: none !important;
   /* Lock height explicitly to prevent movement */
-  height: calc(var(--editor-font-size, 13px) * 2 * 1.1);
-  line-height: 1.1;
+  height: 42px;
+  line-height: 1.2;
   padding: 0;
   margin: 0;
   letter-spacing: -0.04em;
@@ -175,6 +176,7 @@
   color: var(--color-text-secondary) !important;
   /* Use editor background to match theme exactly */
   background-color: var(--editor-bg, var(--color-bg-primary)) !important;
+  caret-color: var(--caret-color, var(--color-accent-primary)) !important;
   border: none !important;
   outline: none !important;
   padding: 4px 0;

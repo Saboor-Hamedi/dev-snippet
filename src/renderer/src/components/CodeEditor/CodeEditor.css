@@ -47,6 +47,13 @@
   opacity: 1 !important;
 }
 
+/* Fix for 'Double Caret' issue: Hide editor cursor when irrelevant */
+.cm-editor:not(.cm-focused) .cm-cursor,
+.cm-editor:not(.cm-focused) .cm-cursorLayer {
+  display: none !important;
+  visibility: hidden !important;
+}
+
 /* VS CODE STYLE: Active Line Background (Base) */
 /* VS CODE STYLE: Active Line Background (Base) */
 /* VS CODE STYLE: Active Line Background (Base) */

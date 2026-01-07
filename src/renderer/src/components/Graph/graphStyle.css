@@ -24,6 +24,7 @@
 }
 
 /* Nexus Header (Internal Tabs & Actions) - Professional Icon-Only Toolbar */
+/* Nexus Header (Internal Tabs & Actions) - Professional Icon-Only Toolbar */
 .nexus-header-overlay {
   position: absolute;
   top: 16px;
@@ -31,28 +32,32 @@
   z-index: 100;
   display: flex;
   align-items: center;
-  background: rgba(15, 20, 25, 0.85);
-  backdrop-filter: blur(25px) saturate(180%);
-  padding: 4px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgb(var(--color-bg-secondary-rgb));
+  padding: 2px;
+  border-radius: 5px;
+  border: 1px solid var(--color-border);
   gap: 2px;
   width: auto;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.nexus-header-overlay svg {
+  width: 14px !important;
+  height: 14px !important;
 }
 
 .nexus-drag-handle {
-  width: 22px; /* Much larger hit area */
-  height: 32px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: grab;
   opacity: 0.4;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  margin-right: 2px;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 6px 0 0 6px;
+  margin-right: 0;
+  background: transparent;
+  border-radius: 4px;
   pointer-events: auto !important;
 }
 
@@ -67,11 +72,7 @@
 }
 
 .drag-dots {
-  width: 6px;
-  height: 14px;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.6) 1.2px, transparent 1px);
-  background-size: 5px 5px;
-  background-position: center;
+  display: none; /* Use GripVertical in JSX or remove this if logic allows. For now hide dots to match switcher style or keep consistent? Switcher uses GripVertical icon. I will fix JSX too. */
 }
 
 @keyframes toolbarFadeIn {
@@ -93,9 +94,9 @@
 
 .nexus-divider {
   width: 1px;
-  height: 16px;
-  background: rgba(255, 255, 255, 0.15);
-  margin: 0 8px;
+  height: 18px;
+  background: var(--color-border);
+  margin: 0 4px;
 }
 
 .nexus-search-group {
@@ -104,7 +105,7 @@
   background: rgba(255, 255, 255, 0.05);
   border-radius: 6px;
   padding: 0 10px;
-  height: 32px;
+  height: 28px; 
   width: 140px;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   border: 1px solid transparent;
@@ -144,13 +145,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   padding: 0;
   border: none;
   background: transparent;
   color: var(--color-text-tertiary);
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
   flex-shrink: 0;
@@ -170,10 +171,9 @@
   color: white;
 }
 
-/* Action buttons (Refresh/Magic) - Square & Precise */
 .nexus-tab:has(svg:only-child) {
-  width: 30px;
-  min-width: 30px;
+  width: 28px;
+  min-width: 28px;
   padding: 0;
 }
 /* Insight Card */

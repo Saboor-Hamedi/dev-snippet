@@ -19,9 +19,17 @@
   z-index: 50 !important;
 }
 
+/* NUCLEAR OPTION: Force square corners everywhere for this modal */
+.knowledge-graph-modal-wrapper,
+.knowledge-graph-modal-wrapper .universal-modal-window,
+.knowledge-graph-modal-wrapper .universal-modal-content {
+  border-radius: 0 !important;
+}
+
 /* Ensure the graph container takes full space */
 .knowledge-graph-modal-wrapper .knowledge-graph-container {
   border-radius: 0 !important;
+ 
 }
 
 /* Header Content Alignment */
@@ -39,7 +47,7 @@
   height: 40px !important;
   min-height: 40px !important;
   max-height: 40px !important;
-  padding: 0 8px;
+  padding: 0 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
@@ -62,6 +70,13 @@
   flex-shrink: 0;
   display: flex;
   align-items: center;
+  margin-right: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* Totally remove the margin from the right  */
+.knowledge-graph-modal-wrapper .universal-modal-controls > *:last-child {
+  margin-right: 0 !important;
 }
 
 .knowledge-graph-modal-wrapper .universal-modal-title {

@@ -167,7 +167,7 @@ const EditorModeSwitcher = ({
             }}
           >
             {m.icon}
-            <span>{m.label}</span>
+            {/* <span>{m.label}</span> */}
           </button>
         ))}
       </div>

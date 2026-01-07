@@ -10,7 +10,8 @@ import {
   Focus,
   Atom,
   Sparkles,
-  ExternalLink
+  ExternalLink,
+  GripVertical
 } from 'lucide-react'
 import { forceRadial, forceManyBody } from 'd3-force'
 import { buildGraphData, filterGraphData, generateRandomGraphTheme } from './GraphLogic'
@@ -321,12 +322,13 @@ const KnowledgeGraph = ({
       const isHovered = hoverNode === node
       const colors = resolvedColors
 
-      // WikiLink status - nodes with links get special highlighting
+      const isGhost = node.type === 'ghost'
       const isLinked = (node.count || 0) > 0
       const isBigHub = node.count >= 3
 
       let nodeColor = colors.secondary
-      if (isSelected) nodeColor = colors.moon
+      if (isGhost) nodeColor = colors.secondary // will be dimmed by opacity
+      else if (isSelected) nodeColor = colors.moon
       else if (isBigHub)
         nodeColor = colors.central // Major hubs
       else if (isLinked)
@@ -340,9 +342,10 @@ const KnowledgeGraph = ({
       // In Neighborhood mode, reduce selected node size for better cluster view
       const selectedMult = activeMode === 'neighborhood' ? 1.7 : 2.2
       const baseMult = isSelected ? selectedMult : isBigHub ? 1.8 : isLinked ? 1.3 : 1.1
-      const size = node.val * baseMult
+      // Ghost nodes are slightly smaller
+      const size = node.val * (isGhost ? 0.8 : baseMult)
 
-      const hasShadow = isSelected || isHovered || isBigHub
+      const hasShadow = !isGhost && (isSelected || isHovered || isBigHub)
       if (hasShadow) {
         ctx.shadowColor = nodeColor
         ctx.shadowBlur = (isSelected || isHovered ? 15 : isBigHub ? 8 : 4) / globalScale
@@ -350,25 +353,42 @@ const KnowledgeGraph = ({
         ctx.shadowOffsetY = 0
       }
 
-      // 2. Subtle Outer Ring for depth
-      ctx.beginPath()
-      ctx.arc(node.x, node.y, size + 0.8 / globalScale, 0, 2 * Math.PI, false)
-      ctx.fillStyle = isSelected
-        ? 'rgba(255,255,255,0.15)'
-        : isLinked
-          ? 'rgba(255,255,255,0.06)'
-          : 'rgba(255,255,255,0.03)'
-      ctx.fill()
+      // 2. Subtle Outer Ring for depth (skip for ghosts)
+      if (!isGhost) {
+        ctx.beginPath()
+        ctx.arc(node.x, node.y, size + 0.8 / globalScale, 0, 2 * Math.PI, false)
+        ctx.fillStyle = isSelected
+          ? 'rgba(255,255,255,0.15)'
+          : isLinked
+            ? 'rgba(255,255,255,0.06)'
+            : 'rgba(255,255,255,0.03)'
+        ctx.fill()
+      }
 
       // 3. Main Node Body - Smooth and organic
       ctx.beginPath()
       ctx.arc(node.x, node.y, size, 0, 2 * Math.PI, false)
       ctx.fillStyle = nodeColor
-      ctx.fill()
+      
+      if (isGhost) {
+        ctx.globalAlpha = 0.3
+        ctx.fill()
+        ctx.globalAlpha = 1
+        
+        // Dashed border for ghosts
+        ctx.lineWidth = 1 / globalScale
+        ctx.setLineDash([3 / globalScale, 2 / globalScale])
+        ctx.strokeStyle = colors.secondary
+        ctx.stroke()
+        ctx.setLineDash([])
+      } else {
+        ctx.fill()
+      }
 
-      // 4. Inner highlight for 3D effect
+      // 4. Inner highlight for 3D effect (skip for ghosts)
       if (
-        (isBigHub || isSelected || isLinked) &&
+        !isGhost &&
+        (isBigHub || isSelected || isLinked) && 
         isFinite(node.x) &&
         isFinite(node.y) &&
         isFinite(size)
@@ -463,8 +483,10 @@ const KnowledgeGraph = ({
             backgroundColor="transparent"
             onNodeClick={(node) => {
               setSelectedNode(node)
-              // We still allow external selection if needed, but local selection drives the UI
-              // onSelectSnippet({ id: node.id, title: node.title })
+              // Navigate immediately to the snippet
+              if (node.type !== 'ghost') {
+                onSelectSnippet({ id: node.id, title: node.title })
+              }
             }}
             onNodeHover={handleNodeHover}
             onBackgroundClick={() => setSelectedNode(null)}
@@ -478,6 +500,8 @@ const KnowledgeGraph = ({
             warmupTicks={50}
             // Link Visuals - Living, flowing connections (theme-adaptive)
             linkWidth={1.5}
+            linkDirectionalArrowLength={3.5}
+            linkDirectionalArrowRelPos={1}
             linkColor={() => {
               const baseColor = graphTheme.secondary || '#6b7280'
               // Extract RGB and add opacity for visibility on all themes
@@ -513,7 +537,7 @@ const KnowledgeGraph = ({
         {/* Nexus Header Tabs & Actions - Moved AFTER viewport for better stacking */}
         <div className="nexus-header-overlay" ref={toolbarRef}>
           <div className="nexus-drag-handle" ref={toolbarHandleRef} title="Drag to move toolbar">
-            <div className="drag-dots"></div>
+            <GripVertical size={14} />
           </div>
           <div className="nexus-group">
             <button
@@ -521,21 +545,21 @@ const KnowledgeGraph = ({
               onClick={() => setActiveMode('universe')}
               title="Universe: Radial Chronology"
             >
-              <Globe size={18} />
+              <Globe />
             </button>
             <button
               className={`nexus-tab ${activeMode === 'neighborhood' ? 'active' : ''}`}
               onClick={() => setActiveMode('neighborhood')}
               title="Neighborhood: Local Context"
             >
-              <Focus size={18} />
+              <Focus />
             </button>
             <button
               className={`nexus-tab ${activeMode === 'orb' ? 'active' : ''}`}
               onClick={() => setActiveMode('orb')}
               title="The Orb: Cinematic Focus"
             >
-              <Atom size={18} />
+              <Atom />
             </button>
           </div>
 
@@ -550,7 +574,7 @@ const KnowledgeGraph = ({
               }}
               title="Zoom In"
             >
-              <Plus size={18} />
+              <Plus />
             </button>
             <button
               className="nexus-tab"
@@ -560,14 +584,14 @@ const KnowledgeGraph = ({
               }}
               title="Zoom Out"
             >
-              <Minus size={18} />
+              <Minus />
             </button>
             <button
               className="nexus-tab"
               onClick={() => graphRef.current?.zoomToFit(600, 100)}
               title="Fit to View"
             >
-              <Maximize2 size={18} />
+              <Maximize2 />
             </button>
           </div>
 
@@ -575,7 +599,7 @@ const KnowledgeGraph = ({
 
           <div className="nexus-group">
             <button className="nexus-tab" onClick={fetchData} title="Refresh Knowledge Graph">
-              <RefreshCw size={18} />
+              <RefreshCw />
             </button>
             <button
               className="nexus-tab"
@@ -585,7 +609,7 @@ const KnowledgeGraph = ({
               }}
               title="Magic Colors: Generate Random Theme"
             >
-              <Sparkles size={18} />
+              <Sparkles />
             </button>
           </div>
         </div>

@@ -28,19 +28,20 @@ const KnowledgeGraphModal = ({ isOpen, onClose, snippets, onSelectSnippet }) => 
           <Share2 size={14} className="text-[var(--color-accent-primary)]" />
         </>
       }
-      width="96vw"
-      height="94vh"
+      width="80vw"
+      height="70vh"
       noOverlay={false}
       resetPosition={false}
-      customKey="knowledge_graph_modal"
+      customKey="knowledge_graph_modal_v2"
       className="knowledge-graph-modal-wrapper no-padding"
       headerHeight={40}
-      hideHeaderBorder={true}
+      hideHeaderBorder={false} // border color , in the buttom
+      hideBorder={true}
       allowMaximize={false}
       noTab={true}
       noRadius={true}
       headerContent={
-        <div className="nexus-modal-header-search no-drag">
+        <div className="nexus-modal-header-search no-drag ">
           <div
             className="nexus-header-search-group no-drag"
             onClick={(e) => {
@@ -50,7 +51,7 @@ const KnowledgeGraphModal = ({ isOpen, onClose, snippets, onSelectSnippet }) => 
             onMouseDown={(e) => e.stopPropagation()}
             onDoubleClick={(e) => e.stopPropagation()}
           >
-            <Search size={14} className="nexus-header-search-icon" />
+            <Search size={14} className="nexus-header-search-icon " />
             <input
               ref={searchInputRef}
               type="text"

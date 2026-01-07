@@ -47,22 +47,35 @@ export const buildGraphData = (snippets) => {
 
     while ((match = WIKILINK_REGEX.exec(content)) !== null) {
       const targetTitle = match[1].trim().toLowerCase()
+      let targetNode = nodesMap.get(targetTitle)
 
-      // We only link to nodes that exist in our snippet library
-      if (nodesMap.has(targetTitle)) {
-        const targetNode = nodesMap.get(targetTitle)
+      // Create "Ghost Node" if target doesn't exist
+      if (!targetNode && targetTitle) {
+        targetNode = {
+          id: `ghost-${targetTitle}`,
+          title: match[1].trim(), // Keep original case for display
+          type: 'ghost',
+          language: 'markdown',
+          isPinned: false,
+          isFavorite: false,
+          count: 0,
+          val: 0.5 // Smaller default size for ghosts
+        }
+        nodesMap.set(targetTitle, targetNode)
+      }
 
+      if (targetNode) {
         // Avoid self-links for the graph visuals
         if (sourceTitle !== targetTitle) {
           links.push({
-            source: snippet.id, // We use IDs for stability in force-directed engines
+            source: snippet.id,
             target: targetNode.id,
             type: 'wikilink'
           })
 
           // Increase connectivity metrics
           if (sourceNode) sourceNode.count++
-          if (targetNode) targetNode.count++
+          targetNode.count++
         }
       }
     }

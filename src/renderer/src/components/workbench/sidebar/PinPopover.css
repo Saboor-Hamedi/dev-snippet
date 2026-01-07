@@ -183,6 +183,11 @@
   user-select: none;
 }
 
+.cm-editor-mode-switcher svg {
+  width: 14px !important;
+  height: 14px !important;
+}
+
 /* Consolidated Light Theme Overrides for Mode Switcher */
 [data-theme='polaris'] .cm-editor-mode-switcher,
 [data-theme='latte'] .cm-editor-mode-switcher,
@@ -267,8 +272,8 @@
   display: flex !important;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  width: 75px;
+  gap: 0;
+  width: 28px;
   height: 28px;
   border-radius: 4px;
   border: none !important;

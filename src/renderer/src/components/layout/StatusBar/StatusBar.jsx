@@ -207,16 +207,7 @@ const StatusBar = ({
             showChars={showChars}
           />
 
-          {!minimal && showLanguage && (
-            <div
-              className="status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer flex"
-              title="Select Language Mode"
-            >
-              <span className="font-mono text-xtiny uppercase tracking-wider">
-                {title?.split('.').pop() || 'TXT'}
-              </span>
-            </div>
-          )}
+
 
           {!minimal && showZoom && displayEditorZoom && (
             <div className="relative group/zoom">

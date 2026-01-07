@@ -274,10 +274,25 @@ const SnippetEditor = ({
   // Auto-focus title input when creating new snippet
   useEffect(() => {
     if (isCreateMode && titleInputRef.current) {
-      setTimeout(() => {
-        titleInputRef.current?.focus()
-        titleInputRef.current?.select()
-      }, 100)
+      const enforceTitleFocus = () => {
+        // Aggressively blur editor to prevent focus stealing
+        const cm = document.querySelector('.cm-content')
+        if (cm) cm.blur()
+        
+        if (titleInputRef.current) {
+          titleInputRef.current.focus({ preventScroll: true })
+          titleInputRef.current.select()
+        }
+      }
+
+      // 1. Immediate
+      enforceTitleFocus()
+      
+      // 2. Post-Render/Layout
+      setTimeout(enforceTitleFocus, 50)
+      
+      // 3. Post-Animation/Mount
+      setTimeout(enforceTitleFocus, 300)
     }
   }, [isCreateMode])
 
@@ -516,8 +531,7 @@ const SnippetEditor = ({
 
       // Check if this is a genuine external update (e.g. sidebar rename)
       setTitle(initialSnippet.title.replace(/\.md$/i, ''))
-      setJustRenamed(true)
-      setTimeout(() => setJustRenamed(false), 1000)
+      // Removed focus stealing to prevent scroll jumps on save
     }
   }, [initialSnippet?.title])
 
@@ -728,7 +742,7 @@ const SnippetEditor = ({
                         wordWrap={wordWrap}
                         theme={currentTheme}
                         centered={true}
-                        autoFocus={initialSnippet?.id !== 'system:settings'}
+                        autoFocus={!isCreateMode && initialSnippet?.id !== 'system:settings'}
                         snippetId={initialSnippet?.id}
                         readOnly={initialSnippet?.readOnly || false}
                         onChange={handleCodeChange}
