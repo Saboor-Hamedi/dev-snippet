@@ -28,7 +28,7 @@ export const useEditorExport = ({
 
       return generatePreviewHtml({
         code,
-        title: title || 'Untitled Snippet',
+        title: title || 'Untitled',
         theme: currentTheme,
         existingTitles,
         isMarkdown,

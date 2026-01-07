@@ -280,15 +280,16 @@ const Workbench = ({
   const getHeaderTitle = () => {
     switch (activeView) {
       case 'editor':
-        return selectedSnippet?.title || 'New Snippet'
+        // FIX: Prioritize actual title even if untyped to avoid " - Quick Snippets" glitch
+        return selectedSnippet?.title || 'Untitled'
       case 'snippets':
-        return selectedSnippet?.title || 'Quick Snippets'
+        return selectedSnippet?.title || 'Dev Snippet'
       case 'welcome':
-        return 'Welcome'
+        return 'Dev Snippet'
       case 'graph':
         return 'Knowledge Graph'
       default:
-        return 'Quick Snippets'
+        return 'Dev Snippet'
     }
   }
 

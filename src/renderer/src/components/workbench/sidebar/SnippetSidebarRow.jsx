@@ -152,7 +152,7 @@ const CreationInputRow = ({
       safe = safe.replace(/[:/\\|]/g, '-') // Swap separators for dashes
       safe = safe.trim()
 
-      if (!safe) safe = isFolder ? 'Untitled Folder' : 'Untitled Snippet'
+      if (!safe) safe = isFolder ? 'Untitled Folder' : 'Untitled'
       onConfirm(safe, itemData.type, itemData.parentId)
     } else if (e.key === 'Escape') {
       e.preventDefault()

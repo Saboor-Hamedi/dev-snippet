@@ -22,7 +22,7 @@ import PerformanceBarrier from '../universal/PerformanceBarrier/PerformanceBarri
 
 // Extracted Editor Hooks & Components
 import { useEditorState } from './editor/useEditorState'
-import { useWikiLinks } from './editor/useWikiLinks'
+// import { useWikiLinks } from './editor/useWikiLinks' // REMOVED: Redundant
 import { useEditorExport } from './editor/useEditorExport'
 import { useEditorSave } from './editor/useEditorSave'
 import EditorMetadataHeader from './editor/EditorMetadataHeader'
@@ -184,17 +184,9 @@ const SnippetEditor = ({
     handleOpenMiniPreview
   } = editorExport
 
-  // WikiLink Logic Hook
-  useWikiLinks({
-    snippets,
-    handleSelectSnippet: (s) => window.dispatchEvent(new CustomEvent('app:open-snippet', { detail: { title: s.title } })),
-    createDraftSnippet: (title, folderId) => ({ title, folder_id: folderId, code: '', tags: [], is_draft: true }),
-    saveSnippet: onSave,
-    setSelectedSnippet: () => {}, // Handled by library
-    navigateTo: () => {}, // Handled by library
-    showToast
-  })
-
+  // WikiLink Logic: Handled entirely by SnippetLibraryInner (global listener)
+  // Removing redundant listener here to prevent recursive loop 'Maximum call stack size exceeded'
+  
   const { handleTriggerCloseCheck } = useEditorCloseCheck({
     isDirty,
     setIsDirty,
@@ -268,6 +260,7 @@ const SnippetEditor = ({
   }, [onToggleCompact])
 
   const onEditorScroll = useCallback((scrollTop) => {
+    // Header is now Absolute (Sticky-Simulated), so we transform it to move with scroll
     if (headerRef.current) {
       headerRef.current.style.transform = `translateY(-${scrollTop}px)`
     }

@@ -13,6 +13,7 @@ const KnowledgeGraphModal = lazy(() => import('../../Graph/KnowledgeGraphModal')
 const AIPilotModal = lazy(() => import('../../AI/AIPilotModal'))
 
 import { ModalContext } from './ModalContext'
+import { sanitizeTitle } from '../../../utils/snippetUtils'
 
 // Loading fallback component
 const ModalLoader = () => (
@@ -252,7 +253,7 @@ export const ModalProvider = ({
             confirmLabel="Confirm"
             showInput={true}
             inputValue={promptInputValue}
-            onInputChange={setPromptInputValue}
+            onInputChange={(val) => setPromptInputValue(sanitizeTitle(val))}
             placeholder="Enter name..."
             onClose={() => setRenameModal((prev) => ({ ...prev, isOpen: false }))}
             onConfirm={(newName) => {
@@ -261,6 +262,7 @@ export const ModalProvider = ({
             }}
           />
         )}
+      
 
         {deleteModal.isOpen && (
           <Prompt

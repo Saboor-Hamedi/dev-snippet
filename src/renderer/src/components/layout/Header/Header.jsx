@@ -85,11 +85,10 @@ const Header = ({
   }, [])
 
   const displayTitle = (() => {
-    if (snippetTitle && title) {
-      if (snippetTitle === title) return snippetTitle
-      return `${snippetTitle} - ${title}`
-    }
-    return title || snippetTitle || 'Untitled'
+    // Priority: snippetTitle (from prop) > title (from prop) > 'Dev Snippet'
+    if (snippetTitle) return snippetTitle
+    if (title && title !== 'Quick Snippets') return title
+    return 'Dev Snippet'
   })()
 
   return (
@@ -234,6 +233,7 @@ const Header = ({
                     text-[var(--header-text, var(--color-text-primary))]
                     transition-all
                     flex items-center justify-center
+                    focus:outline-none outline-none
                   "
                 >
                   <X size={14} className="opacity-100" />
@@ -245,7 +245,7 @@ const Header = ({
             ) : (
               <div className="flex items-center h-full pb-1 pl-4 opacity-60">
                 <span className="text-[12px] font-medium">
-                  {typeof displayTitle === 'string' ? displayTitle : 'Quick Snippets'}
+                  {typeof displayTitle === 'string' ? displayTitle : 'Dev Snippet'}
                 </span>
               </div>
             )}

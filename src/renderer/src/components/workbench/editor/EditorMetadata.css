@@ -3,12 +3,11 @@
   border: none;
   /* Use editor background to match theme exactly */
   background-color: var(--editor-bg, var(--color-bg-primary)) !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Keep transform for scroll, kill bg transition */
   z-index: 10;
   width: 100%;
   /* Add gap between metadata and editor */
-  /* margin-bottom: 0px; */
-  background: red !important;
+  margin-bottom: 24px;
 }
 
 .metadata-inner {

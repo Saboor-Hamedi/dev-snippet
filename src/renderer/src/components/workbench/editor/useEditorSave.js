@@ -43,7 +43,7 @@ export const useEditorSave = ({
         const id = initialSnippet?.id
         if (!id) return
 
-        // DISCARD PROTECTION: Don't autosave if it's a brand new untitled snippet with no content
+        // DISCARD PROTECTION: Don't autosave if it's a brand new Untitled with no content
         const isUntitled = !title || title.toLowerCase() === 'untitled'
         const hasNoContent = !code || code.trim() === ''
         if (isUntitled && hasNoContent && initialSnippet?.is_draft) {

@@ -136,3 +136,16 @@ export const getUniqueTitle = (baseTitle, folderId, snippets, excludeId = null) 
   }
   return finalTitle
 }
+
+/**
+ * Sanitizes a title string, removing invalid filename characters and excessive punctuation.
+ * @param {string} title
+ * @returns {string}
+ */
+export const sanitizeTitle = (title) => {
+  if (!title) return ''
+  // Strict Whitelist: Allow only Letters, Numbers, Spaces, Underscores, Hyphens.
+  // This removes all symbols like []%^&()@#$ etc.
+  // Exception: Dot (.) is allowed for extension or semantic versioning logic.
+  return title.replace(/[^a-zA-Z0-9 _.-]/g, '')
+}

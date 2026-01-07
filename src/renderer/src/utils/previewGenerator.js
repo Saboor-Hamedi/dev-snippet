@@ -416,7 +416,7 @@ const buildScript = (isDark, config) => `
  */
 export const generatePreviewHtml = async ({
   code = '',
-  title = 'Untitled Snippet',
+  title = 'Untitled',
   theme = 'midnight-syntax',
   existingTitles = [],
   isMarkdown = true,

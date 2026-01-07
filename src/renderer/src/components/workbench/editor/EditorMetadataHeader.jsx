@@ -1,6 +1,7 @@
 import React, { useRef } from 'react'
 import { X } from 'lucide-react'
 import PropTypes from 'prop-types'
+import { sanitizeTitle } from '../../../utils/snippetUtils'
 
 /**
  * EditorMetadataHeader - Title and tags input component
@@ -9,6 +10,7 @@ import PropTypes from 'prop-types'
  * - Title input (with duplicate detection)
  * - Tags chip system with inline input
  */
+// EditorMetadataHeader: Now delegates saving to the central useEditorSave hook
 const EditorMetadataHeader = ({
   title,
   setTitle,
@@ -22,34 +24,21 @@ const EditorMetadataHeader = ({
   onSave,
   code,
   titleInputRef,
-  readOnly
+  readOnly,
+  scheduleSave // New prop
 }) => {
-  const titleUpdateTimerRef = useRef(null)
+  // const titleUpdateTimerRef = useRef(null) // Removed: Centralized scheduling
 
   const handleTitleChange = (e) => {
     if (readOnly) return
-    const val = e.target.value.replace(/\.md$/i, '')
+    const rawVal = e.target.value.replace(/\.md$/i, '')
+    const val = sanitizeTitle(rawVal)
     setTitle(val)
     setIsDirty(true)
-
-    // Live sidebar update: debounced optimistic save
-    if (initialSnippet?.id && onSave) {
-      if (titleUpdateTimerRef.current) {
-        clearTimeout(titleUpdateTimerRef.current)
-      }
-      titleUpdateTimerRef.current = setTimeout(() => {
-        onSave(
-          {
-            ...initialSnippet,
-            title: val,
-            code: code,
-            tags: tags,
-            is_draft: false
-          },
-          true
-        )
-        titleUpdateTimerRef.current = null
-      }, 300)
+    
+    // Trigger centralized autosave (respects user delay setting)
+    if (scheduleSave) {
+      scheduleSave()
     }
   }
 
@@ -70,10 +59,12 @@ const EditorMetadataHeader = ({
         setTags((prev) => [...prev, newTag])
         setCurrentTagInput('')
         setIsDirty(true)
+        if (scheduleSave) scheduleSave()
       }
     } else {
       setCurrentTagInput(val)
       setIsDirty(true)
+      if (scheduleSave) scheduleSave()
     }
   }
 
@@ -90,6 +81,7 @@ const EditorMetadataHeader = ({
           setCurrentTagInput('')
         }
         setIsDirty(true)
+        if (scheduleSave) scheduleSave()
       } else {
         const editorElement = document.querySelector('.cm-editor .cm-content')
         if (editorElement) editorElement.focus()
@@ -98,6 +90,7 @@ const EditorMetadataHeader = ({
       if (tags.length > 0) {
         setTags((prev) => prev.slice(0, -1))
         setIsDirty(true)
+        if (scheduleSave) scheduleSave()
       }
     }
   }
@@ -106,6 +99,7 @@ const EditorMetadataHeader = ({
     if (readOnly) return
     setTags((prev) => prev.filter((_, i) => i !== idx))
     setIsDirty(true)
+    if (scheduleSave) scheduleSave()
   }
 
   return (
@@ -123,7 +117,7 @@ const EditorMetadataHeader = ({
               e.stopPropagation()
             }}
             spellCheck="false"
-            placeholder="Untitled Snippet"
+            placeholder="Untitled"
             readOnly={readOnly}
             disabled={readOnly}
           />

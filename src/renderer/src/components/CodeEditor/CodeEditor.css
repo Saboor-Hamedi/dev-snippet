@@ -59,7 +59,7 @@
 /* VS CODE STYLE: Active Line Background (Base) */
 /* PREMIUM ACTIVE LINE: Subtle focal indicator */
 .cm-editor .cm-activeLine {
-  background-color: rgba(255, 255, 255, 0.02) !important;
+  background-color: transparent !important;
   border-left: 2px solid var(--caret-color, #ffffff) !important;
   transition: background-color 0.2s ease;
 }
@@ -227,14 +227,14 @@
 }
 
 /* Code block line styling (The "Boxed" look) */
-.cm-code-block {
+.cm-editor .cm-line.cm-code-block {
   background-color: rgba(125, 125, 125, 0.05) !important;
   padding-left: 1.5rem !important;
   padding-right: 1.5rem !important;
 }
 
 /* Code Block Header Styling (match sidebar) */
-.cm-code-block-header {
+.cm-editor .cm-code-block-header {
   background-color: rgba(255, 255, 255, 0.05) !important;
   border-radius: 12px 12px 0 0 !important;
   padding: 8px 16px !important;
@@ -263,7 +263,7 @@
 }
 
 .cm-editor .cm-activeLine {
-  background-color: rgba(255, 255, 255, 0.02) !important;
+  background-color: transparent !important;
   border-left: 2px solid var(--caret-color, #ffffff) !important;
   transition: background-color 0.2s ease;
 }
