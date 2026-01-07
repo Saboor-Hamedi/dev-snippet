@@ -72,20 +72,18 @@ const CodeEditor = ({
   autoFocus = false,
   centered = false, // Default to false for modals/smaller views
   snippetId = null,
-  zenFocus = false
+  zenFocus = false,
+  onScroll, // New prop for scroll syncing
+  style = {} // Allow passing custom styles
 }) => {
   // Zoom level is now managed globally by useZoomLevel at the root/SettingsProvider level.
   // Individual components consume the result via CSS variables.
   const editorDomRef = useRef(null)
+  
+  // ... (keeping existing refs)
+
   // 1. PERFORMANCE: Stabilize snippet list comparison to avoid map/join on every keystroke
-  // 1. PERFORMANCE: Stabilize snippet list comparison
   // We use a ref to keep the array identity stable unless content actually changes.
-  /**
-   * snippetTitles - MEMOIZED STABILITY
-   * Used by WikiLinks and Autocomplete. We use a deep-compare ref to
-   * ensure that background snippet updates (saving OTHER files) don't
-   * trigger a full extension rebuild in the current editor.
-   */
   const lastTitlesRef = useRef([])
   const snippetTitles = useMemo(() => {
     if (!Array.isArray(snippets)) return lastTitlesRef.current
@@ -281,6 +279,15 @@ const CodeEditor = ({
         cursorSelectionBg,
         disableComplexCM: settingsManager.get('advanced.disableComplexCM')
       }),
+      // --- DYNAMIC PADDING THEME ---
+      EditorView.theme({
+        '& .cm-scroller': {
+          paddingTop: 'var(--editor-content-padding-top, 0px) !important'
+        },
+        '& .cm-content': {
+          paddingTop: '0px !important' // Ensure content doesn't double-pad
+        }
+      }),
       // --- UNIFIED PERFORMANCE LISTENER ---
       EditorView.updateListener.of((update) => {
         // 1. CURSOR TRACKING (Debounced via microtask/RAF to keep typing smooth)
@@ -337,6 +344,8 @@ const CodeEditor = ({
     cursorShadowBoxColor,
     snippetId // Explicitly include snippetId to fix the stale persistence closure
   ])
+
+  // ... (keeping existing layout effects)
 
   // Preserve cursor position when gutter toggles
   const lastCursorPos = useRef(null)
@@ -406,29 +415,20 @@ const CodeEditor = ({
       ...baseExtensions,
       ...dynamicExtensions,
       attributesExtension
-      /*
-      // DEBUG: Log doc state to help diagnose "No tile at position" errors
-      EditorView.updateListener.of((update) => {
-        if (update.docChanged || update.selectionSet) {
-          console.log(
-            'DEBUG: doc length',
-            update.state.doc.length,
-            'selection head',
-            update.state.selection.main.head
-          )
-        }
-      })
-      */
     ],
     [baseExtensions, dynamicExtensions, attributesExtension]
   )
 
+  // ... (keeping existing logic)
+  
   // Detect large files (Optimized for zero typing lag)
   const [isLargeFile, setIsLargeFile] = useState(() => {
     const len = (value || '').length
     return len > 80000 // Slightly lower threshold for earlier protection
   })
 
+  // ... (keeping large file logic)
+  
   const lastLargeState = useRef(isLargeFile)
 
   useEffect(() => {
@@ -550,7 +550,8 @@ const CodeEditor = ({
         '--gutter-bg-color': gutterBgColor,
         '--gutter-border-color': gutterBorderColor,
         '--gutter-border-width': `${gutterBorderWidth}px`,
-        backgroundColor: 'var(--editor-bg)'
+        backgroundColor: 'var(--editor-bg)',
+        ...style // Merge incoming styles
       }}
       ref={editorDomRef}
     >
@@ -608,6 +609,10 @@ const CodeEditor = ({
                   window.dispatchEvent(
                     new CustomEvent('app:editor-scroll', { detail: { percentage } })
                   )
+                }
+                // Call raw scroll handler if provided
+                if (onScroll) {
+                  onScroll(scrollTop)
                 }
               },
               { passive: true }

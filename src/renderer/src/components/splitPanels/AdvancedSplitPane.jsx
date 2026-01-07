@@ -125,7 +125,7 @@ const AdvancedSplitPane = ({
           <div className="absolute inset-0 w-full h-full">{left}</div>
           {!rightHidden && (
             <div
-              className="absolute top-2 right-5 bottom-2 z-10 flex flex-col overflow-hidden shadow-xl"
+              className="absolute top-2 right-5 bottom-2 z-30 flex flex-col overflow-hidden shadow-xl"
               style={{
                 width: `${overlayWidth}%`,
                 minWidth: `${minRight}px`,
@@ -160,7 +160,7 @@ const AdvancedSplitPane = ({
           >
             {left}
           </div>
-          <div className="shrink-0 relative flex items-center justify-center w-1 z-50">
+          <div className="shrink-0 relative flex items-center justify-center w-1 z-10">
             <div
               className="absolute top-0 bottom-0 w-4 -left-1.5 cursor-col-resize z-10"
               onMouseDown={startDrag}
@@ -168,8 +168,8 @@ const AdvancedSplitPane = ({
             <div
               className={`absolute inset-y-0 left-1/2 -translate-x-1/2 w-[1px] transition-colors pointer-events-none ${isDragging ? 'bg-blue-500' : 'bg-slate-300 dark:bg-slate-700'}`}
             />
-            <div
-              className="relative z-20 w-4 h-8 flex items-center justify-center bg-slate-800/90 hover:bg-slate-800 transition-all duration-200 rounded-sm select-none border border-white/5 shadow-md pointer-events-none"
+              <div
+                className="relative z-10 w-4 h-8 flex items-center justify-center bg-slate-800/90 hover:bg-slate-800 transition-all duration-200 rounded-sm select-none border border-white/5 shadow-md pointer-events-none"
               role="separator"
               aria-orientation="vertical"
             >

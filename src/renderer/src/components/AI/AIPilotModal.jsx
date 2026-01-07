@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import UniversalModal from '../universal/UniversalModal'
 import AIPilot from './AIPilot'
-import { Maximize2, Minimize2, Sparkles, WifiOff, ShieldAlert } from 'lucide-react'
+import { Maximize2, Minimize2, Sparkles, WifiOff, ShieldAlert, Smartphone, Tablet, Monitor } from 'lucide-react'
 import { useSettings } from '../../hook/useSettingsContext'
 import { useToast } from '../../hook/useToast'
 
@@ -56,24 +56,27 @@ const AIPilotModal = ({ isOpen, onClose, selectedSnippet }) => {
       hideBorder={true}
       allowMaximize={false}
       headerContent={
-        <div className="flex items-center gap-2 px-4 no-drag">
+        <div className="flex items-center gap-1.5 px-4 no-drag">
           <button
             onClick={() => updateSetting('ai.pilotScale', 50)}
-            className={`p-1 rounded hover:bg-white/10 transition-colors ${scale === 50 ? 'text-[var(--color-accent-primary)]' : 'opacity-40'}`}
+            className={`p-1 rounded-none transition-colors ${scale === 50 ? 'bg-[var(--color-accent-primary)] text-white' : 'text-[var(--color-text-tertiary)] hover:bg-black/5 dark:hover:bg-white/5'}`}
+            title="Mobile View (50%)"
           >
-            <div className="text-[10px] font-bold">50%</div>
+            <Smartphone size={14} />
           </button>
           <button
             onClick={() => updateSetting('ai.pilotScale', 75)}
-            className={`p-1 rounded hover:bg-white/10 transition-colors ${scale === 75 ? 'text-[var(--color-accent-primary)]' : 'opacity-40'}`}
+            className={`p-1 rounded-none transition-colors ${scale === 75 ? 'bg-[var(--color-accent-primary)] text-white' : 'text-[var(--color-text-tertiary)] hover:bg-black/5 dark:hover:bg-white/5'}`}
+            title="Tablet View (75%)"
           >
-            <div className="text-[10px] font-bold">75%</div>
+            <Tablet size={14} />
           </button>
           <button
             onClick={() => updateSetting('ai.pilotScale', 100)}
-            className={`p-1 rounded hover:bg-white/10 transition-colors ${scale === 100 ? 'text-[var(--color-accent-primary)]' : 'opacity-40'}`}
+            className={`p-1 rounded-none transition-colors ${scale === 100 ? 'bg-[var(--color-accent-primary)] text-white' : 'text-[var(--color-text-tertiary)] hover:bg-black/5 dark:hover:bg-white/5'}`}
+            title="Desktop View (100%)"
           >
-            <div className="text-[10px] font-bold">100%</div>
+            <Monitor size={14} />
           </button>
         </div>
       }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import PropTypes from 'prop-types'
-import { GripVertical, X } from 'lucide-react'
+import { GripVertical } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../features/keyboard/useKeyboardShortcuts'
 import { useEditorFocus } from '../../hook/useEditorFocus.js'
 import { useZoomLevel, useEditorZoomLevel } from '../../hook/useSettingsContext'
@@ -13,14 +13,22 @@ import Prompt from '../mermaid/modal/Prompt.jsx'
 import { useSettings, useAutoSave } from '../../hook/useSettingsContext'
 import { useTheme } from '../../hook/useTheme'
 import AdvancedSplitPane from '../splitPanels/AdvancedSplitPane'
-import { extractTags } from '../../utils/snippetUtils.js'
-import { generatePreviewHtml } from '../../utils/previewGenerator'
 import { makeDraggable } from '../../utils/draggable.js'
 import UniversalModal from '../universal/UniversalModal'
 import { useUniversalModal } from '../universal/useUniversalModal'
 import DiagramEditorModal from '../mermaid/modal/DiagramEditorModal'
 import TableEditorModal from '../table/TableEditorModal'
 import PerformanceBarrier from '../universal/PerformanceBarrier/PerformanceBarrier'
+
+// Extracted Editor Hooks & Components
+import { useEditorState } from './editor/useEditorState'
+import { useWikiLinks } from './editor/useWikiLinks'
+import { useEditorExport } from './editor/useEditorExport'
+import { useEditorSave } from './editor/useEditorSave'
+import EditorMetadataHeader from './editor/EditorMetadataHeader'
+import EditorModeSwitcher from './editor/EditorModeSwitcher'
+import { useEditorCloseCheck } from './editor/useEditorCloseCheck.jsx'
+import { useSnippetOperations } from './editor/useSnippetOperations'
 import '../universal/universalStyle.css'
 import './editor/EditorMetadata.css'
 
@@ -87,84 +95,58 @@ const SnippetEditor = ({
   isFlow = false,
   onDirtyStateChange
 }) => {
-  const [code, setCode] = useState(initialSnippet?.code || '')
-  const [isDirty, setIsDirty] = useState(false)
-  const isDiscardingRef = useRef(false)
-  const skipAutosaveRef = useRef(false)
-
-  // PERFORMANCE: Ref to block redundant dirty updates during rapid typing
-  const isDirtyRef = useRef(false)
-  useEffect(() => {
-    isDirtyRef.current = isDirty
-  }, [isDirty])
-
-  const codeRef = useRef(initialSnippet?.code || '')
-
-  const handleCodeChange = useCallback(
-    (val) => {
-      if (isDiscardingRef.current) return
-      const newVal = val || ''
-      if (newVal !== codeRef.current) {
-        codeRef.current = newVal
-        setCode(newVal)
-
-        // Only broadcast if not already known as dirty (prevents sidebar sway/lag)
-        if (!isDirtyRef.current) {
-          setIsDirty(true)
-          isDirtyRef.current = true // Block subsequent broadcasts
-
-          if (initialSnippet?.id && onDirtyStateChange) {
-            onDirtyStateChange(initialSnippet.id, true)
-          }
-        }
-      }
-    },
-    [initialSnippet, onDirtyStateChange]
-  )
   const [zoomLevel, setZoom] = useZoomLevel()
   const [editorZoom, setEditorZoom] = useEditorZoomLevel()
   const { settings, getSetting, updateSetting } = useSettings()
   const { currentTheme } = useTheme()
 
-  const [title, setTitle] = useState(() => {
-    const t = initialSnippet?.title || ''
-    return t.replace(/\.md$/i, '')
+  // --- NEW SPECIALIZED HOOKS ---
+  const editorState = useEditorState({
+    initialSnippet,
+    snippets,
+    onDirtyStateChange
   })
 
-  // Tags state: Managed as an array for the chip system
-  const [tags, setTags] = useState(() => {
-    const rawTags = initialSnippet?.tags || []
-    return Array.isArray(rawTags) ? rawTags : []
+  // Destructure for easier access
+  const {
+    code,
+    setCode,
+    handleCodeChange,
+    codeRef,
+    isDirty,
+    setIsDirty,
+    isDirtyRef,
+    isDiscardingRef,
+    skipAutosaveRef,
+    title,
+    setTitle,
+    tags,
+    setTags,
+    currentTagInput,
+    setCurrentTagInput,
+    isDuplicate
+  } = editorState
+
+  const autoSaveEnabled = settings?.behavior?.autoSave !== false
+
+  const editorSave = useEditorSave({
+    code,
+    title,
+    tags,
+    currentTagInput,
+    initialSnippet,
+    autoSaveEnabled,
+    onSave,
+    isDuplicate,
+    getSetting,
+    showToast,
+    setIsDirty,
+    isDirty,
+    onDirtyStateChange,
+    onAutosave
   })
-  const [currentTagInput, setCurrentTagInput] = useState('')
-  const [justRenamed, setJustRenamed] = useState(false)
-  const [isFloating, setIsFloating] = useState(
-    () => settings?.ui?.modeSwitcher?.isFloating || false
-  )
-  const switcherRef = useRef(null)
-  const dragHandleRef = useRef(null)
 
-  // Ref for debouncing live title updates to sidebar
-  const titleUpdateTimerRef = useRef(null)
-
-  // Ref for title input auto-focus
-  const titleInputRef = useRef(null)
-
-  const [cursorPos, setCursorPos] = useState({ line: 1, col: 1 })
-  const handleCursorChange = useCallback((pos) => {
-    setCursorPos(pos)
-  }, [])
-  const [activeMode, setActiveMode] = useState('live_preview')
-
-  // Auto-focus title input when creating new snippet
-  useEffect(() => {
-    if (isCreateMode && titleInputRef.current) {
-      setTimeout(() => {
-        titleInputRef.current?.focus()
-        titleInputRef.current?.select()
-      }, 100)
-    }
-  }, [isCreateMode])
+  const { handleSave, scheduleSave, lastSavedTitle } = editorSave
 
   const {
     isOpen: isUniOpen,
@@ -183,29 +165,117 @@ const SnippetEditor = ({
     setModalState: setUniState
   } = useUniversalModal()
 
+  const editorExport = useEditorExport({
+    code,
+    title,
+    initialSnippet,
+    currentTheme,
+    showToast
+  })
+
+  // Destructure export handlers
+  const {
+    handleExportPDF,
+    handleExportWord,
+    handleCopyToClipboard,
+    handleOpenExternalPreview,
+    handleOpenMiniPreview
+  } = editorExport
+
+  // WikiLink Logic Hook
+  useWikiLinks({
+    snippets,
+    handleSelectSnippet: (s) => window.dispatchEvent(new CustomEvent('app:open-snippet', { detail: { title: s.title } })),
+    createDraftSnippet: (title, folderId) => ({ title, folder_id: folderId, code: '', tags: [], is_draft: true }),
+    saveSnippet: onSave,
+    setSelectedSnippet: () => {}, // Handled by library
+    navigateTo: () => {}, // Handled by library
+    showToast
+  })
+
+  const { handleTriggerCloseCheck } = useEditorCloseCheck({
+    isDirty,
+    setIsDirty,
+    codeRef,
+    setCode,
+    title,
+    initialSnippet,
+    onSave,
+    onCancel,
+    onDirtyStateChange,
+    openModal,
+    closeUni,
+    handleSave,
+    isDiscardingRef,
+    skipAutosaveRef,
+    isDirtyRef
+  })
+
+  const { handleSplitSnippet } = useSnippetOperations({
+    title,
+    code,
+    setCode,
+    setIsDirty,
+    initialSnippet,
+    snippets,
+    onSave,
+    onNew,
+    showToast
+  })
+
+  const [justRenamed, setJustRenamed] = useState(false)
+  const [isFloating, setIsFloating] = useState(
+    () => settings?.ui?.modeSwitcher?.isFloating || false
+  )
+  const switcherRef = useRef(null)
+  const dragHandleRef = useRef(null)
+
+  // Ref for title input auto-focus
+  const titleInputRef = useRef(null)
+
+  const [cursorPos, setCursorPos] = useState({ line: 1, col: 1 })
+  const handleCursorChange = useCallback((pos) => {
+    setCursorPos(pos)
+  }, [])
+  const [activeMode, setActiveMode] = useState('live_preview')
+  const editorContainerRef = useRef(null)
+  const textareaRef = useRef(null)
+  const [pinPopover, setPinPopover] = useState({ visible: false, x: 0, y: 0 })
+
+  // Header scroll logic
+  const headerRef = useRef(null)
+  const [headerHeight, setHeaderHeight] = useState(120) // Default estimate
+
+  // Measure header height dynamically
   useEffect(() => {
-    // Improved Focus Gate: Prevent jumps if the user is focused on any part of the editor UI
-    const isFocused =
-      document.activeElement &&
-      (document.activeElement.classList.contains('cm-content') ||
-        document.activeElement.tagName === 'TEXTAREA' ||
-        document.activeElement.closest('.editor-container'))
+    if (!headerRef.current) return
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        // Add a little buffer or exact height
+        setHeaderHeight(entry.contentRect.height)
+      }
+    })
+    resizeObserver.observe(headerRef.current)
+    return () => resizeObserver.disconnect()
+  }, [])
 
-    // Cooldown: Don't allow a sync-back immediately after a manual save (increased to 1.5s for stability)
-    const isInCooldown = window.__lastSaveTime && Date.now() - window.__lastSaveTime < 1500
+  const wordWrap = getSetting('editor.wordWrap') !== false
 
-    if (
-      initialSnippet?.id === 'system:settings' &&
-      !isDirty &&
-      !isFocused &&
-      !isInCooldown &&
-      !window.__isSavingSettings && // Global Save Shield
-      initialSnippet.code !== code
-    ) {
-      setCode(initialSnippet.code)
-      codeRef.current = initialSnippet.code
+  const onToggleCompactHandler = useCallback(() => {
+    if (onToggleCompact) onToggleCompact()
+  }, [onToggleCompact])
+
+  // Auto-focus title input when creating new snippet
+  useEffect(() => {
+    if (isCreateMode && titleInputRef.current) {
+      setTimeout(() => {
+        titleInputRef.current?.focus()
+        titleInputRef.current?.select()
+      }, 100)
     }
-  }, [initialSnippet?.code, initialSnippet?.id, isDirty, code])
+  }, [isCreateMode])
+
+
 
   // Apply stored position on mount or when going floating
   useEffect(() => {
@@ -445,20 +515,6 @@ const SnippetEditor = ({
     }
   }, [initialSnippet?.title])
 
-  // DUPLICATE DETECTION
-  const isDuplicate = useMemo(() => {
-    if (!title) return false
-    const normalized = title.trim().toLowerCase()
-    return (snippets || []).some((s) => {
-      // Skip self
-      if (s.id === initialSnippet?.id) return false
-      // Match folder scope (null/undefined treated as root)
-      if ((s.folder_id || null) !== (initialSnippet?.folder_id || null)) return false
-
-      const sTitle = (s.title || '').replace(/\.md$/i, '').trim().toLowerCase()
-      return sTitle === normalized
-    })
-  }, [title, snippets, initialSnippet])
 
   const hideWelcomePage = getSetting('ui.hideWelcomePage') || false
   const saveTimerRef = useRef(null)
@@ -506,183 +562,8 @@ const SnippetEditor = ({
     return () => clearTimeout(timer)
   }, [code, detectedLang, initialSnippet?.id, isDirty])
 
-  // PERF: Synced dirty state is now handled globally via onDirtyStateChange
-  // which updates the main process 'isAppDirty' from SnippetLibraryInner.
 
-  // SYNC DIRTY STATE WITH PARENT (For Sidebar Dot)
-  useEffect(() => {
-    if (initialSnippet?.id && onDirtyStateChange) {
-      onDirtyStateChange(initialSnippet.id, isDirty)
-    }
-  }, [isDirty, initialSnippet?.id, onDirtyStateChange])
 
-  // SILENT DRAFT SYNC: Ensures "Modified" (Yellow Dot) appears in the sidebar.
-  useEffect(() => {
-    if (initialSnippet?.id && isDirty && window.api?.saveSnippetDraft) {
-      window.api
-        .saveSnippetDraft({
-          id: initialSnippet.id,
-          code_draft: code,
-          language: detectedLang
-        })
-        .catch(() => {})
-    }
-  }, [code, detectedLang, initialSnippet?.id, isDirty])
-
-  // Unified AutoSave Hook - Source of Truth
-  const [autoSaveEnabled] = useAutoSave()
-
-  const lastSavedCode = useRef(initialSnippet?.code || '')
-  const lastSavedTitle = useRef(initialSnippet?.title || '')
-
-  const isDeletingRef = useRef(false)
-  const textareaRef = useRef(null)
-  const editorContainerRef = useRef(null)
-  const wordWrap = settings?.editor?.wordWrap || 'off'
-
-  // Local compact mode fallback
-  const [localCompact, setLocalCompact] = useState(() => {
-    try {
-      return localStorage.getItem('compactMode') === 'true'
-    } catch (e) {
-      return false
-    }
-  })
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('compactMode', localCompact)
-    } catch (e) {}
-  }, [localCompact])
-
-  const controlledCompact = typeof isCompact !== 'undefined'
-  const compact = controlledCompact ? isCompact : localCompact
-  const onToggleCompactHandler = () => {
-    if (typeof onToggleCompact === 'function') {
-      onToggleCompact()
-    } else {
-      setLocalCompact((s) => !s)
-    }
-  }
-
-  // Focus management
-  useEditorFocus({ initialSnippet, isCreateMode, textareaRef })
-
-  const scheduleSave = useCallback(() => {
-    // 1. Skip autosave if we're discarding changes
-    if (skipAutosaveRef.current) return
-
-    // 2. Explicitly check if enabled first
-    if (!autoSaveEnabled) return
-
-    // Clear any pending timer
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
-
-    // Schedule new save
-    saveTimerRef.current = setTimeout(
-      async () => {
-        const id = initialSnippet?.id
-        if (!id) return
-
-        // DISCARD PROTECTION: Don't autosave if it's a brand new untitled snippet with no content
-        const isUntitled = !title || title.toLowerCase() === 'untitled'
-        const hasNoContent = !code || code.trim() === ''
-        if (isUntitled && hasNoContent && initialSnippet?.is_draft) {
-          return
-        }
-
-        const updatedSnippet = {
-          ...initialSnippet,
-          id: id,
-          title: title,
-          code: code,
-          language: detectedLang || 'markdown',
-          timestamp: Date.now(),
-          type: initialSnippet?.type || 'snippet',
-          // DRY: Combine explicit tags, active input, and extracted content tags
-          tags: Array.from(
-            new Set([
-              ...tags,
-              ...currentTagInput
-                .split(',')
-                .map((t) => t.trim())
-                .filter(Boolean),
-              ...extractTags(code)
-            ])
-          ).filter((t) => typeof t === 'string' && !/^\d+$/.test(t)),
-          is_draft: false,
-          folder_id: initialSnippet?.folder_id || null,
-          is_pinned: initialSnippet?.is_pinned || 0
-        }
-
-        // DUPLICATE CHECK IN AUTOSAVE
-        // If the title is a duplicate, we DO NOT autosave.
-        // We just let the user keep typing until it's unique.
-        if (isDuplicate) {
-          return
-        }
-
-        try {
-          // Direct event dispatch for UI feedback bypassing prop delays
-          window.dispatchEvent(new CustomEvent('autosave-status', { detail: { status: 'saving' } }))
-
-          await onSave(updatedSnippet)
-
-          window.dispatchEvent(new CustomEvent('autosave-status', { detail: { status: 'saved' } }))
-          setIsDirty(false)
-          lastSavedCode.current = code
-          lastSavedTitle.current = title
-        } catch (err) {
-          window.dispatchEvent(new CustomEvent('autosave-status', { detail: { status: 'error' } }))
-        }
-      },
-      initialSnippet?.id === 'system:settings' ? 800 : getSetting('behavior.autoSaveDelay') || 2000
-    )
-  }, [code, title, tags, currentTagInput, initialSnippet, autoSaveEnabled, onSave, isDuplicate])
-
-  useEffect(() => {
-    const id = initialSnippet?.id
-    if (id) {
-      if (!window.__autosaveCancel) window.__autosaveCancel = new Map()
-      window.__autosaveCancel.set(id, () => {
-        if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
-      })
-    }
-    return () => {
-      const id2 = initialSnippet?.id
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
-      if (id2 && window.__autosaveCancel) window.__autosaveCancel.delete(id2)
-    }
-  }, [initialSnippet?.id])
-
-  const [isInitialMount, setIsInitialMount] = useState(true)
-  const lastSnippetId = useRef(initialSnippet?.id)
-
-  useEffect(() => {
-    if (!initialSnippet) return
-    if (initialSnippet.id !== lastSnippetId.current) {
-      setCode(initialSnippet.code || '')
-      setTitle(initialSnippet.title || '')
-      const rawTags = initialSnippet.tags
-      let sanitizedTags = []
-      if (Array.isArray(rawTags)) {
-        sanitizedTags = rawTags
-      } else if (typeof rawTags === 'string') {
-        sanitizedTags = rawTags.split(',').filter(Boolean)
-      }
-      setTags(sanitizedTags.map((t) => String(t)))
-      setCurrentTagInput('')
-      setIsDirty(false)
-      setIsInitialMount(true)
-      isDiscardingRef.current = false // Reset discard flag for new snippet
-      skipAutosaveRef.current = false // Reset autosave skip flag
-      lastSnippetId.current = initialSnippet.id
-      return
-    }
-    if (initialSnippet.code !== undefined && code === '') {
-      setCode(initialSnippet.code || '')
-    }
-  }, [initialSnippet])
 
   const [namePrompt, setNamePrompt] = useState({ isOpen: false, initialName: '' })
 
@@ -720,601 +601,11 @@ const SnippetEditor = ({
     [debouncedCode.length, words]
   )
 
-  const isSplitting = useRef(false)
-  const handleSplitSnippet = useCallback(() => {
-    if (!title || !code || isSplitting.current) return
-    isSplitting.current = true
 
-    try {
-      // 1. Suggest the next part name: 'large' -> 'large continue' -> 'large continue 2'
-      const nameWithoutExt = title.replace(/\.md$/, '')
-      let nextBase = ''
 
-      if (!nameWithoutExt.includes('continue')) {
-        nextBase = `${nameWithoutExt} continue`
-      } else {
-        const match = nameWithoutExt.match(/(.*? continue)\s?(\d+)?$/)
-        nextBase = match ? match[1] : nameWithoutExt
-      }
 
-      // Check current folder for existing titles to match library logic exactly
-      const folderSnippets = (snippets || []).filter(
-        (s) => (s.folder_id || null) === (initialSnippet?.folder_id || null)
-      )
-      const normalize = (t) => (t || '').toLowerCase().trim().replace(/\.md$/, '')
 
-      let counter = 1
-      let nextPartName = nextBase
 
-      while (folderSnippets.some((s) => normalize(s.title) === normalize(nextPartName))) {
-        counter++
-        nextPartName = `${nextBase} ${counter}`
-      }
-
-      // 2. Update CURRENT snippet with the bridge link
-      const splitLink = `\n\n---\n[[${nextPartName}]]`
-      const updatedCode = code + splitLink
-
-      setCode(updatedCode)
-      setIsDirty(true)
-
-      // Force an immediate save of the OLD snippet without a selection jump
-      onSave({
-        ...(initialSnippet || {}),
-        code: updatedCode,
-        timestamp: Date.now(),
-        _skipSelectionSwitch: true
-      })
-
-      // 3. Create and Navigate to NEW snippet
-      const initialPartCode = `[[${title}]]\n\n# ${nextPartName}\n\n`
-
-      if (onNew) {
-        onNew(nextPartName, initialSnippet?.folder_id || null, {
-          initialCode: initialPartCode
-        })
-      }
-
-      if (showToast) {
-        setTimeout(() => {
-          showToast(`Split complete: Continuing in ${nextPartName}`, 'success')
-        }, 100)
-      }
-    } finally {
-      setTimeout(() => {
-        isSplitting.current = false
-      }, 1000)
-    }
-  }, [title, code, snippets, initialSnippet, onSave, showToast, onNew])
-
-  useEffect(() => {
-    if (isInitialMount) {
-      setIsInitialMount(false)
-      return
-    }
-    if (!isDirty || !autoSaveEnabled) return
-    scheduleSave()
-  }, [code, title, isDirty, autoSaveEnabled, scheduleSave, isInitialMount])
-
-  // Helper to generate the complete HTML for external/mini previews
-  const generateFullHtml = useCallback(
-    (forPrint = false) => {
-      const ext = title?.includes('.') ? title.split('.').pop()?.toLowerCase() : null
-      const isMarkdown = !ext || ext === 'markdown' || ext === 'md'
-      const existingTitles = snippets.map((s) => (s.title || '').trim()).filter(Boolean)
-
-      return generatePreviewHtml({
-        code,
-        title: title || 'Untitled Snippet',
-        theme: currentTheme,
-        existingTitles,
-        isMarkdown,
-        fontFamily: settings?.editor?.fontFamily,
-        forPrint
-      })
-    },
-    [code, title, snippets, currentTheme, settings?.editor?.fontFamily]
-  )
-
-  const handleOpenExternalPreview = useCallback(async () => {
-    const fullHtml = await generateFullHtml()
-    if (window.api?.invoke) {
-      await window.api.invoke('shell:previewInBrowser', fullHtml)
-    }
-  }, [generateFullHtml])
-
-  const handleOpenMiniPreview = useCallback(async () => {
-    const fullHtml = await generateFullHtml()
-    if (window.api?.invoke) {
-      // Use the internal window IPC handler for the mini browser
-      await window.api.invoke('window:openMiniBrowser', fullHtml).catch(() => {
-        // Fallback to external preview
-        return window.api.invoke('shell:previewInBrowser', fullHtml)
-      })
-    }
-  }, [generateFullHtml])
-
-  // Helper function to pre-render Mermaid diagrams for Word export
-  const preRenderMermaidDiagrams = useCallback(
-    async (html) => {
-      // Defensive mermaid rendering pipeline.
-      const tempDiv = document.createElement('div')
-      tempDiv.innerHTML = html || ''
-
-      // Remove any embedded scripts/styles to avoid executing app code here
-      tempDiv.querySelectorAll('script, style, link').forEach((n) => n.remove())
-
-      // Find mermaid containers produced by markdown or direct mermaid blocks
-      const mermaidDivs = tempDiv.querySelectorAll('div.mermaid, div.mermaid-diagram')
-      if (!mermaidDivs || mermaidDivs.length === 0) return tempDiv.innerHTML
-
-      // Lazy-init mermaid instance and cache it on window to avoid re-init
-      let mermaidInstance = window.__mermaidExportInstance || window.mermaid
-      if (!mermaidInstance) {
-        try {
-          mermaidInstance = (await import('mermaid')).default
-          mermaidInstance.initialize({
-            startOnLoad: false,
-            theme: 'default',
-            securityLevel: 'loose',
-            fontFamily: settings?.editor?.fontFamily || 'Inter, sans-serif',
-            themeVariables: {
-              fontFamily: settings?.editor?.fontFamily || 'Inter, sans-serif',
-              fontSize: '14px'
-            }
-          })
-          window.__mermaidExportInstance = mermaidInstance
-        } catch (err) {
-          return tempDiv.innerHTML
-        }
-      }
-
-      // Helper to decode HTML entities produced by escaped content
-      const decodeEntities = (str) => {
-        const txt = document.createElement('textarea')
-        txt.innerHTML = str
-        return txt.value
-      }
-
-      for (const div of Array.from(mermaidDivs)) {
-        try {
-          // Prefer innerHTML decoding, fall back to textContent
-          const raw = div.innerHTML && div.innerHTML.trim() ? div.innerHTML : div.textContent || ''
-          const mermaidCode = decodeEntities(raw).trim()
-          if (!mermaidCode) continue
-
-          const id = `mermaid-export-${Math.random().toString(36).slice(2, 9)}`
-          // mermaid.render sometimes returns svg string or object depending on version
-          const renderResult = await mermaidInstance.render(id, mermaidCode)
-          const svg = (renderResult && renderResult.svg) || renderResult || ''
-          if (!svg || svg.length < 20) throw new Error('empty svg')
-
-          const svgContainer = document.createElement('div')
-          svgContainer.innerHTML = svg
-          const svgElement = svgContainer.querySelector('svg')
-          if (!svgElement) throw new Error('no svg element')
-
-          // Apply safe inline sizing and color resets
-          svgElement.setAttribute('role', 'img')
-          svgElement.style.maxWidth = '100%'
-          svgElement.style.height = 'auto'
-          svgElement.style.display = 'block'
-          svgElement.style.margin = '1.2em auto'
-          svgElement.style.background = 'white'
-          svgElement.querySelectorAll('text').forEach((t) => (t.style.fill = '#000'))
-
-          div.replaceWith(svgElement)
-        } catch (err) {
-          // Replace with a safe code block to preserve readability
-          const pre = document.createElement('pre')
-          pre.textContent = div.textContent || div.innerText || ''
-          div.replaceWith(pre)
-        }
-      }
-
-      return tempDiv.innerHTML
-    },
-    [settings?.editor?.fontFamily]
-  )
-
-  // Sanitize and rebuild a minimal, print-ready HTML wrapper to avoid app CSS leakage
-  const sanitizeExportHtml = useCallback(
-    (html) => {
-      try {
-        const temp = document.createElement('div')
-        temp.innerHTML = html || ''
-
-        // Remove scripts/styles and external links
-        temp.querySelectorAll('script, style, link').forEach((n) => n.remove())
-
-        // Remove UI artifacts from preview
-        temp
-          .querySelectorAll(
-            '.preview-intel, .code-actions, .copy-code-btn, .ui-element, .preview-engine-toolbar'
-          )
-          .forEach((n) => n.remove())
-
-        // Extract main content element
-        const contentElement = temp.querySelector('#content') || temp.querySelector('body') || temp
-        if (!contentElement) return html
-
-        // Strip classes/ids/styles to avoid accidental styling inheritance
-        Array.from(contentElement.querySelectorAll('*')).forEach((el) => {
-          if (el === contentElement) return
-          el.removeAttribute('class')
-          el.removeAttribute('id')
-          el.removeAttribute('style')
-        })
-
-        const contentHtml = contentElement.innerHTML || ''
-
-        const printCss = `
-        @page { margin: 1.2in; size: letter; }
-        html, body { background: white; color: #000; font-family: ${settings?.editor?.fontFamily || 'Inter, sans-serif'}; margin: 0; padding: 0; }
-        .preview-container { max-width: 6.5in; margin: 0 auto; padding: 20px; box-sizing: border-box; }
-        img, svg { max-width: 100%; height: auto; }
-        pre { background: #fafafa; border: 1px solid #e1e5e9; padding: 12px; overflow-x: auto; font-family: monospace; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { border: 1px solid #d1d5db; padding: 8px; }
-      `
-
-        const titleSafe = (title || 'snippet').replace(/[^a-z0-9]/gi, '_').toLowerCase()
-        return `<!doctype html><html><head><meta charset="utf-8"><title>${titleSafe}</title><style>${printCss}</style></head><body><div id="content" class="preview-container">${contentHtml}</div></body></html>`
-      } catch (err) {
-        return html
-      }
-    },
-    [settings?.editor?.fontFamily, title]
-  )
-
-  const handleCopyToClipboard = useCallback(async () => {
-    try {
-      // Generate HTML and pre-render diagrams first
-      let fullHtml = await generateFullHtml(false)
-      if (
-        fullHtml &&
-        (fullHtml.includes('class="mermaid"') || fullHtml.includes('class="mermaid-diagram"'))
-      ) {
-        fullHtml = await preRenderMermaidDiagrams(fullHtml)
-      }
-
-      // Sanitize to remove scripts/styles/UI chrome
-      fullHtml = sanitizeExportHtml(fullHtml)
-
-      const tempDiv = document.createElement('div')
-      tempDiv.innerHTML = fullHtml
-      const contentDiv = tempDiv.querySelector('#content') || tempDiv
-      if (!contentDiv) throw new Error('No content to copy')
-
-      // Remove remaining interactive elements
-      contentDiv
-        .querySelectorAll('.copy-code-btn, .ui-element, .code-actions')
-        .forEach((n) => n.remove())
-
-      // Remove specific headings we don't want copied
-      contentDiv.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach((el) => {
-        const t = (el.textContent || '').trim().toLowerCase()
-        if (t.includes('start frontend') || t.includes('untitled')) el.remove()
-      })
-
-      const htmlContent = contentDiv.innerHTML
-      let textContent = (contentDiv.textContent || contentDiv.innerText || '').trim()
-
-      // Clean markdown-like artifacts from plaintext
-      textContent = textContent
-        .replace(/\*\*(.*?)\*\*/g, '$1')
-        .replace(/\*(.*?)\*/g, '$1')
-        .replace(/__(.*?)__/g, '$1')
-        .replace(/_(.*?)_/g, '$1')
-        .replace(/`(.*?)`/g, '$1')
-        .replace(/~~(.*?)~~/g, '$1')
-        .replace(/^\s*[-*+]\s+/gm, '')
-        .replace(/^\s*\d+\.\s+/gm, '')
-        .replace(/^\s*#{1,6}\s+/gm, '')
-        .trim()
-
-      // Try rich clipboard API first, fallback to plain text
-      try {
-        if (navigator.clipboard && window.ClipboardItem) {
-          await navigator.clipboard.write([
-            new ClipboardItem({
-              'text/html': new Blob([htmlContent], { type: 'text/html' }),
-              'text/plain': new Blob([textContent], { type: 'text/plain' })
-            })
-          ])
-        } else {
-          // Older fallback: write plain text only
-          await navigator.clipboard.writeText(textContent || code)
-        }
-        showToast?.('Rendered content copied to clipboard!', 'success')
-      } catch (err) {
-        // Best-effort fallback
-        await navigator.clipboard.writeText(textContent || code)
-        showToast?.('Rendered content copied to clipboard (plaintext)', 'info')
-      }
-    } catch (err) {
-      try {
-        await navigator.clipboard.writeText(code)
-        showToast?.('Code copied to clipboard!', 'info')
-      } catch (fallbackErr) {
-        showToast?.('Failed to copy to clipboard', 'error')
-      }
-    }
-  }, [generateFullHtml, preRenderMermaidDiagrams, sanitizeExportHtml, code, showToast])
-
-  const handleExportPDF = useCallback(async () => {
-    try {
-      // Generate HTML specifically optimized for PDF (rendered markdown)
-      let fullHtml = await generateFullHtml(true) // true for print
-
-      // Pre-render Mermaid diagrams to SVG for PDF export
-      if (fullHtml.includes('class="mermaid"')) {
-        fullHtml = await preRenderMermaidDiagrams(fullHtml)
-      }
-
-      if (window.api?.invoke) {
-        const sanitizedTitle = (title || 'snippet').replace(/[^a-z0-9]/gi, '_').toLowerCase()
-        const success = await window.api.invoke('export:pdf', fullHtml, sanitizedTitle)
-        if (success) {
-          showToast?.('Snippet exported to PDF successfully!', 'success')
-        }
-      }
-    } catch (err) {
-      console.error('PDF Export Error:', err)
-      showToast?.('Failed to export PDF. Please check the logs.', 'error')
-    }
-  }, [generateFullHtml, title, showToast, preRenderMermaidDiagrams])
-
-  const handleExportWord = useCallback(async () => {
-    try {
-      // Generate HTML optimized for Word (rendered markdown)
-      // Use print-optimized HTML for Word export to avoid including app CSS
-      let fullHtml = await generateFullHtml(true) // true for print/export
-
-      // For Word export, handle Mermaid diagrams differently
-      if (fullHtml.includes('class="mermaid"')) {
-        // For Word, we'll keep Mermaid as code blocks since html-to-docx may not handle SVG well
-        const tempDiv = document.createElement('div')
-        tempDiv.innerHTML = fullHtml
-
-        const mermaidDivs = tempDiv.querySelectorAll('div.mermaid, div.mermaid-diagram')
-        mermaidDivs.forEach((div) => {
-          // Try to extract Mermaid code from the original source
-          const extractMermaidCode = (code) => {
-            const mermaidRegex = /```mermaid\s*\n([\s\S]*?)\n```/g
-            const matches = []
-            let match
-            while ((match = mermaidRegex.exec(code)) !== null) {
-              matches.push(match[1].trim())
-            }
-            return matches
-          }
-
-          const mermaidBlocks = extractMermaidCode(code)
-          let mermaidIndex = 0
-
-          const mermaidCode = div.textContent.trim()
-          if (mermaidCode) {
-            // Replace with a formatted code block that preserves Mermaid formatting
-            const codeBlock = document.createElement('pre')
-            codeBlock.style.cssText = `
-              background: #f6f8fa;
-              border: 1px solid #d1d5db;
-              border-radius: 6px;
-              padding: 1em;
-              margin: 1em 0;
-              font-family: 'Courier New', monospace;
-              font-size: 12px;
-              line-height: 1.4;
-              white-space: pre-wrap;
-              word-wrap: break-word;
-              color: #24292f;
-              overflow-x: auto;
-            `
-
-            // Format the Mermaid code properly
-            const formattedCode = mermaidCode
-              .split('\n')
-              .map((line) => line.trimEnd()) // Remove trailing spaces but keep indentation
-              .join('\n')
-              .trim()
-
-            codeBlock.textContent = `mermaid\n${formattedCode}`
-            div.parentNode.replaceChild(codeBlock, div)
-          }
-        })
-
-        fullHtml = tempDiv.innerHTML
-      }
-
-      // Robust cleanup using DOMParser to ensure no scripts/styles leak to Word
-      const parser = new DOMParser()
-      const doc = parser.parseFromString(fullHtml, 'text/html')
-      doc.querySelectorAll('script, style, link').forEach((el) => el.remove())
-      fullHtml = doc.body.innerHTML || doc.documentElement.innerHTML
-
-      if (window.api?.invoke) {
-        const sanitizedTitle = (title || 'snippet').replace(/[^a-z0-9]/gi, '_').toLowerCase()
-        const success = await window.api.invoke('export:word', fullHtml, sanitizedTitle)
-        if (success) {
-          showToast?.('Snippet exported to Word successfully!', 'success')
-        } else {
-          showToast?.('Word export was cancelled or failed.', 'error')
-        }
-      }
-    } catch (err) {
-      console.error('Word Export Error:', err)
-      showToast?.('Failed to export Word. Please check the logs.', 'error')
-    }
-  }, [generateFullHtml, code, title, showToast])
-
-  const handleSave = async (forceSave = false, customTitle = null) => {
-    const finalTitle = customTitle || title
-
-    if ((initialSnippet?.id && !initialSnippet?.is_draft && finalTitle !== '') || forceSave) {
-      const unchanged =
-        lastSavedCode.current === code && lastSavedTitle.current === (finalTitle || title)
-
-      // Only block if unchanged AND NOT a forced save (Ctrl+S)
-      if (unchanged && !forceSave) {
-        showToast?.('No changes to save', 'info')
-        return
-      }
-    }
-
-    if (!finalTitle || finalTitle.toLowerCase() === 'untitled') {
-      setNamePrompt({ isOpen: true, initialName: '' })
-      return
-    }
-
-    if (isDuplicate) {
-      showToast?.('Snippet name already exists in this folder', 'error')
-      return
-    }
-
-    const payload = {
-      ...initialSnippet,
-      id: initialSnippet?.id || Date.now().toString(),
-      title: finalTitle,
-      code: code,
-      tags: Array.from(
-        new Set([
-          ...tags,
-          ...currentTagInput
-            .split(',')
-            .map((t) => t.trim())
-            .filter(Boolean),
-          ...extractTags(code)
-        ])
-      ).filter((t) => typeof t === 'string' && !/^\d+$/.test(t)),
-      is_draft: false,
-      folder_id: initialSnippet?.folder_id || null,
-      is_pinned: initialSnippet?.is_pinned || 0
-    }
-
-    if (saveTimerRef.current) {
-      clearTimeout(saveTimerRef.current)
-      saveTimerRef.current = null
-    }
-
-    try {
-      onAutosave && onAutosave('saving')
-      window.dispatchEvent(new CustomEvent('autosave-status', { detail: { status: 'saving' } }))
-
-      await onSave(payload)
-
-      window.dispatchEvent(new CustomEvent('autosave-complete', { detail: { id: payload.id } }))
-      window.dispatchEvent(new CustomEvent('autosave-status', { detail: { status: 'saved' } }))
-
-      setIsDirty(false)
-      window.__lastSaveTime = Date.now() // Set cooldown timestamp
-      lastSavedCode.current = code
-      lastSavedTitle.current = finalTitle
-      setTitle(finalTitle) // Sync state
-
-      if (initialSnippet?.id && onDirtyStateChange) {
-        onDirtyStateChange(initialSnippet.id, false)
-      }
-    } catch (err) {
-      onAutosave && onAutosave('error')
-      window.dispatchEvent(new CustomEvent('autosave-status', { detail: { status: null } }))
-    }
-  }
-
-  const handleTriggerCloseCheck = useCallback(
-    (isWindowClose = false) => {
-      // IF UNSAVED: Prompt user using the custom modal
-      if (isDirty) {
-        openModal({
-          title: 'Unsaved Changes',
-          width: '320px',
-          content: (
-            <div className="p-4 text-[var(--color-text-secondary)] text-sm">
-              <p>
-                Save changes to "
-                <span className="text-[var(--color-text-primary)] font-semibold">
-                  {title || 'Untitled'}
-                </span>
-                "?
-              </p>
-            </div>
-          ),
-          footer: (
-            <div className="flex justify-end gap-2 w-full px-4 pb-3">
-              <button
-                className="px-3 py-1.5 text-xs font-medium rounded-md hover:bg-white/10 text-[var(--color-text-secondary)] transition-colors"
-                onClick={() => closeUni()}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-3 py-1.5 text-xs font-medium rounded-md bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
-                onClick={async () => {
-                  // Mark that we're discarding to prevent re-checks and autosave
-                  isDiscardingRef.current = true
-                  skipAutosaveRef.current = true
-
-                  // 1. Revert state and clear dirty
-                  const originalCode = initialSnippet?.code || ''
-                  setCode(originalCode)
-                  codeRef.current = originalCode
-                  setIsDirty(false)
-                  isDirtyRef.current = false
-                  if (initialSnippet?.id && onDirtyStateChange) {
-                    onDirtyStateChange(initialSnippet.id, false)
-                  }
-
-                  // 2. Disable global dirty tracking so main process allows close
-                  if (window.api?.setWindowDirty) {
-                    await window.api.setWindowDirty(false)
-                  }
-
-                  // 3. Close modal immediately
-                  closeUni()
-
-                  // 4. EITHER Exit App or Close Tab
-                  if (isWindowClose) {
-                    if (window.api?.closeWindow) window.api.closeWindow()
-                  } else {
-                    if (onCancel) onCancel(true)
-                  }
-                }}
-              >
-                Discard
-              </button>
-              <button
-                className="px-3 py-1.5 text-xs font-medium rounded-md bg-[var(--color-accent-primary)] text-white hover:opacity-90 transition-colors shadow-sm"
-                onClick={() => {
-                  handleSave(false).then(async () => {
-                    closeUni()
-                    // Disable global dirty tracking
-                    if (window.api?.setWindowDirty) {
-                      await window.api.setWindowDirty(false)
-                    }
-                    if (isWindowClose) {
-                      if (window.api?.closeWindow) window.api.closeWindow()
-                    } else {
-                      if (onCancel) onCancel(true)
-                    }
-                  })
-                }}
-              >
-                Save
-              </button>
-            </div>
-          )
-        })
-        return
-      }
-
-      if (isWindowClose) {
-        if (window.api?.closeWindow) window.api.closeWindow()
-      } else if (onCancel) {
-        onCancel()
-      }
-    },
-    [isDirty, title, openModal, closeUni, onCancel, handleSave, initialSnippet, onDirtyStateChange]
-  )
 
   useKeyboardShortcuts({
     onSave: () => {
@@ -1345,10 +636,6 @@ const SnippetEditor = ({
         return true
       }
       // 2. Close Universal Modal if open
-      if (isUniOpen && closeModal) {
-        closeModal()
-        return true
-      }
       if (isUniOpen && closeUni) {
         closeUni()
         return true
@@ -1371,43 +658,22 @@ const SnippetEditor = ({
       setJustRenamed(false)
     }
   }, [justRenamed, namePrompt.isOpen])
+
   useEffect(() => {
     const fn = () => handleSave(true) // Force save on manual trigger
     const pdfFn = () => handleExportPDF()
     const wordFn = () => handleExportWord()
-    const closeCheckFn = () => handleTriggerCloseCheck()
+
     window.addEventListener('force-save', fn)
     window.addEventListener('app:trigger-export-pdf', pdfFn)
     window.addEventListener('app:trigger-export-word', wordFn)
-    window.addEventListener('app:trigger-close-check', closeCheckFn)
-
-    // Listen for main window close request
-    let unsubscribeClose = null
-    if (window.api?.onCloseRequest) {
-      unsubscribeClose = window.api.onCloseRequest(() => handleTriggerCloseCheck(true))
-    }
 
     return () => {
       window.removeEventListener('force-save', fn)
       window.removeEventListener('app:trigger-export-pdf', pdfFn)
       window.removeEventListener('app:trigger-export-word', wordFn)
-      window.removeEventListener('app:trigger-close-check', closeCheckFn)
-      if (unsubscribeClose) unsubscribeClose()
-      // Cleanup title update timer
-      if (titleUpdateTimerRef.current) {
-        clearTimeout(titleUpdateTimerRef.current)
-        titleUpdateTimerRef.current = null
-      }
     }
-  }, [
-    code,
-    title,
-    initialSnippet,
-    handleExportPDF,
-    handleExportWord,
-    handleCopyToClipboard,
-    handleTriggerCloseCheck
-  ])
+  }, [handleSave, handleExportPDF, handleExportWord])
 
   return (
     <>
@@ -1419,174 +685,86 @@ const SnippetEditor = ({
           style={{ backgroundColor: 'var(--editor-bg)' }}
         >
           <div className="flex-1 min-h-0 overflow-hidden editor-container relative flex flex-col">
-            {/* SEAMLESS METADATA HEADER (Obsidian Style) */}
-            <div className="flex-none snippet-metadata-header pt-8 pb-4 border-none">
-              <div className="metadata-inner px-[30px]">
-                <input
-                  ref={titleInputRef}
-                  className={`snippet-title-input theme-exempt ${isDuplicate ? 'text-red-500' : ''}`}
-                  value={title}
-                  onChange={(e) => {
-                    // Prevent user from manually typing .md
-                    const val = e.target.value.replace(/\.md$/i, '')
-                    setTitle(val)
-                    setIsDirty(true)
-
-                    // Live sidebar update: debounced optimistic save
-                    if (initialSnippet?.id && onSave) {
-                      if (titleUpdateTimerRef.current) {
-                        clearTimeout(titleUpdateTimerRef.current)
-                      }
-                      titleUpdateTimerRef.current = setTimeout(() => {
-                        onSave(
-                          {
-                            ...initialSnippet,
-                            title: val,
-                            code: code,
-                            tags: tags,
-                            is_draft: false
-                          },
-                          true
-                        )
-                        titleUpdateTimerRef.current = null
-                      }, 300)
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      // Jump focus to tags or editor
-                      const nextInput = document.querySelector('.snippet-tags-input')
-                      if (nextInput) nextInput.focus()
-                    }
-                  }}
-                  onWheel={(e) => {
-                    // Prevent scroll from shifting text
-                    e.preventDefault()
-                    e.stopPropagation()
-                  }}
-                  spellCheck="false"
-                  placeholder="Untitled Snippet"
-                />
-                {isDuplicate && (
-                  <div className="text-[10px] text-red-500 font-bold uppercase tracking-wider mt-1">
-                    Snippet name already exists
-                  </div>
-                )}
-                <div className="snippet-tags-container">
-                  <span className="snippet-tags-label">Tags</span>
-
-                  {/* TAG CHIPS */}
-                  <div className="snippet-tags-list flex flex-wrap gap-2 items-center">
-                    {tags.map((tag, idx) => (
-                      <div key={idx} className="snippet-tag-chip group">
-                        <span>{String(tag)}</span>
-                        <button
-                          onClick={() => {
-                            setTags((prev) => prev.filter((_, i) => i !== idx))
-                            setIsDirty(true)
-                          }}
-                          className="snippet-tag-remove"
-                        >
-                          <X size={10} />
-                        </button>
-                      </div>
-                    ))}
-
-                    <input
-                      className="snippet-tags-input theme-exempt"
-                      value={currentTagInput}
-                      onChange={(e) => {
-                        const val = e.target.value
-                        if (val.endsWith(',')) {
-                          const newTag = val.replace(',', '').trim().toLowerCase()
-                          if (newTag && !tags.includes(newTag) && !/^\d+$/.test(newTag)) {
-                            setTags((prev) => [...prev, newTag])
-                            setCurrentTagInput('')
-                            setIsDirty(true)
-                          }
-                        } else {
-                          setCurrentTagInput(val)
-                          setIsDirty(true)
-                        }
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault()
-                          const newTag = currentTagInput.trim().toLowerCase()
-                          if (newTag) {
-                            if (!tags.includes(newTag) && !/^\d+$/.test(newTag)) {
-                              setTags((prev) => [...prev, newTag])
-                              setCurrentTagInput('')
-                            } else {
-                              setCurrentTagInput('')
-                            }
-                            setIsDirty(true)
-                          }
- else {
-                            // Jump focus to editor content if input is empty
-                            const editorElement = document.querySelector('.cm-editor .cm-content')
-                            if (editorElement) editorElement.focus()
-                          }
-                        } else if (e.key === 'Backspace' && !currentTagInput) {
-                          if (tags.length > 0) {
-                            setTags((prev) => prev.slice(0, -1))
-                            setIsDirty(true)
-                          }
-                        }
-                      }}
-                      spellCheck="false"
-                      placeholder={tags.length === 0 ? 'add tags...' : ''}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
             <AdvancedSplitPane
               rightHidden={!showPreview}
               unifiedScroll={false}
               overlayMode={settings?.livePreview?.overlayMode || false}
               left={
-                <div ref={editorContainerRef} className="w-full h-full flex justify-center">
-                  <div className="w-full h-full relative">
-                    <CodeEditor
-                      value={code || ''}
-                      language={detectedLang}
-                      wordWrap={wordWrap}
-                      theme={currentTheme}
-                      centered={true}
-                      autoFocus={initialSnippet?.id !== 'system:settings'}
-                      snippetId={initialSnippet?.id}
-                      readOnly={initialSnippet?.readOnly || false}
-                      onChange={handleCodeChange}
-                      onLargeFileChange={setIsLargeFile}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Escape') {
-                          // Trigger the close logic which now handles the warning
-                          handleTriggerCloseCheck()
-                        }
-                        if ((e.ctrlKey || e.metaKey) && e.key === ',') {
-                          e.preventDefault()
-                          onToggleCompactHandler()
-                        }
-                        // Ctrl + / to cycle modes
-                        if ((e.ctrlKey || e.metaKey) && e.key === '/') {
-                          e.preventDefault()
-                          cycleMode()
-                        }
-                      }}
-                      height="100%"
-                      className="h-full"
-                      textareaRef={textareaRef}
-                      snippets={snippets}
-                      zenFocus={settings?.ui?.zenFocus}
-                      onCursorChange={handleCursorChange}
-                    />
+                <div className="flex flex-col h-full w-full relative">
+                  {/* SEAMLESS METADATA HEADER (Obsidian Style) - Absolute & Scrollable */}
+                  <div 
+                    ref={headerRef} 
+                    className="absolute top-0 left-0 right-4 z-10 transition-transform will-change-transform bg-[var(--editor-bg)] pointer-events-none"
+                  >
+                    <div className="pointer-events-auto">
+                      <EditorMetadataHeader
+                        title={title}
+                        setTitle={setTitle}
+                        tags={tags}
+                        setTags={setTags}
+                        currentTagInput={currentTagInput}
+                        setCurrentTagInput={setCurrentTagInput}
+                        isDuplicate={isDuplicate}
+                        initialSnippet={initialSnippet}
+                        onSave={onSave}
+                        code={code}
+                        setIsDirty={setIsDirty}
+                        titleInputRef={titleInputRef}
+                      />
+                    </div>
+                  </div>
+
+                  <div ref={editorContainerRef} className="flex-1 w-full relative flex justify-center min-h-0">
+                    <div className="w-full h-full relative">
+                      <CodeEditor
+                        value={code || ''}
+                        language={detectedLang}
+                        wordWrap={wordWrap}
+                        theme={currentTheme}
+                        centered={true}
+                        autoFocus={initialSnippet?.id !== 'system:settings'}
+                        snippetId={initialSnippet?.id}
+                        readOnly={initialSnippet?.readOnly || false}
+                        onChange={handleCodeChange}
+                        onLargeFileChange={setIsLargeFile}
+                        onScroll={(scrollTop) => {
+                          if (headerRef.current) {
+                            // Translate header up, clamped so it doesn't detach weirdly
+                            // Actually pure translate is fine, once it's off screen it's off.
+                            headerRef.current.style.transform = `translateY(-${scrollTop}px)`
+                          }
+                        }}
+                        style={{
+                          '--editor-content-padding-top': `${headerHeight}px`
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Escape') {
+                            // Trigger the close logic which now handles the warning
+                            handleTriggerCloseCheck()
+                          }
+                          if ((e.ctrlKey || e.metaKey) && e.key === ',') {
+                            e.preventDefault()
+                            onToggleCompactHandler()
+                          }
+                          // Ctrl + / to cycle modes
+                          if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+                            e.preventDefault()
+                            cycleMode()
+                          }
+                        }}
+                        height="100%"
+                        className="h-full"
+                        textareaRef={textareaRef}
+                        snippets={snippets}
+                        zenFocus={settings?.ui?.zenFocus}
+                        onCursorChange={handleCursorChange}
+                      />
+                    </div>
                   </div>
                 </div>
               }
               right={
-                <div className="h-full w-full p-0 flex justify-center bg-[var(--color-bg-primary)] overflow-hidden text-left items-stretch">
+                <div className="h-full w-full p-0 flex justify-center bg-[var(--color-bg-primary)] overflow-hidden text-left items-stretch relative">
                   <div className="w-full max-w-[850px] h-full shadow-sm flex flex-col">
                     {useMemo(() => {
                       const safeTitle = typeof title === 'string' ? title : ''
@@ -1612,7 +790,8 @@ const SnippetEditor = ({
                       }
 
                       return (
-                        <div className="flex-1 w-full min-h-0">
+                        // Live Preview
+                        <div className="flex-1 w-full min-h-0 relative">
                           <LivePreview
                             code={debouncedCode}
                             language={detectedLang}
@@ -1638,156 +817,19 @@ const SnippetEditor = ({
               }
             />
 
-            <div
-              ref={switcherRef}
-              className={`cm-editor-mode-switcher ${
-                isFloating ? 'is-floating' : ''
-              } animate-in fade-in slide-in-from-bottom-2 duration-300`}
-            >
-              {/* Drag Handle - Only show if draggable is enabled AND currently floating */}
-              {isFloating &&
-                !settings?.ui?.modeSwitcher?.disableDraggable &&
-                !settings?.ui?.universalLock?.modal && (
-                  <div
-                    ref={dragHandleRef}
-                    className="cm-mode-item"
-                    title="Drag to move"
-                    onClick={(e) => {
-                      // Prevent click propagation to avoid triggering adjacent logic if any
-                      e.stopPropagation()
-                    }}
-                    onMouseDown={(e) => {
-                      // Prevent focus stealing for smoother drag start
-                      e.preventDefault()
-                    }}
-                    style={{
-                      cursor: isFloating ? 'move' : 'default',
-                      opacity: isFloating ? 1 : 0.3
-                    }}
-                  >
-                    <GripVertical size={14} />
-                  </div>
-                )}
-
-              {/* Pin/Float Toggle - Only show if draggable is enabled */}
-              {!settings?.ui?.modeSwitcher?.disableDraggable &&
-                !settings?.ui?.universalLock?.modal && (
-                  <button
-                    className="cm-mode-item"
-                    onClick={(e) => {
-                      e.currentTarget.blur() // Remove focus ring to avoid confusion with active state
-                      if (switcherRef.current) {
-                        switcherRef.current.style.top = ''
-                        switcherRef.current.style.left = ''
-                        switcherRef.current.style.bottom = ''
-                        switcherRef.current.style.right = ''
-                        switcherRef.current.style.margin = ''
-                      }
-                      const newState = !isFloating
-                      setIsFloating(newState)
-                      updateSetting('ui.modeSwitcher.isFloating', newState)
-                    }}
-                  >
-                    {isFloating ? (
-                      <svg
-                        viewBox="0 0 24 24"
-                        width="14"
-                        height="14"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path d="M21 10V4a2 2 0 0 0-2-2h-6"></path>
-                        <path d="M3 14v6a2 2 0 0 0 2 2h6"></path>
-                        <path d="M16 2l6 6"></path>
-                        <path d="M2 16l6 6"></path>
-                      </svg>
-                    ) : (
-                      <svg
-                        viewBox="0 0 24 24"
-                        width="14"
-                        height="14"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"></path>
-                      </svg>
-                    )}
-                  </button>
-                )}
-              <div className="cm-mode-divider"></div>
-
-              {[
-                {
-                  id: 'source',
-                  label: 'Source',
-                  icon: (
-                    <svg
-                      viewBox="0 0 24 24"
-                      width="14"
-                      height="14"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <polyline points="16 18 22 12 16 6"></polyline>
-                      <polyline points="8 6 2 12 8 18"></polyline>
-                    </svg>
-                  )
-                },
-
-                // Switch modes
-                {
-                  id: 'live_preview',
-                  label: 'Live',
-                  icon: (
-                    <svg
-                      viewBox="0 0 24 24"
-                      width="14"
-                      height="14"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                      <circle cx="12" cy="12" r="3"></circle>
-                    </svg>
-                  )
-                },
-                {
-                  id: 'reading',
-                  label: 'Read',
-                  icon: (
-                    <svg
-                      viewBox="0 0 24 24"
-                      width="14"
-                      height="14"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                    </svg>
-                  )
-                }
-              ].map((m) => (
-                <button
-                  key={m.id}
-                  className={`cm-mode-btn ${activeMode === m.id ? 'is-active' : ''}`}
-                  title={`${m.label} Mode`}
-                  onClick={() => {
-                    window.dispatchEvent(
-                      new CustomEvent('app:set-editor-mode', { detail: { mode: m.id } })
-                    )
-                  }}
-                >
-                  {m.icon}
-                  <span>{m.label}</span>
-                </button>
-              ))}
-            </div>
+            <EditorModeSwitcher
+              isFloating={isFloating}
+              setIsFloating={setIsFloating}
+              switcherRef={switcherRef}
+              dragHandleRef={dragHandleRef}
+              activeMode={activeMode}
+              updateSetting={updateSetting}
+              settings={settings}
+              initialSnippet={initialSnippet}
+              onFavorite={onFavorite}
+              onPing={onPing}
+              isFlow={isFlow}
+            />
           </div>
 
           <StatusBar

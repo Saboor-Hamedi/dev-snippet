@@ -23,8 +23,11 @@ export const useEditorSave = ({
   getSetting,
   showToast,
   setIsDirty,
-  onDirtyStateChange
+  isDirty,
+  onDirtyStateChange,
+  onAutosave
 }) => {
+  const isInitialMount = useRef(true)
   const saveTimerRef = useRef(null)
   const lastSavedCode = useRef(initialSnippet?.code || '')
   const lastSavedTitle = useRef(initialSnippet?.title || '')
@@ -97,21 +100,37 @@ export const useEditorSave = ({
         }
 
         try {
+          onAutosave && onAutosave('saving')
           window.dispatchEvent(new CustomEvent('autosave-status', { detail: { status: 'saving' } }))
 
           await onSave(updatedSnippet)
 
+          onAutosave && onAutosave('saved')
           window.dispatchEvent(new CustomEvent('autosave-status', { detail: { status: 'saved' } }))
           setIsDirty(false)
           lastSavedCode.current = code
           lastSavedTitle.current = title
         } catch (err) {
+          onAutosave && onAutosave('error')
           window.dispatchEvent(new CustomEvent('autosave-status', { detail: { status: 'error' } }))
         }
       },
       initialSnippet?.id === 'system:settings' ? 800 : getSetting('behavior.autoSaveDelay') || 2000
     )
-  }, [code, title, tags, currentTagInput, initialSnippet, autoSaveEnabled, onSave, isDuplicate, getSetting, setIsDirty])
+  }, [code, title, tags, currentTagInput, initialSnippet, autoSaveEnabled, onSave, isDuplicate, getSetting, setIsDirty, onAutosave])
+
+  // NEW: Internal Autosave Controller (Centralized)
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+      return
+    }
+    if (!setIsDirty || !autoSaveEnabled || initialSnippet?.id === 'system:settings') return
+    
+    // Only schedule if dirty
+    // Note: We depend on 'code' and 'title' from outside to trigger this
+    scheduleSave()
+  }, [code, title, isDirty, autoSaveEnabled, scheduleSave])
 
   // Register autosave cancel handler
   useEffect(() => {

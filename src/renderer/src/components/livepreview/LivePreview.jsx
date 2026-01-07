@@ -40,7 +40,8 @@ const LivePreview = ({
   onExportPDF,
   showHeader = true,
   enableScrollSync = false,
-  fontSize = null
+  fontSize = null,
+  renderMetadataCard = false
 }) => {
   // --- Refs & Context ---
   const lastScrollPercentage = useRef(0)
@@ -92,7 +93,7 @@ const LivePreview = ({
 
       // 1. Check cache first (LRU cache hit = instant)
       const normalizedLang = (language || 'markdown').toLowerCase()
-      const cacheKey = { showHeader, titles: existingTitles }
+      const cacheKey = { showHeader: renderMetadataCard, titles: existingTitles }
       const cachedResult = parseCache.get(code, normalizedLang, cacheKey)
 
       if (cachedResult && active) {
@@ -111,7 +112,7 @@ const LivePreview = ({
           if (visibleCode.length > 50000) {
             for await (const chunk of incrementalParser.parseInChunks(
               visibleCode,
-              { renderMetadata: showHeader, titles: existingTitles },
+              { renderMetadata: renderMetadataCard, titles: existingTitles },
               (chunkResult) => {
                 if (active) {
                   setParseProgress(chunkResult.progress)
@@ -127,7 +128,7 @@ const LivePreview = ({
           } else {
             // Small file: single fast parse
             result = await markdownToHtml(visibleCode, {
-              renderMetadata: showHeader,
+              renderMetadata: renderMetadataCard,
               titles: existingTitles
             })
           }
@@ -212,7 +213,7 @@ const LivePreview = ({
         abortControllerRef.current.abort()
       }
     }
-  }, [code, language, showHeader, existingTitles, disabled])
+  }, [code, language, renderMetadataCard, existingTitles, disabled])
 
   // --- 2. Style Merging (DRY Token Engine) ---
   const combinedStyles = useMemo(() => {
@@ -468,7 +469,7 @@ const LivePreview = ({
 
   // --- 5. Main Render Output ---
   return (
-    <div className="w-full h-full flex flex-col bg-transparent overflow-hidden live-preview-container">
+    <div className="w-full h-full flex flex-col bg-transparent overflow-hidden live-preview-container relative">
       {/* Parse Progress Bar - shows during incremental parsing */}
       {parseProgress < 100 && (
         <div
@@ -609,7 +610,8 @@ LivePreview.propTypes = {
   onExportPDF: PropTypes.func,
   enableScrollSync: PropTypes.bool,
   showHeader: PropTypes.bool,
-  fontSize: PropTypes.number
+  fontSize: PropTypes.number,
+  renderMetadataCard: PropTypes.bool
 }
 
 export default React.memo(LivePreview)

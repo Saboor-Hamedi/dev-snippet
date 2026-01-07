@@ -104,46 +104,48 @@ const EditorMetadataHeader = ({
 
   return (
     <div className="flex-none snippet-metadata-header pt-8 pb-4 border-none">
-      <div className="metadata-inner px-[30px]">
-        <input
-          ref={titleInputRef}
-          className={`snippet-title-input theme-exempt ${isDuplicate ? 'text-red-500' : ''}`}
-          value={title}
-          onChange={handleTitleChange}
-          onKeyDown={handleTitleKeyDown}
-          onWheel={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-          }}
-          spellCheck="false"
-          placeholder="Untitled Snippet"
-        />
-        {isDuplicate && (
-          <div className="text-[10px] text-red-500 font-bold uppercase tracking-wider mt-1">
-            Snippet name already exists
-          </div>
-        )}
-        <div className="snippet-tags-container">
-          <span className="snippet-tags-label">Tags</span>
+      <div className="metadata-inner px-[30px] flex justify-center">
+        <div className="w-full max-w-[850px]">
+          <input
+            ref={titleInputRef}
+            className={`snippet-title-input theme-exempt ${isDuplicate ? 'text-red-500' : ''}`}
+            value={title}
+            onChange={handleTitleChange}
+            onKeyDown={handleTitleKeyDown}
+            onWheel={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
+            spellCheck="false"
+            placeholder="Untitled Snippet"
+          />
+          {isDuplicate && (
+            <div className="text-[10px] text-red-500 font-bold uppercase tracking-wider mt-1">
+              Snippet name already exists
+            </div>
+          )}
+          <div className="snippet-tags-container">
+            <span className="snippet-tags-label">Tags</span>
 
-          <div className="snippet-tags-list flex flex-wrap gap-2 items-center">
-            {tags.map((tag, idx) => (
-              <div key={idx} className="snippet-tag-chip group">
-                <span>{String(tag)}</span>
-                <button onClick={() => handleRemoveTag(idx)} className="snippet-tag-remove">
-                  <X size={10} />
-                </button>
-              </div>
-            ))}
+            <div className="snippet-tags-list flex flex-wrap gap-2 items-center">
+              {tags.map((tag, idx) => (
+                <div key={idx} className="snippet-tag-chip group">
+                  <span>{String(tag)}</span>
+                  <button onClick={() => handleRemoveTag(idx)} className="snippet-tag-remove">
+                    <X size={10} />
+                  </button>
+                </div>
+              ))}
 
-            <input
-              className="snippet-tags-input theme-exempt"
-              value={currentTagInput}
-              onChange={handleTagInputChange}
-              onKeyDown={handleTagInputKeyDown}
-              spellCheck="false"
-              placeholder={tags.length === 0 ? 'add tags...' : ''}
-            />
+              <input
+                className="snippet-tags-input theme-exempt"
+                value={currentTagInput}
+                onChange={handleTagInputChange}
+                onKeyDown={handleTagInputKeyDown}
+                spellCheck="false"
+                placeholder={tags.length === 0 ? 'add tags...' : ''}
+              />
+            </div>
           </div>
         </div>
       </div>
