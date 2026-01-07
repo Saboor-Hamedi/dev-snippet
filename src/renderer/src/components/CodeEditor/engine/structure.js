@@ -169,11 +169,26 @@ export const richMarkdownStateField = StateField.define({
                 })
               })
 
+              // Determine activity state for the fences
+              const startActive = isRangeActive(startLine.from, startLine.to)
+              const endActive = isRangeActive(endLine.from, endLine.to)
+
               for (let i = startLine.number; i <= endLine.number; i++) {
                 if (!lineDecos.has(i)) {
                   let cls = 'cm-code-block'
-                  if (i === startLine.number) cls += ' cm-code-block-start'
-                  if (i === endLine.number) cls += ' cm-code-block-end'
+                  if (i === startLine.number) {
+                    cls += ' cm-code-block-start'
+                    if (!startActive) cls += ' cm-hidden-fence'
+                  }
+                  if (i === endLine.number - 1 && !endActive) {
+                    cls += ' cm-code-block-bottom'
+                  }
+
+                  if (i === endLine.number) {
+                    cls += ' cm-code-block-end'
+                    if (!endActive) cls += ' cm-hidden-fence'
+                  }
+                  
                   lineDecos.set(i, Decoration.line({ class: cls }))
                 }
               }

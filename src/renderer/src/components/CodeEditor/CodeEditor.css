@@ -59,7 +59,7 @@
 /* VS CODE STYLE: Active Line Background (Base) */
 /* PREMIUM ACTIVE LINE: Subtle focal indicator */
 .cm-editor .cm-activeLine {
-  background-color: transparent !important;
+  background-color: rgba(255, 255, 255, 0.02) !important;
   border-left: 2px solid var(--caret-color, #ffffff) !important;
   transition: background-color 0.2s ease;
 }
@@ -227,7 +227,8 @@
 }
 
 /* Code block line styling (The "Boxed" look) */
-.cm-editor .cm-line.cm-code-block {
+.cm-editor .cm-line.cm-code-block,
+.cm-editor .cm-line.cm-code-block.cm-activeLine {
   background-color: rgba(125, 125, 125, 0.05) !important;
   padding-left: 1.5rem !important;
   padding-right: 1.5rem !important;
@@ -249,10 +250,14 @@
   border-bottom: none;
 }
 
+
+/* Remove th */
 .cm-line.cm-code-block-start {
   border-radius: 0 !important; /* Header handles top rounding */
+  padding-top: 12px !important; /* Visual padding inside the block */
 }
-.cm-line.cm-code-block-end {
+.cm-line.cm-code-block-end,
+.cm-line.cm-code-block-bottom {
   border-radius: 0 0 12px 12px !important;
   border-bottom: 1px solid var(--color-border, transparent) !important;
   padding-bottom: 24px !important; /* Fixed: Replaced margin-bottom with padding for selection stability */
@@ -263,7 +268,7 @@
 }
 
 .cm-editor .cm-activeLine {
-  background-color: transparent !important;
+  background-color: rgba(255, 255, 255, 0.02) !important;
   border-left: 2px solid var(--caret-color, #ffffff) !important;
   transition: background-color 0.2s ease;
 }
@@ -691,3 +696,14 @@ body.zen-focus-active .cm-line:not(.cm-zen-active) .cm-activeLineGutter {
 /* ============================================================================ */
 /* User Request: Make ALL themes match the larger "white theme" header sizes. 
    Enforcing 1.4rem globally as requested. Added .cm-editor prefix for max specificity. */
+/* HIDE FENCES (Live Preview) */
+.cm-hidden-fence {
+  display: none !important;
+}
+
+/* Ensure the header connects nicely when fence is hidden */
+.cm-hidden-fence + .cm-line.cm-code-block {
+  padding-top: 12px !important;
+  /* Ensure top border logic if needed, but usually header covers it */
+}
+
