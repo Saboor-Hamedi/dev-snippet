@@ -335,7 +335,7 @@ const SearchPanel = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.15 }}
-      className="search-panel-widget absolute top-1 right-8 z-[1001] flex flex-col p-2 gap-1.5"
+      className="search-panel-widget fixed top-0 right-8 z-[1001] flex flex-col p-2 gap-1.5"
       style={{ width: '400px' }}
     >
       {/* FIND ROW */}

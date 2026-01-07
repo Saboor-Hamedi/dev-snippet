@@ -1,0 +1,169 @@
+import React, { useRef } from 'react'
+import { X } from 'lucide-react'
+import PropTypes from 'prop-types'
+
+/**
+ * EditorMetadataHeader - Title and tags input component
+ * 
+ * This component renders the Obsidian-style metadata header with:
+ * - Title input (with duplicate detection)
+ * - Tags chip system with inline input
+ */
+const EditorMetadataHeader = ({
+  title,
+  setTitle,
+  tags,
+  setTags,
+  currentTagInput,
+  setCurrentTagInput,
+  isDuplicate,
+  setIsDirty,
+  initialSnippet,
+  onSave,
+  code,
+  titleInputRef
+}) => {
+  const titleUpdateTimerRef = useRef(null)
+
+  const handleTitleChange = (e) => {
+    const val = e.target.value.replace(/\.md$/i, '')
+    setTitle(val)
+    setIsDirty(true)
+
+    // Live sidebar update: debounced optimistic save
+    if (initialSnippet?.id && onSave) {
+      if (titleUpdateTimerRef.current) {
+        clearTimeout(titleUpdateTimerRef.current)
+      }
+      titleUpdateTimerRef.current = setTimeout(() => {
+        onSave(
+          {
+            ...initialSnippet,
+            title: val,
+            code: code,
+            tags: tags,
+            is_draft: false
+          },
+          true
+        )
+        titleUpdateTimerRef.current = null
+      }, 300)
+    }
+  }
+
+  const handleTitleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      const nextInput = document.querySelector('.snippet-tags-input')
+      if (nextInput) nextInput.focus()
+    }
+  }
+
+  const handleTagInputChange = (e) => {
+    const val = e.target.value
+    if (val.endsWith(',')) {
+      const newTag = val.replace(',', '').trim().toLowerCase()
+      if (newTag && !tags.includes(newTag) && !/^\d+$/.test(newTag)) {
+        setTags((prev) => [...prev, newTag])
+        setCurrentTagInput('')
+        setIsDirty(true)
+      }
+    } else {
+      setCurrentTagInput(val)
+      setIsDirty(true)
+    }
+  }
+
+  const handleTagInputKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      const newTag = currentTagInput.trim().toLowerCase()
+      if (newTag) {
+        if (!tags.includes(newTag) && !/^\d+$/.test(newTag)) {
+          setTags((prev) => [...prev, newTag])
+          setCurrentTagInput('')
+        } else {
+          setCurrentTagInput('')
+        }
+        setIsDirty(true)
+      } else {
+        const editorElement = document.querySelector('.cm-editor .cm-content')
+        if (editorElement) editorElement.focus()
+      }
+    } else if (e.key === 'Backspace' && !currentTagInput) {
+      if (tags.length > 0) {
+        setTags((prev) => prev.slice(0, -1))
+        setIsDirty(true)
+      }
+    }
+  }
+
+  const handleRemoveTag = (idx) => {
+    setTags((prev) => prev.filter((_, i) => i !== idx))
+    setIsDirty(true)
+  }
+
+  return (
+    <div className="flex-none snippet-metadata-header pt-8 pb-4 border-none">
+      <div className="metadata-inner px-[30px]">
+        <input
+          ref={titleInputRef}
+          className={`snippet-title-input theme-exempt ${isDuplicate ? 'text-red-500' : ''}`}
+          value={title}
+          onChange={handleTitleChange}
+          onKeyDown={handleTitleKeyDown}
+          onWheel={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+          }}
+          spellCheck="false"
+          placeholder="Untitled Snippet"
+        />
+        {isDuplicate && (
+          <div className="text-[10px] text-red-500 font-bold uppercase tracking-wider mt-1">
+            Snippet name already exists
+          </div>
+        )}
+        <div className="snippet-tags-container">
+          <span className="snippet-tags-label">Tags</span>
+
+          <div className="snippet-tags-list flex flex-wrap gap-2 items-center">
+            {tags.map((tag, idx) => (
+              <div key={idx} className="snippet-tag-chip group">
+                <span>{String(tag)}</span>
+                <button onClick={() => handleRemoveTag(idx)} className="snippet-tag-remove">
+                  <X size={10} />
+                </button>
+              </div>
+            ))}
+
+            <input
+              className="snippet-tags-input theme-exempt"
+              value={currentTagInput}
+              onChange={handleTagInputChange}
+              onKeyDown={handleTagInputKeyDown}
+              spellCheck="false"
+              placeholder={tags.length === 0 ? 'add tags...' : ''}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+EditorMetadataHeader.propTypes = {
+  title: PropTypes.string.isRequired,
+  setTitle: PropTypes.func.isRequired,
+  tags: PropTypes.array.isRequired,
+  setTags: PropTypes.func.isRequired,
+  currentTagInput: PropTypes.string.isRequired,
+  setCurrentTagInput: PropTypes.func.isRequired,
+  isDuplicate: PropTypes.bool.isRequired,
+  setIsDirty: PropTypes.func.isRequired,
+  initialSnippet: PropTypes.object,
+  onSave: PropTypes.func,
+  code: PropTypes.string,
+  titleInputRef: PropTypes.object
+}
+
+export default EditorMetadataHeader

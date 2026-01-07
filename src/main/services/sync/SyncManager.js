@@ -15,8 +15,9 @@ import { app } from 'electron'
  * - SETTINGS_FILENAME: Parallel payload for application configuration.
  */
 
-const APP_VERSION = app.getVersion()
-const GIST_DESCRIPTION = `Dev-Snippet-Backup-v${APP_VERSION.split('.')[0]}` // signature versioned by major release
+// Lazy getters to avoid accessing app before it's ready
+const getAppVersion = () => app?.getVersion() || '1.0.0'
+const getGistDescription = () => `Dev-Snippet-Backup-v${getAppVersion().split('.')[0]}`
 const BACKUP_FILENAME = 'dev-snippet-data.json'
 const SETTINGS_FILENAME = 'dev-snippet-config.json'
 const SENSITIVE_SETTINGS_KEYS = new Set(['github.token'])
@@ -118,7 +119,7 @@ class SyncManager {
       }
 
       // 2. Find existing Gist
-      const existingGist = await GitHubService.findGistByDescription(GIST_DESCRIPTION)
+      const existingGist = await GitHubService.findGistByDescription(getGistDescription())
 
       let targetGistId = null
       if (existingGist) {
@@ -129,7 +130,7 @@ class SyncManager {
       } else {
         // 4. Create new
         console.log('[Sync] Creating new Gist')
-        const gist = await GitHubService.createGist(GIST_DESCRIPTION, files, false) // False = Private
+        const gist = await GitHubService.createGist(getGistDescription(), files, false) // False = Private
         targetGistId = gist?.id || null
       }
 
@@ -326,7 +327,7 @@ class SyncManager {
       }
 
       try {
-        const gist = await GitHubService.findGistByDescription(GIST_DESCRIPTION)
+        const gist = await GitHubService.findGistByDescription(getGistDescription())
         if (gist) {
           baseStatus.gist = {
             id: gist.id,
@@ -366,7 +367,7 @@ class SyncManager {
     }))
 
     return {
-      version: APP_VERSION,
+      version: getAppVersion(),
       timestamp: Date.now(),
       snippets: processedSnippets,
       folders: folders

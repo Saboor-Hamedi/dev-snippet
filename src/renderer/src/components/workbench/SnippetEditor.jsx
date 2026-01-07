@@ -22,7 +22,7 @@ import DiagramEditorModal from '../mermaid/modal/DiagramEditorModal'
 import TableEditorModal from '../table/TableEditorModal'
 import PerformanceBarrier from '../universal/PerformanceBarrier/PerformanceBarrier'
 import '../universal/universalStyle.css'
-import './EditorMetadata.css'
+import './editor/EditorMetadata.css'
 
 /**
  * ╔══════════════════════════════════════════════════════════════════════════╗

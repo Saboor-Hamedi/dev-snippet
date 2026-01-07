@@ -14,9 +14,14 @@ import { useThemeManager } from '../../hook/useThemeManager'
 import { themeProps } from '../preference/theme/themeProps'
 import { handleRenameSnippet } from '../../hook/handleRenameSnippet'
 import { useFlowMode } from '../FlowMode/useFlowMode'
-import { getBaseTitle } from '../../utils/snippetUtils'
+import { getBaseTitle, getUniqueTitle } from '../../utils/snippetUtils'
 import { useSessionRestore } from '../../hook/session/useSessionRestore'
 import { useSidebarStore } from '../../store/useSidebarStore'
+// Extracted library hooks
+import { useSnippetOperations } from './library/useSnippetOperations'
+import { useClipboardOperations } from './library/useClipboardOperations'
+import { useFolderOperations } from './library/useFolderOperations'
+import { useSnippetHandlers } from './library/useSnippetHandlers'
 
 // #file:SnippetLibraryInner.jsx orchestrates the entire workbench experience.
 // The Core Logic Component
@@ -423,54 +428,6 @@ const SnippetLibraryInner = ({ snippetData }) => {
     updateSetting('sidebar.visible', !isSidebarOpen)
   }, [isSidebarOpen, updateSetting])
 
-  const handleSelectSnippet = useCallback(
-    (s) => {
-      if (!s) {
-        setSelectedSnippet(null)
-        setSelectedFolderId(null)
-        setSelectedIds([])
-        return
-      }
-
-      // UNSAVED CHANGES CHECK: Before switching to a different snippet
-      if (
-        selectedSnippet &&
-        selectedSnippet.id !== s.id &&
-        dirtySnippetIds.has(selectedSnippet.id)
-      ) {
-        // Store the next snippet to switch to
-        window.__pendingSnippetSwitch = s
-        // Trigger close check on current snippet
-        window.dispatchEvent(new CustomEvent('app:trigger-close-check'))
-        return
-      }
-
-      setSelectedSnippet(s)
-      setSelectedFolderId(null)
-      
-      // FIX: Only update selectedIds if the snippet (or its pinned variant) 
-      // is not already in the selection. This prevents "jumping" when clicking
-      // pinned items in the sidebar.
-      const isAlreadyInSelection = selectedIds.some(id => 
-        id === s.id || id === `pinned-${s.id}`
-      )
-      
-      if (!isAlreadyInSelection) {
-        setSelectedIds([s.id])
-      }
-
-      navigateTo('editor')
-    },
-    [
-      setSelectedSnippet,
-      setSelectedFolderId,
-      setSelectedIds,
-      navigateTo,
-      selectedSnippet,
-      dirtySnippetIds,
-      selectedIds
-    ]
-  )
 
   // Session Restoration (P1 Feature) - Must be after state init & handler definition
   const { isRestoring } = useSessionRestore({
@@ -493,6 +450,67 @@ const SnippetLibraryInner = ({ snippetData }) => {
       if (el?.focus) el.focus()
     }, 50)
   }, [activeView, isCreatingSnippet])
+
+  // Initialize extracted library hooks
+  const snippetOps = useSnippetOperations({
+    snippets,
+    folders,
+    saveSnippet,
+    saveFolder,
+    setSnippets,
+    setSelectedSnippet,
+    setIsCreatingSnippet,
+    navigateTo,
+    showToast
+  })
+
+  const clipboardOps = useClipboardOperations({
+    selectedIds,
+    selectedFolderId,
+    snippets,
+    folders,
+    clipboard,
+    setClipboard,
+    setSelectedIds,
+    moveSnippet,
+    moveFolder,
+    saveSnippet,
+    saveFolder,
+    showToast
+  })
+
+  const folderOps = useFolderOperations({
+    folders,
+    snippets,
+    saveFolder,
+    deleteFolder,
+    deleteFolders,
+    toggleFolderCollapse,
+    selectedFolderId,
+    selectedSnippet,
+    openRenameModal,
+    openDeleteModal,
+    showToast
+  })
+
+  const snippetHandlers = useSnippetHandlers({
+    snippets,
+    selectedSnippet,
+    selectedIds,
+    dirtySnippetIds,
+    setSelectedSnippet,
+    setSelectedFolderId,
+    setSelectedIds,
+    setIsCreatingSnippet,
+    saveSnippet,
+    deleteItem,
+    deleteItems,
+    navigateTo,
+    openRenameModal,
+    openDeleteModal,
+    showToast,
+    createDraftSnippet: snippetOps.createDraftSnippet
+  })
 
   // --- Navigation Listeners ---
   useEffect(() => {
@@ -527,197 +545,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
     }
   }, [setZoomLevel, setEditorZoom])
 
-  const createDailyNote = async () => {
-    const now = new Date()
-    // FIX: Use local date instead of UTC to avoid timezone alignment issues (e.g. 2026-01-02)
-    const year = now.getFullYear()
-    const month = String(now.getMonth() + 1).padStart(2, '0')
-    const day = String(now.getDate()).padStart(2, '0')
-    const dateTitle = `${year}-${month}-${day}`
-    const targetBase = getBaseTitle(dateTitle)
 
-    // Check if a note for today already exists
-    const existing = snippets.find((s) => getBaseTitle(s.title) === targetBase && !s.is_deleted)
-
-    if (existing) {
-      handleSelectSnippet(existing)
-      showToast(`Opening today's log: ${dateTitle}`, 'info')
-      return
-    }
-
-    // Time signature for the initial log entry
-    const timeStr = now.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    })
-
-    // Premium Template
-    const initialCode = `# ${dateTitle}\n\n## Log Started at ${timeStr}\n\n- [ ] \n`
-
-    // Multi-Folder Detection: Support "Inbox", "Daily", or "Journal"
-    let targetFolder = folders.find((f) =>
-      ['inbox', 'daily', 'journal'].some((keyword) => f.name.toLowerCase().includes(keyword))
-    )
-
-    let folderId = targetFolder ? targetFolder.id : null
-
-    // Auto-create "📥 Inbox" if no suitable home is found
-    if (!targetFolder) {
-      try {
-        const folderResult = await saveFolder({ name: '📥 Inbox', parent_id: null })
-        folderId = folderResult.id
-      } catch (e) {
-        console.error('Failed to auto-create Inbox:', e)
-      }
-    }
-
-    const draft = createDraftSnippet(dateTitle, folderId, {
-      initialCode,
-      skipNavigation: false,
-      isPinned: 0,
-      isDraft: false
-    })
-
-    // Save immediately
-    await saveSnippet({
-      ...draft,
-      is_draft: false,
-      is_pinned: 0
-    })
-
-    showToast(`Journal entry "${dateTitle}" created`, 'success')
-  }
-
-  const createDraftSnippet = (initialTitle = '', folderId = null, options = {}) => {
-    if (!initialTitle && !folderId) {
-      const existingBlank = snippets.find(
-        (s) =>
-          (!s.title || s.title.trim() === '') && (!s.code || s.code.trim() === '') && !s.folder_id
-      )
-
-      if (existingBlank) {
-        if (!options.skipNavigation) {
-          setSelectedSnippet(existingBlank)
-          setIsCreatingSnippet(true)
-          navigateTo('editor')
-        }
-        showToast('Resuming empty draft', 'info')
-        return existingBlank
-      }
-    }
-
-    const draft = {
-      id: window.crypto?.randomUUID
-        ? window.crypto.randomUUID()
-        : `draft-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      title: initialTitle,
-      code: options.initialCode || '',
-      timestamp: Date.now(),
-      type: 'snippet',
-      is_draft: options.isDraft !== undefined ? options.isDraft : true,
-      is_pinned: options.isPinned !== undefined ? options.isPinned : 0,
-      folder_id: folderId
-    }
-    setSnippets((prev) => [draft, ...prev])
-
-    if (!options.skipNavigation) {
-      setSelectedSnippet(draft)
-      setIsCreatingSnippet(true)
-      navigateTo('editor')
-    }
-    return draft
-  }
-
-  // Toggle favorite helper used by popover and sidebar menu
-  const toggleFavoriteSnippet = async (id) => {
-    try {
-    } catch (e) {}
-    try {
-      const s = snippets.find((t) => t.id === id)
-      if (!s) return
-      const updated = { ...s, is_favorite: s.is_favorite === 1 ? 0 : 1 }
-      await saveSnippet(updated)
-
-      setSnippets((prev) => prev.map((it) => (it.id === id ? updated : it)))
-      if (selectedSnippet?.id === id) setSelectedSnippet(updated)
-    } catch (err) {
-      console.error('Failed toggle favorite from sidebar/menu', err)
-      showToast('Failed to toggle favorite', 'error')
-    }
-  }
-
-  const handlePing = useCallback(
-    async (id) => {
-      try {
-      } catch (e) {}
-      const s = snippets.find((t) => t.id === id)
-      if (s) {
-        // 1. Toggle pinned state and update timestamp
-        const isCurrentlyPinned = s.is_pinned === 1
-        const updated = {
-          ...s,
-          is_pinned: isCurrentlyPinned ? 0 : 1,
-          timestamp: Date.now()
-        }
-
-        // 2. Persist the update
-        await saveSnippet(updated)
-
-        // 3. Update local state
-        setSnippets((prev) => prev.map((it) => (it.id === id ? updated : it)))
-
-        // 4. Select and navigate
-        setSelectedSnippet(updated)
-        navigateTo('editor')
-      }
-    },
-    [snippets, setSelectedSnippet, navigateTo, setSnippets, originalSaveSnippet, saveSnippet]
-  )
-
-  const handleRenameRequest = () => {
-    if (selectedSnippet?.id === 'system:settings') {
-      showToast('The settings.json file cannot be renamed', 'info')
-      return
-    }
-    if (selectedSnippet?.id === 'system:default-settings') {
-      // showToast('The default settings file cannot be renamed', 'info')
-      return
-    }
-    openRenameModal(selectedSnippet, (newName) => {
-      handleRenameSnippet({
-        renameModal: { newName, item: selectedSnippet },
-        saveSnippet,
-        setSelectedSnippet,
-        setRenameModal: () => {},
-        setIsCreatingSnippet,
-        renameSnippet: (oldId, updated) => {
-          setSnippets((prev) => [...prev.filter((s) => s.id !== oldId), updated])
-        },
-        showToast,
-        snippets
-      }).then(() => focusEditor())
-    })
-  }
-
-  useEffect(() => {
-    const handleOpenRequest = (e) => {
-      const { title } = e.detail
-      if (!title) return
-      const search = title.trim().toLowerCase()
-      const target = snippets.find((s) => (s.title || '').toLowerCase().trim() === search)
-      if (target) {
-        setSelectedSnippet(target)
-        navigateTo('editor')
-      } else {
-        const finalTitle = search.endsWith('.md') ? title.trim() : `${title.trim()}.md`
-        showToast(`Navigating to ${finalTitle}...`, 'info')
-        createDraftSnippet(finalTitle)
-      }
-    }
-    window.addEventListener('app:open-snippet', handleOpenRequest)
-    return () => window.removeEventListener('app:open-snippet', handleOpenRequest)
-  }, [snippets, showToast, navigateTo, setSelectedSnippet])
 
   const { setTheme, currentThemeId } = themeProps()
   const themeRef = React.useRef(currentThemeId)
@@ -856,18 +684,18 @@ const SnippetLibraryInner = ({ snippetData }) => {
       showToast(`Header ${!current ? 'Shown' : 'Hidden'}`, 'info')
     }
     const onCommandFavorite = () => {
-      if (selectedSnippet) toggleFavoriteSnippet(selectedSnippet.id)
+      if (selectedSnippet) snippetOps.toggleFavoriteSnippet(selectedSnippet.id)
       else showToast('No snippet selected', 'info')
     }
     const onCommandPing = () => {
-      if (selectedSnippet) handlePing(selectedSnippet.id)
+      if (selectedSnippet) snippetOps.handlePing(selectedSnippet.id)
       else showToast('No snippet selected', 'info')
     }
     const onCommandAIPilot = () => openAIPilot()
 
     const onBulkDelete = (e) => {
       const ids = e.detail?.ids
-      if (ids && ids.length > 0) handleBulkDelete(ids)
+      if (ids && ids.length > 0) snippetHandlers.handleBulkDelete(ids)
     }
 
     window.addEventListener('app:command-new-snippet', onCommandNew)
@@ -894,74 +722,11 @@ const SnippetLibraryInner = ({ snippetData }) => {
     window.addEventListener('app:ping-snippet', onCommandPing)
     window.addEventListener('app:toggle-ai-pilot', onCommandAIPilot)
 
-    // Listen for wiki-link navigation events
-    const onOpenSnippet = async (e) => {
-      const rawTitle = e.detail?.title
-      if (!rawTitle) return
-
-      // Normalize: remove .md extension
-      const textTitle = rawTitle.replace(/\.md$/i, '').trim()
-      const searchTitle = textTitle.toLowerCase()
-
-      // Debounce: Prevent double-creation if event fires multiple times
-      if (window.__wikiLock === searchTitle) return
-
-      // Smart Search: Match "Title" OR "Title.md"
-      const target = snippets.find((s) => {
-        const t = (s.title || '').trim().toLowerCase()
-        return t === searchTitle || t === `${searchTitle}.md`
-      })
-
-      if (target) {
-        handleSelectSnippet(target)
-      } else {
-        // Lock creation for 1s to prevent duplicates
-        window.__wikiLock = searchTitle
-        setTimeout(() => {
-          window.__wikiLock = null
-        }, 1000)
-
-        // Robustness: Smart Sanitize
-        // 1. Remove chars that imply punctuation (?*"><)
-        let safeTitle = textTitle.replace(/[?*"><]/g, '')
-        // 2. Replace structural chars (: / \ |) with hyphens
-        safeTitle = safeTitle.replace(/[:/\\|]/g, '-')
-        safeTitle = safeTitle.trim()
-
-        if (!safeTitle) safeTitle = 'Untitled Wiki Note'
-
-        // Create persistent snippet
-        const newSnippet = createDraftSnippet(safeTitle, null, {
-          initialCode: `# New Snippet ${safeTitle}\n\n`,
-          skipNavigation: true,
-          isDraft: false
-        })
-
-        if (newSnippet) {
-          try {
-            await saveSnippet(newSnippet) // Persist to DB immediately
-
-            // Critical Fix: Force navigation to the new snippet
-            // We use a timeout to ensure this executes after any potential re-renders from saveSnippet
-            handleSelectSnippet(newSnippet)
-
-            setTimeout(() => {
-              setSelectedSnippet(newSnippet)
-              navigateTo('editor')
-            }, 50)
-
-            showToast(`New Snippet "${safeTitle}"`, 'success')
-          } catch (error) {
-            console.error('[WikiLink] Creation failed:', error)
-            showToast('Failed to save new snippet', 'error')
-          }
-        }
-      }
-    }
-    window.addEventListener('app:open-snippet', onOpenSnippet)
+    const handleOpenSnippetEvent = (e) => snippetHandlers.handleOpenSnippet(e.detail?.title)
+    window.addEventListener('app:open-snippet', handleOpenSnippetEvent)
 
     return () => {
-      window.removeEventListener('app:open-snippet', onOpenSnippet)
+      window.removeEventListener('app:open-snippet', handleOpenSnippetEvent)
       window.removeEventListener('app:command-new-snippet', onCommandNew)
       window.removeEventListener('app:command-bulk-delete', onBulkDelete)
       window.removeEventListener('app:toggle-theme', onCommandTheme)
@@ -986,7 +751,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
       window.removeEventListener('app:ping-snippet', onCommandPing)
     }
   }, [
-    createDraftSnippet,
+    snippetOps,
     handleToggleSidebar,
     togglePreview,
     navigateTo,
@@ -1007,350 +772,6 @@ const SnippetLibraryInner = ({ snippetData }) => {
     openImageExportModal
   ])
 
-  const handleNewFolder = (arg1 = {}, arg2 = null) => {
-    if (typeof arg1 === 'string') {
-      const name = arg1
-      const parentId = arg2
-      if (name && name.trim()) {
-        saveFolder({ name: name.trim(), parent_id: parentId })
-          .then(() => {
-            if (parentId) toggleFolderCollapse(parentId, false)
-            showToast(`Folder "${name}" created`, 'success')
-          })
-          .catch((e) => {
-            console.error('Failed to create folder:', e)
-            showToast('Failed to create folder', 'error')
-          })
-      }
-      return
-    }
-
-    const options = arg1 || {}
-    const parentId = options.parentId || selectedFolderId || selectedSnippet?.folder_id || null
-
-    openRenameModal(
-      null,
-      async (name) => {
-        if (name && name.trim()) {
-          try {
-            await saveFolder({ name: name.trim(), parent_id: parentId })
-            if (parentId) toggleFolderCollapse(parentId, false)
-            showToast(`Folder "${name}" created`, 'success')
-          } catch (e) {
-            console.error('Failed to create folder:', e)
-            showToast('Failed to create folder', 'error')
-          }
-        }
-      },
-      'New Folder'
-    )
-  }
-
-  const handleInlineRename = async (id, newName, type) => {
-    try {
-      if (!newName || !newName.trim()) return
-
-      if (type === 'snippet') {
-        const snippet = snippets.find((s) => s.id === id)
-        if (snippet) {
-          if (snippet.title === newName.trim()) return
-
-          const uniqueTitle = getUniqueTitle(newName.trim(), snippet.folder_id, id)
-          const updated = { ...snippet, title: uniqueTitle }
-
-          if (uniqueTitle !== newName.trim()) {
-            showToast(`Renamed to "${uniqueTitle}" to avoid duplicate`, 'info')
-          }
-
-          await saveSnippet(updated)
-          setSnippets((prev) => prev.map((s) => (s.id === id ? updated : s)))
-          if (selectedSnippet?.id === id) setSelectedSnippet(updated)
-          showToast('Snippet renamed', 'success')
-        }
-      } else {
-        const folder = folders.find((f) => f.id === id)
-        if (folder) {
-          if (folder.name === newName.trim()) return
-          // Future: check for duplicate folder names in same parent
-          const updated = { ...folder, name: newName.trim() }
-          await saveFolder(updated)
-          showToast('Folder renamed', 'success')
-        }
-      }
-    } catch (e) {
-      console.error('Inline rename failed:', e)
-      showToast('Rename failed', 'error')
-    }
-  }
-
-  const handleDeleteRequest = (id) => {
-    if (id === 'system:settings' || id === 'system:default-settings') {
-      return
-    }
-    openDeleteModal(id, async (targetId) => {
-      await deleteItem(targetId)
-    })
-  }
-
-  // Clipboard operations
-  const handleCopy = useCallback(() => {
-    if (selectedIds.length === 0) return
-
-    const items = selectedIds
-      .map((id) => {
-        const snippet = snippets.find((s) => s.id === id)
-        if (snippet) return { id, type: 'snippet', data: snippet }
-
-        const folder = folders.find((f) => f.id === id)
-        if (folder) return { id, type: 'folder', data: folder }
-
-        return null
-      })
-      .filter(Boolean)
-
-    if (items.length > 0) {
-      setClipboard({ type: 'copy', items })
-      showToast(`Copied ${items.length} item${items.length > 1 ? 's' : ''}`, 'success')
-    }
-  }, [selectedIds, snippets, folders, showToast])
-
-  const handleCut = useCallback(() => {
-    if (selectedIds.length === 0) return
-
-    const items = selectedIds
-      .map((id) => {
-        const snippet = snippets.find((s) => s.id === id)
-        if (snippet) return { id, type: 'snippet', data: snippet }
-
-        const folder = folders.find((f) => f.id === id)
-        if (folder) return { id, type: 'folder', data: folder }
-
-        return null
-      })
-      .filter(Boolean)
-
-    if (items.length > 0) {
-      setClipboard({ type: 'cut', items })
-      showToast(`Cut ${items.length} item${items.length > 1 ? 's' : ''}`, 'success')
-    }
-  }, [selectedIds, snippets, folders, showToast])
-
-  const handlePaste = useCallback(async () => {
-    if (!clipboard || clipboard.items.length === 0) return
-
-    const targetFolderId = selectedFolderId || null
-
-    try {
-      if (clipboard.type === 'cut') {
-        // Move existing items
-        for (const item of clipboard.items) {
-          if (item.type === 'snippet') {
-            await moveSnippet(item.id, targetFolderId)
-          } else if (item.type === 'folder') {
-            await moveFolder(item.id, targetFolderId)
-          }
-        }
-        setClipboard(null)
-        setSelectedIds([])
-        const destinationName = targetFolderId
-          ? folders.find((f) => f.id === targetFolderId)?.name || 'Unknown Folder'
-          : 'Root'
-        showToast(
-          `Moved ${clipboard.items.length} item${clipboard.items.length > 1 ? 's' : ''} to ${destinationName}`,
-          'success'
-        )
-      } else {
-        // Copy: create new items
-        let successCount = 0
-        for (const item of clipboard.items) {
-          if (item.type === 'snippet') {
-            // Generate unique name for duplicate snippets
-            const baseName = item.data.title || 'Untitled'
-            let finalName = baseName
-            let counter = 1
-
-            while (
-              snippets.some(
-                (s) =>
-                  (s.title || '').toLowerCase() === finalName.toLowerCase() &&
-                  (s.folder_id || null) === targetFolderId
-              )
-            ) {
-              finalName = `${baseName} (${counter})`
-              counter++
-            }
-
-            const newSnippet = {
-              ...item.data,
-              id:
-                window.crypto?.randomUUID?.() ||
-                `snippet-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-              title: finalName,
-              folder_id: targetFolderId,
-              timestamp: Date.now()
-            }
-
-            await saveSnippet(newSnippet)
-            successCount++
-          } else if (item.type === 'folder') {
-            // Generate unique name for duplicate folders
-            const baseName = item.data.name || 'Untitled Folder'
-            let finalName = baseName
-            let counter = 1
-
-            while (
-              folders.some(
-                (f) =>
-                  f.name.toLowerCase() === finalName.toLowerCase() &&
-                  (f.parent_id || null) === targetFolderId
-              )
-            ) {
-              finalName = `${baseName} (${counter})`
-              counter++
-            }
-
-            const newFolder = {
-              ...item.data,
-              id:
-                window.crypto?.randomUUID?.() ||
-                `folder-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-              name: finalName,
-              parent_id: targetFolderId,
-              created_at: Date.now(),
-              updated_at: Date.now()
-            }
-
-            await saveFolder(newFolder)
-            successCount++
-          }
-        }
-        showToast(`Pasted ${successCount} item${successCount > 1 ? 's' : ''}`, 'success')
-      }
-    } catch (error) {
-      console.error('Paste operation failed:', error)
-      showToast('Failed to paste items', 'error')
-    }
-  }, [
-    clipboard,
-    selectedFolderId,
-    snippets,
-    folders,
-    moveSnippet,
-    moveFolder,
-    saveSnippet,
-    saveFolder,
-    showToast
-  ])
-
-  const handleSelectAll = useCallback(() => {
-    // Select all visible items (from current tree)
-    // This is a simplified version - in a real implementation you'd want to select all items in the current view
-    const allItemIds = [...snippets.map((s) => s.id), ...folders.map((f) => f.id)]
-    setSelectedIds(allItemIds)
-    showToast(`Selected ${allItemIds.length} items`, 'info')
-  }, [snippets, folders, showToast])
-
-  const handleBulkDelete = (ids) => {
-    openDeleteModal(
-      ids,
-      async (targetIds) => {
-        const folderIds = ids.filter((id) => folders.some((f) => f.id === id))
-        const snippetIds = ids.filter((id) => snippets.some((s) => s.id === id))
-        if (snippetIds.length > 0) await deleteItems(snippetIds)
-        if (folderIds.length > 0) await deleteFolders(folderIds)
-        setSelectedIds([])
-      },
-      ids.length > 1 ? `${ids.length} items` : 'item'
-    )
-  }
-
-  const handleRenameFolder = (folder) => {
-    openRenameModal(
-      folder,
-      async (newName) => {
-        if (newName && newName.trim()) {
-          try {
-            await saveFolder({ ...folder, name: newName.trim() })
-            showToast(`Folder renamed to "${newName}"`, 'success')
-          } catch (e) {
-            console.error('Failed to rename folder:', e)
-            showToast('Failed to rename folder', 'error')
-          }
-        }
-      },
-      'Rename Folder'
-    )
-  }
-
-  const handleDeleteFolder = (folderId) => {
-    openDeleteModal(
-      folderId,
-      async (id) => {
-        try {
-          await deleteFolder(id)
-          showToast('Folder deleted', 'success')
-        } catch (e) {
-          showToast('Failed to delete folder', 'error')
-        }
-      },
-      'Folder'
-    )
-  }
-
-  const handleRenameSnippetRequest = (snippet) => {
-    openRenameModal(
-      snippet,
-      async (newName) => {
-        handleRenameSnippet({
-          renameModal: { item: snippet, newName },
-          saveSnippet,
-          setSelectedSnippet,
-          setRenameModal: () => {},
-          setIsCreatingSnippet: () => {},
-          showToast,
-          snippets
-        })
-      },
-      'Rename Snippet'
-    )
-  }
-
-  const getUniqueTitle = useCallback(
-    (baseTitle, folderId, excludeId = null) => {
-      const normalize = (t) => (t || '').toLowerCase().trim().replace(/\.md$/, '')
-      const targetBase = normalize(baseTitle)
-
-      let counter = 1
-      let finalTitle = baseTitle
-      let currentBase = targetBase
-
-      while (
-        snippets.find(
-          (s) =>
-            normalize(s.title) === currentBase &&
-            (s.folder_id || null) === (folderId || null) &&
-            s.id !== excludeId
-        )
-      ) {
-        const cleanBase = baseTitle.replace(/\.md$/, '')
-        if (cleanBase.match(/\sPart\s\d+$/)) {
-          const basePart = cleanBase.replace(/\sPart\s\d+$/, '')
-          finalTitle = `${basePart} Part ${counter + 1}.md`
-        } else if (cleanBase.match(/\scontinue\s?(\d+)?$/)) {
-          const match = cleanBase.match(/(.*? continue)\s?(\d+)?$/)
-          const base = match ? match[1] : cleanBase
-          const num = match && match[2] ? parseInt(match[2]) + 1 : counter + 1
-          finalTitle = `${base} ${num}.md`
-        } else {
-          finalTitle = `${cleanBase} (${counter}).md`
-        }
-        currentBase = normalize(finalTitle)
-        counter++
-      }
-      return finalTitle
-    },
-    [snippets]
-  )
 
   if (isRestoring) {
     return (
@@ -1370,12 +791,12 @@ const SnippetLibraryInner = ({ snippetData }) => {
         saveSnippet={saveSnippet}
         deleteItem={deleteItem}
         setAutosaveStatus={setAutosaveStatus}
-        createDraftSnippet={createDraftSnippet}
+        createDraftSnippet={snippetOps.createDraftSnippet}
         focusEditor={focusEditor}
         isCreatingSnippet={isCreatingSnippet}
         setIsCreatingSnippet={setIsCreatingSnippet}
         showToast={showToast}
-        handleRename={handleRenameRequest}
+        handleRename={snippetHandlers.handleRenameRequest}
         onToggleSidebar={handleToggleSidebar}
         onTogglePin={togglePinnedSnippet}
         onOpenPinPopover={(id, rect, origin = 'mouse') => {
@@ -1454,8 +875,8 @@ const SnippetLibraryInner = ({ snippetData }) => {
           pinPopover={pinPopover}
           setPinPopover={setPinPopover}
           isSearching={isSearching}
-          onPing={handlePing}
-          onFavorite={toggleFavoriteSnippet}
+          onPing={snippetOps.handlePing}
+          onFavorite={snippetOps.toggleFavoriteSnippet}
           currentContext={activeView}
           selectedSnippet={selectedSnippet}
           snippets={sortedAndFilteredSnippets}
@@ -1515,7 +936,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
               setIsCreatingSnippet(false)
               setSelectedIds([])
               setSelectedSnippet(null)
-              createDraftSnippet()
+              snippetOps.createDraftSnippet()
             } else {
               setIsCreatingSnippet(false)
               setSelectedIds([])
@@ -1551,7 +972,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
           onSave={async (item) => {
             try {
               if (item.title && item.title.trim()) {
-                const uniqueTitle = getUniqueTitle(item.title, item.folder_id, item.id)
+                const uniqueTitle = getUniqueTitle(item.title, item.folder_id, snippets, item.id)
                 if (uniqueTitle !== item.title) {
                   item.title = uniqueTitle
                   showToast(`Renamed to "${uniqueTitle}" to avoid duplicate`, 'info')
@@ -1586,33 +1007,33 @@ const SnippetLibraryInner = ({ snippetData }) => {
               window.dispatchEvent(new CustomEvent('app:trigger-close-check'))
               return
             }
-            createDraftSnippet()
+            snippetOps.createDraftSnippet()
           }}
-          onDeleteRequest={handleDeleteRequest}
-          onBulkDeleteRequest={handleBulkDelete}
+          onDeleteRequest={snippetHandlers.handleDeleteRequest}
+          onBulkDeleteRequest={snippetHandlers.handleBulkDelete}
           onNewSnippet={(title, folderId, options) => {
             try {
               const parentId = folderId || selectedFolderId || selectedSnippet?.folder_id || null
-              const uniqueTitle = getUniqueTitle(title || '', parentId)
-              const draft = createDraftSnippet(uniqueTitle, parentId, options)
+              const uniqueTitle = getUniqueTitle(title || '', parentId, snippets)
+              const draft = snippetOps.createDraftSnippet(uniqueTitle, parentId, options)
               // We no longer force-save here. Snippet stays a 'Draft' in-memory
               // until the user either manually saves or autosave triggers.
             } catch (e) {
               console.error('[SnippetLibrary] Failed to create snippet:', e)
             }
           }}
-          onRenameSnippet={handleRenameSnippetRequest}
-          onNewFolder={handleNewFolder}
-          onDailyNote={createDailyNote}
-          onRenameFolder={handleRenameFolder}
-          onDeleteFolder={handleDeleteFolder}
-          onDeleteBulk={handleBulkDelete}
+          onRenameSnippet={snippetHandlers.handleRenameSnippetRequest}
+          onNewFolder={folderOps.handleNewFolder}
+          onDailyNote={snippetOps.createDailyNote}
+          onRenameFolder={folderOps.handleRenameFolder}
+          onDeleteFolder={folderOps.handleDeleteFolder}
+          onDeleteBulk={snippetHandlers.handleBulkDelete}
           onToggleFolder={toggleFolderCollapse}
           onMoveSnippet={moveSnippet}
           onMoveFolder={moveFolder}
           onTogglePin={togglePinnedSnippet}
-          onToggleFavorite={toggleFavoriteSnippet}
-          onSelectSnippet={handleSelectSnippet}
+          onToggleFavorite={snippetOps.toggleFavoriteSnippet}
+          onSelectSnippet={snippetHandlers.handleSelectSnippet}
           onSearchSnippets={handleSearchSnippets}
           onOpenSettings={(params = {}) => {
             openSettingsModal() // Keep this for now if needed, but navigation is primary
@@ -1620,12 +1041,15 @@ const SnippetLibraryInner = ({ snippetData }) => {
           }}
           isSettingsOpen={isSettingsOpen}
           onCloseSettings={() => navigateTo('snippets')}
-          onInlineRename={handleInlineRename}
+          onInlineRename={(id, newName, type) => {
+            if (type === 'snippet') snippetHandlers.handleInlineRenameSnippet(id, newName)
+            else folderOps.handleInlineRenameFolder(id, newName)
+          }}
           // Clipboard operations
-          onCopy={handleCopy}
-          onCut={handleCut}
-          onPaste={handlePaste}
-          onSelectAll={handleSelectAll}
+          onCopy={clipboardOps.handleCopy}
+          onCut={clipboardOps.handleCut}
+          onPaste={clipboardOps.handlePaste}
+          onSelectAll={clipboardOps.handleSelectAll}
         />
       </div>
       {pinPopover.visible && (
@@ -1647,8 +1071,8 @@ const SnippetLibraryInner = ({ snippetData }) => {
             } catch (e) {}
             focusEditor()
           }}
-          onPing={handlePing}
-          onFavorite={toggleFavoriteSnippet}
+          onPing={snippetOps.handlePing}
+          onFavorite={snippetOps.toggleFavoriteSnippet}
         />
       )}
     </div>

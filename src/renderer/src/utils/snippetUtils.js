@@ -94,3 +94,45 @@ export const isDateTitle = (title) => {
   const base = getBaseTitle(title)
   return /^\d{4}-\d{2}-\d{2}$/.test(base) || /^[a-zA-Z]{3} \d{1,2}, \d{4}$/.test(base)
 }
+
+/**
+ * Generates a unique title within a folder by appending a counter if needed
+ * @param {string} baseTitle - The desired title
+ * @param {string|null} folderId - The folder context
+ * @param {Array} snippets - The full collection of snippets
+ * @param {string|null} excludeId - ID of a snippet to ignore (e.g., current snippet being renamed)
+ * @returns {string} - A unique title
+ */
+export const getUniqueTitle = (baseTitle, folderId, snippets, excludeId = null) => {
+  const normalize = (t) => (t || '').toLowerCase().trim().replace(/\.md$/, '')
+  const targetBase = normalize(baseTitle)
+
+  let counter = 1
+  let finalTitle = baseTitle
+  let currentBase = targetBase
+
+  while (
+    snippets.find(
+      (s) =>
+        normalize(s.title) === currentBase &&
+        (s.folder_id || null) === (folderId || null) &&
+        s.id !== excludeId
+    )
+  ) {
+    const cleanBase = baseTitle.replace(/\.md$/, '')
+    if (cleanBase.match(/\sPart\s\d+$/)) {
+      const basePart = cleanBase.replace(/\sPart\s\d+$/, '')
+      finalTitle = `${basePart} Part ${counter + 1}.md`
+    } else if (cleanBase.match(/\scontinue\s?(\d+)?$/)) {
+      const match = cleanBase.match(/(.*? continue)\s?(\d+)?$/)
+      const base = match ? match[1] : cleanBase
+      const num = match && match[2] ? parseInt(match[2]) + 1 : counter + 1
+      finalTitle = `${base} ${num}.md`
+    } else {
+      finalTitle = `${cleanBase} (${counter}).md`
+    }
+    currentBase = normalize(finalTitle)
+    counter++
+  }
+  return finalTitle
+}
