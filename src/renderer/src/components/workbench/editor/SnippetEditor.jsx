@@ -1,0 +1,1636 @@
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import PropTypes from 'prop-types'
+import { GripVertical, X } from 'lucide-react'
+import { useKeyboardShortcuts } from '../../../features/keyboard/useKeyboardShortcuts'
+import { useEditorFocus } from '../../../hook/useEditorFocus.js'
+import { useZoomLevel, useEditorZoomLevel } from '../../../hook/useSettingsContext'
+import { ZOOM_STEP } from '../../../hook/useZoomLevel.js'
+import WelcomePage from '../../WelcomePage.jsx'
+import { StatusBar } from '../../layout/StatusBar/useStatusBar'
+import CodeEditor from '../../CodeEditor/CodeEditor.jsx'
+import LivePreview from '../../livepreview/LivePreview.jsx'
+import Prompt from '../../mermaid/modal/Prompt.jsx'
+import { useSettings, useAutoSave } from '../../../hook/useSettingsContext'
+import { useTheme } from '../../../hook/useTheme'
+import AdvancedSplitPane from '../../splitPanels/AdvancedSplitPane'
+import { extractTags } from '../../../utils/snippetUtils.js'
+import { generatePreviewHtml } from '../../../utils/previewGenerator'
+import { makeDraggable } from '../../../utils/draggable.js'
+import UniversalModal from '../../universal/UniversalModal'
+import { useUniversalModal } from '../../universal/useUniversalModal'
+import DiagramEditorModal from '../../mermaid/modal/DiagramEditorModal'
+import TableEditorModal from '../../table/TableEditorModal'
+import PerformanceBarrier from '../../universal/PerformanceBarrier/PerformanceBarrier'
+import '../../universal/universalStyle.css'
+import './EditorMetadata.css'
+import EditorMetadata from './EditorMetadata'
+import EditorModeSwitcher from './EditorModeSwitcher'
+
+/**
+ * ╔══════════════════════════════════════════════════════════════════════════╗
+ * ║                          SNIPPET EDITOR                                   ║
+ * ╚══════════════════════════════════════════════════════════════════════════╝
+ *
+ * FILE LOCATION:
+ *   src/renderer/src/components/workbench/SnippetEditor.jsx
+ *
+ * PARENT COMPONENTS:
+ *   - Workbench.jsx (src/renderer/src/components/workbench/Workbench.jsx)
+ *     └─> Renders this when activeView === 'editor'
+ *
+ * CORE RESPONSIBILITY:
+ *   The main workspace for editing snippets. It provides a localized environment
+ *   for modifying code/markdown with real-time preview (Split View).
+ *
+ *   CRITICAL: This component holds the "Draft" state. Changes here are NOT
+ *   persisted to the main database until internal save logic triggers `onSave`.
+ *
+ * COMPONENT STRUCTURE:
+ *   [CodeEditor (CodeMirror)]  <-- Split Pane -->  [LivePreview (Markdown)]
+ *          |                                            |
+ *          └─────────────────[Status Bar]───────────────┘
+ *
+ * FEATURES:
+ *   - Advanced Split Pane (draggable resizer)
+ *   - Auto-Save integration
+ *   - Real-time Markdown rendering
+ *   - Diagram/Table visual editing (via Modals)
+ *   - Zoom controls
+ *
+ * AUTO-SAVE LOGIC:
+ *   - Uses `useAutoSave` hook.
+ *   - Triggers `onSave` prop after N seconds of inactivity.
+ *   - Shows status (Saving... -> Saved) in Status Bar.
+ *
+ * RELATED FILES:
+ *   - CodeEditor.jsx - The actual CodeMirror wrapper.
+ *   - LivePreview.jsx - HTML renderer.
+ *   - AdvancedSplitPane.jsx - Resizable layout container.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+const SnippetEditor = ({
+  onSave,
+  initialSnippet,
+  onCancel,
+  onNew,
+  onDelete,
+  isCreateMode,
+  activeView,
+  onSettingsClick,
+  onAutosave,
+  showToast,
+  isCompact,
+  onToggleCompact,
+  showPreview,
+  snippets = [],
+  onPing,
+  onFavorite,
+  onImageExport,
+  isFlow = false,
+  onDirtyStateChange
+}) => {
+  const [code, setCode] = useState(initialSnippet?.code || '')
+  const [isDirty, setIsDirty] = useState(false)
+  const isDiscardingRef = useRef(false)
+  const skipAutosaveRef = useRef(false)
+
+  // PERFORMANCE: Ref to block redundant dirty updates during rapid typing
+  const isDirtyRef = useRef(false)
+  useEffect(() => {
+    isDirtyRef.current = isDirty
+  }, [isDirty])
+
+  const codeRef = useRef(initialSnippet?.code || '')
+
+  const handleCodeChange = useCallback(
+    (val) => {
+      if (isDiscardingRef.current) return
+      const newVal = val || ''
+      if (newVal !== codeRef.current) {
+        codeRef.current = newVal
+        setCode(newVal)
+
+        // Only broadcast if not already known as dirty (prevents sidebar sway/lag)
+        if (!isDirtyRef.current) {
+          setIsDirty(true)
+          isDirtyRef.current = true // Block subsequent broadcasts
+
+          if (initialSnippet?.id && onDirtyStateChange) {
+            onDirtyStateChange(initialSnippet.id, true)
+          }
+        }
+      }
+    },
+    [initialSnippet, onDirtyStateChange]
+  )
+  const [zoomLevel, setZoom] = useZoomLevel()
+  const [editorZoom, setEditorZoom] = useEditorZoomLevel()
+  const { settings, getSetting, updateSetting } = useSettings()
+  const { currentTheme } = useTheme()
+
+  const [title, setTitle] = useState(() => {
+    const t = initialSnippet?.title || ''
+    return t.replace(/\.md$/i, '')
+  })
+
+  // Tags state: Managed as an array for the chip system
+  const [tags, setTags] = useState(() => {
+    const rawTags = initialSnippet?.tags || []
+    return Array.isArray(rawTags) ? rawTags : []
+  })
+  const [currentTagInput, setCurrentTagInput] = useState('')
+  const [justRenamed, setJustRenamed] = useState(false)
+  const [isFloating, setIsFloating] = useState(
+    () => settings?.ui?.modeSwitcher?.isFloating || false
+  )
+  const switcherRef = useRef(null)
+  const dragHandleRef = useRef(null)
+
+  // Ref for debouncing live title updates to sidebar
+  const titleUpdateTimerRef = useRef(null)
+
+  // Ref for title input auto-focus
+  const titleInputRef = useRef(null)
+
+  const [cursorPos, setCursorPos] = useState({ line: 1, col: 1 })
+  const handleCursorChange = useCallback((pos) => {
+    setCursorPos(pos)
+  }, [])
+  const [activeMode, setActiveMode] = useState('live_preview')
+
+  // Auto-focus title input when creating new snippet
+  useEffect(() => {
+    if (isCreateMode && titleInputRef.current) {
+      setTimeout(() => {
+        titleInputRef.current?.focus()
+        titleInputRef.current?.select()
+      }, 100)
+    }
+  }, [isCreateMode])
+
+  const {
+    isOpen: isUniOpen,
+    title: uniTitle,
+    content: uniContent,
+    footer: uniFooter,
+    width: uniWidth,
+    height: uniHeight,
+    resetPosition: uniResetPosition,
+    isMaximized: uniMaximized,
+    hideHeaderBorder: uniHideHeaderBorder,
+    noTab: uniNoTab,
+    className: uniClassName,
+    closeModal: closeUni,
+    openModal,
+    setModalState: setUniState
+  } = useUniversalModal()
+
+  useEffect(() => {
+    // Improved Focus Gate: Prevent jumps if the user is focused on any part of the editor UI
+    const isFocused =
+      document.activeElement &&
+      (document.activeElement.classList.contains('cm-content') ||
+        document.activeElement.tagName === 'TEXTAREA' ||
+        document.activeElement.closest('.editor-container'))
+
+    // Cooldown: Don't allow a sync-back immediately after a manual save (increased to 1.5s for stability)
+    const isInCooldown = window.__lastSaveTime && Date.now() - window.__lastSaveTime < 1500
+
+    if (
+      initialSnippet?.id === 'system:settings' &&
+      !isDirty &&
+      !isFocused &&
+      !isInCooldown &&
+      !window.__isSavingSettings && // Global Save Shield
+      initialSnippet.code !== code
+    ) {
+      setCode(initialSnippet.code)
+      codeRef.current = initialSnippet.code
+    }
+  }, [initialSnippet?.code, initialSnippet?.id, isDirty, code])
+
+  // Apply stored position on mount or when going floating
+  useEffect(() => {
+    if (isFloating && switcherRef.current) {
+      const pos = settings?.ui?.modeSwitcher?.pos
+      if (pos && pos.x !== null && pos.y !== null) {
+        switcherRef.current.style.left = `${pos.x}px`
+        switcherRef.current.style.top = `${pos.y}px`
+        switcherRef.current.style.bottom = 'auto'
+        switcherRef.current.style.right = 'auto'
+      }
+    }
+  }, [isFloating])
+
+  // Listen for mode changes from CM instance
+  useEffect(() => {
+    const handleModeChange = (e) => setActiveMode(e.detail.mode)
+    window.addEventListener('app:mode-changed', handleModeChange)
+    return () => window.removeEventListener('app:mode-changed', handleModeChange)
+  }, [])
+
+  // Listen for Source Modal requests from richMarkdown extension
+  useEffect(() => {
+    const handleSourceModal = (e) => {
+      const { view, from, to, initialCode } = e.detail
+      const oldSlice = view.state.doc.sliceString(from, to).trim()
+
+      const previousSelection = view.state.selection
+      const handleClose = () => {
+        closeUni()
+        // Restore focus and selection to main editor
+        requestAnimationFrame(() => {
+          try {
+            view.focus()
+            if (previousSelection) {
+              view.dispatch({ selection: previousSelection })
+            }
+          } catch (e) {
+            console.warn('Failed to restore focus/selection:', e)
+          }
+        })
+      }
+
+      const onApplyChanges = (newCode) => {
+        let finalCode = newCode.trim()
+
+        // Persistent detection: Check if we are editing a fenced block
+        const hasMermaidFences =
+          oldSlice.startsWith('```mermaid') || initialCode.startsWith('```mermaid')
+        const hasStandardFences = oldSlice.startsWith('```') || initialCode.startsWith('```')
+
+        if (hasMermaidFences) {
+          // If the modal already returned it wrapped, don't double wrap
+          if (!finalCode.startsWith('```mermaid')) {
+            finalCode = '```mermaid\n' + finalCode + '\n```'
+          }
+        } else if (hasStandardFences) {
+          if (!finalCode.startsWith('```')) {
+            const match = (oldSlice || initialCode).match(/^```(\w*)/)
+            const lang = match ? match[1] : ''
+            finalCode = '```' + lang + '\n' + finalCode + '\n```'
+          }
+        }
+
+        window.__suppressNextSourceModal = true
+        view.dispatch({
+          changes: { from, to, insert: finalCode },
+          userEvent: 'input.source.modal'
+        })
+        handleClose()
+      }
+
+      // 1. Detect Mermaid Block
+      const isMermaid = oldSlice.startsWith('```mermaid') || initialCode.startsWith('```mermaid')
+      if (isMermaid) {
+        const innerCode = initialCode.replace(/^```mermaid\n?/, '').replace(/\n?```$/, '')
+        openModal({
+          title: 'Edit Mermaid Diagram',
+          width: '90vw',
+          height: '80vh',
+          resetPosition: true,
+          className: 'no-padding',
+          hideHeaderBorder: true,
+          noTab: true,
+          content: (
+            <DiagramEditorModal
+              initialCode={innerCode}
+              onSave={onApplyChanges}
+              onCancel={handleClose}
+            />
+          ),
+          footer: null
+        })
+        return
+      }
+
+      // 2. Detect Table Block
+      const isTable =
+        (oldSlice.includes('|') && oldSlice.includes('---')) ||
+        (initialCode.includes('|') && initialCode.includes('---'))
+      if (isTable) {
+        openModal({
+          title: 'Visual Table Editor',
+          width: '90vw',
+          height: '80vh',
+          resetPosition: true,
+          className: 'no-padding',
+          hideHeaderBorder: true,
+          noTab: true,
+          content: (
+            <TableEditorModal
+              initialCode={initialCode}
+              onSave={onApplyChanges}
+              onCancel={handleClose}
+            />
+          ),
+          footer: null
+        })
+        return
+      }
+
+      // 3. Fallback: Standard Text/Code Block Modal
+      let currentInput = initialCode
+      openModal({
+        title: 'Edit Raw Source',
+        content: (
+          <div className="source-editor-container">
+            <textarea
+              className="cm-md-source-modal-input"
+              style={{
+                width: '100%',
+                minHeight: '300px',
+                background: 'transparent',
+                border: 'none',
+                color: 'inherit',
+                outline: 'none',
+                resize: 'none',
+                fontFamily: 'monospace',
+                fontSize: '13px',
+                lineHeight: '1.6'
+              }}
+              defaultValue={initialCode}
+              onChange={(evt) => {
+                currentInput = evt.target.value
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') handleClose()
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                  onApplyChanges(currentInput)
+                }
+              }}
+              autoFocus
+            />
+          </div>
+        ),
+        footer: (
+          <div className="flex gap-2">
+            <button className="cm-md-modal-cancel" onClick={handleClose}>
+              Cancel
+            </button>
+            <button className="cm-md-modal-save" onClick={() => onApplyChanges(currentInput)}>
+              Apply Changes
+            </button>
+          </div>
+        )
+      })
+    }
+
+    window.addEventListener('app:open-source-modal', handleSourceModal)
+    return () => window.removeEventListener('app:open-source-modal', handleSourceModal)
+  }, [openModal, closeUni])
+
+  useEffect(() => {
+    // Check Universal Lock (Master Switch)
+    const isLocked = settings?.ui?.universalLock?.modal
+
+    if (isLocked) {
+      if (isFloating) {
+        setIsFloating(false)
+        updateSetting('ui.modeSwitcher.isFloating', false)
+      }
+
+      // FORCE RESET POSITION STYLES if locked
+      if (switcherRef.current) {
+        switcherRef.current.style.top = ''
+        switcherRef.current.style.left = ''
+        switcherRef.current.style.bottom = ''
+        switcherRef.current.style.right = ''
+        switcherRef.current.style.transform = ''
+        switcherRef.current.style.margin = ''
+      }
+      return
+    }
+
+    if (settings?.ui?.modeSwitcher?.disableDraggable) {
+      // Legacy/Local switch support if we kept it, but Universal Lock overrides all
+      if (isFloating) setIsFloating(false)
+      return
+    }
+
+    if (isFloating && switcherRef.current && dragHandleRef.current) {
+      return makeDraggable(switcherRef.current, dragHandleRef.current, (pos) => {
+        updateSetting('ui.modeSwitcher.pos', pos)
+      })
+    }
+  }, [
+    isFloating,
+    updateSetting,
+    settings?.ui?.modeSwitcher?.disableDraggable,
+    settings?.ui?.universalLock?.modal
+  ])
+
+  const cycleMode = useCallback(() => {
+    const modes = ['source', 'live_preview', 'reading']
+    const nextIndex = (modes.indexOf(activeMode) + 1) % modes.length
+    window.dispatchEvent(
+      new CustomEvent('app:set-editor-mode', { detail: { mode: modes[nextIndex] } })
+    )
+  }, [activeMode])
+
+  // Update title when initialSnippet changes (e.g., after rename)
+  useEffect(() => {
+    // Only update if the ID matches (same snippet) but title is different externally
+    // AND we are not currently editing it (handled by not having 'title' in deps)
+    if (initialSnippet?.title && initialSnippet.title.replace(/\.md$/i, '') !== title) {
+      // AUTO-ECHO PROTECTION:
+      // If the incoming title matches what we JUST saved, ignore it to prevent cursor jumps.
+      // This happens because autosave completes -> updates parent -> parent pushes new prop -> we re-render.
+      if (initialSnippet.title.replace(/\.md$/i, '') === lastSavedTitle.current) {
+        return
+      }
+
+      // Check if this is a genuine external update (e.g. sidebar rename)
+      setTitle(initialSnippet.title.replace(/\.md$/i, ''))
+      setJustRenamed(true)
+      setTimeout(() => setJustRenamed(false), 1000)
+    }
+  }, [initialSnippet?.title])
+
+  // DUPLICATE DETECTION
+  const isDuplicate = useMemo(() => {
+    if (!title) return false
+    const normalized = title.trim().toLowerCase()
+    return (snippets || []).some((s) => {
+      // Skip self
+      if (s.id === initialSnippet?.id) return false
+      // Match folder scope (null/undefined treated as root)
+      if ((s.folder_id || null) !== (initialSnippet?.folder_id || null)) return false
+
+      const sTitle = (s.title || '').replace(/\.md$/i, '').trim().toLowerCase()
+      return sTitle === normalized
+    })
+  }, [title, snippets, initialSnippet])
+
+  const hideWelcomePage = getSetting('ui.hideWelcomePage') || false
+  const saveTimerRef = useRef(null)
+  const [isLargeFile, setIsLargeFile] = useState(false)
+
+  // Debounced code for live preview
+  const [debouncedCode, setDebouncedCode] = useState(code)
+  // Stabilize language detection so the editor doesn't re-mount on every keystroke
+  const detectedLang = useMemo(() => {
+    const safeTitle = typeof title === 'string' ? title : ''
+    const ext = safeTitle.includes('.') ? safeTitle.split('.').pop()?.toLowerCase() : null
+    let lang = ext || 'plaintext'
+    if (!ext && code) {
+      const trimmed = code.substring(0, 500).trim()
+      if (
+        trimmed.startsWith('# ') ||
+        trimmed.startsWith('## ') ||
+        trimmed.startsWith('### ') ||
+        trimmed.startsWith('- ') ||
+        trimmed.startsWith('* ') ||
+        trimmed.startsWith('```') ||
+        trimmed.startsWith('>') ||
+        trimmed.includes('**') ||
+        trimmed.includes(']]')
+      ) {
+        lang = 'markdown'
+      }
+    }
+    return lang
+  }, [title, code.substring(0, 20)]) // Re-detect if title or start of code changes
+
+  useEffect(() => {
+    // TWEAK: Slightly more aggressive update for better "Live" feel
+    // while still protecting the thread for massive documents.
+    const wait = code.length > 150000 ? 1200 : code.length > 50000 ? 600 : 300
+    const timer = setTimeout(() => {
+      setDebouncedCode(code)
+      // Broadcast live code to Ghost Preview only after debounce
+      window.dispatchEvent(
+        new CustomEvent('app:code-update', {
+          detail: { code, language: detectedLang }
+        })
+      )
+    }, wait)
+    return () => clearTimeout(timer)
+  }, [code, detectedLang, initialSnippet?.id, isDirty])
+
+  // PERF: Synced dirty state is now handled globally via onDirtyStateChange
+  // which updates the main process 'isAppDirty' from SnippetLibraryInner.
+
+  // SYNC DIRTY STATE WITH PARENT (For Sidebar Dot)
+  useEffect(() => {
+    if (initialSnippet?.id && onDirtyStateChange) {
+      onDirtyStateChange(initialSnippet.id, isDirty)
+    }
+  }, [isDirty, initialSnippet?.id, onDirtyStateChange])
+
+  // SILENT DRAFT SYNC: Ensures "Modified" (Yellow Dot) appears in the sidebar.
+  useEffect(() => {
+    if (initialSnippet?.id && isDirty && window.api?.saveSnippetDraft) {
+      window.api
+        .saveSnippetDraft({
+          id: initialSnippet.id,
+          code_draft: code,
+          language: detectedLang
+        })
+        .catch(() => {})
+    }
+  }, [code, detectedLang, initialSnippet?.id, isDirty])
+
+  // Unified AutoSave Hook - Source of Truth
+  const [autoSaveEnabled] = useAutoSave()
+
+  const lastSavedCode = useRef(initialSnippet?.code || '')
+  const lastSavedTitle = useRef(initialSnippet?.title || '')
+
+  const isDeletingRef = useRef(false)
+  const textareaRef = useRef(null)
+  const editorContainerRef = useRef(null)
+  const wordWrap = settings?.editor?.wordWrap || 'off'
+
+  // Local compact mode fallback
+  const [localCompact, setLocalCompact] = useState(() => {
+    try {
+      return localStorage.getItem('compactMode') === 'true'
+    } catch (e) {
+      return false
+    }
+  })
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('compactMode', localCompact)
+    } catch (e) {}
+  }, [localCompact])
+
+  const controlledCompact = typeof isCompact !== 'undefined'
+  const compact = controlledCompact ? isCompact : localCompact
+  const onToggleCompactHandler = () => {
+    if (typeof onToggleCompact === 'function') {
+      onToggleCompact()
+    } else {
+      setLocalCompact((s) => !s)
+    }
+  }
+
+  // Focus management
+  useEditorFocus({ initialSnippet, isCreateMode, textareaRef })
+
+  const scheduleSave = useCallback(() => {
+    // 1. Skip autosave if we're discarding changes
+    if (skipAutosaveRef.current) return
+
+    // 2. Explicitly check if enabled first
+    if (!autoSaveEnabled) return
+
+    // Clear any pending timer
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+
+    // Schedule new save
+    saveTimerRef.current = setTimeout(
+      async () => {
+        const id = initialSnippet?.id
+        if (!id) return
+
+        // DISCARD PROTECTION: Don't autosave if it's a brand new untitled snippet with no content
+        const isUntitled = !title || title.toLowerCase() === 'untitled'
+        const hasNoContent = !code || code.trim() === ''
+        if (isUntitled && hasNoContent && initialSnippet?.is_draft) {
+          return
+        }
+
+        const updatedSnippet = {
+          ...initialSnippet,
+          id: id,
+          title: title,
+          code: code,
+          language: detectedLang || 'markdown',
+          timestamp: Date.now(),
+          type: initialSnippet?.type || 'snippet',
+          // DRY: Combine explicit tags, active input, and extracted content tags
+          tags: Array.from(
+            new Set([
+              ...tags,
+              ...currentTagInput
+                .split(',')
+                .map((t) => t.trim())
+                .filter(Boolean),
+              ...extractTags(code)
+            ])
+          ).filter((t) => typeof t === 'string' && !/^\d+$/.test(t)),
+          is_draft: false,
+          folder_id: initialSnippet?.folder_id || null,
+          is_pinned: initialSnippet?.is_pinned || 0
+        }
+
+        // DUPLICATE CHECK IN AUTOSAVE
+        // If the title is a duplicate, we DO NOT autosave.
+        // We just let the user keep typing until it's unique.
+        if (isDuplicate) {
+          return
+        }
+
+        try {
+          // Direct event dispatch for UI feedback bypassing prop delays
+          window.dispatchEvent(new CustomEvent('autosave-status', { detail: { status: 'saving' } }))
+
+          await onSave(updatedSnippet)
+
+          window.dispatchEvent(new CustomEvent('autosave-status', { detail: { status: 'saved' } }))
+          setIsDirty(false)
+          lastSavedCode.current = code
+          lastSavedTitle.current = title
+        } catch (err) {
+          window.dispatchEvent(new CustomEvent('autosave-status', { detail: { status: 'error' } }))
+        }
+      },
+      initialSnippet?.id === 'system:settings' ? 800 : getSetting('behavior.autoSaveDelay') || 2000
+    )
+  }, [code, title, tags, currentTagInput, initialSnippet, autoSaveEnabled, onSave, isDuplicate])
+
+  useEffect(() => {
+    const id = initialSnippet?.id
+    if (id) {
+      if (!window.__autosaveCancel) window.__autosaveCancel = new Map()
+      window.__autosaveCancel.set(id, () => {
+        if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+      })
+    }
+    return () => {
+      const id2 = initialSnippet?.id
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+      if (id2 && window.__autosaveCancel) window.__autosaveCancel.delete(id2)
+    }
+  }, [initialSnippet?.id])
+
+  const [isInitialMount, setIsInitialMount] = useState(true)
+  const lastSnippetId = useRef(initialSnippet?.id)
+
+  useEffect(() => {
+    if (!initialSnippet) return
+    if (initialSnippet.id !== lastSnippetId.current) {
+      setCode(initialSnippet.code || '')
+      setTitle(initialSnippet.title || '')
+      const rawTags = initialSnippet.tags
+      let sanitizedTags = []
+      if (Array.isArray(rawTags)) {
+        sanitizedTags = rawTags
+      } else if (typeof rawTags === 'string') {
+        sanitizedTags = rawTags.split(',').filter(Boolean)
+      }
+      setTags(sanitizedTags.map((t) => String(t)))
+      setCurrentTagInput('')
+      setIsDirty(false)
+      setIsInitialMount(true)
+      isDiscardingRef.current = false // Reset discard flag for new snippet
+      skipAutosaveRef.current = false // Reset autosave skip flag
+      lastSnippetId.current = initialSnippet.id
+      return
+    }
+    if (initialSnippet.code !== undefined && code === '') {
+      setCode(initialSnippet.code || '')
+    }
+  }, [initialSnippet])
+
+  const [namePrompt, setNamePrompt] = useState({ isOpen: false, initialName: '' })
+
+  // Word count is computationally expensive for large files, so we compute it against debouncedCode
+  const words = useMemo(() => {
+    const text = debouncedCode || ''
+    const len = text.length
+    if (len === 0) return 0
+    // Fast path for massive files: Use regex for word count if over 50k chars
+    if (len > 50000) {
+      return (text.match(/\S+/g) || []).length
+    }
+    let count = 0
+    let inWord = false
+    for (let i = 0; i < len; i++) {
+      const charCode = text.charCodeAt(i)
+      const isWhitespace =
+        charCode === 32 || charCode === 9 || charCode === 10 || charCode === 13 || charCode === 160
+      if (isWhitespace) {
+        inWord = false
+      } else if (!inWord) {
+        inWord = true
+        count++
+      }
+    }
+    return count
+  }, [debouncedCode])
+
+  // Chars/Stats are stabilized to prevent Status Bar flickering on every keystroke
+  const stats = useMemo(
+    () => ({
+      chars: (debouncedCode || '').length,
+      words: words
+    }),
+    [debouncedCode.length, words]
+  )
+
+  const isSplitting = useRef(false)
+  const handleSplitSnippet = useCallback(() => {
+    if (!title || !code || isSplitting.current) return
+    isSplitting.current = true
+
+    try {
+      // 1. Suggest the next part name: 'large' -> 'large continue' -> 'large continue 2'
+      const nameWithoutExt = title.replace(/\.md$/, '')
+      let nextBase = ''
+
+      if (!nameWithoutExt.includes('continue')) {
+        nextBase = `${nameWithoutExt} continue`
+      } else {
+        const match = nameWithoutExt.match(/(.*? continue)\s?(\d+)?$/)
+        nextBase = match ? match[1] : nameWithoutExt
+      }
+
+      // Check current folder for existing titles to match library logic exactly
+      const folderSnippets = (snippets || []).filter(
+        (s) => (s.folder_id || null) === (initialSnippet?.folder_id || null)
+      )
+      const normalize = (t) => (t || '').toLowerCase().trim().replace(/\.md$/, '')
+
+      let counter = 1
+      let nextPartName = nextBase
+
+      while (folderSnippets.some((s) => normalize(s.title) === normalize(nextPartName))) {
+        counter++
+        nextPartName = `${nextBase} ${counter}`
+      }
+
+      // 2. Update CURRENT snippet with the bridge link
+      const splitLink = `\n\n---\n[[${nextPartName}]]`
+      const updatedCode = code + splitLink
+
+      setCode(updatedCode)
+      setIsDirty(true)
+
+      // Force an immediate save of the OLD snippet without a selection jump
+      onSave({
+        ...(initialSnippet || {}),
+        code: updatedCode,
+        timestamp: Date.now(),
+        _skipSelectionSwitch: true
+      })
+
+      // 3. Create and Navigate to NEW snippet
+      const initialPartCode = `[[${title}]]\n\n# ${nextPartName}\n\n`
+
+      if (onNew) {
+        onNew(nextPartName, initialSnippet?.folder_id || null, {
+          initialCode: initialPartCode
+        })
+      }
+
+      if (showToast) {
+        setTimeout(() => {
+          showToast(`Split complete: Continuing in ${nextPartName}`, 'success')
+        }, 100)
+      }
+    } finally {
+      setTimeout(() => {
+        isSplitting.current = false
+      }, 1000)
+    }
+  }, [title, code, snippets, initialSnippet, onSave, showToast, onNew])
+
+  useEffect(() => {
+    if (isInitialMount) {
+      setIsInitialMount(false)
+      return
+    }
+    if (!isDirty || !autoSaveEnabled) return
+    scheduleSave()
+  }, [code, title, isDirty, autoSaveEnabled, scheduleSave, isInitialMount])
+
+  // Helper to generate the complete HTML for external/mini previews
+  const generateFullHtml = useCallback(
+    (forPrint = false) => {
+      const ext = title?.includes('.') ? title.split('.').pop()?.toLowerCase() : null
+      const isMarkdown = !ext || ext === 'markdown' || ext === 'md'
+      const existingTitles = snippets.map((s) => (s.title || '').trim()).filter(Boolean)
+
+      return generatePreviewHtml({
+        code,
+        title: title || 'Untitled Snippet',
+        theme: currentTheme,
+        existingTitles,
+        isMarkdown,
+        fontFamily: settings?.editor?.fontFamily,
+        forPrint
+      })
+    },
+    [code, title, snippets, currentTheme, settings?.editor?.fontFamily]
+  )
+
+  const handleOpenExternalPreview = useCallback(async () => {
+    const fullHtml = await generateFullHtml()
+    if (window.api?.invoke) {
+      await window.api.invoke('shell:previewInBrowser', fullHtml)
+    }
+  }, [generateFullHtml])
+
+  const handleOpenMiniPreview = useCallback(async () => {
+    const fullHtml = await generateFullHtml()
+    if (window.api?.invoke) {
+      // Use the internal window IPC handler for the mini browser
+      await window.api.invoke('window:openMiniBrowser', fullHtml).catch(() => {
+        // Fallback to external preview
+        return window.api.invoke('shell:previewInBrowser', fullHtml)
+      })
+    }
+  }, [generateFullHtml])
+
+  // Helper function to pre-render Mermaid diagrams for Word export
+  const preRenderMermaidDiagrams = useCallback(
+    async (html) => {
+      // Defensive mermaid rendering pipeline.
+      const tempDiv = document.createElement('div')
+      tempDiv.innerHTML = html || ''
+
+      // Remove any embedded scripts/styles to avoid executing app code here
+      tempDiv.querySelectorAll('script, style, link').forEach((n) => n.remove())
+
+      // Find mermaid containers produced by markdown or direct mermaid blocks
+      const mermaidDivs = tempDiv.querySelectorAll('div.mermaid, div.mermaid-diagram')
+      if (!mermaidDivs || mermaidDivs.length === 0) return tempDiv.innerHTML
+
+      // Lazy-init mermaid instance and cache it on window to avoid re-init
+      let mermaidInstance = window.__mermaidExportInstance || window.mermaid
+      if (!mermaidInstance) {
+        try {
+          mermaidInstance = (await import('mermaid')).default
+          mermaidInstance.initialize({
+            startOnLoad: false,
+            theme: 'default',
+            securityLevel: 'loose',
+            fontFamily: settings?.editor?.fontFamily || 'Inter, sans-serif',
+            themeVariables: {
+              fontFamily: settings?.editor?.fontFamily || 'Inter, sans-serif',
+              fontSize: '14px'
+            }
+          })
+          window.__mermaidExportInstance = mermaidInstance
+        } catch (err) {
+          return tempDiv.innerHTML
+        }
+      }
+
+      // Helper to decode HTML entities produced by escaped content
+      const decodeEntities = (str) => {
+        const txt = document.createElement('textarea')
+        txt.innerHTML = str
+        return txt.value
+      }
+
+      for (const div of Array.from(mermaidDivs)) {
+        try {
+          // Prefer innerHTML decoding, fall back to textContent
+          const raw = div.innerHTML && div.innerHTML.trim() ? div.innerHTML : div.textContent || ''
+          const mermaidCode = decodeEntities(raw).trim()
+          if (!mermaidCode) continue
+
+          const id = `mermaid-export-${Math.random().toString(36).slice(2, 9)}`
+          // mermaid.render sometimes returns svg string or object depending on version
+          const renderResult = await mermaidInstance.render(id, mermaidCode)
+          const svg = (renderResult && renderResult.svg) || renderResult || ''
+          if (!svg || svg.length < 20) throw new Error('empty svg')
+
+          const svgContainer = document.createElement('div')
+          svgContainer.innerHTML = svg
+          const svgElement = svgContainer.querySelector('svg')
+          if (!svgElement) throw new Error('no svg element')
+
+          // Apply safe inline sizing and color resets
+          svgElement.setAttribute('role', 'img')
+          svgElement.style.maxWidth = '100%'
+          svgElement.style.height = 'auto'
+          svgElement.style.display = 'block'
+          svgElement.style.margin = '1.2em auto'
+          svgElement.style.background = 'white'
+          svgElement.querySelectorAll('text').forEach((t) => (t.style.fill = '#000'))
+
+          div.replaceWith(svgElement)
+        } catch (err) {
+          // Replace with a safe code block to preserve readability
+          const pre = document.createElement('pre')
+          pre.textContent = div.textContent || div.innerText || ''
+          div.replaceWith(pre)
+        }
+      }
+
+      return tempDiv.innerHTML
+    },
+    [settings?.editor?.fontFamily]
+  )
+
+  // Sanitize and rebuild a minimal, print-ready HTML wrapper to avoid app CSS leakage
+  const sanitizeExportHtml = useCallback(
+    (html) => {
+      try {
+        const temp = document.createElement('div')
+        temp.innerHTML = html || ''
+
+        // Remove scripts/styles and external links
+        temp.querySelectorAll('script, style, link').forEach((n) => n.remove())
+
+        // Remove UI artifacts from preview
+        temp
+          .querySelectorAll(
+            '.preview-intel, .code-actions, .copy-code-btn, .ui-element, .preview-engine-toolbar'
+          )
+          .forEach((n) => n.remove())
+
+        // Extract main content element
+        const contentElement = temp.querySelector('#content') || temp.querySelector('body') || temp
+        if (!contentElement) return html
+
+        // Strip classes/ids/styles to avoid accidental styling inheritance
+        Array.from(contentElement.querySelectorAll('*')).forEach((el) => {
+          if (el === contentElement) return
+          el.removeAttribute('class')
+          el.removeAttribute('id')
+          el.removeAttribute('style')
+        })
+
+        const contentHtml = contentElement.innerHTML || ''
+
+        const printCss = `
+        @page { margin: 1.2in; size: letter; }
+        html, body { background: white; color: #000; font-family: ${settings?.editor?.fontFamily || 'Inter, sans-serif'}; margin: 0; padding: 0; }
+        .preview-container { max-width: 6.5in; margin: 0 auto; padding: 20px; box-sizing: border-box; }
+        img, svg { max-width: 100%; height: auto; }
+        pre { background: #fafafa; border: 1px solid #e1e5e9; padding: 12px; overflow-x: auto; font-family: monospace; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #d1d5db; padding: 8px; }
+      `
+
+        const titleSafe = (title || 'snippet').replace(/[^a-z0-9]/gi, '_').toLowerCase()
+        return `<!doctype html><html><head><meta charset="utf-8"><title>${titleSafe}</title><style>${printCss}</style></head><body><div id="content" class="preview-container">${contentHtml}</div></body></html>`
+      } catch (err) {
+        return html
+      }
+    },
+    [settings?.editor?.fontFamily, title]
+  )
+
+  const handleCopyToClipboard = useCallback(async () => {
+    try {
+      // Generate HTML and pre-render diagrams first
+      let fullHtml = await generateFullHtml(false)
+      if (
+        fullHtml &&
+        (fullHtml.includes('class="mermaid"') || fullHtml.includes('class="mermaid-diagram"'))
+      ) {
+        fullHtml = await preRenderMermaidDiagrams(fullHtml)
+      }
+
+      // Sanitize to remove scripts/styles/UI chrome
+      fullHtml = sanitizeExportHtml(fullHtml)
+
+      const tempDiv = document.createElement('div')
+      tempDiv.innerHTML = fullHtml
+      const contentDiv = tempDiv.querySelector('#content') || tempDiv
+      if (!contentDiv) throw new Error('No content to copy')
+
+      // Remove remaining interactive elements
+      contentDiv
+        .querySelectorAll('.copy-code-btn, .ui-element, .code-actions')
+        .forEach((n) => n.remove())
+
+      // Remove specific headings we don't want copied
+      contentDiv.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach((el) => {
+        const t = (el.textContent || '').trim().toLowerCase()
+        if (t.includes('start frontend') || t.includes('untitled')) el.remove()
+      })
+
+      const htmlContent = contentDiv.innerHTML
+      let textContent = (contentDiv.textContent || contentDiv.innerText || '').trim()
+
+      // Clean markdown-like artifacts from plaintext
+      textContent = textContent
+        .replace(/\*\*(.*?)\*\*/g, '$1')
+        .replace(/\*(.*?)\*/g, '$1')
+        .replace(/__(.*?)__/g, '$1')
+        .replace(/_(.*?)_/g, '$1')
+        .replace(/`(.*?)`/g, '$1')
+        .replace(/~~(.*?)~~/g, '$1')
+        .replace(/^\s*[-*+]\s+/gm, '')
+        .replace(/^\s*\d+\.\s+/gm, '')
+        .replace(/^\s*#{1,6}\s+/gm, '')
+        .trim()
+
+      // Try rich clipboard API first, fallback to plain text
+      try {
+        if (navigator.clipboard && window.ClipboardItem) {
+          await navigator.clipboard.write([
+            new ClipboardItem({
+              'text/html': new Blob([htmlContent], { type: 'text/html' }),
+              'text/plain': new Blob([textContent], { type: 'text/plain' })
+            })
+          ])
+        } else {
+          // Older fallback: write plain text only
+          await navigator.clipboard.writeText(textContent || code)
+        }
+        showToast?.('Rendered content copied to clipboard!', 'success')
+      } catch (err) {
+        // Best-effort fallback
+        await navigator.clipboard.writeText(textContent || code)
+        showToast?.('Rendered content copied to clipboard (plaintext)', 'info')
+      }
+    } catch (err) {
+      try {
+        await navigator.clipboard.writeText(code)
+        showToast?.('Code copied to clipboard!', 'info')
+      } catch (fallbackErr) {
+        showToast?.('Failed to copy to clipboard', 'error')
+      }
+    }
+  }, [generateFullHtml, preRenderMermaidDiagrams, sanitizeExportHtml, code, showToast])
+
+  const handleExportPDF = useCallback(async () => {
+    try {
+      // Generate HTML specifically optimized for PDF (rendered markdown)
+      let fullHtml = await generateFullHtml(true) // true for print
+
+      // Pre-render Mermaid diagrams to SVG for PDF export
+      if (fullHtml.includes('class="mermaid"')) {
+        fullHtml = await preRenderMermaidDiagrams(fullHtml)
+      }
+
+      if (window.api?.invoke) {
+        const sanitizedTitle = (title || 'snippet').replace(/[^a-z0-9]/gi, '_').toLowerCase()
+        const success = await window.api.invoke('export:pdf', fullHtml, sanitizedTitle)
+        if (success) {
+          showToast?.('Snippet exported to PDF successfully!', 'success')
+        }
+      }
+    } catch (err) {
+      console.error('PDF Export Error:', err)
+      showToast?.('Failed to export PDF. Please check the logs.', 'error')
+    }
+  }, [generateFullHtml, title, showToast, preRenderMermaidDiagrams])
+
+  const handleExportWord = useCallback(async () => {
+    try {
+      // Generate HTML optimized for Word (rendered markdown)
+      // Use print-optimized HTML for Word export to avoid including app CSS
+      let fullHtml = await generateFullHtml(true) // true for print/export
+
+      // For Word export, handle Mermaid diagrams differently
+      if (fullHtml.includes('class="mermaid"')) {
+        // For Word, we'll keep Mermaid as code blocks since html-to-docx may not handle SVG well
+        const tempDiv = document.createElement('div')
+        tempDiv.innerHTML = fullHtml
+
+        const mermaidDivs = tempDiv.querySelectorAll('div.mermaid, div.mermaid-diagram')
+        mermaidDivs.forEach((div) => {
+          // Try to extract Mermaid code from the original source
+          const extractMermaidCode = (code) => {
+            const mermaidRegex = /```mermaid\s*\n([\s\S]*?)\n```/g
+            const matches = []
+            let match
+            while ((match = mermaidRegex.exec(code)) !== null) {
+              matches.push(match[1].trim())
+            }
+            return matches
+          }
+
+          const mermaidBlocks = extractMermaidCode(code)
+          let mermaidIndex = 0
+
+          const mermaidCode = div.textContent.trim()
+          if (mermaidCode) {
+            // Replace with a formatted code block that preserves Mermaid formatting
+            const codeBlock = document.createElement('pre')
+            codeBlock.style.cssText = `
+              background: #f6f8fa;
+              border: 1px solid #d1d5db;
+              border-radius: 6px;
+              padding: 1em;
+              margin: 1em 0;
+              font-family: 'Courier New', monospace;
+              font-size: 12px;
+              line-height: 1.4;
+              white-space: pre-wrap;
+              word-wrap: break-word;
+              color: #24292f;
+              overflow-x: auto;
+            `
+
+            // Format the Mermaid code properly
+            const formattedCode = mermaidCode
+              .split('\n')
+              .map((line) => line.trimEnd()) // Remove trailing spaces but keep indentation
+              .join('\n')
+              .trim()
+
+            codeBlock.textContent = `mermaid\n${formattedCode}`
+            div.parentNode.replaceChild(codeBlock, div)
+          }
+        })
+
+        fullHtml = tempDiv.innerHTML
+      }
+
+      // Robust cleanup using DOMParser to ensure no scripts/styles leak to Word
+      const parser = new DOMParser()
+      const doc = parser.parseFromString(fullHtml, 'text/html')
+      doc.querySelectorAll('script, style, link').forEach((el) => el.remove())
+      fullHtml = doc.body.innerHTML || doc.documentElement.innerHTML
+
+      if (window.api?.invoke) {
+        const sanitizedTitle = (title || 'snippet').replace(/[^a-z0-9]/gi, '_').toLowerCase()
+        const success = await window.api.invoke('export:word', fullHtml, sanitizedTitle)
+        if (success) {
+          showToast?.('Snippet exported to Word successfully!', 'success')
+        } else {
+          showToast?.('Word export was cancelled or failed.', 'error')
+        }
+      }
+    } catch (err) {
+      console.error('Word Export Error:', err)
+      showToast?.('Failed to export Word. Please check the logs.', 'error')
+    }
+  }, [generateFullHtml, code, title, showToast])
+
+  const handleSave = async (forceSave = false, customTitle = null) => {
+    const finalTitle = customTitle || title
+
+    if ((initialSnippet?.id && !initialSnippet?.is_draft && finalTitle !== '') || forceSave) {
+      const unchanged =
+        lastSavedCode.current === code && lastSavedTitle.current === (finalTitle || title)
+
+      // Only block if unchanged AND NOT a forced save (Ctrl+S)
+      if (unchanged && !forceSave) {
+        showToast?.('No changes to save', 'info')
+        return
+      }
+    }
+
+    if (!finalTitle || finalTitle.toLowerCase() === 'untitled') {
+      setNamePrompt({ isOpen: true, initialName: '' })
+      return
+    }
+
+    if (isDuplicate) {
+      showToast?.('Snippet name already exists in this folder', 'error')
+      return
+    }
+
+    const payload = {
+      ...initialSnippet,
+      id: initialSnippet?.id || Date.now().toString(),
+      title: finalTitle,
+      code: code,
+      tags: Array.from(
+        new Set([
+          ...tags,
+          ...currentTagInput
+            .split(',')
+            .map((t) => t.trim())
+            .filter(Boolean),
+          ...extractTags(code)
+        ])
+      ).filter((t) => typeof t === 'string' && !/^\d+$/.test(t)),
+      is_draft: false,
+      folder_id: initialSnippet?.folder_id || null,
+      is_pinned: initialSnippet?.is_pinned || 0
+    }
+
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current)
+      saveTimerRef.current = null
+    }
+
+    try {
+      onAutosave && onAutosave('saving')
+      window.dispatchEvent(new CustomEvent('autosave-status', { detail: { status: 'saving' } }))
+
+      await onSave(payload)
+
+      window.dispatchEvent(new CustomEvent('autosave-complete', { detail: { id: payload.id } }))
+      window.dispatchEvent(new CustomEvent('autosave-status', { detail: { status: 'saved' } }))
+
+      setIsDirty(false)
+      window.__lastSaveTime = Date.now() // Set cooldown timestamp
+      lastSavedCode.current = code
+      lastSavedTitle.current = finalTitle
+      setTitle(finalTitle) // Sync state
+
+      if (initialSnippet?.id && onDirtyStateChange) {
+        onDirtyStateChange(initialSnippet.id, false)
+      }
+    } catch (err) {
+      onAutosave && onAutosave('error')
+      window.dispatchEvent(new CustomEvent('autosave-status', { detail: { status: null } }))
+    }
+  }
+
+  const handleTriggerCloseCheck = useCallback(
+    (isWindowClose = false) => {
+      // IF UNSAVED: Prompt user using the custom modal
+      if (isDirty) {
+        openModal({
+          title: 'Unsaved Changes',
+          width: '320px',
+          content: (
+            <div className="p-4 text-[var(--color-text-secondary)] text-sm">
+              <p>
+                Save changes to "
+                <span className="text-[var(--color-text-primary)] font-semibold">
+                  {title || 'Untitled'}
+                </span>
+                "?
+              </p>
+            </div>
+          ),
+          footer: (
+            <div className="flex justify-end gap-2 w-full px-4 pb-3">
+              <button
+                className="px-3 py-1.5 text-xs font-medium rounded-md hover:bg-white/10 text-[var(--color-text-secondary)] transition-colors"
+                onClick={() => closeUni()}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-3 py-1.5 text-xs font-medium rounded-md bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
+                onClick={async () => {
+                  // Mark that we're discarding to prevent re-checks and autosave
+                  isDiscardingRef.current = true
+                  skipAutosaveRef.current = true
+
+                  // 1. Revert state and clear dirty
+                  const originalCode = initialSnippet?.code || ''
+                  setCode(originalCode)
+                  codeRef.current = originalCode
+                  setIsDirty(false)
+                  isDirtyRef.current = false
+                  if (initialSnippet?.id && onDirtyStateChange) {
+                    onDirtyStateChange(initialSnippet.id, false)
+                  }
+
+                  // 2. Disable global dirty tracking so main process allows close
+                  if (window.api?.setWindowDirty) {
+                    await window.api.setWindowDirty(false)
+                  }
+
+                  // 3. Close modal immediately
+                  closeUni()
+
+                  // 4. EITHER Exit App or Close Tab
+                  if (isWindowClose) {
+                    if (window.api?.closeWindow) window.api.closeWindow()
+                  } else {
+                    if (onCancel) onCancel(true)
+                  }
+                }}
+              >
+                Discard
+              </button>
+              <button
+                className="px-3 py-1.5 text-xs font-medium rounded-md bg-[var(--color-accent-primary)] text-white hover:opacity-90 transition-colors shadow-sm"
+                onClick={() => {
+                  handleSave(false).then(async () => {
+                    closeUni()
+                    // Disable global dirty tracking
+                    if (window.api?.setWindowDirty) {
+                      await window.api.setWindowDirty(false)
+                    }
+                    if (isWindowClose) {
+                      if (window.api?.closeWindow) window.api.closeWindow()
+                    } else {
+                      if (onCancel) onCancel(true)
+                    }
+                  })
+                }}
+              >
+                Save
+              </button>
+            </div>
+          )
+        })
+        return
+      }
+
+      if (isWindowClose) {
+        if (window.api?.closeWindow) window.api.closeWindow()
+      } else if (onCancel) {
+        onCancel()
+      }
+    },
+    [isDirty, title, openModal, closeUni, onCancel, handleSave, initialSnippet, onDirtyStateChange]
+  )
+
+  useKeyboardShortcuts({
+    onSave: () => {
+      if (!title || title.toLowerCase() === 'untitled') {
+        setNamePrompt({ isOpen: true, initialName: '' })
+      } else {
+        handleSave(true)
+      }
+    },
+    onToggleCompact: onToggleCompactHandler,
+    onDelete: () => {
+      // Silently ignore delete for system files to avoid modal popup
+      if (
+        initialSnippet?.id === 'system:settings' ||
+        initialSnippet?.id === 'system:default-settings'
+      )
+        return
+
+      if (onDelete) onDelete(initialSnippet?.id)
+    },
+    onCloseEditor: handleTriggerCloseCheck,
+    onToggleMode: cycleMode,
+    onCopyToClipboard: handleCopyToClipboard,
+    onEscapeMenusOnly: (e) => {
+      // 1. Close Pin Popover if open
+      if (pinPopover?.visible) {
+        setPinPopover?.({ ...pinPopover, visible: false })
+        return true
+      }
+      // 2. Close Universal Modal if open
+      if (isUniOpen && closeModal) {
+        closeModal()
+        return true
+      }
+      if (isUniOpen && closeUni) {
+        closeUni()
+        return true
+      }
+
+      // 3. Dispatch to CodeEditor to close internal tooltips (link preview, autocomplete)
+      window.dispatchEvent(new CustomEvent('app:close-tooltips'))
+
+      // Return false so we don't block other Escape behaviors (like clearing selection)
+      return false
+    }
+  })
+
+  useEffect(() => {
+    if (justRenamed && !namePrompt.isOpen) {
+      setTimeout(() => {
+        const editorElement = document.querySelector('.cm-editor .cm-content')
+        if (editorElement) editorElement.focus()
+      }, 500)
+      setJustRenamed(false)
+    }
+  }, [justRenamed, namePrompt.isOpen])
+  useEffect(() => {
+    const fn = () => handleSave(true) // Force save on manual trigger
+    const pdfFn = () => handleExportPDF()
+    const wordFn = () => handleExportWord()
+    const closeCheckFn = () => handleTriggerCloseCheck()
+    window.addEventListener('force-save', fn)
+    window.addEventListener('app:trigger-export-pdf', pdfFn)
+    window.addEventListener('app:trigger-export-word', wordFn)
+    window.addEventListener('app:trigger-close-check', closeCheckFn)
+
+    // Listen for main window close request
+    let unsubscribeClose = null
+    if (window.api?.onCloseRequest) {
+      unsubscribeClose = window.api.onCloseRequest(() => handleTriggerCloseCheck(true))
+    }
+
+    return () => {
+      window.removeEventListener('force-save', fn)
+      window.removeEventListener('app:trigger-export-pdf', pdfFn)
+      window.removeEventListener('app:trigger-export-word', wordFn)
+      window.removeEventListener('app:trigger-close-check', closeCheckFn)
+      if (unsubscribeClose) unsubscribeClose()
+      // Cleanup title update timer
+      if (titleUpdateTimerRef.current) {
+        clearTimeout(titleUpdateTimerRef.current)
+        titleUpdateTimerRef.current = null
+      }
+    }
+  }, [
+    code,
+    title,
+    initialSnippet,
+    handleExportPDF,
+    handleExportWord,
+    handleCopyToClipboard,
+    handleTriggerCloseCheck
+  ])
+
+  return (
+    <>
+      {!isCreateMode && (!initialSnippet || !initialSnippet.id) && !hideWelcomePage ? (
+        <WelcomePage onNewSnippet={onNew} />
+      ) : (
+        <div
+          className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative SnippetEditor_root"
+          style={{ backgroundColor: 'var(--editor-bg)' }}
+        >
+          <div className="flex-1 min-h-0 overflow-hidden editor-container relative flex flex-col">
+            {/* SEAMLESS METADATA HEADER (Obsidian Style) */}
+            <EditorMetadata
+              title={title}
+              setTitle={setTitle}
+              titleInputRef={titleInputRef}
+              isDuplicate={isDuplicate}
+              tags={tags}
+              setTags={setTags}
+              currentTagInput={currentTagInput}
+              setCurrentTagInput={setCurrentTagInput}
+              setIsDirty={setIsDirty}
+              initialSnippet={initialSnippet}
+              onSave={onSave}
+              code={code}
+              titleUpdateTimerRef={titleUpdateTimerRef}
+            />
+
+            <AdvancedSplitPane
+              rightHidden={!showPreview}
+              unifiedScroll={false}
+              overlayMode={settings?.livePreview?.overlayMode || false}
+              left={
+                <div ref={editorContainerRef} className="w-full h-full flex justify-center">
+                  <div className="w-full h-full relative">
+                    <CodeEditor
+                      value={code || ''}
+                      language={detectedLang}
+                      wordWrap={wordWrap}
+                      theme={currentTheme}
+                      centered={true}
+                      autoFocus={initialSnippet?.id !== 'system:settings'}
+                      snippetId={initialSnippet?.id}
+                      readOnly={initialSnippet?.readOnly || false}
+                      onChange={handleCodeChange}
+                      onLargeFileChange={setIsLargeFile}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                          // Trigger the close logic which now handles the warning
+                          handleTriggerCloseCheck()
+                        }
+                        if ((e.ctrlKey || e.metaKey) && e.key === ',') {
+                          e.preventDefault()
+                          onToggleCompactHandler()
+                        }
+                        // Ctrl + / to cycle modes
+                        if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+                          e.preventDefault()
+                          cycleMode()
+                        }
+                      }}
+                      height="100%"
+                      className="h-full"
+                      textareaRef={textareaRef}
+                      snippets={snippets}
+                      zenFocus={settings?.ui?.zenFocus}
+                      onCursorChange={handleCursorChange}
+                    />
+                  </div>
+                </div>
+              }
+              right={
+                <div className="h-full w-full p-0 flex justify-center bg-[var(--color-bg-primary)] overflow-hidden text-left items-stretch">
+                  <div className="w-full max-w-[850px] h-full shadow-sm flex flex-col">
+                    {useMemo(() => {
+                      const safeTitle = typeof title === 'string' ? title : ''
+                      const ext = safeTitle.includes('.')
+                        ? safeTitle.split('.').pop()?.toLowerCase()
+                        : null
+
+                      let detectedLang = ext || 'plaintext'
+
+                      if (!ext && debouncedCode) {
+                        const trimmed = debouncedCode.trim()
+                        if (
+                          trimmed.startsWith('# ') ||
+                          trimmed.startsWith('## ') ||
+                          trimmed.startsWith('### ') ||
+                          trimmed.startsWith('- ') ||
+                          trimmed.startsWith('* ') ||
+                          trimmed.startsWith('```') ||
+                          trimmed.startsWith('>')
+                        ) {
+                          detectedLang = 'markdown'
+                        }
+                      }
+
+                      return (
+                        <div className="flex-1 w-full min-h-0">
+                          <LivePreview
+                            code={debouncedCode}
+                            language={detectedLang}
+                            snippets={snippets}
+                            theme={currentTheme}
+                            fontFamily={settings?.editor?.fontFamily}
+                            onOpenExternal={handleOpenExternalPreview}
+                            onOpenMiniPreview={handleOpenMiniPreview}
+                            onExportPDF={handleExportPDF}
+                            zenFocus={settings?.ui?.zenFocus}
+                          />
+                        </div>
+                      )
+                    }, [
+                      debouncedCode,
+                      title,
+                      snippets,
+                      currentTheme,
+                      settings?.editor?.fontFamily
+                    ])}
+                  </div>
+                </div>
+              }
+            />
+
+            <EditorModeSwitcher
+              isFloating={isFloating}
+              setIsFloating={setIsFloating}
+              switcherRef={switcherRef}
+              dragHandleRef={dragHandleRef}
+              activeMode={activeMode}
+              updateSetting={updateSetting}
+              settings={settings}
+              initialSnippet={initialSnippet}
+              onFavorite={onFavorite}
+              onPing={onPing}
+              onImageExport={onImageExport}
+              isFlow={isFlow}
+            />
+          </div>
+
+          <StatusBar
+            title={title}
+            isFavorited={initialSnippet?.is_favorite === 1}
+            isLargeFile={isLargeFile || code.length > 120000}
+            stats={stats}
+            line={cursorPos.line}
+            col={cursorPos.col}
+            minimal={isFlow || settings?.ui?.showFlowMode}
+          />
+
+          <PerformanceBarrier
+            words={words}
+            onSplit={handleSplitSnippet}
+            triggerReset={debouncedCode}
+          />
+
+          <Prompt
+            isOpen={namePrompt.isOpen}
+            title="Name Snippet"
+            message="Your snippet needs a name before it can be saved."
+            confirmLabel="Save"
+            showInput={true}
+            inputValue={namePrompt.initialName || ''}
+            onInputChange={(val) => setNamePrompt((prev) => ({ ...prev, initialName: val }))}
+            onClose={() => setNamePrompt({ isOpen: false, initialName: '' })}
+            onConfirm={async () => {
+              const entered = (namePrompt.initialName || '').trim()
+              if (!entered) return
+
+              // Await saving - normalization happens inside the hook
+              await handleSave(true, entered)
+
+              setNamePrompt({ isOpen: false, initialName: '' })
+              setJustRenamed(true)
+            }}
+            placeholder="e.g. document.js or document.md"
+          />
+
+          <UniversalModal
+            key={settings?.ui?.universalModal?.disableDrag ? 'locked' : 'draggable'}
+            isOpen={isUniOpen}
+            onClose={closeUni}
+            title={uniTitle}
+            footer={uniFooter}
+            width={uniWidth}
+            height={uniHeight}
+            resetPosition={uniResetPosition}
+            isMaximized={uniMaximized}
+            onMaximize={(val) => setUniState((prev) => ({ ...prev, isMaximized: val }))}
+            customKey="snippet_editor_universal_modal"
+            hideHeaderBorder={uniHideHeaderBorder}
+            noTab={uniNoTab}
+            className={uniClassName}
+          >
+            {uniContent}
+          </UniversalModal>
+        </div>
+      )}
+    </>
+  )
+}
+
+SnippetEditor.propTypes = {
+  onSave: PropTypes.func.isRequired,
+  initialSnippet: PropTypes.object,
+  onCancel: PropTypes.func,
+  onDelete: PropTypes.func,
+  isCreateMode: PropTypes.bool,
+  activeView: PropTypes.string,
+  onAutosave: PropTypes.func,
+  showToast: PropTypes.func,
+  isCompact: PropTypes.bool,
+  onToggleCompact: PropTypes.func,
+  onPing: PropTypes.func,
+  onFavorite: PropTypes.func,
+  onImageExport: PropTypes.func,
+  isFlow: PropTypes.bool,
+  onDirtyStateChange: PropTypes.func,
+  showPreview: PropTypes.bool,
+  snippets: PropTypes.array
+}
+
+export default React.memo(SnippetEditor)
