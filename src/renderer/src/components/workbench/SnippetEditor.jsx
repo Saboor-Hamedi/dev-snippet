@@ -265,6 +265,12 @@ const SnippetEditor = ({
     if (onToggleCompact) onToggleCompact()
   }, [onToggleCompact])
 
+  const onEditorScroll = useCallback((scrollTop) => {
+    if (headerRef.current) {
+      headerRef.current.style.transform = `translateY(-${scrollTop}px)`
+    }
+  }, [])
+
   // Auto-focus title input when creating new snippet
   useEffect(() => {
     if (isCreateMode && titleInputRef.current) {
@@ -727,13 +733,7 @@ const SnippetEditor = ({
                         readOnly={initialSnippet?.readOnly || false}
                         onChange={handleCodeChange}
                         onLargeFileChange={setIsLargeFile}
-                        onScroll={(scrollTop) => {
-                          if (headerRef.current) {
-                            // Translate header up, clamped so it doesn't detach weirdly
-                            // Actually pure translate is fine, once it's off screen it's off.
-                            headerRef.current.style.transform = `translateY(-${scrollTop}px)`
-                          }
-                        }}
+                        onScroll={onEditorScroll}
                         style={{
                           '--editor-content-padding-top': `${headerHeight}px`
                         }}

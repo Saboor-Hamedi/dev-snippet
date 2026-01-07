@@ -127,10 +127,17 @@ export const useEditorSave = ({
     }
     if (!setIsDirty || !autoSaveEnabled || initialSnippet?.id === 'system:settings') return
     
-    // Only schedule if dirty
-    // Note: We depend on 'code' and 'title' from outside to trigger this
-    scheduleSave()
-  }, [code, title, isDirty, autoSaveEnabled, scheduleSave])
+    // STRICT GUARD: Only schedule if actually dirty.
+    if (isDirty) {
+      scheduleSave()
+    } else {
+      // If not dirty (e.g. manually saved or reverted), cancel any pending autosave
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current)
+        saveTimerRef.current = null
+      }
+    }
+  }, [code, title, isDirty, autoSaveEnabled, scheduleSave, initialSnippet?.id])
 
   // Register autosave cancel handler
   useEffect(() => {
