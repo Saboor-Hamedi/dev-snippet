@@ -25,7 +25,8 @@ export const useEditorSave = ({
   setIsDirty,
   isDirty,
   onDirtyStateChange,
-  onAutosave
+  onAutosave,
+  isReadOnly = false
 }) => {
   const isInitialMount = useRef(true)
   const saveTimerRef = useRef(null)
@@ -33,7 +34,7 @@ export const useEditorSave = ({
   const lastSavedTitle = useRef(initialSnippet?.title || '')
 
   const scheduleSave = useCallback(() => {
-    if (!autoSaveEnabled) return
+    if (!autoSaveEnabled || isReadOnly) return
 
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
 
@@ -156,6 +157,7 @@ export const useEditorSave = ({
   }, [initialSnippet?.id])
 
   const handleSave = async (forceSave = false, customTitle = null) => {
+    if (isReadOnly) return { success: false }
     const finalTitle = customTitle || title
 
     if ((initialSnippet?.id && !initialSnippet?.is_draft && finalTitle !== '') || forceSave) {

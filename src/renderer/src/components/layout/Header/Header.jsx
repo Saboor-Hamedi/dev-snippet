@@ -14,7 +14,8 @@ import {
   File,
   FilePlus,
   Star,
-  Zap
+  Zap,
+  Lock
 } from 'lucide-react'
 import iconUrl from '../../../assets/icon.png'
 import AutosaveIndicator from './AutosaveIndicator'
@@ -46,7 +47,9 @@ const Header = ({
   onToggleZenFocus,
   actions, // New: slot for custom view-specific buttons (Right)
   centerActions, // New: slot for central search/controls
-  isDirty // New: show yellow dot for unsaved changes
+  isDirty, // New: show yellow dot for unsaved changes
+  isReadOnly,
+  isDoc
 }) => {
   const isMobile = window.innerWidth <= 768
   const activityBarWidth = 48 // Match Workbench
@@ -154,26 +157,39 @@ const Header = ({
             {isTab ? (
               <div
                 className="
-                  group relative flex items-center gap-2 px-3 mx-0
-                  h-[28px] /* Compact tab height */
-                  mt-auto /* Push to bottom */
+                  group relative flex items-center gap-2 px-3
+                  h-[30px] /* Obsidian height */
+                  mt-auto
                   min-w-[140px] max-w-[220px]
                   bg-[var(--color-bg-primary)] 
-                  rounded-t-md
+                  rounded-t-lg /* Smoother corners */
                   rounded-b-none
+                  border-l border-r border-[var(--color-border)]
+                  border-b-0
                   cursor-default
                   select-none
-                  transition-all duration-200
+                  
                 "
                 style={{
                   WebkitAppRegion: 'no-drag',
                   boxShadow: 'none',
-                  marginBottom: '0px'
+                  marginBottom: '-1px', // Overlap bottom border
+                  marginLeft: '6px', // Spacing from left
+                  zIndex: 10
                 }}
-                onDoubleClick={() => onRename && onRename()}
+                onDoubleClick={() => !isReadOnly && onRename && onRename()}
               >
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   {(() => {
+                    if (isDoc) {
+                       return (
+                         <Lock
+                           size={12}
+                           className="flex-none opacity-70"
+                           style={{ color: 'var(--color-text-secondary)' }}
+                         />
+                       )
+                    }
                     const { icon: FileIcon, color: iconColor } = getFileIcon(null, displayTitle)
                     return (
                       <FileIcon
@@ -187,9 +203,9 @@ const Header = ({
                     className="text-[13px] truncate font-medium opacity-90 block normal-case"
                     style={{ color: 'var(--header-text, var(--color-text-primary))' }}
                   >
-                    {typeof displayTitle === 'string'
+                    {isDoc ? 'Doc' : (typeof displayTitle === 'string'
                       ? displayTitle.replace(/\.[^/.]+$/, '')
-                      : 'Untitled'}
+                      : 'Untitled')}
                   </span>
                   {/* Dirty Dot (Yellow) */}
                   {isDirty && (
@@ -204,7 +220,7 @@ const Header = ({
                   )}
                 </div>
 
-                {/* Close Button - Always visible but subtle, or hover */}
+                {/* Close Button */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
@@ -213,18 +229,18 @@ const Header = ({
                   onDoubleClick={(e) => e.stopPropagation()}
                   className="
                     ml-1 p-0.5 rounded-md
-                    opacity-0 group-hover:opacity-100
+                    opacity-60 hover:opacity-100
                     hover:bg-[var(--color-bg-tertiary)]
                     text-[var(--header-text, var(--color-text-primary))]
                     transition-all
                     flex items-center justify-center
                   "
                 >
-                  <X size={14} className="opacity-70" />
+                  <X size={14} className="opacity-100" />
                 </button>
 
-                {/* Active Tab Accent - Top 2px, inset slightly */}
-                <div className="absolute top-0 left-2 right-2 h-[2px] bg-[var(--color-accent-primary)] rounded-b-sm" />
+                {/* Active Tab Accent - Moved to Bottom */}
+                <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--color-accent-primary)] rounded-none opacity-100" />
               </div>
             ) : (
               <div className="flex items-center h-full pb-1 pl-4 opacity-60">

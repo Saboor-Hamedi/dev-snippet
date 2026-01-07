@@ -10,7 +10,8 @@ import {
   Sparkles,
   RefreshCw,
   Download,
-  RotateCcw
+  RotateCcw,
+  Book
 } from 'lucide-react'
 import { useActivityBar } from './useActivityBar'
 
@@ -58,7 +59,7 @@ const ActivityButton = ({
       >
         <Icon
           strokeWidth={isActive ? 2 : 1.5}
-          size={19}
+          size={item.iconSize || 19}
           className={loading ? 'animate-spin' : ''}
           color={
             isActive || loading
@@ -148,9 +149,16 @@ const ActivityBar = ({
       setDownloadProgress(p.percent)
     })
     const unsubDownloaded = window.api.onUpdateDownloaded(() => setUpdateStatus('downloaded'))
-    const unsubError = window.api.onUpdateError(() => {
+    const unsubError = window.api.onUpdateError((err) => {
+      let msg = err
+      if (typeof err === 'string' && err.includes('not-packed')) {
+        msg = 'Updater only works in installed version.'
+      }
+      showToast(msg, 'error')
       setUpdateStatus('error')
-      setTimeout(() => setUpdateStatus('idle'), 3000)
+      
+      // Auto-reset error state after delay
+      setTimeout(() => setUpdateStatus('idle'), 4000)
     })
 
     return () => {
@@ -183,8 +191,8 @@ const ActivityBar = ({
         setUpdateStatus('downloading')
         await window.api.downloadUpdate()
       } catch (err) {
-        showToast('Download failed', 'error')
-        setUpdateStatus('error')
+        showToast('Download start failed', 'error')
+        setUpdateStatus('available')
       }
       return
     }
@@ -194,25 +202,47 @@ const ActivityBar = ({
       return
     }
 
+    // Pre-flight check
+    if (!window.api?.checkForUpdates) {
+      showToast('Update feature unavailable', 'error')
+      return
+    }
+
     // Default: Check for updates
     setUpdateStatus('checking')
 
+    // Safety timeout to prevent infinite spinning
+    const safetyTimer = setTimeout(() => {
+      setUpdateStatus((prev) => (prev === 'checking' ? 'idle' : prev))
+      showToast('Check timed out', 'error')
+    }, 15000)
+
     try {
-      if (window.api?.checkForUpdates) {
-        const info = await window.api.checkForUpdates()
-        if (!info) {
-          setUpdateStatus('no-update')
-          setTimeout(() => setUpdateStatus('idle'), 3000)
-          showToast('App is up to date', 'info')
-        }
+      const info = await window.api.checkForUpdates()
+      clearTimeout(safetyTimer)
+
+      if (!info) {
+        setUpdateStatus('no-update')
+        setTimeout(() => setUpdateStatus('idle'), 3000)
+        showToast('App is up to date', 'info')
+      } else {
+        // Force available state if event didn't trigger
+        setUpdateStatus('available')
       }
     } catch (error) {
+      clearTimeout(safetyTimer)
       setUpdateStatus('error')
-      showToast('Update check failed', 'error')
+      showToast(error.message || 'Update check failed', 'error')
+      setTimeout(() => setUpdateStatus('idle'), 4000)
     }
   }
 
   const handleAction = (item) => {
+    if (item.id === 'docs') {
+      window.dispatchEvent(new CustomEvent('app:open-docs'))
+      return
+    }
+
     if (item.id === 'update') {
       handleUpdateCheck()
       return
@@ -249,6 +279,17 @@ const ActivityBar = ({
       </div>
 
       <div className="mt-auto flex flex-col w-full">
+        <ActivityButton
+          item={{ 
+            id: 'docs', 
+            icon: Book,
+            label: 'Documentation'
+          }}
+          isActive={false}
+          styles={styles}
+          onSettings={onSettings}
+          handleAction={handleAction}
+        />
         <ActivityButton
           item={{ 
             id: 'update', 

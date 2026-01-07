@@ -123,6 +123,7 @@ const KeyboardHandler = ({
 
       // Fallback: Rename via modal if in editor or list view without specific sidebar focus
       if (selectedSnippet && (activeView === 'snippets' || activeView === 'editor')) {
+        if (selectedSnippet.readOnly) return
         handleRename()
       }
     },
@@ -148,6 +149,7 @@ const KeyboardHandler = ({
       }
 
       if (selectedSnippet) {
+        if (selectedSnippet.readOnly) return
         if (selectedSnippet.id === 'system:settings' || selectedSnippet.id === 'system:default-settings') return
         openDeleteModal(selectedSnippet.id, async (id) => {
           await deleteItem(id)
@@ -158,6 +160,8 @@ const KeyboardHandler = ({
     onSave: (e) => {
       e?.preventDefault()
       if (selectedSnippet) {
+        if (selectedSnippet.readOnly) return
+
         // Force editor flush
         const editorPresent = !!document.querySelector('.editor-container .cm-editor')
         if (editorPresent || activeView === 'editor' || isCreatingSnippet) {

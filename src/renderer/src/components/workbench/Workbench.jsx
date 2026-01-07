@@ -198,6 +198,7 @@ const Workbench = ({
   }, [updateSetting, showFlowMode, getSetting, setIsSidebarOpen])
 
   const handleSave = (snippet) => {
+    if (snippet?.readOnly) return
     onSave(snippet)
   }
 
@@ -377,6 +378,7 @@ const Workbench = ({
           initialSnippet={selectedSnippet}
           snippets={allSnippets || snippets}
           onSave={handleSave}
+          isReadOnly={selectedSnippet?.readOnly}
           onNew={onNewSnippet}
           onCancel={handleCloseSnippet}
           onDelete={onDeleteRequest}
@@ -467,6 +469,8 @@ const Workbench = ({
           isDirty={
             selectedSnippet && (dirtyIds?.has(selectedSnippet.id) || selectedSnippet.is_dirty)
           }
+          isReadOnly={selectedSnippet?.readOnly}
+          isDoc={String(selectedSnippet?.id || '').startsWith('doc:')}
           isCompact={isCompact}
           isResizing={isResizing} // Pass the resizing flag to suppress transitions
           onToggleCompact={onToggleCompact}

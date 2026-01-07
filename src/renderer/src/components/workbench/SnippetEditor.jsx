@@ -93,7 +93,8 @@ const SnippetEditor = ({
   onPing,
   onFavorite,
   isFlow = false,
-  onDirtyStateChange
+  onDirtyStateChange,
+  isReadOnly
 }) => {
   const [zoomLevel, setZoom] = useZoomLevel()
   const [editorZoom, setEditorZoom] = useEditorZoomLevel()
@@ -143,7 +144,8 @@ const SnippetEditor = ({
     setIsDirty,
     isDirty,
     onDirtyStateChange,
-    onAutosave
+    onAutosave,
+    isReadOnly
   })
 
   const { handleSave, scheduleSave, lastSavedTitle } = editorSave
@@ -629,6 +631,7 @@ const SnippetEditor = ({
 
   useKeyboardShortcuts({
     onSave: () => {
+      if (isReadOnly) return
       if (!title || title.toLowerCase() === 'untitled') {
         setNamePrompt({ isOpen: true, initialName: '' })
       } else {
@@ -680,7 +683,10 @@ const SnippetEditor = ({
   }, [justRenamed, namePrompt.isOpen])
 
   useEffect(() => {
-    const fn = () => handleSave(true) // Force save on manual trigger
+    const fn = () => {
+      if (isReadOnly) return
+      handleSave(true)
+    }
     const pdfFn = () => handleExportPDF()
     const wordFn = () => handleExportWord()
 
@@ -730,6 +736,7 @@ const SnippetEditor = ({
                         code={code}
                         setIsDirty={setIsDirty}
                         titleInputRef={titleInputRef}
+                        readOnly={isReadOnly}
                       />
                     </div>
                   </div>
@@ -744,7 +751,7 @@ const SnippetEditor = ({
                         centered={true}
                         autoFocus={!isCreateMode && initialSnippet?.id !== 'system:settings'}
                         snippetId={initialSnippet?.id}
-                        readOnly={initialSnippet?.readOnly || false}
+                        readOnly={isReadOnly || initialSnippet?.readOnly || false}
                         onChange={handleCodeChange}
                         onLargeFileChange={setIsLargeFile}
                         onScroll={onEditorScroll}

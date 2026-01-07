@@ -21,11 +21,13 @@ const EditorMetadataHeader = ({
   initialSnippet,
   onSave,
   code,
-  titleInputRef
+  titleInputRef,
+  readOnly
 }) => {
   const titleUpdateTimerRef = useRef(null)
 
   const handleTitleChange = (e) => {
+    if (readOnly) return
     const val = e.target.value.replace(/\.md$/i, '')
     setTitle(val)
     setIsDirty(true)
@@ -52,6 +54,7 @@ const EditorMetadataHeader = ({
   }
 
   const handleTitleKeyDown = (e) => {
+    if (readOnly) return
     if (e.key === 'Enter') {
       const nextInput = document.querySelector('.snippet-tags-input')
       if (nextInput) nextInput.focus()
@@ -59,6 +62,7 @@ const EditorMetadataHeader = ({
   }
 
   const handleTagInputChange = (e) => {
+    if (readOnly) return
     const val = e.target.value
     if (val.endsWith(',')) {
       const newTag = val.replace(',', '').trim().toLowerCase()
@@ -74,6 +78,7 @@ const EditorMetadataHeader = ({
   }
 
   const handleTagInputKeyDown = (e) => {
+    if (readOnly) return
     if (e.key === 'Enter') {
       e.preventDefault()
       const newTag = currentTagInput.trim().toLowerCase()
@@ -98,6 +103,7 @@ const EditorMetadataHeader = ({
   }
 
   const handleRemoveTag = (idx) => {
+    if (readOnly) return
     setTags((prev) => prev.filter((_, i) => i !== idx))
     setIsDirty(true)
   }
@@ -118,6 +124,8 @@ const EditorMetadataHeader = ({
             }}
             spellCheck="false"
             placeholder="Untitled Snippet"
+            readOnly={readOnly}
+            disabled={readOnly}
           />
           {isDuplicate && (
             <div className="text-[10px] text-red-500 font-bold uppercase tracking-wider mt-1">
@@ -131,9 +139,11 @@ const EditorMetadataHeader = ({
               {tags.map((tag, idx) => (
                 <div key={idx} className="snippet-tag-chip group">
                   <span>{String(tag)}</span>
-                  <button onClick={() => handleRemoveTag(idx)} className="snippet-tag-remove">
-                    <X size={10} />
-                  </button>
+                  {!readOnly && (
+                    <button onClick={() => handleRemoveTag(idx)} className="snippet-tag-remove">
+                      <X size={10} />
+                    </button>
+                  )}
                 </div>
               ))}
 
@@ -144,6 +154,8 @@ const EditorMetadataHeader = ({
                 onKeyDown={handleTagInputKeyDown}
                 spellCheck="false"
                 placeholder={tags.length === 0 ? 'add tags...' : ''}
+                readOnly={readOnly}
+                disabled={readOnly}
               />
             </div>
           </div>

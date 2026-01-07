@@ -22,6 +22,7 @@ import { useSnippetOperations } from './library/useSnippetOperations'
 import { useClipboardOperations } from './library/useClipboardOperations'
 import { useFolderOperations } from './library/useFolderOperations'
 import { useSnippetHandlers } from './library/useSnippetHandlers'
+import { docs } from '../../documentation/content'
 
 // #file:SnippetLibraryInner.jsx orchestrates the entire workbench experience.
 // The Core Logic Component
@@ -156,6 +157,12 @@ const SnippetLibraryInner = ({ snippetData }) => {
     async (s, options = false) => {
       const silent = typeof options === 'object' ? options.silent : options
       if (!s) return
+
+      // GUARDIAN: Prevent persistence of Read-Only / Virtual Snippets
+      if (s.readOnly || String(s.id).startsWith('doc:')) {
+        if (!silent) showToast('Read-only: Changes are not saved', 'info')
+        return
+      }
 
       // CRITICAL: Block background sync while this function is executing
       if (s.id === 'system:settings') {
@@ -692,6 +699,24 @@ const SnippetLibraryInner = ({ snippetData }) => {
       else showToast('No snippet selected', 'info')
     }
     const onCommandAIPilot = () => openAIPilot()
+    const onCommandDocs = () => {
+      const doc = docs['doc:manual']
+      if (doc) {
+        const virtual = {
+          id: 'doc:manual',
+          title: doc.title,
+          code: doc.content,
+          language: 'markdown',
+          timestamp: Date.now(),
+          is_pinned: 0,
+          is_draft: false,
+          readOnly: true
+        }
+        setSelectedSnippet(virtual)
+        navigateTo('editor')
+        showToast('Opened Documentation', 'info')
+      }
+    }
 
     const onBulkDelete = (e) => {
       const ids = e.detail?.ids
@@ -699,6 +724,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
     }
 
     window.addEventListener('app:command-new-snippet', onCommandNew)
+    window.addEventListener('app:open-docs', onCommandDocs)
     window.addEventListener('app:command-bulk-delete', onBulkDelete)
     window.addEventListener('app:toggle-theme', onCommandTheme)
     window.addEventListener('app:toggle-sidebar', onCommandSidebar)
@@ -749,6 +775,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
       window.removeEventListener('app:reset-window', onResetWindow)
       window.removeEventListener('app:toggle-favorite', onCommandFavorite)
       window.removeEventListener('app:ping-snippet', onCommandPing)
+      window.removeEventListener('app:open-docs', onCommandDocs)
     }
   }, [
     snippetOps,
