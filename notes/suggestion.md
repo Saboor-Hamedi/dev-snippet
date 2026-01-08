@@ -53,10 +53,20 @@ To achieve "Zero-Latency" performance in Flow Mode while maintaining its premium
 - **Why**: Enhance the writing experience by reducing visual noise.
 - **Plan**: Added an immersive mode that opacity-fades the sidebar, header, and non-active lines in the editor (focusing only on the current paragraph). Includes smooth CSS transitions and grayscale filtering for secondary lines.
 
-## 5. Smart Tag Autocomplete (Priority: P2 - Medium)
+## 5. ✅ Smart Tag Autocomplete (Priority: P2 - Medium)
 
 - **Why**: Tagging is powerful but hard to remember.
-- **Plan**: Create a background indexer that scans all `#tags` in the workspace and offers them as autocomplete suggestions when typing `#`.
+- **Solution**: Create a background indexer that scans all `#tags` in the workspace and offers them as autocomplete suggestions when typing `#`.
+
+## 6. ✅ Magnetic Drop-Zone Feedback (Priority: P1 - High)
+
+- **Why**: Standard folder highlights feel static and lack tactile feedback during organization.
+- **Solution**: Implemented a "Magnetic Pulse" engine. When dragging items over a sidebar folder, the target now scales by 2% and emits a soft, de-saturated glow in the accent color, signaling it is "ready" to accept the drop.
+
+## 7. ✅ Institutional Minimalism (Focus-Aware Opacity) (Priority: P2 - Medium)
+
+- **Why**: Sidebars and Activity Bars can be distracting during deep-work writing sessions.
+- **Solution**: Implemented a smart opacity engine. When the editor is focused, peripheral UI elements (Sidebar, Activity Bar) smoothly fade to 35% opacity after a 0.1s grace period, instantly restoring to 100% on mouse-hover.
 
 ## 6. [x] PDF & HTML Export (Priority: P2 - Medium)
 

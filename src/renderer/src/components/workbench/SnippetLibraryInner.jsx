@@ -710,7 +710,25 @@ const SnippetLibraryInner = ({ snippetData }) => {
       if (ids && ids.length > 0) snippetHandlers.handleBulkDelete(ids)
     }
 
+    const onDraftTitleUpdated = (e) => {
+      const { id, title } = e.detail
+      if (!id) return
+      
+      // 1. Update list for Sidebar consistency
+      setSnippets((prev) => prev.map((s) => (s.id === id ? { ...s, title } : s)))
+
+      // 2. Update active object for Header/Tab consistency
+      // Use functional update to ensure we only trigger if the title actually differs
+      setSelectedSnippet((prev) => {
+        if (prev?.id === id && prev.title !== title) {
+          return { ...prev, title }
+        }
+        return prev
+      })
+    }
+
     window.addEventListener('app:command-new-snippet', onCommandNew)
+    window.addEventListener('app:draft-title-updated', onDraftTitleUpdated)
     window.addEventListener('app:open-docs', onCommandDocs)
     window.addEventListener('app:command-bulk-delete', onBulkDelete)
     window.addEventListener('app:toggle-theme', onCommandTheme)
@@ -739,6 +757,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
     window.addEventListener('app:open-snippet', handleOpenSnippetEvent)
 
     return () => {
+      window.removeEventListener('app:draft-title-updated', onDraftTitleUpdated)
       window.removeEventListener('app:open-snippet', handleOpenSnippetEvent)
       window.removeEventListener('app:command-new-snippet', onCommandNew)
       window.removeEventListener('app:command-bulk-delete', onBulkDelete)
@@ -796,7 +815,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
   }
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white overflow-hidden">
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white overflow-hidden workbench-layout">
       <ToastNotification toast={toast} />
       <KeyboardHandler
         showFlowMode={settings?.ui?.showFlowMode}

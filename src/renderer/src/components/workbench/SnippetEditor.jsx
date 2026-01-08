@@ -266,6 +266,40 @@ const SnippetEditor = ({
     }
   }, [])
 
+  // Memoize style to prevent CodeEditor re-renders on title change
+  const editorStyle = useMemo(() => ({
+    '--editor-content-padding-top': `${headerHeight}px`
+  }), [headerHeight])
+
+  // Mode cycling logic - Defined EARLY to be used in handlers
+  const cycleMode = useCallback(() => {
+    const modes = ['source', 'live_preview', 'reading']
+    // Fallback to 'live_preview' if activeMode is undefined
+    const currentMode = activeMode || 'live_preview'
+    const nextIndex = (modes.indexOf(currentMode) + 1) % modes.length
+    
+    window.dispatchEvent(
+      new CustomEvent('app:set-editor-mode', { detail: { mode: modes[nextIndex] } })
+    )
+  }, [activeMode])
+
+  // Memoize key handler to prevent CodeEditor re-renders
+  const handleEditorKeyDown = useCallback((e) => {
+    if (e.key === 'Escape') {
+      // Trigger the close logic which now handles the warning
+      handleTriggerCloseCheck()
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === ',') {
+      e.preventDefault()
+      onToggleCompactHandler()
+    }
+    // Ctrl + / to cycle modes
+    if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+      e.preventDefault()
+      cycleMode()
+    }
+  }, [handleTriggerCloseCheck, onToggleCompactHandler, cycleMode])
+
   // Auto-focus title input when creating new snippet
   useEffect(() => {
     if (isCreateMode && titleInputRef.current) {
@@ -525,13 +559,8 @@ const SnippetEditor = ({
     settings?.ui?.universalLock?.modal
   ])
 
-  const cycleMode = useCallback(() => {
-    const modes = ['source', 'live_preview', 'reading']
-    const nextIndex = (modes.indexOf(activeMode) + 1) % modes.length
-    window.dispatchEvent(
-      new CustomEvent('app:set-editor-mode', { detail: { mode: modes[nextIndex] } })
-    )
-  }, [activeMode])
+  // cycleMode was moved up to hoist it before handleEditorKeyDown usage
+  // <--- REMOVED DUPLICATE DEFINITION
 
   // Update title when initialSnippet changes (e.g., after rename)
   useEffect(() => {
@@ -643,6 +672,54 @@ const SnippetEditor = ({
 
 
 
+  // Stabilize the preview component to prevent unnecessary remounts
+  const previewContent = useMemo(() => {
+    const safeTitle = typeof title === 'string' ? title : ''
+    const ext = safeTitle.includes('.') ? safeTitle.split('.').pop()?.toLowerCase() : null
+
+    let previewLang = ext || 'plaintext'
+
+    if (!ext && debouncedCode) {
+      const trimmed = debouncedCode.trim()
+      if (
+        trimmed.startsWith('# ') ||
+        trimmed.startsWith('## ') ||
+        trimmed.startsWith('### ') ||
+        trimmed.startsWith('- ') ||
+        trimmed.startsWith('* ') ||
+        trimmed.startsWith('```') ||
+        trimmed.startsWith('>')
+      ) {
+        previewLang = 'markdown'
+      }
+    }
+
+    return (
+      <div className="flex-1 w-full min-h-0 relative">
+        <LivePreview
+          code={debouncedCode}
+          language={previewLang}
+          snippets={snippets}
+          theme={currentTheme}
+          fontFamily={settings?.editor?.fontFamily}
+          onOpenExternal={handleOpenExternalPreview}
+          onOpenMiniPreview={handleOpenMiniPreview}
+          onExportPDF={handleExportPDF}
+          zenFocus={settings?.ui?.zenFocus}
+        />
+      </div>
+    )
+  }, [
+    debouncedCode,
+    title,
+    snippets,
+    currentTheme,
+    settings?.editor?.fontFamily,
+    handleOpenExternalPreview,
+    handleOpenMiniPreview,
+    handleExportPDF
+  ])
+
   useKeyboardShortcuts({
     onSave: () => {
       if (isReadOnly) return
@@ -732,7 +809,7 @@ const SnippetEditor = ({
               left={
                 <div className="flex flex-col h-full w-full relative">
                   {/* SEAMLESS METADATA HEADER (Obsidian Style) - Absolute & Scrollable */}
-                  {!isReadOnly && !initialSnippet?.readOnly && (
+                  {((!isReadOnly && !initialSnippet?.readOnly) || isCreateMode) && (
                     <div
                       ref={headerRef}
                       className="absolute top-0 left-0 right-4 z-10 transition-transform will-change-transform bg-[var(--editor-bg)] pointer-events-none"
@@ -771,24 +848,8 @@ const SnippetEditor = ({
                         onChange={handleCodeChange}
                         onLargeFileChange={setIsLargeFile}
                         onScroll={onEditorScroll}
-                        style={{
-                          '--editor-content-padding-top': `${headerHeight}px`
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Escape') {
-                            // Trigger the close logic which now handles the warning
-                            handleTriggerCloseCheck()
-                          }
-                          if ((e.ctrlKey || e.metaKey) && e.key === ',') {
-                            e.preventDefault()
-                            onToggleCompactHandler()
-                          }
-                          // Ctrl + / to cycle modes
-                          if ((e.ctrlKey || e.metaKey) && e.key === '/') {
-                            e.preventDefault()
-                            cycleMode()
-                          }
-                        }}
+                        style={editorStyle}
+                        onKeyDown={handleEditorKeyDown}
                         height="100%"
                         className="h-full"
                         textareaRef={textareaRef}
@@ -803,52 +864,7 @@ const SnippetEditor = ({
               right={
                 <div className="h-full w-full p-0 flex justify-center bg-[var(--color-bg-primary)] overflow-hidden text-left items-stretch relative">
                   <div className="w-full max-w-[850px] h-full shadow-sm flex flex-col">
-                    {useMemo(() => {
-                      const safeTitle = typeof title === 'string' ? title : ''
-                      const ext = safeTitle.includes('.')
-                        ? safeTitle.split('.').pop()?.toLowerCase()
-                        : null
-
-                      let detectedLang = ext || 'plaintext'
-
-                      if (!ext && debouncedCode) {
-                        const trimmed = debouncedCode.trim()
-                        if (
-                          trimmed.startsWith('# ') ||
-                          trimmed.startsWith('## ') ||
-                          trimmed.startsWith('### ') ||
-                          trimmed.startsWith('- ') ||
-                          trimmed.startsWith('* ') ||
-                          trimmed.startsWith('```') ||
-                          trimmed.startsWith('>')
-                        ) {
-                          detectedLang = 'markdown'
-                        }
-                      }
-
-                      return (
-                        // Live Preview
-                        <div className="flex-1 w-full min-h-0 relative">
-                          <LivePreview
-                            code={debouncedCode}
-                            language={detectedLang}
-                            snippets={snippets}
-                            theme={currentTheme}
-                            fontFamily={settings?.editor?.fontFamily}
-                            onOpenExternal={handleOpenExternalPreview}
-                            onOpenMiniPreview={handleOpenMiniPreview}
-                            onExportPDF={handleExportPDF}
-                            zenFocus={settings?.ui?.zenFocus}
-                          />
-                        </div>
-                      )
-                    }, [
-                      debouncedCode,
-                      title,
-                      snippets,
-                      currentTheme,
-                      settings?.editor?.fontFamily
-                    ])}
+                    {previewContent}
                   </div>
                 </div>
               }

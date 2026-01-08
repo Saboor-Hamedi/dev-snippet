@@ -214,15 +214,24 @@ async function getMarkdownEngines() {
           node.type === 'textDirective'
         ) {
           const type = node.name.toLowerCase()
+          const validTypes = ['note', 'tip', 'important', 'warning', 'caution']
           const data = node.data || (node.data = {})
-          data.hName = 'div'
-          data.hProperties = { class: `admonition admonition-${type}` }
-          const label = node.attributes?.label || type.toUpperCase()
-          node.children.unshift({
-            type: 'paragraph',
-            data: { hName: 'p', hProperties: { class: 'admonition-title' } },
-            children: [{ type: 'text', value: label }]
-          })
+
+          if (validTypes.includes(type)) {
+            data.hName = 'div'
+            data.hProperties = { class: `admonition admonition-${type}` }
+            const label = node.attributes?.label || type.toUpperCase()
+            node.children.unshift({
+              type: 'paragraph',
+              data: { hName: 'p', hProperties: { class: 'admonition-title' } },
+              children: [{ type: 'text', value: label }]
+            })
+          } else {
+            // Fallback for unknown directives (e.g., 'ss')
+            // Render as a generic div/span so content is visible but unstyled
+            data.hName = node.type === 'textDirective' ? 'span' : 'div'
+            data.hProperties = { class: `directive directive-${type}` }
+          }
         }
       })
     }

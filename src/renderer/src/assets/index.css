@@ -1404,3 +1404,65 @@ html body .cm-content *::selection {
     transform: scale(1);
   }
 }
+
+/* --- Institutional Minimalism & Performance UI --- */
+
+/* 1. Ultra-Thin, Floating "Institutional" Scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(var(--color-accent-primary-rgb, 88, 166, 255), 0.15);
+  border-radius: 10px;
+  border: 1px solid transparent; 
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--color-accent-primary-rgb, 88, 166, 255), 0.4);
+}
+
+/* 2. Focus-Aware Opacity (Minimalism) */
+/* When the editor (CodeMirror) is focused, we dim peripheral UI */
+
+/* Base transitions on the elements themselves for symmetrical smooth fading */
+.activity-bar,
+.sidebar-pane-container {
+  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), filter 0.8s ease;
+}
+
+.workbench-layout:has(.cm-focused) .activity-bar,
+.workbench-layout:has(.cm-focused) .sidebar-pane-container {
+  opacity: 0.35;
+  filter: saturate(0.2) blur(0.1px);
+  /* Slower fade-out with a slight grace period delay */
+  transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.1s, filter 1.2s ease 0.1s;
+}
+
+.workbench-layout:has(.cm-focused) .activity-bar:hover,
+.workbench-layout:has(.cm-focused) .sidebar-pane-container:hover {
+  opacity: 1;
+  filter: saturate(1) blur(0);
+  /* Faster recovery when the user actually wants to use them */
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), filter 0.4s ease;
+}
+
+/* 3. Magnetic Drop Zone Feedback */
+@keyframes magnetic-pulse {
+  0% { box-shadow: 0 0 0 0px rgba(var(--color-accent-primary-rgb), 0.4); transform: scale(1); }
+  50% { box-shadow: 0 0 20px 4px rgba(var(--color-accent-primary-rgb), 0.2); transform: scale(1.02); }
+  100% { box-shadow: 0 0 0 0px rgba(var(--color-accent-primary-rgb), 0); transform: scale(1); }
+}
+
+.drop-target-magnetic {
+  animation: magnetic-pulse 1.2s infinite ease-in-out;
+  background-color: rgba(var(--color-accent-primary-rgb), 0.15) !important;
+  z-index: 100;
+  border-radius: 6px;
+}

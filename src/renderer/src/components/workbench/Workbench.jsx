@@ -555,7 +555,7 @@ const Workbench = ({
         {/* Sidebar */}
         <aside
           ref={sidebarRef}
-          className="flex flex-col h-full z-10 relative sidebar-container bg-[var(--sidebar-bg)]"
+          className="flex flex-col h-full z-10 relative sidebar-pane-container bg-[var(--sidebar-bg)]"
           style={{
             width: 'var(--sidebar-width)',
             willChange: isResizing ? 'width' : 'auto',

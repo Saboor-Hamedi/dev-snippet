@@ -1,6 +1,5 @@
-import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useMemo, useLayoutEffect } from 'react'
 import { AnimatePresence } from 'framer-motion'
-import * as React from 'react'
 import useCursorProp from '../../hook/settings/useCursorProp.js'
 import useGutterProp from '../../hook/settings/useGutterProp.js'
 import { useSettings, useZoomLevel, useEditorZoomLevel } from '../../hook/useSettingsContext'

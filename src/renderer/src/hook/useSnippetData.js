@@ -21,33 +21,36 @@ export const useSnippetData = () => {
   const { searchSnippetList } = useSearchLogic()
 
   // 3. Snippet-Specific Logic (Kept in main hook for now as it's the core focus)
-  const setSelectedSnippet = async (item) => {
-    if (!item) {
+  const setSelectedSnippet = (itemOrUpdater) => {
+    if (!itemOrUpdater) {
       setSelectedSnippetState(null)
       return
     }
 
-    try {
-      if (item.code !== undefined && !item.is_draft) {
-        setSelectedSnippetState(item)
-        return
-      }
+    // Support functional updates for fine-grained title/dirty state synchronization
+    if (typeof itemOrUpdater === 'function') {
+      setSelectedSnippetState(itemOrUpdater)
+      return
+    }
 
-      setSelectedSnippetState(item)
+    const item = itemOrUpdater
+    // Immediate state update for UI responsiveness
+    setSelectedSnippetState(item)
 
+    // Background fetch for full code if it's not already complete
+    if (item.code === undefined || item.is_draft) {
       if (window.api?.getSnippetById) {
-        const fullSnippet = await window.api.getSnippetById(item.id)
-        setSelectedSnippetState((current) => {
-          if (current && current.id === item.id) {
-            return fullSnippet || item
-          }
-          return current
+        window.api.getSnippetById(item.id).then((fullSnippet) => {
+          setSelectedSnippetState((current) => {
+            if (current && current.id === item.id) {
+              return fullSnippet || item
+            }
+            return current
+          })
+        }).catch(err => {
+          console.error('[useSnippetData] Failed to fetch full snippet:', err)
         })
-      } else {
-        setSelectedSnippetState(item)
       }
-    } catch (err) {
-      setSelectedSnippetState(item)
     }
   }
 

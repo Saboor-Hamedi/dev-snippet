@@ -441,7 +441,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         )}
         <div
           className={`group flex items-center gap-[6px] w-full h-full select-none pr-2 relative transition-colors duration-150 ${
-            isDragOver ? 'bg-[var(--color-accent-primary)] bg-opacity-20' : 'hover:bg-[var(--sidebar-item-hover-bg)]'
+            isDragOver ? 'drop-target-magnetic' : 'hover:bg-[var(--sidebar-item-hover-bg)]'
           }`}
           style={{
             backgroundColor: isHighlight ? 'var(--sidebar-item-active-bg)' : undefined,
