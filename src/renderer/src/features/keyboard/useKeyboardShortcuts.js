@@ -19,6 +19,13 @@ export const useKeyboardShortcuts = (shortcuts) => {
 
   useEffect(() => {
     const handleKeyDown = (event) => {
+      // SHIELD: If a modal is open, we disable global background shortcuts
+      // to prevent things like 'Ctrl+R' (Rename) firing while reading documentation.
+      // We allow Escape so the 'onEscapeMenusOnly' handler can still close the modal.
+      if (document.querySelector('.universal-modal') && event.key !== 'Escape') {
+        return
+      }
+
       for (const matcher of KEYDOWN_MATCHERS) {
         if (!matcher.when || !matcher.handlerKey) continue
         const handler = shortcutsRef.current[matcher.handlerKey]

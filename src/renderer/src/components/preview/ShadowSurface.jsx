@@ -5,7 +5,7 @@ import PropTypes from 'prop-types'
  * ShadowSurface - A robust, reusable high-performance Shadow DOM wrapper for React.
  * Encapsulates styles and content while remaining part of the same execution context.
  */
-const ShadowSurface = ({ html, styles, onRender, isDark, zenFocus, className = '' }) => {
+const ShadowSurface = ({ html, styles, onRender, isDark, zenFocus, noScroll = false, className = '' }) => {
   const hostRef = useRef(null)
   const shadowRootRef = useRef(null)
   const contentRef = useRef(null)
@@ -20,8 +20,15 @@ const ShadowSurface = ({ html, styles, onRender, isDark, zenFocus, className = '
       const container = document.createElement('div')
       container.className = 'shadow-wrapper markdown-body'
       container.style.width = '100%'
-      container.style.height = '100%'
-      container.style.overflowY = 'auto'
+      
+      if (noScroll) {
+        container.style.height = 'auto'
+        container.style.overflowY = 'visible'
+      } else {
+        container.style.height = '100%'
+        container.style.overflowY = 'auto'
+      }
+      
       container.style.overflowX = 'hidden'
       container.style.boxSizing = 'border-box'
       container.style.scrollBehavior = 'smooth'
@@ -100,6 +107,7 @@ ShadowSurface.propTypes = {
   styles: PropTypes.string,
   onRender: PropTypes.func,
   isDark: PropTypes.bool,
+  noScroll: PropTypes.bool,
   className: PropTypes.string
 }
 

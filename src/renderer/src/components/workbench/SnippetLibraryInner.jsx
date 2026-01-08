@@ -132,6 +132,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
     openSettingsModal,
     openSyncModal,
     openAIPilot,
+    openManualModal,
     isSettingsOpen
   } = useModal()
 
@@ -700,22 +701,8 @@ const SnippetLibraryInner = ({ snippetData }) => {
     }
     const onCommandAIPilot = () => openAIPilot()
     const onCommandDocs = () => {
-      const doc = docs['doc:manual']
-      if (doc) {
-        const virtual = {
-          id: 'doc:manual',
-          title: doc.title,
-          code: doc.content,
-          language: 'markdown',
-          timestamp: Date.now(),
-          is_pinned: 0,
-          is_draft: false,
-          readOnly: true
-        }
-        setSelectedSnippet(virtual)
-        navigateTo('editor')
-        showToast('Opened Documentation', 'info')
-      }
+      openManualModal()
+      showToast('Opened Reference Manual', 'info')
     }
 
     const onBulkDelete = (e) => {

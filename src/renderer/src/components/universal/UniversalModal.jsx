@@ -29,6 +29,7 @@ const UniversalModal = ({
   hideBorder = false,
   noTab = false,
   noRadius = false,
+  borderRadius = null,
   hideCloseButton = false
 }) => {
   const [isMaximizedInternal, setIsMaximizedInternal] = useState(false)
@@ -235,6 +236,14 @@ const UniversalModal = ({
     isMaximized
   ])
 
+  // --- 4. Focus Management ---
+  useEffect(() => {
+    if (isOpen && modalRef.current) {
+      // Focus the modal container to allow local keyboard events
+      modalRef.current.focus()
+    }
+  }, [isOpen])
+
   const toggleMaximized = (e) => {
     if (e && e.stopPropagation) e.stopPropagation()
     setIsMaximizedInternal(!isMaximized)
@@ -246,21 +255,25 @@ const UniversalModal = ({
   const isDragDisabled = isLockedProp || settings?.ui?.universalLock?.modal
 
   const modalContent = (
-    <div
-      ref={modalRef}
-      className={`universal-modal u-solid ${!hideBorder ? 'native-frame' : ''} ${isDragDisabled ? 'locked' : ''} ${className} ${noOverlay ? 'no-overlay' : ''} ${hideBorder ? 'borderless' : ''}`}
-      style={{
-        width: typeof initialWidth === 'number' ? `${initialWidth}px` : initialWidth,
-        height: typeof initialHeight === 'number' ? `${initialHeight}px` : initialHeight,
-        zIndex: noOverlay ? 100000 : 200000,
-        pointerEvents: className.includes('click-through') ? 'none' : 'auto',
-        opacity: 1,
-        border: hideBorder ? 'none' : undefined,
-        boxShadow: hideBorder ? 'none' : undefined,
-        borderRadius: noRadius ? '0px' : undefined,
-        WebkitAppRegion: 'no-drag'
-      }}
-    >
+      <div
+        ref={modalRef}
+        tabIndex={-1}
+        className={`universal-modal u-solid outline-none ${!hideBorder ? 'native-frame' : ''} ${isDragDisabled ? 'locked' : ''} ${className} ${noOverlay ? 'no-overlay' : ''} ${hideBorder ? 'borderless' : ''}`}
+        style={{
+          width: typeof initialWidth === 'number' ? `${initialWidth}px` : initialWidth,
+          height: typeof initialHeight === 'number' ? `${initialHeight}px` : initialHeight,
+          zIndex: noOverlay ? 100000 : 200000,
+          pointerEvents: className.includes('click-through') ? 'none' : 'auto',
+          opacity: 1,
+          border: hideBorder ? 'none' : undefined,
+          boxShadow: hideBorder ? 'none' : undefined,
+          borderRadius: (borderRadius !== null && borderRadius !== undefined) ? 
+            (borderRadius === false ? '0px' : borderRadius) : 
+            (noRadius ? '0px' : undefined),
+          WebkitAppRegion: 'no-drag',
+          overflow: (borderRadius === false || noRadius || borderRadius === '0px' || borderRadius === 0) ? 'hidden' : undefined
+        }}
+      >
       <div
         ref={headerRef}
         className="universal-modal-header u-solid no-drag"

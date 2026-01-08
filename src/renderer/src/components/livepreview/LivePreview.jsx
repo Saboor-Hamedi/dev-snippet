@@ -41,7 +41,8 @@ const LivePreview = ({
   showHeader = true,
   enableScrollSync = false,
   fontSize = null,
-  renderMetadataCard = false
+  renderMetadataCard = false,
+  noScroll = false
 }) => {
   // --- Refs & Context ---
   const lastScrollPercentage = useRef(0)
@@ -469,7 +470,7 @@ const LivePreview = ({
 
   // --- 5. Main Render Output ---
   return (
-    <div className="w-full h-full flex flex-col bg-transparent overflow-hidden live-preview-container relative">
+    <div className={`w-full ${noScroll ? 'h-auto overflow-visible' : 'h-full flex flex-col overflow-hidden'} bg-transparent live-preview-container relative`}>
       {/* Parse Progress Bar - shows during incremental parsing */}
       {parseProgress < 100 && (
         <div
@@ -582,8 +583,11 @@ const LivePreview = ({
         </div>
       )}
       <div
-        className="flex-1 w-full min-h-0 relative live-preview-scroller-container"
-        style={{ backgroundColor: isDark ? 'transparent' : '#ffffff' }}
+        className={noScroll ? "w-full min-h-0 relative" : "flex-1 w-full min-h-0 relative live-preview-scroller-container"}
+        style={{ 
+          backgroundColor: isDark ? 'transparent' : '#ffffff',
+          height: noScroll ? 'auto' : undefined
+        }}
         onClick={handleShadowClick}
       >
         <ShadowSurface
@@ -591,6 +595,7 @@ const LivePreview = ({
           styles={combinedStyles}
           onRender={onShadowRender}
           isDark={isDark}
+          noScroll={noScroll}
           className="w-full h-full"
         />
       </div>
@@ -609,9 +614,9 @@ LivePreview.propTypes = {
   onOpenMiniPreview: PropTypes.func,
   onExportPDF: PropTypes.func,
   enableScrollSync: PropTypes.bool,
-  showHeader: PropTypes.bool,
   fontSize: PropTypes.number,
-  renderMetadataCard: PropTypes.bool
+  renderMetadataCard: PropTypes.bool,
+  noScroll: PropTypes.bool
 }
 
 export default React.memo(LivePreview)

@@ -306,12 +306,33 @@ const SnippetEditor = ({
     }
   }, [isFloating])
 
+  // Mode management: Documentation/Read-only snippets should ALWAYS use 'reading' mode
+  // while preserving the user's preferred mode for editable snippets.
+  const isDoc = String(initialSnippet?.id || '').startsWith('doc:') || 
+                String(initialSnippet?.title || '').toLowerCase().includes('manual') ||
+                String(initialSnippet?.title || '').toLowerCase().includes('documentation') ||
+                String(initialSnippet?.id || '').includes('content.js')
+  const isReadOnlySnippet = !!(isReadOnly || initialSnippet?.readOnly || isDoc)
+
   // Listen for mode changes from CM instance
   useEffect(() => {
-    const handleModeChange = (e) => setActiveMode(e.detail.mode)
+    const handleModeChange = (e) => {
+      // If we are in a read-only snippet, we don't let mode changes stay persistent
+      if (!isReadOnlySnippet) {
+        setActiveMode(e.detail.mode)
+      }
+    }
     window.addEventListener('app:mode-changed', handleModeChange)
     return () => window.removeEventListener('app:mode-changed', handleModeChange)
-  }, [])
+  }, [isReadOnlySnippet])
+
+  // Sync mode with engine when snippet or preferred mode changes
+  useEffect(() => {
+    const targetMode = isReadOnlySnippet ? 'reading' : activeMode
+    window.dispatchEvent(
+      new CustomEvent('app:set-editor-mode', { detail: { mode: targetMode } })
+    )
+  }, [isReadOnlySnippet, activeMode, initialSnippet?.id])
 
   // Listen for Source Modal requests from richMarkdown extension
   useEffect(() => {
@@ -833,7 +854,7 @@ const SnippetEditor = ({
               }
             />
 
-            {!isReadOnly && !initialSnippet?.readOnly && (
+            {!isReadOnlySnippet && !isFlow && !isDoc && (
               <EditorModeSwitcher
                 isFloating={isFloating}
                 setIsFloating={setIsFloating}

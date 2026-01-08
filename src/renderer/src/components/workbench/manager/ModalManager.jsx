@@ -11,9 +11,15 @@ const TrashModal = lazy(() => import('../../mermaid/modal/TrashModal'))
 const SyncControlModal = lazy(() => import('../../sync/SyncControlModal'))
 const KnowledgeGraphModal = lazy(() => import('../../Graph/KnowledgeGraphModal'))
 const AIPilotModal = lazy(() => import('../../AI/AIPilotModal'))
+const LivePreview = lazy(() => import('../../livepreview/LivePreview'))
+import { docs } from '../../../documentation/content'
+import UniversalModal from '../../universal/UniversalModal'
+import { BookOpen } from 'lucide-react'
 
 import { ModalContext } from './ModalContext'
 import { sanitizeTitle } from '../../../utils/snippetUtils'
+import { useTheme } from '../../../hook/useTheme'
+import '../../Graph/KnowledgeGraphModal.css'
 
 // Loading fallback component
 const ModalLoader = () => (
@@ -81,8 +87,8 @@ export const ModalProvider = ({
   onSelectSnippet,
   selectedSnippet
 }) => {
+  const { currentTheme } = useTheme()
   // useSettings intentionally not used here; modals should request their own settings if needed
-  // Input State for Prompts
   const [promptInputValue, setPromptInputValue] = useState('')
 
   // Modal States
@@ -105,6 +111,7 @@ export const ModalProvider = ({
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false)
   const [isGraphModalOpen, setIsGraphModalOpen] = useState(false)
   const [isAIPilotOpen, setIsAIPilotOpen] = useState(false)
+  const [isManualModalOpen, setIsManualModalOpen] = useState(false)
 
   // API exposed to consumers
   const openRenameModal = useCallback((item, onConfirm, customTitle = 'Rename Snippet') => {
@@ -148,6 +155,14 @@ export const ModalProvider = ({
     setIsAIPilotOpen(false)
   }, [])
 
+  const openManualModal = useCallback(() => {
+    setIsManualModalOpen(true)
+  }, [])
+
+  const closeManualModal = useCallback(() => {
+    setIsManualModalOpen(false)
+  }, [])
+
   const toggleCommandPalette = useCallback(
     (forceCommandMode = false) => {
       setIsCommandPaletteOpen((prev) => {
@@ -179,17 +194,40 @@ export const ModalProvider = ({
   ) // Added dependency
 
   const closeAll = useCallback(() => {
-    setRenameModal({ isOpen: false, item: null, onConfirm: null })
-    setDeleteModal({ isOpen: false, snippetId: null, onConfirm: null })
-    setIsCommandPaletteOpen(false)
-    setCommandPaletteMode(null)
-    setImageExportModal({ isOpen: false, snippet: null })
+    // 1. Close high-priority UI Prompts first (Rename/Delete/Export)
+    if (renameModal.isOpen || deleteModal.isOpen || imageExportModal.isOpen) {
+      setRenameModal({ isOpen: false, item: null, onConfirm: null })
+      setDeleteModal({ isOpen: false, snippetId: null, onConfirm: null })
+      setImageExportModal({ isOpen: false, snippet: null })
+      return
+    }
+
+    // 2. Close navigation overlays
+    if (isCommandPaletteOpen) {
+      setIsCommandPaletteOpen(false)
+      setCommandPaletteMode(null)
+      return
+    }
+
+    // 3. Close the Manual/Graph last (since they often serve as base layers)
+    if (isManualModalOpen) {
+      setIsManualModalOpen(false)
+      return
+    }
+
+    // 4. Fallback: Close everything else if no specific priority hit
     setIsSettingsOpen(false)
     setIsTrashOpen(false)
     setIsSyncModalOpen(false)
     setIsGraphModalOpen(false)
     setIsAIPilotOpen(false)
-  }, [])
+  }, [
+    renameModal,
+    deleteModal,
+    imageExportModal,
+    isCommandPaletteOpen,
+    isManualModalOpen
+  ])
 
   return (
     <ModalContext.Provider
@@ -216,9 +254,13 @@ export const ModalProvider = ({
           isTrashOpen ||
           isSyncModalOpen ||
           isGraphModalOpen ||
-          isAIPilotOpen,
+          isAIPilotOpen ||
+          isManualModalOpen,
         openAIPilot,
-        closeAIPilot
+        closeAIPilot,
+        openManualModal,
+        closeManualModal,
+        isManualModalOpen
       }}
     >
       {children}
@@ -262,7 +304,6 @@ export const ModalProvider = ({
             }}
           />
         )}
-      
 
         {deleteModal.isOpen && (
           <Prompt
@@ -374,6 +415,56 @@ export const ModalProvider = ({
             onClose={() => setIsAIPilotOpen(false)}
             selectedSnippet={selectedSnippet}
           />
+        )}
+
+        {/* show documentation modal */}
+        {isManualModalOpen && (
+          <UniversalModal
+            isOpen={true}
+            onClose={() => setIsManualModalOpen(false)}
+            title={
+              <>
+                <BookOpen size={14} className="text-[var(--color-accent-primary)]" />
+              </>
+            }
+            width="90vw"
+            height="90vh"
+            resetPosition={false}
+            className="no-padding documentation-modal knowledge-graph-modal-wrapper"
+            noTab={true}
+            hideBorder={true}
+            allowMaximize={true}
+            customKey="documentation_manager_modal"
+            borderRadius={false}
+            hideHeaderBorder={true}
+            headerHeight={40}
+            footer={
+              <div className="nexus-modal-footer-stats">
+                <div className="flex items-center gap-4 px-4 h-8 text-[11px] opacity-60 font-medium tracking-wide uppercase">
+                  <span>Reference Manual</span>
+                  <div className="w-[1px] h-3 bg-white/10" />
+                  <span>V1.0</span>
+                  <div className="w-[1px] h-3 bg-white/10" />
+                  <span className="text-[var(--color-accent-primary)]">
+                    Enterprise Edition
+                  </span>
+                </div>
+              </div>
+            }
+          >
+            <div className="h-full bg-[var(--color-bg-primary)] overflow-y-auto overflow-x-hidden pt-12 pb-24 px-4">
+              <Suspense fallback={<ModalLoader />}>
+                <LivePreview
+                  code={docs['doc:manual']?.content || ''}
+                  language="markdown"
+                  snippets={snippets}
+                  theme={currentTheme}
+                  showHeader={false}
+                  noScroll={true}
+                />
+              </Suspense>
+            </div>
+          </UniversalModal>
         )}
       </Suspense>
     </ModalContext.Provider>

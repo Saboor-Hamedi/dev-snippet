@@ -192,6 +192,24 @@ const SnippetSidebar = ({
     startCreation(type, targetParentId)
   }
 
+  // --- 🪄 Global Deselection logic ---
+  // When clicking outside the sidebar (e.g. editor, header), deselect the sidebar.
+  React.useEffect(() => {
+    const handleGlobalClick = (e) => {
+      // If we clicked outside the sidebar pane
+      if (parentRef.current && !parentRef.current.contains(e.target)) {
+        // Only clear if something is actually selected to avoid redundant renders
+        if (isSidebarSelected || selectedIds.length > 0) {
+          setSidebarSelected(false)
+          setSelectedIds([]) // Clear highlights as well for total deselection
+          // We do NOT clear selectedFolderId here as that represents the current view filter
+        }
+      }
+    }
+    document.addEventListener('mousedown', handleGlobalClick)
+    return () => document.removeEventListener('mousedown', handleGlobalClick)
+  }, [isSidebarSelected, selectedIds, setSidebarSelected, setSelectedIds])
+
   // --- 🔍 Search Sync ---
   React.useEffect(() => {
     if (!filter || !filter.trim()) {

@@ -49,13 +49,17 @@ const KeyboardHandler = ({
         return true
       }
 
-      // Priority 2: Clear Selection (Multi-select or Folder select)
-      const hasSelection = (selectedIds && selectedIds.length > 0) || selectedFolderId
+      // Priority 2: Clear Selection (Multi-select, Folder select, or Sidebar Focus)
+      const { isSidebarSelected, clearSelection } = useSidebarStore.getState()
+      const hasSelection = (selectedIds && selectedIds.length > 0) || selectedFolderId || isSidebarSelected
+
       if (hasSelection) {
-        if (setSelectedIds) setSelectedIds([])
-        if (setSelectedFolderId) setSelectedFolderId(null)
-        // We do NOT clear selectedSnippet here to keep the editor open
-        // if the user wants to close the editor, they can use the specific shortcut or click away
+        if (clearSelection) clearSelection()
+        else {
+          if (setSelectedIds) setSelectedIds([])
+          if (setSelectedFolderId) setSelectedFolderId(null)
+        }
+        focusEditor() // Shift focus back to editor
         return true
       }
 

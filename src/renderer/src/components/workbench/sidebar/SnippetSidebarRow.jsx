@@ -515,8 +515,9 @@ const SnippetSidebarRow = ({ index, style, data }) => {
 
   const itemId = type === 'pinned_snippet' ? item.realId : itemData.id
   
-  // FIX: isSelected now checks the Virtual Row ID (item.id) to prevent double highlighting
-  const isSelected = selectedIds.includes(item.id)
+  // HIGHLIGHT LOGIC: Row is selected if it's in the multi-select array 
+  // OR if it's the active snippet being edited (only in the primary folders, not pinned section)
+  const isSelected = selectedIds.includes(item.id) || (selectedSnippet && selectedSnippet.id === itemId && type !== 'pinned_snippet')
   
   const safeTitle = typeof itemData.title === 'string' ? itemData.title : ''
   const { icon: Icon, color } = getFileIcon(itemData.language, safeTitle)
