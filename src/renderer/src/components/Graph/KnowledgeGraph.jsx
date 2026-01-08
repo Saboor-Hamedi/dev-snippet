@@ -17,18 +17,10 @@ import { forceRadial, forceManyBody } from 'd3-force'
 import { buildGraphData, filterGraphData, generateRandomGraphTheme } from './GraphLogic'
 import { useSettings } from '../../hook/useSettingsContext'
 import markdownToHtml from '../../utils/markdownParser'
-import mermaid from 'mermaid'
 import { makeDraggable } from '../../utils/draggable'
 import './graphStyle.css'
 
-// Initialize Mermaid for compact previews
-mermaid.initialize({
-  startOnLoad: false,
-  theme: 'dark',
-  securityLevel: 'loose',
-  fontFamily: 'inherit',
-  fontSize: 10
-})
+// Mermaid removed
 
 /**
  * KnowledgeGraph Component - Nexus Edition
@@ -183,10 +175,8 @@ const KnowledgeGraph = ({
       const lang = (s.language || 'markdown').toLowerCase()
       let md = raw
 
-      // Auto-wrap mermaid if it's the snippet language but not fenced
-      if (lang === 'mermaid' && !raw.trim().startsWith('```')) {
-        md = `\`\`\`mermaid\n${raw}\n\`\`\``
-      } else if (lang !== 'markdown' && lang !== 'md' && !raw.startsWith('```')) {
+      // Auto-wrap code if not fenced
+      if (lang !== 'markdown' && lang !== 'md' && !raw.startsWith('```')) {
         md = `\`\`\`${lang}\n${raw}\n\`\`\``
       }
 
@@ -202,21 +192,7 @@ const KnowledgeGraph = ({
     render()
   }, [hoverNode, selectedNode, allSnippets])
 
-  // 1.7. Render Mermaid diagrams after HTML is injected
-  useEffect(() => {
-    if (previewHtml) {
-      // Give a tiny delay for React to mount the HTML
-      const timer = setTimeout(() => {
-        const nodes = document.querySelectorAll('.nexus-insight-card .mermaid')
-        if (nodes.length > 0) {
-          mermaid
-            .run({ nodes: Array.from(nodes) })
-            .catch((err) => console.warn('Mermaid render failed:', err))
-        }
-      }, 50)
-      return () => clearTimeout(timer)
-    }
-  }, [previewHtml])
+  // Mermaid rendering removed
 
   // 2. Filter & Sort data based on search and MODE
   const processedData = useMemo(() => {

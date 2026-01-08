@@ -229,15 +229,7 @@ body.dragging-active * {
   will-change: auto !important; /* Don't overload GPU with individual children change hints */
 }
 
-/* Specific stability for Mermaid diagrams during movement */
-.universal-modal.is-dragging .mermaid-diagram-wrapper {
-  contain: strict !important;
-}
 
-.universal-modal.is-dragging .mermaid svg {
-  transition: none !important;
-  transform: translateZ(0) !important; /* Force stability */
-}
 
 .universal-modal.is-dragging .code-actions svg {
   animation: none !important;

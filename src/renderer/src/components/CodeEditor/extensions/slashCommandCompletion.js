@@ -128,15 +128,6 @@ const COMMANDS = [
     icon: 'SQL',
     cursorOffset: 8
   },
-  {
-    label: '/mermaid',
-    display: 'Mermaid Diagram',
-    detail: 'Insert a flowchart or sequence diagram',
-    section: 'Code',
-    template: '\n```mermaid\ngraph TD\n  A[Start] --> B[End]\n```\n',
-    icon: '📊',
-    cursorOffset: 21 // Inside graph content
-  },
 
   // --- Advanced Components ---
   {

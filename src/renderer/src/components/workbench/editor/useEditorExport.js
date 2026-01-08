@@ -6,7 +6,6 @@ import { generatePreviewHtml } from '../../../utils/previewGenerator'
  * 
  * This hook manages:
  * - HTML generation for previews and exports
- * - Mermaid diagram pre-rendering
  * - PDF export
  * - Word export
  * - Clipboard copy (rich HTML + plain text)
@@ -55,74 +54,14 @@ export const useEditorExport = ({
     }
   }, [generateFullHtml])
 
-  // Helper function to pre-render Mermaid diagrams for Word export
-  const preRenderMermaidDiagrams = useCallback(
+  // Helper function to pre-process HTML for export
+  const preProcessExportHtml = useCallback(
     async (html) => {
       const tempDiv = document.createElement('div')
       tempDiv.innerHTML = html || ''
 
+      // Remove scripts, styles, and links for clean export
       tempDiv.querySelectorAll('script, style, link').forEach((n) => n.remove())
-
-      const mermaidDivs = tempDiv.querySelectorAll('div.mermaid, div.mermaid-diagram')
-      if (!mermaidDivs || mermaidDivs.length === 0) return tempDiv.innerHTML
-
-      let mermaidInstance = window.__mermaidExportInstance || window.mermaid
-      if (!mermaidInstance) {
-        try {
-          mermaidInstance = (await import('mermaid')).default
-          mermaidInstance.initialize({
-            startOnLoad: false,
-            theme: 'default',
-            securityLevel: 'loose',
-            fontFamily: settings?.editor?.fontFamily || 'Inter, sans-serif',
-            themeVariables: {
-              fontFamily: settings?.editor?.fontFamily || 'Inter, sans-serif',
-              fontSize: '14px'
-            }
-          })
-          window.__mermaidExportInstance = mermaidInstance
-        } catch (err) {
-          return tempDiv.innerHTML
-        }
-      }
-
-      const decodeEntities = (str) => {
-        const txt = document.createElement('textarea')
-        txt.innerHTML = str
-        return txt.value
-      }
-
-      for (const div of Array.from(mermaidDivs)) {
-        try {
-          const raw = div.innerHTML && div.innerHTML.trim() ? div.innerHTML : div.textContent || ''
-          const mermaidCode = decodeEntities(raw).trim()
-          if (!mermaidCode) continue
-
-          const id = `mermaid-export-${Math.random().toString(36).slice(2, 9)}`
-          const renderResult = await mermaidInstance.render(id, mermaidCode)
-          const svg = (renderResult && renderResult.svg) || renderResult || ''
-          if (!svg || svg.length < 20) throw new Error('empty svg')
-
-          const svgContainer = document.createElement('div')
-          svgContainer.innerHTML = svg
-          const svgElement = svgContainer.querySelector('svg')
-          if (!svgElement) throw new Error('no svg element')
-
-          svgElement.setAttribute('role', 'img')
-          svgElement.style.maxWidth = '100%'
-          svgElement.style.height = 'auto'
-          svgElement.style.display = 'block'
-          svgElement.style.margin = '1.2em auto'
-          svgElement.style.background = 'white'
-          svgElement.querySelectorAll('text').forEach((t) => (t.style.fill = '#000'))
-
-          div.replaceWith(svgElement)
-        } catch (err) {
-          const pre = document.createElement('pre')
-          pre.textContent = div.textContent || div.innerText || ''
-          div.replaceWith(pre)
-        }
-      }
 
       return tempDiv.innerHTML
     },
@@ -177,12 +116,7 @@ export const useEditorExport = ({
   const handleCopyToClipboard = useCallback(async () => {
     try {
       let fullHtml = await generateFullHtml(false)
-      if (
-        fullHtml &&
-        (fullHtml.includes('class="mermaid"') || fullHtml.includes('class="mermaid-diagram"'))
-      ) {
-        fullHtml = await preRenderMermaidDiagrams(fullHtml)
-      }
+      fullHtml = await preProcessExportHtml(fullHtml)
 
       fullHtml = sanitizeExportHtml(fullHtml)
 
@@ -239,15 +173,13 @@ export const useEditorExport = ({
         showToast?.('Failed to copy to clipboard', 'error')
       }
     }
-  }, [generateFullHtml, preRenderMermaidDiagrams, sanitizeExportHtml, code, showToast])
+  }, [generateFullHtml, preProcessExportHtml, sanitizeExportHtml, code, showToast])
 
   const handleExportPDF = useCallback(async () => {
     try {
       let fullHtml = await generateFullHtml(true)
 
-      if (fullHtml.includes('class="mermaid"')) {
-        fullHtml = await preRenderMermaidDiagrams(fullHtml)
-      }
+      fullHtml = await preProcessExportHtml(fullHtml)
 
       if (window.api?.invoke) {
         const sanitizedTitle = (title || 'snippet').replace(/[^a-z0-9]/gi, '_').toLowerCase()
@@ -260,49 +192,13 @@ export const useEditorExport = ({
       console.error('PDF Export Error:', err)
       showToast?.('Failed to export PDF. Please check the logs.', 'error')
     }
-  }, [generateFullHtml, title, showToast, preRenderMermaidDiagrams])
+  }, [generateFullHtml, title, showToast, preProcessExportHtml])
 
   const handleExportWord = useCallback(async () => {
     try {
       let fullHtml = await generateFullHtml(true)
 
-      if (fullHtml.includes('class="mermaid"')) {
-        const tempDiv = document.createElement('div')
-        tempDiv.innerHTML = fullHtml
-
-        const mermaidDivs = tempDiv.querySelectorAll('div.mermaid, div.mermaid-diagram')
-        mermaidDivs.forEach((div) => {
-          const mermaidCode = div.textContent.trim()
-          if (mermaidCode) {
-            const codeBlock = document.createElement('pre')
-            codeBlock.style.cssText = `
-              background: #f6f8fa;
-              border: 1px solid #d1d5db;
-              border-radius: 6px;
-              padding: 1em;
-              margin: 1em 0;
-              font-family: 'Courier New', monospace;
-              font-size: 12px;
-              line-height: 1.4;
-              white-space: pre-wrap;
-              word-wrap: break-word;
-              color: #24292f;
-              overflow-x: auto;
-            `
-
-            const formattedCode = mermaidCode
-              .split('\n')
-              .map((line) => line.trimEnd())
-              .join('\n')
-              .trim()
-
-            codeBlock.textContent = `mermaid\n${formattedCode}`
-            div.parentNode.replaceChild(codeBlock, div)
-          }
-        })
-
-        fullHtml = tempDiv.innerHTML
-      }
+      fullHtml = await preProcessExportHtml(fullHtml)
 
       const parser = new DOMParser()
       const doc = parser.parseFromString(fullHtml, 'text/html')
@@ -331,7 +227,7 @@ export const useEditorExport = ({
     handleCopyToClipboard,
     handleExportPDF,
     handleExportWord,
-    preRenderMermaidDiagrams,
+    preProcessExportHtml,
     sanitizeExportHtml
   }
 }

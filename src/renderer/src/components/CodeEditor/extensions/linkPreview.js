@@ -1,38 +1,8 @@
 import { hoverTooltip, EditorView, ViewPlugin, MatchDecorator, Decoration } from '@codemirror/view'
 import { markdownToHtml } from '../../../utils/markdownParser'
-import mermaid from 'mermaid'
 import { useSidebarStore } from '../../../store/useSidebarStore' // For instant cache lookup
 
-// Initialize Mermaid (compact, neutral theme matching tooltip)
-mermaid.initialize({
-  startOnLoad: false,
-  theme: 'neutral',
-  securityLevel: 'loose',
-  fontFamily: 'inherit',
-  themeVariables: {
-    primaryColor: '#ffffff',
-    primaryTextColor: '#000000',
-    primaryBorderColor: '#333333',
-    lineColor: '#333333',
-    secondaryColor: '#f6f6f6',
-    tertiaryColor: '#ffffff',
-    nodeBorder: '#333333',
-    clusterBkg: '#ffffff',
-    clusterBorder: '#333333',
-    actorBkg: '#ffffff',
-    actorTextColor: '#000000',
-    actorBorder: '#333333',
-    actorLineColor: '#333333',
-    edgeLabelBackground: '#ffffff',
-    labelBackgroundColor: '#ffffff',
-    fontSize: '11px' // Slightly smaller for compact tooltip
-  },
-  flowchart: {
-    useMaxWidth: true,
-    htmlLabels: true,
-    curve: 'basis'
-  }
-})
+// Mermaid removed
 
 /**
  * Compact Link Preview Tooltip for WikiLinks ([[Link]])
@@ -118,9 +88,7 @@ export const linkPreviewTooltip = hoverTooltip(
     const lang = (snippet.language || 'markdown').toLowerCase()
 
     // Auto-wrap non-markdown content in proper fences
-    if (lang === 'mermaid' && !codeToParse.startsWith('```mermaid')) {
-      codeToParse = '```mermaid\n' + codeToParse + '\n```'
-    } else if (lang !== 'markdown' && lang !== 'md' && !/^```/.test(codeToParse)) {
+    if (lang !== 'markdown' && lang !== 'md' && !/^```/.test(codeToParse)) {
       codeToParse = '```' + lang + '\n' + codeToParse + '\n```'
     }
 
@@ -135,29 +103,7 @@ export const linkPreviewTooltip = hoverTooltip(
     const tempMeasureDiv = document.createElement('div')
     tempMeasureDiv.innerHTML = initialHTML
 
-    // 1. Render Mermaid Diagrams in the background before showing
-    const mermaidNodes = tempMeasureDiv.querySelectorAll('.mermaid')
-    if (mermaidNodes.length > 0) {
-      try {
-        // We must be in a DOM-attached state for mermaid to measure correctly,
-        // so we use a hidden anchor in the body for pre-rendering
-        const anchor = document.createElement('div')
-        anchor.style.position = 'fixed'
-        anchor.style.left = '-10000px'
-        anchor.style.visibility = 'hidden'
-        anchor.innerHTML = initialHTML
-        document.body.appendChild(anchor)
-
-        const nodesToRun = Array.from(anchor.querySelectorAll('.mermaid'))
-        await mermaid.run({ nodes: nodesToRun })
-
-        // Transfer the rendered HTML back to our measure div
-        initialHTML = anchor.innerHTML
-        document.body.removeChild(anchor)
-      } catch (e) {
-        console.warn('Pre-render Mermaid failed:', e)
-      }
-    }
+    // Mermaid pre-rendering removed
 
     // 2. Wait for regular images
     const images = Array.from(tempMeasureDiv.querySelectorAll('img'))

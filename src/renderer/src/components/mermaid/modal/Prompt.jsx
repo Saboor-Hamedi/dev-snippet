@@ -1,201 +1,103 @@
 import React, { useEffect, useRef } from 'react'
 import PropTypes from 'prop-types'
-import { FileEdit, Trash2, AlertCircle, Info } from 'lucide-react'
-import UniversalModal from '../../universal/UniversalModal'
 
+/**
+ * Simple Prompt Modal - Replacement for deleted Mermaid Prompt
+ */
 const Prompt = ({
   isOpen,
-  onClose,
-  onConfirm,
   title,
   message,
   confirmLabel = 'Confirm',
   cancelLabel = 'Cancel',
-  variant = 'primary',
   showInput = false,
   inputValue = '',
   onInputChange,
-  placeholder = 'Type here...',
-  icon: CustomIcon,
-  zIndex = 200000
+  onConfirm,
+  onClose
 }) => {
-  const [isProcessing, setIsProcessing] = React.useState(false)
   const inputRef = useRef(null)
-  const confirmBtnRef = useRef(null)
 
   useEffect(() => {
-    if (isOpen) {
-      setIsProcessing(false) // Reset state when opening
-      if (showInput) {
-        // Use multiple attempts to ensure focus after animation/render
-        const focus = () => {
-          if (inputRef.current) {
-            inputRef.current.focus()
-            inputRef.current.select()
-          }
-        }
-
-        focus()
-        setTimeout(focus, 50)
-        setTimeout(focus, 150)
-      }
+    if (isOpen && showInput && inputRef.current) {
+      inputRef.current.focus()
+      inputRef.current.select()
     }
   }, [isOpen, showInput])
 
-  const handleConfirm = async () => {
+  if (!isOpen) return null
+
+  const handleConfirm = () => {
     if (onConfirm) {
-      setIsProcessing(true)
-
-      // Safety: Give React a chance to paint the spinner
-      // before potentially heavy synchronous work blocks the thread.
-      await new Promise((resolve) => setTimeout(resolve, 50))
-
-      try {
-        await onConfirm(inputValue)
-      } finally {
-        // We don't necessarily set isProcessing to false if the modal closes,
-        // but it helps if it stays open for any reason.
-        setIsProcessing(false)
-      }
+      onConfirm(inputValue)
     }
   }
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
-      if (showInput && !inputValue?.trim()) return
-      if (isProcessing) return
       e.preventDefault()
       handleConfirm()
     } else if (e.key === 'Escape') {
-      if (isProcessing) return
       e.preventDefault()
-      onClose && onClose()
+      onClose()
     }
   }
-
-  if (!isOpen) return null
-
-  // Variant Mapping
-  const configs = {
-    primary: {
-      icon: <FileEdit size={16} strokeWidth={2.5} />,
-      iconBg: 'bg-[var(--color-accent-primary)]/10',
-      iconColor: 'text-[var(--color-accent-primary)]',
-      confirmBtn: 'bg-[var(--color-accent-primary)] hover:opacity-90',
-      tagColor: 'text-[var(--color-accent-primary)]'
-    },
-    danger: {
-      icon: <Trash2 size={16} strokeWidth={2.5} />,
-      iconBg: 'bg-[var(--color-error)]/10',
-      iconColor: 'text-[var(--color-error)]',
-      confirmBtn: 'bg-[var(--color-error)] hover:opacity-90',
-      tagColor: 'text-[var(--color-error)]'
-    },
-    info: {
-      icon: <Info size={16} strokeWidth={2.5} />,
-      iconBg: 'bg-[var(--color-info)]/10',
-      iconColor: 'text-[var(--color-info)]',
-      confirmBtn: 'bg-[var(--color-info)] hover:opacity-90',
-      tagColor: 'text-[var(--color-info)]'
-    }
-  }
-
-  const config = configs[variant] || configs.primary
-  const displayIcon = CustomIcon ? <CustomIcon size={16} strokeWidth={2.5} /> : config.icon
 
   return (
-    <UniversalModal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={title}
-      width="350px"
-      height="auto"
-      className="prompt-modal"
-      resetPosition={false}
-      isLocked={true}
-      hideHeaderBorder={false}
-      hideBorder={true} // remove border color
-      allowMaximize={false}
-      noTab={true}
-      noRadius={false}
+    <div
+      className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50"
+      onClick={onClose}
     >
-      <div className=" text-left bg-[var(--color-bg-primary)]">
-        {/* Message */}
-        {message && (
-          <div className="text-[12px] text-[var(--color-text-secondary)] mb-3 leading-relaxed opacity-90">
-            <div className="flex items-center gap-2 mb-2">
-              <div
-                className={`w-6 h-6 ${config.iconBg} flex items-center justify-center ${config.iconColor} bg-opacity-20`}
-              >
-                {React.cloneElement(displayIcon, { size: 14 })}
-              </div>
-              <span className="font-semibold text-[var(--color-text-primary)]">{title}</span>
-            </div>
-            {message}
-          </div>
-        )}
+      <div
+        className="bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-lg shadow-2xl p-6 min-w-[400px] max-w-[500px]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="text-lg font-semibold mb-3 text-[var(--color-text-primary)]">
+          {title}
+        </h2>
+        <p className="text-sm text-[var(--color-text-secondary)] mb-4">{message}</p>
 
-        {/* Optional Input */}
         {showInput && (
-          <div className="mb-2">
-            <input
-              ref={inputRef}
-              type="text"
-              value={inputValue}
-              onChange={(e) => onInputChange && onInputChange(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={placeholder}
-              className="w-full bg-white/5 dark:bg-black/20 border rounded-xxtiny outline-none px-2.5 py-1.5 text-[11px] text-[var(--color-text-primary)] transition-all placeholder:text-[var(--color-text-tertiary)] shadow-inner"
-              autoComplete="off"
-            />
-          </div>
+          <input
+            ref={inputRef}
+            type="text"
+            value={inputValue}
+            onChange={(e) => onInputChange?.(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="w-full px-3 py-2 mb-4 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-primary)]"
+          />
         )}
 
-        {/* Actions */}
-        <div className="flex justify-end gap-3 mt-4">
+        <div className="flex justify-end gap-2">
           <button
-            onClick={(e) => {
-              e.currentTarget.blur()
-              onClose && onClose()
-            }}
-            className="px-4 py-1.5 text-[11px] font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-white/5 transition-all rounded-lg outline-none"
+            onClick={onClose}
+            className="px-4 py-2 text-sm rounded bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
           >
             {cancelLabel}
           </button>
           <button
-            ref={confirmBtnRef}
-            onClick={(e) => {
-              e.currentTarget.blur()
-              handleConfirm()
-            }}
-            disabled={isProcessing || (showInput && !inputValue?.trim())}
-            className={`px-6 py-1.5 flex items-center justify-center gap-2 text-[11px] font-bold text-white rounded-lg transition-all active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed ${config.confirmBtn} ring-1 ring-white/10 shadow-none`}
+            onClick={handleConfirm}
+            className="px-4 py-2 text-sm rounded bg-[var(--color-accent-primary)] text-white hover:opacity-90 transition-opacity"
           >
-            {isProcessing && (
-              <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            )}
-            {isProcessing ? 'Processing...' : confirmLabel}
+            {confirmLabel}
           </button>
         </div>
       </div>
-    </UniversalModal>
+    </div>
   )
 }
 
 Prompt.propTypes = {
   isOpen: PropTypes.bool.isRequired,
-  onClose: PropTypes.func.isRequired,
-  onConfirm: PropTypes.func.isRequired,
   title: PropTypes.string.isRequired,
-  message: PropTypes.oneOfType([PropTypes.string, PropTypes.node]),
+  message: PropTypes.string,
   confirmLabel: PropTypes.string,
   cancelLabel: PropTypes.string,
-  variant: PropTypes.oneOf(['primary', 'danger', 'info']),
   showInput: PropTypes.bool,
   inputValue: PropTypes.string,
   onInputChange: PropTypes.func,
-  placeholder: PropTypes.string,
-  icon: PropTypes.elementType
+  onConfirm: PropTypes.func,
+  onClose: PropTypes.func.isRequired
 }
 
 export default Prompt

@@ -9,9 +9,6 @@ import { incrementalParser } from '../../utils/incrementalParser'
 import previewStyles from '../../assets/preview.css?raw'
 import markdownStyles from '../../assets/markdown.css?raw'
 import variableStyles from '../../assets/variables.css?raw'
-import mermaidStyles from '../mermaid/mermaid.css?raw'
-import { getMermaidConfig } from '../mermaid/mermaidConfig'
-import { useMermaidCapture } from '../mermaid/hooks/useMermaidCapture'
 
 import { themes } from '../preference/theme/themes'
 import { useModal } from '../workbench/manager/ModalContext'
@@ -68,7 +65,7 @@ const LivePreview = ({
   }, [theme])
 
   // --- Specialized Hooks ---
-  const { handleQuickCopyMermaid } = useMermaidCapture(fontFamily)
+
   const { openImageExportModal } = useModal()
 
   // --- 1. Parsing Engine Engine ---
@@ -141,32 +138,6 @@ const LivePreview = ({
 
           // Cache the result for future hits
           parseCache.set(code, normalizedLang, result, cacheKey)
-        } else if (normalizedLang === 'mermaid') {
-          const escaped = visibleCode
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-          const encoded = encodeURIComponent(visibleCode)
-          result = `
-            <div class="mermaid-diagram-wrapper" style="display: flex !important; flex-direction: column !important; width: 100% !important; background: var(--color-bg-secondary) !important; border: 1px solid var(--color-border) !important; border-radius: 0 !important; margin: 2rem 0 !important; box-sizing: border-box !important;">
-              <div class="code-block-header" style="display: flex !important; justify-content: space-between !important; align-items: center !important; padding: 12px 20px !important; background: var(--color-bg-tertiary) !important; backdrop-filter: none !important; border-bottom: 1px solid var(--color-border) !important; width: 100% !important; box-sizing: border-box !important; flex-shrink: 0 !important; height: 44px !important;">
-                <div style="display: flex !important; align-items: center !important; gap: 8px !important;">
-                  <div style="width: 10px; height: 10px; border-radius: 50%; background: #ff5f56; border: 0.5px solid rgba(0,0,0,0.1); margin: 0 !important; padding: 0 !important;"></div>
-                  <div style="width: 10px; height: 10px; border-radius: 50%; background: #ffbd2e; border: 0.5px solid rgba(0,0,0,0.1); margin: 0 !important; padding: 0 !important;"></div>
-                  <div style="width: 10px; height: 10px; border-radius: 50%; background: #27c93f; border: 0.5px solid rgba(0,0,0,0.1); margin: 0 !important; padding: 0 !important;"></div>
-                </div>
-                <div class="code-actions" style="display: flex !important; gap: 10px !important; align-items: center !important;">
-                  <button class="copy-image-btn" data-code="${encoded}" data-lang="mermaid" title="Export as Image" style="background: transparent !important; border: none !important; cursor: pointer !important; color: var(--color-text-tertiary) !important; padding: 6px !important; border-radius: 0 !important; display: flex !important; align-items: center !important; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); hover:background: rgba(255,255,255,0.05) !important;">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-image"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-                  </button>
-                  <button class="copy-code-btn" data-code="${encoded}" title="Copy Mermaid Source" style="background: transparent !important; border: none !important; cursor: pointer !important; color: var(--color-text-tertiary) !important; padding: 6px !important; border-radius: 0 !important; display: flex !important; align-items: center !important; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); hover:background: rgba(255,255,255,0.05) !important;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-                  </button>
-                </div>
-              </div>
-            <div class="mermaid" data-mermaid-src="${encoded}" style="display: flex !important; justify-content: center !important; width: 100% !important; padding: 40px 20px !important; background: var(--color-bg-primary) !important; box-sizing: border-box !important; position: relative !important; overflow: visible !important; min-height: 150px !important;">${escaped}</div>
-          </div>`
         } else {
           const escaped = visibleCode
             .replace(/&/g, '&amp;')
@@ -251,7 +222,7 @@ const LivePreview = ({
       --font-sans: ${fontFamily}, sans-serif;
     }`
 
-    return `${variableStyles}\n${themeVars}\n${previewStyles}\n${markdownStyles}\n${mermaidStyles}\n.markdown-body { padding-bottom: 5rem !important; }`
+    return `${variableStyles}\n${themeVars}\n${previewStyles}\n${markdownStyles}\n.markdown-body { padding-bottom: 5rem !important; }`
   }, [theme, fontFamily, settings?.editor?.fontSize, settings?.syntax])
 
   // --- 3. Shadow DOM Event Pipeline ---
@@ -265,10 +236,23 @@ const LivePreview = ({
       const btn = target.closest('.copy-code-btn') || target.closest('.copy-image-btn')
       if (btn) {
         let raw = ''
+        const codeData = btn.dataset.code || ''
+
         try {
-          raw = decodeURIComponent(btn.dataset.code)
-        } catch {
-          raw = btn.dataset.code
+          // Try Base64 (matches markdownParser) - modern TextDecoder
+          const binaryString = atob(codeData)
+          const bytes = new Uint8Array(binaryString.length)
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i)
+          }
+          raw = new TextDecoder().decode(bytes)
+        } catch (e) {
+          try {
+            // Fallback to URI Component
+            raw = decodeURIComponent(codeData)
+          } catch (e2) {
+            raw = codeData
+          }
         }
 
         const type = btn.classList.contains('copy-code-btn') ? 'copy-text' : 'copy-image'
@@ -276,16 +260,11 @@ const LivePreview = ({
         if (type === 'copy-text') {
           navigator.clipboard.writeText(raw)
         } else {
-          const lang = btn.dataset.lang || 'text'
-          if (lang === 'mermaid') {
-            handleQuickCopyMermaid(raw)
-          } else {
-            openImageExportModal({
-              title: 'Code Snippet',
-              code: raw,
-              language: lang
-            })
-          }
+          openImageExportModal({
+            title: 'Code Snippet',
+            code: raw,
+            language: btn.dataset.lang || 'text'
+          })
         }
 
         // Visual Feedback
@@ -329,7 +308,7 @@ const LivePreview = ({
         }
       }
     },
-    [handleQuickCopyMermaid, openImageExportModal]
+    [openImageExportModal]
   )
 
   // --- 4. Shadow Rendering Callback (Mermaid & Logic) ---
@@ -347,94 +326,7 @@ const LivePreview = ({
         })
       }
 
-      // 2. Mermaid Diagram Initialization (Robust Shadow DOM Bridge)
-      if (renderedHtml.includes('class="mermaid"')) {
-        const nodes = contentContainer.querySelectorAll('.mermaid')
-        if (nodes.length > 0 && !isRendering.current) {
-          isRendering.current = true
-
-          // 0. GLOBAL PERFORMANCE GUARD: Skip rendering if dragging is active
-          if (document.body.classList.contains('dragging-active')) {
-            isRendering.current = false
-            return
-          }
-
-          requestAnimationFrame(async () => {
-            // Re-check inside RAF just in case
-            if (document.body.classList.contains('dragging-active')) {
-              isRendering.current = false
-              return
-            }
-
-            try {
-              // 1. Setup Bridge
-              let bridge = document.getElementById('mermaid-render-bridge')
-              if (!bridge) {
-                bridge = document.createElement('div')
-                bridge.id = 'mermaid-render-bridge'
-                bridge.style.cssText =
-                  'position:absolute;left:-9999px;top:-9999px;visibility:hidden;width:1200px;'
-                document.body.appendChild(bridge)
-              }
-
-              // 2. Load and Refresh Config
-              const { default: mermaid } = await import('mermaid')
-              mermaid.initialize({
-                ...getMermaidConfig(isDark, fontFamily),
-                startOnLoad: false,
-                securityLevel: 'loose'
-              })
-
-              const currentConfig = `${theme}-${fontFamily}`
-              const forceReRender = lastRenderedConfig.current !== currentConfig
-              lastRenderedConfig.current = currentConfig
-
-              const targetNodes = Array.from(nodes).filter(
-                (n) => forceReRender || !n.getAttribute('data-processed')
-              )
-
-              // 3. Sequential Render Cycle
-              for (const node of targetNodes) {
-                const id = `mermaid-sv-${Math.random().toString(36).substring(2, 9)}`
-                const encodedSrc = node.getAttribute('data-mermaid-src')
-                const rawCode = encodedSrc
-                  ? decodeURIComponent(encodedSrc)
-                  : node.textContent.trim()
-
-                if (!rawCode) continue
-
-                try {
-                  // We use a fresh element for EACH render to avoid bridge collision errors
-                  const tempContainer = document.createElement('div')
-                  bridge.appendChild(tempContainer)
-
-                  const { svg } = await mermaid.render(id, rawCode, tempContainer)
-                  node.innerHTML = svg
-                  node.setAttribute('data-processed', 'true')
-
-                  // Entrance animation
-                  node.style.opacity = '0'
-                  requestAnimationFrame(() => {
-                    node.style.transition = 'opacity 0.4s ease'
-                    node.style.opacity = '1'
-                  })
-                } catch (renderErr) {
-                  console.error('Mermaid individual render failure:', renderErr)
-                  node.setAttribute('data-processed', 'error')
-                  node.innerHTML = `<div style="color: #ef4444; font-size: 11px; padding: 12px; border: 1px solid #ef444433; border-radius: 0; background: rgba(239, 68, 68, 0.05);">Mermaid Error: check diagram syntax</div>`
-                } finally {
-                  // Carefully clear ONLY this render's bridge content
-                  bridge.innerHTML = ''
-                }
-              }
-            } catch (globalErr) {
-              console.error('Mermaid global render failure:', globalErr)
-            } finally {
-              isRendering.current = false
-            }
-          })
-        }
-      }
+      // Mermaid rendering removed - diagrams will display as code blocks
     },
     [renderedHtml, isDark, fontFamily, theme]
   )

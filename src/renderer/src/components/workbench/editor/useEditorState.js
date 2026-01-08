@@ -53,31 +53,29 @@ export const useEditorState = ({ initialSnippet, snippets, onDirtyStateChange })
 
   // Tags state: Managed as an array for the chip system
   const [tags, setTags] = useState(() => {
-    const rawTags = initialSnippet?.tags || []
-    return Array.isArray(rawTags) ? rawTags : []
+    const rawTags = initialSnippet?.tags
+    if (Array.isArray(rawTags)) return rawTags.map((t) => String(t))
+    if (typeof rawTags === 'string') return rawTags.split(',').filter(Boolean)
+    return []
   })
 
   const [currentTagInput, setCurrentTagInput] = useState('')
+  const userHasManuallyNamed = useRef(false)
+  const lastSnippetId = useRef(initialSnippet?.id)
 
   // Detect duplicate titles
   const isDuplicate = (() => {
-    if (!title) return false
-    const normalized = title.trim().toLowerCase()
+    if (!title || !initialSnippet?.folder_id) return false
     return (snippets || []).some((s) => {
-      // Skip self
-      if (s.id === initialSnippet?.id) return false
-      // Match folder scope (null/undefined treated as root)
-      if ((s.folder_id || null) !== (initialSnippet?.folder_id || null)) return false
-
-      const sTitle = (s.title || '').replace(/\.md$/i, '').trim().toLowerCase()
-      return sTitle === normalized
+      return (
+        s.id !== initialSnippet.id &&
+        s.folder_id === initialSnippet.folder_id &&
+        s.title?.toLowerCase().replace(/\.md$/i, '') === title.toLowerCase()
+      )
     })
   })()
 
-  // Sync state when snippet changes
-  const lastSnippetId = useRef(initialSnippet?.id)
-  const userHasManuallyNamed = useRef(false)
-
+  // --- SNIPPET SWITCHING & INITIAL LOAD ---
   useEffect(() => {
     if (!initialSnippet) return
     if (initialSnippet.id !== lastSnippetId.current) {
@@ -104,11 +102,15 @@ export const useEditorState = ({ initialSnippet, snippets, onDirtyStateChange })
       userHasManuallyNamed.current = false
       return
     }
-    // Deep sync code if it matches the current id but code is empty (newly loaded/switched)
-    if (initialSnippet.code !== undefined && code === '') {
+    // Sync code from server when:
+    // 1. Same snippet ID (no switch happened above)
+    // 2. Local code is empty but server has code
+    // 3. NOT dirty (user hasn't made changes)
+    // This handles: initial load, metadata->full code transition, refresh
+    if (initialSnippet.code !== undefined && code === '' && !isDirty) {
       setCode(initialSnippet.code || '')
     }
-  }, [initialSnippet, code])
+  }, [initialSnippet, code, isDirty])
 
   // --- EXTERNAL METADATA SYNC ---
   // Sync title and tags if initialSnippet (prop) changes while ID is same (e.g. after Save/Rename)
@@ -172,6 +174,13 @@ export const useEditorState = ({ initialSnippet, snippets, onDirtyStateChange })
   }, [code, initialSnippet?.is_draft, title, initialSnippet?.id])
 
   const titleDebounceRef = useRef(null)
+
+  // Ensure cleanup of debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (titleDebounceRef.current) clearTimeout(titleDebounceRef.current)
+    }
+  }, [])
 
   const handleManualTitleChange = useCallback((val) => {
     userHasManuallyNamed.current = true

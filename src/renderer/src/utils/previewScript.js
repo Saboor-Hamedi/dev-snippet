@@ -19,20 +19,7 @@ export const initPreview = (config = {}) => {
     }
   }
 
-  /* --- 2. Mermaid Rendering --- */
-  const renderMermaid = () => {
-    if (window.mermaid) {
-      try {
-        const nodes = document.querySelectorAll('.mermaid')
-        if (nodes.length > 0) {
-          const unprocessed = Array.from(nodes).filter((n) => !n.getAttribute('data-processed'))
-          if (unprocessed.length > 0) {
-            mermaid.run({ nodes: unprocessed, suppressErrors: true })
-          }
-        }
-      } catch (e) {}
-    }
-  }
+// Mermaid rendering removed
 
   /* --- 3. Copy to Clipboard --- */
   const copyToClipboard = (btn) => {
@@ -59,46 +46,16 @@ export const initPreview = (config = {}) => {
   }
 
   // --- Initial Execution ---
-  if (window.mermaid) {
-    mermaid.initialize({
-      startOnLoad: false,
-      theme: 'neutral',
-      securityLevel: 'loose',
-      themeVariables: {
-        primaryColor: '#ffffff',
-        primaryTextColor: '#000000',
-        primaryBorderColor: '#333333',
-        lineColor: '#333333',
-        secondaryColor: '#f4f4f4',
-        tertiaryColor: '#fff',
-        nodeBorder: '#333333',
-        clusterBkg: '#ffffff',
-        clusterBorder: '#333333',
-        actorBkg: '#ffffff',
-        actorTextColor: '#000000',
-        actorBorder: '#333333',
-        actorLineColor: '#333333',
-        edgeLabelBackground: '#ffffff',
-        labelBackgroundColor: '#ffffff',
-        fontSize: '16px'
-      },
-      flowchart: {
-        useMaxWidth: true,
-        htmlLabels: true,
-        curve: 'basis'
-      }
-    })
-  }
+// mermaid initialization removed
 
   // Initial runs
   renderHighlight()
-  renderMermaid()
+// renderMermaid() call removed
 
   // Polling for async content
   ;[100, 500, 1500, 3000, 5000].forEach((delay) => {
     setTimeout(() => {
       renderHighlight()
-      renderMermaid()
     }, delay)
   })
 

@@ -9,16 +9,16 @@ import WelcomePage from '../WelcomePage.jsx'
 import { StatusBar } from '../layout/StatusBar/useStatusBar'
 import CodeEditor from '../CodeEditor/CodeEditor.jsx'
 import LivePreview from '../livepreview/LivePreview.jsx'
-import Prompt from '../mermaid/modal/Prompt.jsx'
+import LivePreviewErrorBoundary from '../livepreview/LivePreviewErrorBoundary.jsx'
 import { useSettings, useAutoSave } from '../../hook/useSettingsContext'
 import { useTheme } from '../../hook/useTheme'
 import AdvancedSplitPane from '../splitPanels/AdvancedSplitPane'
 import { makeDraggable } from '../../utils/draggable.js'
 import UniversalModal from '../universal/UniversalModal'
 import { useUniversalModal } from '../universal/useUniversalModal'
-import DiagramEditorModal from '../mermaid/modal/DiagramEditorModal'
 import TableEditorModal from '../table/TableEditorModal'
 import PerformanceBarrier from '../universal/PerformanceBarrier/PerformanceBarrier'
+import Prompt from '../mermaid/modal/Prompt'
 
 // Extracted Editor Hooks & Components
 import { useEditorState } from './editor/useEditorState'
@@ -302,6 +302,7 @@ const SnippetEditor = ({
 
   // Auto-focus title input when creating new snippet
   useEffect(() => {
+    let timers = []
     if (isCreateMode && titleInputRef.current) {
       const enforceTitleFocus = () => {
         // Aggressively blur editor to prevent focus stealing
@@ -310,7 +311,6 @@ const SnippetEditor = ({
         
         if (titleInputRef.current) {
           titleInputRef.current.focus({ preventScroll: true })
-          titleInputRef.current.select()
         }
       }
 
@@ -318,11 +318,12 @@ const SnippetEditor = ({
       enforceTitleFocus()
       
       // 2. Post-Render/Layout
-      setTimeout(enforceTitleFocus, 50)
+      timers.push(setTimeout(enforceTitleFocus, 50))
       
       // 3. Post-Animation/Mount
-      setTimeout(enforceTitleFocus, 300)
+      timers.push(setTimeout(enforceTitleFocus, 300))
     }
+    return () => timers.forEach(clearTimeout)
   }, [isCreateMode])
 
 
@@ -394,16 +395,9 @@ const SnippetEditor = ({
         let finalCode = newCode.trim()
 
         // Persistent detection: Check if we are editing a fenced block
-        const hasMermaidFences =
-          oldSlice.startsWith('```mermaid') || initialCode.startsWith('```mermaid')
         const hasStandardFences = oldSlice.startsWith('```') || initialCode.startsWith('```')
 
-        if (hasMermaidFences) {
-          // If the modal already returned it wrapped, don't double wrap
-          if (!finalCode.startsWith('```mermaid')) {
-            finalCode = '```mermaid\n' + finalCode + '\n```'
-          }
-        } else if (hasStandardFences) {
+        if (hasStandardFences) {
           if (!finalCode.startsWith('```')) {
             const match = (oldSlice || initialCode).match(/^```(\w*)/)
             const lang = match ? match[1] : ''
@@ -419,31 +413,7 @@ const SnippetEditor = ({
         handleClose()
       }
 
-      // 1. Detect Mermaid Block
-      const isMermaid = oldSlice.startsWith('```mermaid') || initialCode.startsWith('```mermaid')
-      if (isMermaid) {
-        const innerCode = initialCode.replace(/^```mermaid\n?/, '').replace(/\n?```$/, '')
-        openModal({
-          title: 'Edit Mermaid Diagram',
-          width: '90vw',
-          height: '80vh',
-          resetPosition: true,
-          className: 'no-padding',
-          hideHeaderBorder: true,
-          noTab: true,
-          content: (
-            <DiagramEditorModal
-              initialCode={innerCode}
-              onSave={onApplyChanges}
-              onCancel={handleClose}
-            />
-          ),
-          footer: null
-        })
-        return
-      }
-
-      // 2. Detect Table Block
+      // Detect Table Block
       const isTable =
         (oldSlice.includes('|') && oldSlice.includes('---')) ||
         (initialCode.includes('|') && initialCode.includes('---'))
@@ -696,17 +666,19 @@ const SnippetEditor = ({
 
     return (
       <div className="flex-1 w-full min-h-0 relative">
-        <LivePreview
-          code={debouncedCode}
-          language={previewLang}
-          snippets={snippets}
-          theme={currentTheme}
-          fontFamily={settings?.editor?.fontFamily}
-          onOpenExternal={handleOpenExternalPreview}
-          onOpenMiniPreview={handleOpenMiniPreview}
-          onExportPDF={handleExportPDF}
-          zenFocus={settings?.ui?.zenFocus}
-        />
+        <LivePreviewErrorBoundary>
+          <LivePreview
+            code={debouncedCode}
+            language={previewLang}
+            snippets={snippets}
+            theme={currentTheme}
+            fontFamily={settings?.editor?.fontFamily}
+            onOpenExternal={handleOpenExternalPreview}
+            onOpenMiniPreview={handleOpenMiniPreview}
+            onExportPDF={handleExportPDF}
+            zenFocus={settings?.ui?.zenFocus}
+          />
+        </LivePreviewErrorBoundary>
       </div>
     )
   }, [

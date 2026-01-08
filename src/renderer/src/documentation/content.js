@@ -178,13 +178,6 @@ Standard technical detail or implementation notice.
 ::: warning
 Significant risks associated with data loss or system state.
 :::
-\`\`\`
-
-### 8.3 Integrated Mermaid.js
-Render architectural diagrams from raw text directly within the snippet:
-- **Flowcharts**: Define complex logic paths.
-- **ER Diagrams**: Map your database schemas.
-- **Gantt Charts**: Track project timelines.
 
 ---
 

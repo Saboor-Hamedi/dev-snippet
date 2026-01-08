@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom'
 import PropTypes from 'prop-types'
 import { useZoomLevel, useEditorZoomLevel, useSettings } from '../../../hook/useSettingsContext'
 import { Check, Eye, Edit2, Hash } from 'lucide-react'
-import Prompt from '../../mermaid/modal/Prompt'
 
 import './StatusBar.css'
 import ContextMenu from '../../common/ContextMenu'
@@ -95,8 +94,6 @@ const StatusBar = ({
 
   const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0 })
   const [zoomMenu, setZoomMenu] = useState({ visible: false, x: 0, y: 0 })
-  const [showZoomPrompt, setShowZoomPrompt] = useState(false)
-  const [tempZoom, setTempZoom] = useState('')
 
   const [, setEditorZoomInternal] = useEditorZoomLevel()
 
@@ -293,7 +290,15 @@ const StatusBar = ({
                   { label: 'separator' },
                   {
                     label: 'Custom...',
-                    onClick: () => setShowZoomPrompt(true)
+                    onClick: () => {
+                      const input = window.prompt('Enter zoom percentage (10-300):', Math.round((displayEditorZoom || 1) * 100).toString())
+                      if (input) {
+                        const num = parseInt(input, 10)
+                        if (!isNaN(num) && num >= 10 && num <= 300) {
+                          setEditorZoomInternal(num / 100)
+                        }
+                      }
+                    }
                   }
                 ]}
                 onClose={() => setZoomMenu({ ...zoomMenu, visible: false })}
@@ -302,24 +307,6 @@ const StatusBar = ({
           </div>,
           document.body
         )}
-
-      <Prompt
-        isOpen={showZoomPrompt}
-        title="Custom Zoom Level"
-        message="Enter a zoom percentage (10 - 300)"
-        confirmLabel="Apply"
-        showInput={true}
-        inputValue={tempZoom}
-        onInputChange={(val) => setTempZoom(val)}
-        onConfirm={(val) => {
-          const num = parseInt(val, 10)
-          if (!isNaN(num) && num >= 10 && num <= 300) {
-            setEditorZoomInternal(num / 100)
-            setShowZoomPrompt(false)
-          }
-        }}
-        onClose={() => setShowZoomPrompt(false)}
-      />
     </>
   )
 }

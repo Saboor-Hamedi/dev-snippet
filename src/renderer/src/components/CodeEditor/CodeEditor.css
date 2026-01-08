@@ -585,26 +585,19 @@ html body .cm-content *::selection {
    We collapse the width using letter-spacing to prevent layout jumps.
 */
 .cm-marker-hidden {
-  display: inline !important;
+  display: none !important;
   color: transparent !important;
   opacity: 0 !important;
   user-select: none !important;
   pointer-events: none !important;
-  letter-spacing: -1ch !important;
-  white-space: nowrap;
-  vertical-align: baseline;
-  transition:
-    opacity 0.1s ease-out,
-    letter-spacing 0.1s ease-out;
 }
 
 /* Reveal markers only on the active line */
 .cm-activeLine .cm-marker-hidden {
+  display: inline !important;
   opacity: 0.5 !important;
   color: inherit !important;
-  /* Restore dimensions instantly */
   font-size: inherit !important;
-  letter-spacing: normal !important;
 }
 
 /* 

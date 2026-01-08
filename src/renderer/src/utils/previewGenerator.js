@@ -6,9 +6,7 @@
 
 import markdownStyles from '../assets/markdown.css?raw'
 import variableStyles from '../assets/variables.css?raw'
-import mermaidStyles from '../components/mermaid/mermaid.css?raw'
-import { getMermaidConfig } from '../components/mermaid/mermaidConfig'
-import { getMermaidEngine } from '../components/mermaid/mermaidEngine'
+
 import { markdownToHtml } from './markdownParser'
 
 import { themes } from '../components/preference/theme/themes'
@@ -24,7 +22,7 @@ const buildHeader = (title, theme, isDark, fontFamily, themeVars, forPrint = fal
       ${forPrint ? '' : variableStyles}
       ${forPrint ? '' : themeVars}
       ${forPrint ? '' : markdownStyles.replace(/@import\s+['"][^'"]+['"];/g, '')}
-      ${forPrint ? '' : mermaidStyles}
+
       ${
         forPrint
           ? `
@@ -75,7 +73,7 @@ const buildHeader = (title, theme, isDark, fontFamily, themeVars, forPrint = fal
         min-height: 100vh !important;
         padding-bottom: 2rem !important;
       }
-      .markdown-body, .mermaid-wrapper, .mermaid-diagram, .actor, .node label { 
+      .markdown-body, .actor, .node label { 
         font-family: ${fontFamily}, 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important; 
         color: inherit !important;
       }
@@ -111,7 +109,7 @@ const buildHeader = (title, theme, isDark, fontFamily, themeVars, forPrint = fal
 
         /* 2. Block Pagination (Keep It Together) */
         .code-block-wrapper, 
-        .mermaid, 
+ 
         .markdown-alert, 
         blockquote,
         table,
@@ -140,7 +138,7 @@ const buildHeader = (title, theme, isDark, fontFamily, themeVars, forPrint = fal
         }
 
         /* 4. Diagram Sizing */
-        .mermaid svg, img {
+        img {
           max-width: 100% !important;
           height: auto !important;
         }
@@ -159,10 +157,7 @@ const buildHeader = (title, theme, isDark, fontFamily, themeVars, forPrint = fal
           margin: 1em 0 !important;
         }
         
-        .mermaid {
-          margin: 1.5em auto !important;
-          border: 1px solid #eee !important;
-        }
+
         
         /* 7. Artifact Cleanup */
         .code-block-header, .copy-code-btn, .code-block-footer, 
@@ -321,12 +316,7 @@ const buildHeader = (title, theme, isDark, fontFamily, themeVars, forPrint = fal
           border-radius: 0 !important;
         }
         
-        /* Icons and special content */
-        .mermaid svg {
-          max-width: 100% !important;
-          height: auto !important;
-          background: white !important;
-        }
+
         
         /* Ensure images and icons are properly sized */
         img {
@@ -359,7 +349,7 @@ const buildHeader = (title, theme, isDark, fontFamily, themeVars, forPrint = fal
           : ''
       }
     </style>
-    ${forPrint ? '' : '<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>'}
+
     ${forPrint ? '' : `<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/${isDark ? 'github-dark' : 'github'}.min.css">`}
     ${forPrint ? '' : '<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>'}
   </head>
@@ -370,7 +360,7 @@ const buildHeader = (title, theme, isDark, fontFamily, themeVars, forPrint = fal
  */
 const buildScript = (isDark, config) => `
   <script>
-    ${getMermaidEngine()}
+
   </script>
   <script type="module">
     const setup = () => {
@@ -385,12 +375,7 @@ const buildScript = (isDark, config) => `
         setTimeout(highlight, 500);
       }
 
-      // 2. Mermaid Diagram Engine
-      if (window.mermaid && window.diagramEngine) {
-        window.diagramEngine.init(${JSON.stringify(config)});
-        window.diagramEngine.run();
-        setTimeout(() => window.diagramEngine.run(), 1000);
-      }
+// mermaid engine removed
 
       // 3. Interactions (Copy Code)
       document.addEventListener('click', (e) => {
@@ -464,7 +449,7 @@ export const generatePreviewHtml = async ({
       </div>`
   }
 
-  const mermaidConfig = getMermaidConfig(isDark, fontFamily)
+
 
   return `
 <!DOCTYPE html>
@@ -474,7 +459,7 @@ export const generatePreviewHtml = async ({
     <div class="preview-container" style="${forPrint ? 'background: white !important;' : ''}">
       <div id="content" style="width: 100%;">${contentHtml}</div>
     </div>
-    ${buildScript(isDark, mermaidConfig)}
+    ${buildScript(isDark, {})}
   </body>
 </html>
   `.trim()

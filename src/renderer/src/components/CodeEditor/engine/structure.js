@@ -8,7 +8,6 @@ import { safeLineAt, safeLine, sortDecorations } from './utils'
 import { TableWidget } from '../../table/TableWidget'
 import { ImageWidget } from './widgets/ImageWidget'
 import { HRWidget } from './widgets/HRWidget'
-import { MermaidWidget } from './widgets/MermaidWidget'
 import { AdmonitionWidget } from './widgets/AdmonitionWidget'
 import { CodeBlockHeaderWidget } from './widgets/HeaderWidget'
 import { CheckboxWidget } from './widgets/CheckboxWidget'
@@ -137,24 +136,8 @@ export const richMarkdownStateField = StateField.define({
           if (node.name === 'FencedCode') {
             const info = node.node.getChild('CodeInfo')
             const lang = info ? doc.sliceString(info.from, info.to).toLowerCase() : ''
-            if (lang.includes('mermaid') && !isRangeActive(from, to)) {
-              const code = doc
-                .sliceString(from, to)
-                .replace(/^```mermaid\s*/, '')
-                .replace(/```$/, '')
-                .trim()
-              if (code) {
-                collected.push({
-                  from,
-                  to,
-                  deco: Decoration.replace({
-                    widget: new MermaidWidget(code, mode, from, to),
-                    block: true
-                  })
-                })
-                return false
-              }
-            } else {
+            // Mermaid checks removed - treating as standard code block
+
               const startLine = safeLineAt(doc, from)
               const endLine = safeLineAt(doc, to)
 
@@ -193,7 +176,6 @@ export const richMarkdownStateField = StateField.define({
                 }
               }
             }
-          }
 
           // 7. Admonitions
           if (node.name === 'Paragraph') {
