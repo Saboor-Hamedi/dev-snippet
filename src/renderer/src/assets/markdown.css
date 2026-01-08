@@ -1365,3 +1365,76 @@ html[data-theme='nebula'] em {
   opacity: 1 !important;
   filter: none !important;
 }
+
+/* ===== MATH & EQUATION STYLING ===== */
+/* Enhancements for KaTeX / remark-math output */
+
+/* Inline Math ($...$) */
+.katex {
+  font-family: 'KaTeX_Main', serif;
+  font-size: 1.1em !important;
+  color: var(--color-text-primary) !important;
+  line-height: 1.2;
+}
+
+/* Display Math ($$...$$) */
+.katex-display {
+  display: flex !important;
+  justify-content: center !important;
+  margin: 2rem 0 !important;
+  padding: 1.5rem !important;
+  background-color: var(--color-bg-secondary, rgba(255, 255, 255, 0.05)) !important; /* Subtle background */
+  border-radius: 12px !important;
+  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
+  overflow-x: auto !important; /* Allow scroll on small screens */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.katex-display:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+  border-color: rgba(var(--color-accent-primary-rgb, 88, 166, 255), 0.3) !important;
+}
+
+/* Ensure math colors respect theme */
+.katex-html {
+  color: var(--color-text-primary) !important;
+}
+
+.katex .base {
+  color: inherit !important;
+}
+
+/* Fix for fractions in dark mode */
+.katex .mfrac .frac-line {
+  border-bottom-color: var(--color-text-primary) !important;
+}
+
+/* Fix for roots */
+.katex .sqrt > .root {
+  border-left-color: var(--color-text-primary) !important;
+}
+
+/* Highlighting specific operators if desired */
+.katex .mbin {
+  color: var(--color-accent-primary, #58a6ff) !important;
+}
+
+.katex .mrel {
+  color: var(--color-text-secondary, #8b949e) !important;
+}
+
+/* Scrollbar for display math */
+.katex-display::-webkit-scrollbar {
+  height: 6px;
+}
+
+.katex-display::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.katex-display::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 3px;
+}

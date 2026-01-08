@@ -30,15 +30,37 @@ class IncrementalParser {
       chunks.push(visibleCode.slice(i, i + chunkSize))
     }
 
-    let accumulatedHtml = ''
+    // Pre-calculate Global Stats (so they are correct for the whole doc)
+    const words = (code || '').trim().split(/\s+/).filter(Boolean).length
+    const readTime = Math.max(1, Math.ceil(words / 200))
+    const isRTL = /[\u0600-\u06FF\u0590-\u05FF]/.test(code || '')
+    
+    // Construct Header
+    let globalHeader = ''
+    if (options.renderMetadata) {
+       globalHeader = `<div class="preview-intel"><span>${words} words</span> • <span>${readTime} min read</span></div>`
+    }
+    
+    // Wrapper Start/End
+    const wrapStart = `<div class="${isRTL ? 'is-rtl' : 'is-ltr'}">${globalHeader}<div class="markdown-content">`
+    const wrapEnd = `</div></div>`
+
+    let accumulatedRawHtml = ''
     for (let i = 0; i < chunks.length; i++) {
       try {
-        const chunkHtml = await markdownToHtml(chunks[i], options)
-        accumulatedHtml += chunkHtml
+        // Use 'unwrap: true' to get just the HTML fragment for this chunk
+        const chunkHtml = await markdownToHtml(chunks[i], { ...options, unwrap: true })
+        accumulatedRawHtml += chunkHtml
         const progress = Math.round(((i + 1) / chunks.length) * 100)
 
+        // Add truncation message if at the very end
+        let finalInner = accumulatedRawHtml
+        if (isTooLarge && i === chunks.length - 1) {
+          finalInner += '<div class="preview-performance-notice">Preview truncated for performance.</div>'
+        }
+
         const result = {
-          html: accumulatedHtml,
+          html: wrapStart + finalInner + wrapEnd, // Wrap the raw content
           progress,
           isComplete: i === chunks.length - 1,
           chunkIndex: i,
@@ -51,13 +73,6 @@ class IncrementalParser {
         console.error(`Error parsing chunk ${i}:`, err)
         throw err
       }
-    }
-
-    // Add truncation notice if needed
-    if (isTooLarge) {
-      accumulatedHtml +=
-        '<div class="preview-performance-notice">Preview truncated for performance.</div>'
-      yield { html: accumulatedHtml, progress: 100, isComplete: true, isTruncated: true }
     }
   }
 

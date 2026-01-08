@@ -125,10 +125,7 @@ const buildTheme = (EditorView, options = {}) => {
         width: '100%'
       },
 
-      '.cm-mermaid-block': {
-        backgroundColor: 'rgba(190, 80, 255, 0.08) !important',
-        borderLeft: '3px solid #be50ff'
-      },
+
 
       // Syntax Hiding (Live Preview)
       '.cm-hide-syntax': {
@@ -484,66 +481,7 @@ const buildTheme = (EditorView, options = {}) => {
         opacity: 0.7
       },
 
-      /* Mermaid Widget Support */
-      '.cm-mermaid-widget': {
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        padding: '20px',
-        backgroundColor: '#ffffff',
-        borderRadius: '8px',
-        border: 'none',
-        width: '100%',
-        minHeight: '220px',
-        maxHeight: '100%',
-        overflow: 'auto',
-        position: 'relative',
-        transition: 'none !important',
-        color: '#333'
-      },
-      '.cm-mermaid-toolbar': {
-        position: 'absolute',
-        top: '8px',
-        right: '12px',
-        display: 'flex',
-        gap: '8px',
-        opacity: 0,
-        transition: 'opacity 0.2s ease',
-        zIndex: 10
-      },
-      '.cm-mermaid-widget:hover .cm-mermaid-toolbar': {
-        opacity: 1
-      },
-      '.cm-mermaid-tool-btn': {
-        padding: '3px 8px',
-        fontSize: '11px',
-        background: 'var(--color-bg-tertiary)',
-        border: '1px solid var(--color-border)',
-        borderRadius: '4px',
-        color: 'var(--color-text-secondary)',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '4px',
-        transition: 'none !important'
-      },
-      '.cm-mermaid-tool-btn:hover': {
-        background: 'var(--color-accent-primary)',
-        color: '#fff',
-        borderColor: 'var(--color-accent-primary)'
-      },
-      // mermaid svg size
-      '.cm-mermaid-widget svg': {
-        maxWidth: '100% !important',
-        height: 'auto !important',
-        transition: 'transform 0.2s ease'
-      },
-      '.cm-mermaid-loading': {
-        fontSize: '12px',
-        color: 'var(--color-text-tertiary)',
-        fontStyle: 'italic',
-        letterSpacing: '0.05em'
-      },
+
       /* Removed manual overrides for node/label colors to allow Mermaid 'default' theme to work strictly */
 
       // Dark mode overrides and theme variable sync

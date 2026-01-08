@@ -332,31 +332,25 @@ const LivePreview = ({
   )
 
   // --- 4. Scroll Synchronization Logic ---
+    // --- 4. Scroll Synchronization Logic ---
   useEffect(() => {
     if (!enableScrollSync) return
 
-    let rafId = null
     const handleSync = (e) => {
       const percentage = e.detail?.percentage
       if (typeof percentage !== 'number') return
 
       lastScrollPercentage.current = percentage
-
-      if (rafId) cancelAnimationFrame(rafId)
-      rafId = requestAnimationFrame(() => {
-        const container = shadowContentRef.current
-        if (container) {
-          const scrollTarget = (container.scrollHeight - container.clientHeight) * percentage
-          container.scrollTo({ top: scrollTarget, behavior: 'instant' })
-        }
-        rafId = null
-      })
+      const container = shadowContentRef.current
+      if (container) {
+        const scrollTarget = (container.scrollHeight - container.clientHeight) * percentage
+        container.scrollTop = scrollTarget
+      }
     }
 
     window.addEventListener('app:editor-scroll', handleSync)
     return () => {
       window.removeEventListener('app:editor-scroll', handleSync)
-      if (rafId) cancelAnimationFrame(rafId)
     }
   }, [enableScrollSync])
 
