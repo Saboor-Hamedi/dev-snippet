@@ -222,6 +222,15 @@ export const useSnippetData = () => {
       setSnippets((prev) =>
         prev.map((s) => (ids.includes(s.id) ? { ...s, folder_id: folderId || null } : s))
       )
+
+      // CRITICAL: Update selectedSnippet if it was moved
+      // This prevents Ctrl+S from reverting the folder change
+      setSelectedSnippetState((current) => {
+        if (current && ids.includes(current.id)) {
+          return { ...current, folder_id: folderId || null }
+        }
+        return current
+      })
     } catch (error) {
       showToast('❌ Failed to move snippet(s)')
     }

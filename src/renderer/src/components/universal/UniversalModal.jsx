@@ -30,7 +30,8 @@ const UniversalModal = ({
   noTab = false,
   noRadius = false,
   borderRadius = null,
-  hideCloseButton = false
+  hideCloseButton = false,
+  allowResize = true
 }) => {
   const [isMaximizedInternal, setIsMaximizedInternal] = useState(false)
   const isMaximized = isMaximizedExternal !== undefined ? isMaximizedExternal : isMaximizedInternal
@@ -181,9 +182,8 @@ const UniversalModal = ({
         )
       }
 
-      // 3. Enable Resizing (Simple bottom-right handle logic)
       let resizeHandle
-      if (!isLocked && !isMaximized) {
+      if (!isLocked && !isMaximized && allowResize) {
         resizeHandle = document.createElement('div')
         resizeHandle.className = 'universal-modal-resize-handle'
         modal.appendChild(resizeHandle)

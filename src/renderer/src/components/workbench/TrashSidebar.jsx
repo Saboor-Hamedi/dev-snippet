@@ -44,7 +44,7 @@ const Row = ({ index, style, data }) => {
               e.currentTarget.blur()
               onRestore(item.id)
             }}
-            className="p-1 hover:bg-emerald-500/20 text-emerald-500 rounded transition-colors"
+            className="p-1 hover:bg-emerald-500/20 text-emerald-500 rounded transition-all active:scale-90"
             title="Restore Snippet"
           >
             <RotateCcw size={14} strokeWidth={1.5} />
@@ -55,7 +55,7 @@ const Row = ({ index, style, data }) => {
               e.currentTarget.blur()
               onPermanentDelete(item.id)
             }}
-            className="p-1 hover:bg-red-500/20 text-red-500 rounded transition-colors"
+            className="p-1 hover:bg-red-500/20 text-red-500 rounded transition-all active:scale-90"
             title="Permanently Delete"
           >
             <Trash2 size={14} strokeWidth={1.5} />
@@ -162,7 +162,7 @@ const TrashSidebar = ({ items, onRestore, onPermanentDelete, onLoadTrash, openDe
               e.currentTarget.blur()
               handleEmptyTrash()
             }}
-            className="text-xs text-red-500/70 hover:text-red-500 hover:bg-red-500/10 px-2 py-1 rounded transition-colors flex items-center gap-1.5"
+            className="text-xs text-red-500/70 hover:text-red-500 hover:bg-red-500/10 px-2 py-1 rounded transition-all active:scale-95 flex items-center gap-1.5"
             title="Empty Trash"
           >
             <Trash2 size={12} strokeWidth={1.5} />

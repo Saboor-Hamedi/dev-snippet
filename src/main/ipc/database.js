@@ -1,6 +1,25 @@
+/**
+ * @fileoverview Database IPC handlers for DevSnippet
+ * Provides all communication between the renderer process and SQLite database.
+ * Implements full-text search (FTS5), snippet CRUD, folder management, and WikiLink resolution.
+ * @module ipc/database
+ */
+
 import { ipcMain, BrowserWindow } from 'electron'
 import { propagateRename } from '../database/refactor'
 
+/**
+ * Notifies all renderer windows that database data has changed.
+ * Triggers a UI refresh in all open windows via IPC event broadcast.
+ * 
+ * @private
+ * @returns {void}
+ * 
+ * @example
+ * // After saving a snippet
+ * preparedStatements.save.run(snippet)
+ * notifyDataChanged() // All windows refresh their UI
+ */
 const notifyDataChanged = () => {
   BrowserWindow.getAllWindows().forEach((win) => {
     if (!win.isDestroyed()) {
@@ -9,6 +28,22 @@ const notifyDataChanged = () => {
   })
 }
 
+/**
+ * Transforms a raw database row into a frontend-friendly format.
+ * Converts CSV tags to arrays and normalizes boolean fields.
+ * 
+ * @private
+ * @param {Object|null} row - Raw database row from better-sqlite3
+ * @param {string} row.tags - Comma-separated tag string (e.g., "react,hooks")
+ * @param {number} row.is_draft - SQLite boolean (0 or 1)
+ * @param {number} row.is_favorite - SQLite boolean (0 or 1)
+ * @returns {Object|null} Transformed row or null if input is null
+ * 
+ * @example
+ * const raw = { tags: 'react,hooks', is_draft: 1, is_favorite: 0 }
+ * const transformed = transformRow(raw)
+ * // { tags: ['react', 'hooks'], is_draft: true, is_favorite: 0 }
+ */
 const transformRow = (row) => {
   if (!row) return row
   return {
@@ -19,8 +54,59 @@ const transformRow = (row) => {
   }
 }
 
+
+/**
+ * Registers all database IPC handlers with the Electron main process.
+ * Sets up bidirectional communication between renderer (React) and SQLite database.
+ * 
+ * **Registered Channels:**
+ * - `db:getSnippets` - Fetch all or paginated snippets
+ * - `db:getSnippetById` - Get single snippet by ID
+ * - `db:saveSnippet` - Create or update snippet
+ * - `db:searchSnippets` - Full-text search (FTS5)
+ * - `db:deleteSnippet` - Soft delete snippet
+ * - `db:getFolders` - Get folder hierarchy
+ * - ... (and many more, see inline documentation)
+ * 
+ * @public
+ * @param {import('better-sqlite3').Database} db - SQLite database instance
+ * @param {Object} preparedStatements - Pre-compiled SQL statements for performance
+ * @param {import('better-sqlite3').Statement} preparedStatements.getMetadata - Get snippet metadata only
+ * @param {import('better-sqlite3').Statement} preparedStatements.getAll - Get full snippet content
+ * @param {import('better-sqlite3').Statement} preparedStatements.getById - Get snippet by ID
+ * @param {import('better-sqlite3').Statement} preparedStatements.save - Save/update snippet
+ * @param {import('better-sqlite3').Statement} preparedStatements.softDelete - Soft delete snippet
+ * @returns {void}
+ * 
+ * @example
+ * // In main/index.js
+ * import Database from 'better-sqlite3'
+ * import { registerDatabaseHandlers } from './ipc/database.js'
+ * 
+ * const db = new Database('app.db')
+ * const preparedStatements = {
+ *   getMetadata: db.prepare('SELECT id, title FROM snippets'),
+ *   // ... other statements
+ * }
+ * registerDatabaseHandlers(db, preparedStatements)
+ */
 export const registerDatabaseHandlers = (db, preparedStatements) => {
-  // Get snippets (all or paginated)
+  /**
+   * IPC Handler: Get all snippets or paginated subset
+   * 
+   * @channel db:getSnippets
+   * @param {Object} options - Query options
+   * @param {number} [options.limit] - Maximum snippets to return
+   * @param {number} [options.offset] - Starting position for pagination
+   * @param {boolean} [options.metadataOnly=true] - Fetch only metadata (no full `code`)
+   * @returns {Object[]} Array of snippet objects
+   * 
+   * @performance Target: < 20ms for 10,000 snippets (metadata only)
+   * 
+   * @example
+   * // Renderer process
+   * const snippets = await window.api.getSnippets({ limit: 50, offset: 0 })
+   */
   ipcMain.handle('db:getSnippets', (event, options = {}) => {
     const { limit, offset, metadataOnly = true } = options
 
@@ -38,12 +124,36 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
     return stmt.all().map(transformRow)
   })
 
-  // Get single snippet by ID (full content)
+  /**
+   * IPC Handler: Get single snippet by unique ID (full content)
+   * 
+   * @channel db:getSnippetById
+   * @param {string} id - Snippet UUID
+   * @returns {Object|null} Snippet object or null if not found
+   * 
+   * @performance Target: < 5ms (indexed lookup)
+   * 
+   * @example
+   * const snippet = await window.api.getSnippetById('abc-123-def')
+   */
   ipcMain.handle('db:getSnippetById', (event, id) => {
     return transformRow(preparedStatements.getById.get(id))
   })
 
-  // Get single snippet by Title (for WikiLinks)
+  /**
+   * IPC Handler: Get snippet by title (case-insensitive)
+   * Used for WikiLink resolution: [[My Note]] -> snippet lookup
+   * 
+   * @channel db:getSnippetByTitle
+   * @param {string} title - Snippet title to search for
+   * @returns {Object|null} Snippet object or null if not found
+   * 
+   * @performance Target: < 5ms (assumes index on `title COLLATE NOCASE`)
+   * 
+   * @example
+   * // WikiLink click handler
+   * const linked = await window.api.getSnippetByTitle('React Hooks Guide')
+   */
   ipcMain.handle('db:getSnippetByTitle', (event, title) => {
     if (!title) return null
     const row = db
@@ -51,6 +161,7 @@ export const registerDatabaseHandlers = (db, preparedStatements) => {
       .get(title.trim())
     return transformRow(row)
   })
+
 
   // Full-text search using FTS5 with robust LIKE fallback
   ipcMain.handle('db:searchSnippets', (event, query, limit = 250) => {

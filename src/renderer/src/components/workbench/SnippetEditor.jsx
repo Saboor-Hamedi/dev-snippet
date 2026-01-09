@@ -18,7 +18,7 @@ import UniversalModal from '../universal/UniversalModal'
 import { useUniversalModal } from '../universal/useUniversalModal'
 import TableEditorModal from '../table/TableEditorModal'
 import PerformanceBarrier from '../universal/PerformanceBarrier/PerformanceBarrier'
-import Prompt from '../mermaid/modal/Prompt'
+import Prompt from '../universal/Prompt'
 
 // Extracted Editor Hooks & Components
 import { useEditorState } from './editor/useEditorState'
@@ -784,7 +784,7 @@ const SnippetEditor = ({
                   {((!isReadOnly && !initialSnippet?.readOnly) || isCreateMode) && (
                     <div
                       ref={headerRef}
-                      className="absolute top-0 left-0 right-4 z-10 transition-transform will-change-transform bg-[var(--editor-bg)] pointer-events-none"
+                      className="absolute top-0 left-0 right-4 z-50 transition-transform will-change-transform bg-[var(--editor-bg)] pointer-events-none"
                     >
                       <div className="pointer-events-auto">
                         <EditorMetadataHeader

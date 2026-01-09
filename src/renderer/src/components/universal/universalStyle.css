@@ -519,20 +519,30 @@ body.dragging-active * {
   background-color: #ffffff !important;
 }
 
-/* Prompt Modal Specific Overrides (Square & Flush Header) */
+/* Prompt & Trash Modal Specific Overrides (Square & Flush Header) */
 .universal-modal.prompt-modal,
+.universal-modal.trash-modal,
 .universal-modal.prompt-modal .universal-modal-header,
-.universal-modal.prompt-modal .universal-modal-content {
+.universal-modal.trash-modal .universal-modal-header,
+.universal-modal.prompt-modal .universal-modal-content,
+.universal-modal.trash-modal .universal-modal-content {
   border-radius: 0 !important;
 }
 
-.universal-modal.prompt-modal .universal-modal-controls {
+.universal-modal.prompt-modal {
+  min-height: auto !important;
+}
+
+.universal-modal.prompt-modal .universal-modal-controls,
+.universal-modal.trash-modal .universal-modal-controls {
   padding-right: 0 !important;
   margin-right: 0 !important;
 }
 
 .universal-modal.prompt-modal .universal-modal-controls > *:last-child,
-.universal-modal.prompt-modal .universal-modal-controls button:last-child {
+.universal-modal.trash-modal .universal-modal-controls > *:last-child,
+.universal-modal.prompt-modal .universal-modal-controls button:last-child,
+.universal-modal.trash-modal .universal-modal-controls button:last-child {
   margin-right: 0 !important;
   padding-right: 0 !important;
 }

@@ -18,7 +18,8 @@ import { ModalContext } from './ModalContext'
 import { sanitizeTitle } from '../../../utils/snippetUtils'
 import { useTheme } from '../../../hook/useTheme'
 import '../../Graph/KnowledgeGraphModal.css'
-
+import Prompt from '../../universal/Prompt'
+import TrashModal from './TrashModal'
 // Loading fallback component
 const ModalLoader = () => (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">

@@ -240,9 +240,48 @@ All shortcuts live in `src/renderer/src/features/keyboard/shortcuts.js` (consume
 - **Search returning nothing**: Verify tags are non-empty and query terms exceed two characters (SQLite FTS default).
 - **Mermaid dynamic import errors**: Clear `.vite` and restart to refresh the dependency graph.
 
+## Documentation
+
+### 📚 Developer Guides
+
+DevSnippet provides comprehensive documentation for contributors and maintainers:
+
+| Guide | Purpose | Audience |
+| :--- | :--- | :--- |
+| **[CONTRIBUTING.md](./CONTRIBUTING.md)** | Development setup, coding standards, testing guidelines, PR process | New contributors |
+| **[DEPLOYMENT.md](./DEPLOYMENT.md)** | Code signing, CI/CD, auto-updates, multi-platform builds | Maintainers, DevOps |
+| **[API Documentation](./src/main/ipc/database.js)** | JSDoc-annotated IPC handlers with types and examples | API consumers |
+| **[Performance Benchmarks](./src/test/performance/README.md)** | Benchmarking suite, regression testing, optimization guide | Performance engineers |
+| **[Technical Manual](./notes/doc.md)** | Architecture deep-dive, design decisions, stability guide | Advanced developers |
+
+### 🔬 Performance Testing
+
+Run reproducible benchmarks to validate performance claims:
+
+```bash
+# Run all benchmarks (search, save, virtual list, etc.)
+npm run benchmark
+
+# Results validate documentation claims:
+# - FTS5 Search: < 10ms mean ✅
+# - Snippet Save: < 20ms mean ✅
+# - Virtual List: < 16ms (60fps) ✅
+# - WikiLink Resolve: < 5ms ✅
+```
+
+See [Performance Benchmark Guide](./src/test/performance/README.md) for details.
+
+### 📖 Quick Links
+
+- **New Contributors**: Start with [CONTRIBUTING.md](./CONTRIBUTING.md)
+- **Building Releases**: See [DEPLOYMENT.md](./DEPLOYMENT.md)
+- **API Reference**: Check [JSDoc in database.js](./src/main/ipc/database.js)
+- **Documentation Changes**: Review [DOCUMENTATION_IMPROVEMENTS.md](./DOCUMENTATION_IMPROVEMENTS.md)
+
 ## Contributing
 
 Pull requests are welcome—keep them focused and well-tested.
+
 
 1. Run `npm run lint` and `npm run format` before committing.
 2. Include screenshots / GIFs for UI changes.

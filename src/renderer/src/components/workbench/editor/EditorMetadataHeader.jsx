@@ -103,7 +103,7 @@ const EditorMetadataHeader = ({
   }
 
   return (
-    <div className="flex-none snippet-metadata-header pt-3 pb-0 border-none">
+    <div className="flex-none snippet-metadata-header pt-12 pb-0 border-none">
       <div className="metadata-inner px-[30px] flex justify-center">
         <div className="w-full max-w-[850px]">
           <input
