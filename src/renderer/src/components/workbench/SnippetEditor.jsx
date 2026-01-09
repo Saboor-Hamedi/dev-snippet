@@ -21,7 +21,7 @@ import PerformanceBarrier from '../universal/PerformanceBarrier/PerformanceBarri
 import Prompt from '../universal/Prompt'
 
 // Extracted Editor Hooks & Components
-import { useEditorState } from './editor/useEditorState'
+import { useEditorState } from './editor/useEditorState'  
 // import { useWikiLinks } from './editor/useWikiLinks' // REMOVED: Redundant
 import { useEditorExport } from './editor/useEditorExport'
 import { useEditorSave } from './editor/useEditorSave'
@@ -784,7 +784,7 @@ const SnippetEditor = ({
                   {((!isReadOnly && !initialSnippet?.readOnly) || isCreateMode) && (
                     <div
                       ref={headerRef}
-                      className="absolute top-0 left-0 right-4 z-50 transition-transform will-change-transform bg-[var(--editor-bg)] pointer-events-none"
+                      className="absolute top-0 left-0 right-4 z-50 transition-transform will-change-transform pointer-events-none"
                     >
                       <div className="pointer-events-auto">
                         <EditorMetadataHeader
