@@ -17,7 +17,7 @@ const WelcomePage = ({
   // GitHub profile state
   const [showGitHubProfile, setShowGitHubProfile] = useState(false)
   const [showGitHubSettings, setShowGitHubSettings] = useState(false)
-  const [showAllRecents, setShowAllRecents] = useState(false)
+
 
   const [githubUsername, setGitHubUsername] = useState(() => {
     try {
@@ -32,7 +32,7 @@ const WelcomePage = ({
     .filter((snippet) => !snippet.is_draft)
     .sort((a, b) => b.timestamp - a.timestamp)
 
-  const recentFiles = showAllRecents ? allRecentSnippets.slice(0, 5) : allRecentSnippets.slice(0, 3)
+  const recentFiles = allRecentSnippets.slice(0, 3)
 
   const handleSaveGitHubUsername = (username) => {
     try {
@@ -64,7 +64,7 @@ const WelcomePage = ({
                     setShowGitHubSettings(true)
                   }
                 }}
-                className="flex items-center gap-2 px-0 py-1 text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition-colors group"
+                className="flex items-center gap-2 px-0 py-1 text-[var(--color-text-tertiary)] hover:text-white hover:bg-transparent transition-colors group theme-exempt"
               >
                 <div className="flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity">
                   <Github size={12} />
@@ -89,7 +89,7 @@ const WelcomePage = ({
 
                 <button
                   onClick={onOpenSettings}
-                  className="p-1.5 rounded-md hover:bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] transition-all theme-exempt"
+                  className="p-1.5 rounded-md text-[var(--color-text-secondary)] hover:text-white hover:bg-transparent transition-all theme-exempt"
                   title="Settings"
                 >
                   <Settings size={14} />
@@ -175,14 +175,6 @@ const WelcomePage = ({
                     <h2 className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider opacity-50">
                       Recent
                     </h2>
-                    {allRecentSnippets.length > 3 && (
-                      <button
-                        onClick={() => setShowAllRecents(!showAllRecents)}
-                        className="text-[10px] text-[var(--color-accent)] hover:underline opacity-80"
-                      >
-                        {showAllRecents ? 'Show less' : 'Show more'}
-                      </button>
-                    )}
                   </div>
 
                   <div className="space-y-1">

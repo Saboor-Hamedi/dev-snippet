@@ -34,7 +34,7 @@ const ActivityButton = ({
         e.currentTarget.blur()
         item.id === 'settings' ? onSettings() : handleAction(item)
       }}
-      className={`w-full h-[48px] flex items-center justify-center relative cursor-pointer group transition-all duration-300 theme-exempt ${
+      className={`w-full h-[36px] flex items-center justify-center relative cursor-pointer group transition-all duration-300 theme-exempt ${
         isActive ? 'opacity-100' : 'opacity-40 hover:opacity-100'
       }`}
       style={{ background: 'transparent' }}
@@ -261,9 +261,11 @@ const ActivityBar = ({
 
   return (
     <div
-      className="w-[48px] h-full flex flex-col items-stretch z-10 select-none activity-bar transition-colors duration-300 border-r border-white/5 overflow-hidden"
+      className="w-[48px] h-full flex flex-col items-stretch z-10 select-none activity-bar transition-colors duration-300 border-r border-white/5 overflow-hidden pt-0"
       style={{ backgroundColor: 'var(--activity-bar-bg, #09090b)' }}
     >
+      {/* Spacer to align with Sidebar Header (optional, if user wants icons below header level. But usually sidebars have icons flush top) */}
+      {/* Use explicitly empty flex column */}
       <div className="flex flex-col w-full">
         {items.map((item) => (
           <ActivityButton

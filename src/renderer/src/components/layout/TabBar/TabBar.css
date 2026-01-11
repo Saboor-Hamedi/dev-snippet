@@ -1,0 +1,88 @@
+.tab-bar-container {
+  height: 36px;
+  width: 100%;
+  display: flex;
+  background-color: var(--header-bg); /* Match sidebar header for seamless single-line look */
+  border-bottom: none;
+  overflow-x: auto;
+  align-items: flex-end; /* Tabs mimic folder tabs */
+  box-sizing: border-box;
+}
+
+.tab-scroll-container {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none; /* Hide scrollbar */
+}
+
+.tab-scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
+.tab-item {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 10px;
+  min-width: 120px;
+  max-width: 200px;
+  border-right: 1px solid var(--color-border);
+  cursor: pointer;
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  position: relative;
+  user-select: none;
+  transition: background-color 0.1s;
+}
+
+.tab-item:hover {
+  background-color: var(--color-bg-tertiary);
+}
+
+.tab-item.active {
+  background-color: var(--editor-bg);
+  color: var(--color-text-primary);
+  border-top: 2px solid var(--color-accent-primary); /* Top highlighting like VSCode */
+}
+
+.tab-icon {
+  margin-right: 6px;
+  display: flex;
+  align-items: center;
+  opacity: 0.7;
+}
+
+.tab-title {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-right: 8px;
+}
+
+.tab-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  padding: 0;
+  opacity: 0; /* Hidden by default */
+  transition: all 0.2s;
+}
+
+.tab-item:hover .tab-close-btn {
+  opacity: 1;
+}
+
+.tab-close-btn:hover {
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+}

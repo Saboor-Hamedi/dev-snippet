@@ -1058,17 +1058,18 @@ html body .cm-content *::selection {
    MOBILE RESPONSIVENESS (GLOBAL)
    ========================================================================== */
 
+   /* Sidebar Overlay Strategy */
+    /* Stay right of Activity Bar */
 @media (max-width: 768px) {
-  /* Sidebar Overlay Strategy */
-  aside {
+  /* aside {
     position: absolute !important;
     top: 0;
-    left: 40px; /* Stay right of Activity Bar */
+    left: 40px;
     bottom: 0;
     z-index: 50 !important;
     box-shadow: 20px 0 50px rgba(0, 0, 0, 0.3);
     background: var(--color-bg-primary) !important;
-  }
+  } */
 
   /* Activity Bar Tweak */
   .activity-bar {
@@ -1433,25 +1434,23 @@ html body .cm-content *::selection {
 /* When the editor (CodeMirror) is focused, we dim peripheral UI */
 
 /* Base transitions on the elements themselves for symmetrical smooth fading */
-.activity-bar,
+/* Base transitions on the elements themselves for symmetrical smooth fading */
 .sidebar-pane-container {
   transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), filter 0.8s ease;
 }
 
-.workbench-layout:has(.cm-focused) .activity-bar,
 .workbench-layout:has(.cm-focused) .sidebar-pane-container {
-  opacity: 0.35;
+  opacity: 0.6;
   filter: saturate(0.2) blur(0.1px);
-  /* Slower fade-out with a slight grace period delay */
-  transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.1s, filter 1.2s ease 0.1s;
+  /* Ultra-slow, imperceptible fade-out so the user doesn't "feel" it happening */
+  transition: opacity 3s cubic-bezier(0.4, 0, 0.2, 1) 1s, filter 3s ease 1s;
 }
 
-.workbench-layout:has(.cm-focused) .activity-bar:hover,
 .workbench-layout:has(.cm-focused) .sidebar-pane-container:hover {
   opacity: 1;
   filter: saturate(1) blur(0);
-  /* Faster recovery when the user actually wants to use them */
-  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), filter 0.4s ease;
+  /* Smooth recovery that feels natural */
+  transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), filter 0.6s ease;
 }
 
 /* 3. Magnetic Drop Zone Feedback */

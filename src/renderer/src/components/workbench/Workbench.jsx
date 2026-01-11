@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import SnippetEditor from './SnippetEditor'
 import WelcomePage from '../WelcomePage'
 import { Header } from '../layout/Header'
+import TabBar from '../layout/TabBar/TabBar'
 import {
   Plus,
   Minus,
@@ -196,6 +197,23 @@ const Workbench = ({
       window.removeEventListener('mouseup', handleMouseUp)
     }
   }, [updateSetting, showFlowMode, getSetting, setIsSidebarOpen])
+
+  // --- Auto-close Sidebar on Mobile Resize ---
+  React.useEffect(() => {
+    const handleWindowResize = () => {
+      if (window.innerWidth <= 768 && isSidebarOpen) {
+        setIsSidebarOpen(false)
+      }
+    }
+
+    // Check on initial load too
+    if (window.innerWidth <= 768 && isSidebarOpen) {
+      setIsSidebarOpen(false)
+    }
+
+    window.addEventListener('resize', handleWindowResize)
+    return () => window.removeEventListener('resize', handleWindowResize)
+  }, [isSidebarOpen, setIsSidebarOpen])
 
   const handleSave = (snippet) => {
     if (snippet?.readOnly) return
@@ -559,7 +577,7 @@ const Workbench = ({
           style={{
             width: 'var(--sidebar-width)',
             willChange: isResizing ? 'width' : 'auto',
-            overflow: 'hidden', // Contain content but scrollbar stays on edge
+            overflow: 'visible', // Allow sash to protrude
             transition: 'none'
           }}
         >
@@ -677,6 +695,16 @@ const Workbench = ({
             transform: 'translateZ(0)' // Hardware acceleration
           }}
         >
+          {/* Tab Bar - Always visible above content */}
+          {activeView === 'editor' || (activeView === 'snippets' && selectedSnippet) ? (
+            <TabBar
+              tabs={selectedSnippet ? [selectedSnippet] : []}
+              activeTabId={selectedSnippet?.id}
+              onTabClick={() => {}} // Already active
+              onTabClose={handleCloseSnippet}
+            />
+          ) : null}
+
           {showFlowMode && (
             <div className="flow-convas" style={{ zIndex: -1 }}>
               <div className="zen-atmosphere">

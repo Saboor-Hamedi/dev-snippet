@@ -242,8 +242,8 @@ const SnippetSidebar = ({
     // 📋 Clipboard Group
     if (selectedIds.length > 0) {
       menuItems.push(
-        { label: 'Cut', icon: '✂️', onClick: onCut },
-        { label: 'Copy', icon: '📋', onClick: onCopy },
+        { label: 'Cut', onClick: onCut },
+        { label: 'Copy', onClick: onCopy },
         { label: 'separator' }
       )
     }
@@ -252,28 +252,25 @@ const SnippetSidebar = ({
     if (type === 'folder') {
       menuItems.push({
         label: isMulti ? `Delete ${selectedIds.length} Items` : 'Delete',
-        icon: Trash2,
         onClick: () => {
           if (isMulti) onDeleteBulk(resolveRealIds(selectedIds))
           else onDeleteFolder(itemData.id)
         },
         danger: true
       })
-      menuItems.push({ label: 'Paste', icon: '📌', onClick: onPaste })
+      menuItems.push({ label: 'Paste', onClick: onPaste })
       if (!isMulti) {
         menuItems.unshift(
           {
             label: 'New Snippet',
-            icon: FilePlus,
             onClick: () => startCreation('snippet', itemData.id)
           },
           {
             label: 'New Subfolder',
-            icon: FolderPlus,
             onClick: () => startCreation('folder', itemData.id)
           },
           { label: 'separator' },
-          { label: 'Rename', icon: Edit2, onClick: () => startRenaming(virtualId) }
+          { label: 'Rename', onClick: () => startRenaming(virtualId) }
         )
       }
     }
@@ -281,7 +278,6 @@ const SnippetSidebar = ({
     else if (type === 'snippet' || type === 'pinned_snippet') {
       menuItems.push({
         label: isMulti ? `Delete ${selectedIds.length} Items` : 'Delete',
-        icon: Trash2,
         onClick: () => {
           if (isMulti) onDeleteBulk(resolveRealIds(selectedIds))
           else onDeleteSnippet(itemData.id)
@@ -289,17 +285,15 @@ const SnippetSidebar = ({
         danger: true,
         shortcut: isMulti ? '' : 'Ctrl+Shift+D'
       })
-      menuItems.push({ label: 'Paste', icon: '📌', onClick: onPaste })
+      menuItems.push({ label: 'Paste', onClick: onPaste })
       if (!isMulti) {
         menuItems.unshift({
           label: 'Rename',
-          icon: Edit2,
           onClick: () => startRenaming(virtualId),
           shortcut: 'Ctrl+R'
         })
         menuItems.unshift({
           label: 'Open in Graph',
-          icon: Network,
           onClick: () => {
             if (window.dispatchEvent) {
               window.dispatchEvent(
@@ -311,12 +305,10 @@ const SnippetSidebar = ({
         })
         menuItems.unshift({
           label: itemData.is_favorite ? 'Unfavorite' : 'Make Favorite',
-          icon: Star,
           onClick: () => onToggleFavorite && onToggleFavorite(itemData.id)
         })
         menuItems.unshift({
           label: itemData.is_pinned ? 'Unpin' : 'Pin',
-          icon: Pin,
           onClick: () => onTogglePin(itemData.id),
           shortcut: 'Alt+P'
         })
@@ -327,17 +319,15 @@ const SnippetSidebar = ({
       menuItems.push(
         {
           label: 'New Snippet',
-          icon: FilePlus,
           onClick: () => startCreation('snippet', selectedFolderId || null)
         },
         {
           label: 'New Folder',
-          icon: FolderPlus,
           onClick: () => startCreation('folder', selectedFolderId || null)
         },
         { label: 'separator' },
-        { label: 'Paste', icon: '📌', onClick: onPaste },
-        { label: 'Select All', icon: '🎯', onClick: onSelectAll }
+        { label: 'Paste', onClick: onPaste },
+        { label: 'Select All', onClick: onSelectAll }
       )
     }
 
@@ -402,7 +392,7 @@ const SnippetSidebar = ({
   return (
     <SidebarPane className="overflow-hidden">
       {/* HEADER SECTION */}
-      <PaneHeader className="pr-1 pb-3 pt-1 px-1">
+      <PaneHeader className="px-2 py-1">
         <div className="flex items-center gap-2 w-full">
           {/* SEARCH INPUT */}
           <div className="relative group flex-1 h-7">

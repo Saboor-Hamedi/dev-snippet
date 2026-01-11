@@ -51,15 +51,7 @@ const Header = ({
   isReadOnly,
   isDoc
 }) => {
-  const isMobile = window.innerWidth <= 768
-  const activityBarWidth = 48 // Match Workbench
-
-  // Use CSS variable for ultra-smooth syncing if available
-  const sidebarSectionWidth =
-    isSidebarOpen && !isMobile
-      ? `calc(var(--sidebar-width, ${sidebarWidth}px) + ${activityBarWidth}px)`
-      : `${activityBarWidth}px`
-
+  // Header is now fully fluid and top-level
   const [isMaximized, setIsMaximized] = useState(false)
 
   useEffect(() => {
@@ -93,7 +85,7 @@ const Header = ({
 
   return (
     <header
-      className="relative flex items-end h-[32px] select-none"
+      className="relative flex items-center h-[32px] select-none w-full"
       style={{
         backgroundColor: 'var(--color-bg-secondary)', // Unified with modal headers
         borderBottom: '1px solid var(--color-border)', // Standardized native-like border
@@ -102,12 +94,10 @@ const Header = ({
         boxSizing: 'border-box'
       }}
     >
-      {/* Sidebar Header Part - Aligned with Sidebar/ActivityBar */}
+      {/* App Icon Area */}
       <div
-        id="header-sidebar-section"
-        className={`h-full flex items-center px-1 pb-1 overflow-hidden ${isResizing ? '' : 'transition-[width] duration-200 ease-in-out'}`}
+        className="h-full flex items-center px-1 pb-1"
         style={{
-          width: sidebarSectionWidth,
           backgroundColor: 'transparent',
           borderRight: 'none',
           WebkitAppRegion: 'drag'
@@ -153,102 +143,21 @@ const Header = ({
       <div className="flex-1 h-full flex items-end min-w-0 overflow-hidden relative">
         <div className="flex-1 h-full flex items-end px-0" style={{ WebkitAppRegion: 'drag' }}>
           <div className="flex items-end max-w-full h-full">
-            {isTab ? (
-              <div
-                className="
-                  group relative flex items-center gap-2 px-3
-                  h-[30px] /* Obsidian height */
-                  mt-auto
-                  min-w-[140px] max-w-[220px]
-                  bg-[var(--color-bg-primary)] 
-                  rounded-t-lg /* Smoother corners */
-                  rounded-b-none
-                  border-l border-r border-[var(--color-border)]
-                  border-b-0
-                  cursor-default
-                  select-none
-                  
-                "
-                style={{
-                  WebkitAppRegion: 'no-drag',
-                  boxShadow: 'none',
-                  marginBottom: '-1px', // Overlap bottom border
-                  marginLeft: '6px', // Spacing from left
-                  zIndex: 10
-                }}
-                onDoubleClick={() => !isReadOnly && onRename && onRename()}
-              >
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  {(() => {
-                    if (isDoc) {
-                       return (
-                         <Lock
-                           size={12}
-                           className="flex-none opacity-70"
-                           style={{ color: 'var(--color-text-secondary)' }}
-                         />
-                       )
-                    }
-                    const { icon: FileIcon, color: iconColor } = getFileIcon(null, displayTitle)
-                    return (
-                      <FileIcon
-                        size={13}
-                        className="flex-none transition-opacity"
-                        style={{ color: iconColor }}
-                      />
-                    )
-                  })()}
-                  <span
-                    className="text-[13px] truncate font-medium opacity-90 block normal-case"
-                    style={{ color: 'var(--header-text, var(--color-text-primary))' }}
-                  >
-                    {isDoc ? 'Doc' : (typeof displayTitle === 'string'
-                      ? displayTitle.replace(/\.[^/.]+$/, '')
-                      : 'Untitled')}
-                  </span>
-                  {/* Dirty Dot (Yellow) */}
-                  {isDirty && (
-                    <div className="flex-shrink-0 w-2 h-2 rounded-full bg-yellow-400 shadow-[0_0_8px_rgba(234,179,8,0.6)] animate-pulse" />
-                  )}
-                  {/* Favorite star next to tab title if present */}
-                  {typeof isFavorited !== 'undefined' && isFavorited && (
-                    <Star
-                      size={12}
-                      className="ml-2 text-[var(--color-accent-primary)] fill-current"
-                    />
-                  )}
-                </div>
-
-                {/* Close Button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onClose && onClose()
-                  }}
-                  onDoubleClick={(e) => e.stopPropagation()}
-                  className="
-                    ml-1 p-0.5 rounded-md
-                    opacity-60 hover:opacity-100
-                    hover:bg-[var(--color-bg-tertiary)]
-                    text-[var(--header-text, var(--color-text-primary))]
-                    transition-all
-                    flex items-center justify-center
-                    focus:outline-none outline-none
-                  "
-                >
-                  <X size={14} className="opacity-100" />
-                </button>
-
-                {/* Active Tab Accent - Moved to Bottom */}
-                <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--color-accent-primary)] rounded-none opacity-100" />
+            <div
+              className="h-full flex items-center justify-center"
+              style={{
+                WebkitAppRegion: 'no-drag',
+                boxShadow: 'none',
+                marginLeft: '6px', // Spacing from left
+                zIndex: 10
+              }}
+            >
+              <div className="flex items-center h-full px-2 opacity-60">
+               <span className="text-[12px] font-medium">
+                 Dev Snippet
+               </span>
               </div>
-            ) : (
-              <div className="flex items-center h-full pb-1 pl-4 opacity-60">
-                <span className="text-[12px] font-medium">
-                  {typeof displayTitle === 'string' ? displayTitle : 'Dev Snippet'}
-                </span>
-              </div>
-            )}
+            </div>
           </div>
         </div>
 
