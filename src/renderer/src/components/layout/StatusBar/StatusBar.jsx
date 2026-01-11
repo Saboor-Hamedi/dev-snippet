@@ -70,10 +70,7 @@ const StatusBar = ({
 }) => {
   const [version, setVersion] = useState('...')
   const [zoom] = useZoomLevel()
-  const [editorZoom] = useEditorZoomLevel()
-
-  const [displayZoom] = useZoomLevel()
-  const [displayEditorZoom] = useEditorZoomLevel()
+  const [editorZoom, setEditorZoomInternal] = useEditorZoomLevel()
 
   useEffect(() => {
     window.api?.getVersion().then(setVersion)
@@ -94,8 +91,6 @@ const StatusBar = ({
 
   const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0 })
   const [zoomMenu, setZoomMenu] = useState({ visible: false, x: 0, y: 0 })
-
-  const [, setEditorZoomInternal] = useEditorZoomLevel()
 
   const handleContextMenu = (e) => {
     e.preventDefault()
@@ -206,7 +201,7 @@ const StatusBar = ({
 
 
 
-          {!minimal && showZoom && displayEditorZoom && (
+          {!minimal && showZoom && editorZoom !== undefined && (
             <div className="relative group/zoom">
               <div
                 className="status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer"
@@ -214,7 +209,6 @@ const StatusBar = ({
                 onClick={(e) => {
                   e.stopPropagation()
                   const rect = e.currentTarget.getBoundingClientRect()
-                  setTempZoom(Math.round((displayEditorZoom || 1) * 100).toString())
                   setZoomMenu({
                     visible: true,
                     x: rect.left,
@@ -223,7 +217,7 @@ const StatusBar = ({
                 }}
               >
                 <span className="font-mono tabular-nums text-xtiny">
-                  {Math.round((displayEditorZoom || 1) * 100)}%
+                  {Math.round((editorZoom || 1) * 100)}%
                 </span>
               </div>
             </div>
@@ -291,7 +285,10 @@ const StatusBar = ({
                   {
                     label: 'Custom...',
                     onClick: () => {
-                      const input = window.prompt('Enter zoom percentage (10-300):', Math.round((displayEditorZoom || 1) * 100).toString())
+                      const input = window.prompt(
+                        'Enter zoom percentage (10-300):',
+                        Math.round((editorZoom || 1) * 100).toString()
+                      )
                       if (input) {
                         const num = parseInt(input, 10)
                         if (!isNaN(num) && num >= 10 && num <= 300) {

@@ -424,31 +424,75 @@ Pasting very large snippets (50,000+ lines or characters) caused three issues:
 
 ### The Challenge
 
-The `settings.json` virtual editor suffered from three UX issues:
-1. **Visual Clutter**: The `EditorMetadataHeader` (Title/Tags) was visible, which is redundant for system settings.
-2. **Layout Inefficiency**: Even when hidden, a "ghost" padding of 120px remained at the top of the editor.
-3. **Synchronization Deadlock**: Changes made in the UI (like theme switching) wouldn't reflect in the editor if it was open, and manual saves caused the cursor to "jump" to the top of the file.
+The `settings.json` virtual editor suffered from synchronization deadlocks:
+1. **Formatting Jump**: Saving the editor triggered a re-format that synced back from the parent, resetting the cursor to the top.
+2. **Sync Block**: Theme changes wouldn't show up because the editor was "focused" or "shielded" by a brittle timer.
 
 ### The Solution
 
-- **Context-Aware Layout**: Implemented `isHeaderVisible` logic in `SnippetEditor.jsx`. When editing system files, the header is unmounted, and `--editor-content-padding-top` is dynamically reduced to a slim `10px`.
-- **Navigation Shift**: Updated `SnippetLibraryInner.jsx` to open settings using the `'snippets'` view instead of `'editor'`. This allows the workbench to treat it as an existing file rather than a "New Snippet" creation flow, unlocking accurate ID-based logic.
-- **Bi-Directional Smart Sync**:
-  - **The "Identity Lock" Break**: Added a dedicated `useEffect` in `SnippetEditor.jsx` that watches for `initialSnippet.code` updates. This allows background settings changes (themes, font sizes) to "flow" into the editor instantly.
-  - **The "Jumping" Shield**: Re-implemented the `window.__isSavingSettings` global shield. It is now shared between the conducter and the editor. During a manual save, the application blocks the "Saved-Rebound" effect (where the reformatted code tries to re-sync into the editor), ensuring the cursor stays exactly at the last edited character.
-- **Focus Respect**: The sync engine only overwrites the editor if the file is not "dirty" (unsaved typing), preserving user input.
+- **Bi-Directional Smart Sync**: Added a reactive bridge between the global settings and the CodeMirror instance.
+
+#### Synchronizer (Conductor)
+In `SnippetLibraryInner.jsx`, we remove the arbitrary timer and use a semantic focus check:
+```javascript
+useEffect(() => {
+  if (selectedSnippet?.id === 'system:settings' && !isDirty && !window.__isSavingSettings) {
+    if (JSON.stringify(settings) !== JSON.stringify(JSON.parse(code))) {
+      setSelectedSnippet({ ...selectedSnippet, code: JSON.stringify(settings, null, 2) });
+    }
+  }
+}, [settings, isDirty]);
+```
+
+#### Selection Shield (Editor)
+In `SnippetEditor.jsx`, we prevent the "Save-Rebound" jump by checking the shield:
+```javascript
+useEffect(() => {
+  if (initialSnippet?.id === 'system:settings' && !isDirty && !window.__isSavingSettings) {
+    setCode(initialSnippet.code);
+  }
+}, [initialSnippet.code, isDirty]);
+```
 
 ### Result
-
-- ✅ **Clean UI**: Settings now start from the very top of the window with no redundant headers.
-- ✅ **Live Theme Previews**: Switching themes in the sidebar instantly updates the JSON text in the editor.
-- ✅ **No More Jumps**: Manual saves are stable and transparent to the user.
+- ✅ **Instant UI Feedback**: Live theme updates.
+- ✅ **Cursor Stability**: No jumps on manual save.
 
 ### Files Modified
-
 - `src/renderer/src/components/workbench/SnippetLibraryInner.jsx`
 - `src/renderer/src/components/workbench/SnippetEditor.jsx`
 - `src/renderer/src/components/preference/ThemeSelector.jsx`
+
+---
+
+## 🛑 BUG: Folder Logic - Circular Move Disappearance
+
+### The Diagnostic
+
+If a user drags a **Parent Folder** into one of its own **Descendant Folders**, the entire tree branch disappears from the sidebar.
+
+### Root Cause
+1. **Validation Failure**: `moveFolder` in `useFolderData.js` lacks a recursive check. It allows setting `folder.parent_id = child.id`.
+2. **Flattening Failure**: The tree-flattening logic in `useSidebarLogic.js` only parses nodes that can be traced back to the `null` root. Circular references become "islands" that are filtered out of the Virtual List.
+
+### Proposed Fix
+In `SnippetSidebarRow.jsx` (Drag & Drop handler), implement a recursion check:
+```javascript
+const isDescendant = (parent, potentialChild) => {
+  let curr = potentialChild;
+  while(curr.parent_id) {
+    if (curr.parent_id === parent.id) return true;
+    curr = folders.find(f => f.id === curr.parent_id);
+  }
+  return false;
+};
+```
+Prevent moves if `isDescendant(targetFolder, movingFolder)` is true.
+
+### Files Involved
+- `src/renderer/src/hook/useSnippetData/useFolderData.js`
+- `src/renderer/src/components/workbench/sidebar/SnippetSidebarRow.jsx`
+- `src/renderer/src/components/workbench/sidebar/useSidebarLogic.js`
 
 ---
 

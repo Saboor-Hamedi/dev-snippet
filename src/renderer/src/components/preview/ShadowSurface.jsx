@@ -77,7 +77,9 @@ const ShadowSurface = ({ html, styles, onRender, isDark, zenFocus, noScroll = fa
   // 3. Synchronize Content & Trigger Render Hook
   const lastHtmlRef = useRef('')
 
-  useEffect(() => {
+  // useLayoutEffect ensures the content is injected BEFORE the browser paints.
+  // This prevents the "blank flash" or delayed rendering.
+  React.useLayoutEffect(() => {
     if (contentRef.current && html !== undefined) {
       // 3.1 Update HTML if it actually changed
       if (lastHtmlRef.current !== html) {
@@ -86,7 +88,6 @@ const ShadowSurface = ({ html, styles, onRender, isDark, zenFocus, noScroll = fa
       }
 
       // 3.2 ALWAYS notify parent if render callback or content changed
-      // This allows Mermaid to re-run on theme/font changes even if HTML is the same.
       if (onRender) {
         onRender(shadowRootRef.current, contentRef.current)
       }

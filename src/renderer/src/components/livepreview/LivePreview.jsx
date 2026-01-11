@@ -85,9 +85,11 @@ const LivePreview = ({
       }
 
       // 0. PERFORMANCE GUARD: Skip parsing if the window is currently being dragged
-      if (document.body.classList.contains('dragging-active')) {
-        return
-      }
+      // EXCEPT: Always allow the initial render (when renderedHtml is empty)
+      // Removed this guard to ensure content appears instantly without requiring a click.
+      // if (document.body.classList.contains('dragging-active') && renderedHtml !== '') {
+      //   return
+      // }
 
       // 1. Check cache first (LRU cache hit = instant)
       const normalizedLang = (language || 'markdown').toLowerCase()
@@ -173,10 +175,17 @@ const LivePreview = ({
       }
     }
 
-    // Intelligent debounce: 75ms while typing, 250ms when paused
-    // This keeps editor thread free while providing snappy feedback
-    const debounceDelay = 75
-    const timeoutId = setTimeout(parse, debounceDelay)
+
+    let timeoutId = null
+
+    // Snappy Initial Load: Bypass timeout if we have nothing rendered yet
+    if (renderedHtml === '' && code) {
+      parse()
+    } else {
+      const wait = renderedHtml === '' ? 0 : 75
+      const timeoutId = setTimeout(parse, wait)
+      return () => clearTimeout(timeoutId)
+    }
 
     return () => {
       clearTimeout(timeoutId)

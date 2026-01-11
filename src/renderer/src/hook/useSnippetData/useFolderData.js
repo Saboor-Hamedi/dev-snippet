@@ -5,12 +5,44 @@ export const useFolderData = (showToast, folders, setFolders, setSnippets, setTr
     try {
       if (window.api?.getFolders) {
         const loadedFolders = await window.api.getFolders()
+        
+        // --- 🛡️ RESCUE ENGINE: Circular Reference Repair ---
+        // If a user previously moved a parent into a child, they create an "Island".
+        // This logic detects loops and breaks them by moving the loop-head to Root.
+        if (loadedFolders && loadedFolders.length > 0) {
+          const brokenFolders = []
+          loadedFolders.forEach(folder => {
+            const path = new Set()
+            let curr = folder
+            while (curr && curr.parent_id) {
+              if (path.has(curr.id)) {
+                brokenFolders.push(curr.id)
+                break
+              }
+              path.add(curr.id)
+              curr = loadedFolders.find(f => f.id === curr.parent_id)
+            }
+          })
+
+          if (brokenFolders.length > 0) {
+            console.warn('[Rescue] Detected circular references in folders:', brokenFolders)
+            for (const id of brokenFolders) {
+              await moveFolder(id, null)
+            }
+            // Re-fetch after repair to ensure consistent state
+            const repairedFolders = await window.api.getFolders()
+            setFolders(repairedFolders || [])
+            showToast('📂 Recovered folders from a circular loop', 'success')
+            return
+          }
+        }
+
         setFolders(loadedFolders || [])
       }
     } catch (error) {
       console.error('Folder loading error:', error)
     }
-  }, [setFolders])
+  }, [setFolders, showToast])
 
   const saveFolder = async (folder) => {
     try {

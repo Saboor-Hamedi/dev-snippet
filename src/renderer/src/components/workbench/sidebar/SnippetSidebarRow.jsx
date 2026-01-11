@@ -253,7 +253,8 @@ const SnippetSidebarRow = ({ index, style, data }) => {
     onCancelRenaming,
     startCreation,
     handleSelectionInternal,
-    todayStr
+    todayStr,
+    folders
   } = data
 
   const {
@@ -370,14 +371,33 @@ const SnippetSidebarRow = ({ index, style, data }) => {
       e.preventDefault()
       e.stopPropagation()
       setIsDragOver(false)
+
+      // Recursive Check: Ensure target is not a descendant of the moving folder
+      const isDescendant = (movingId, targetId) => {
+        let curr = targetId
+        while (curr) {
+          const folder = folders.find((f) => f.id === curr)
+          if (!folder) break
+          if (folder.parent_id === movingId) return true
+          curr = folder.parent_id
+        }
+        return false
+      }
+
       try {
         const sourceIds = JSON.parse(e.dataTransfer.getData('sourceIds') || '[]')
         const sourceTypes = JSON.parse(e.dataTransfer.getData('sourceTypes') || '[]')
         if (sourceIds.includes(itemData.id)) return
-        
+
         const sIds = sourceIds.filter((_, idx) => sourceTypes[idx] === 'snippet')
         const fIds = sourceIds.filter((_, idx) => sourceTypes[idx] === 'folder')
-        
+
+        const illegalMove = fIds.some((fId) => isDescendant(fId, itemData.id))
+        if (illegalMove) {
+          console.warn('[Validation] Circular move blocked: Cannot move a folder into its own subfolder.')
+          return
+        }
+
         if (sIds.length > 0) onMoveSnippet(sIds, itemData.id)
         if (fIds.length > 0) onMoveFolder(fIds, itemData.id)
 

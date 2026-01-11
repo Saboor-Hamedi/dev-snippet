@@ -112,6 +112,22 @@ const AdvancedSplitPane = ({
     [overlayMode, overlayWidth]
   )
 
+  const handleDoubleClick = () => {
+    if (overlayMode) {
+      setOverlayWidth(40)
+      localStorage.setItem('overlayWidth', 40)
+    } else {
+      setSideBySideLeft(initialLeft)
+      localStorage.setItem('sideBySideLeft', initialLeft)
+    }
+  }
+
+  // Device Presets
+  const setPreset = (percent) => {
+    setOverlayWidth(percent)
+    localStorage.setItem('overlayWidth', percent)
+  }
+
   return (
     <SplitPaneContext.Provider value={contextValue}>
       {rightHidden ? (
@@ -122,25 +138,54 @@ const AdvancedSplitPane = ({
         </div>
       ) : overlayMode ? (
         <div ref={containerRef} className="relative h-full w-full overflow-hidden">
-          <div className="absolute inset-0 w-full h-full">{left}</div>
+          <div className="absolute inset-0 w-full h-full z-0">{left}</div>
           {!rightHidden && (
             <div
-              className="absolute top-2 right-5 bottom-2 z-30 flex flex-col overflow-hidden shadow-xl"
+              className="absolute top-4 right-5 bottom-6 z-40 flex flex-col overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.3)] transition-all duration-300 ease-out"
               style={{
                 width: `${overlayWidth}%`,
                 minWidth: `${minRight}px`,
-                maxWidth: '90%',
+                maxWidth: '92%',
                 backgroundColor: bgColor,
-                border: `${borderWidth}px solid ${borderColor || 'rgba(0,0,0,0.06)'}`,
-                borderRadius: `${borderRound}px`
+                border: `${borderWidth}px solid ${borderColor || 'rgba(255,255,255,0.1)'}`,
+                borderRadius: `${borderRound}px`,
+                backdropFilter: 'blur(20px) saturate(180%)'
               }}
             >
+              {/* Overlay Toolbar & Resizer */}
               <div
-                className="absolute left-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-500/20 transition-colors flex items-center justify-center z-20 group"
+                className="absolute left-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-blue-500/30 transition-colors z-50 group flex items-center justify-center"
                 onMouseDown={startDrag}
+                onDoubleClick={handleDoubleClick}
               >
-                <div className="w-1 h-8 bg-slate-400 dark:bg-slate-500 rounded-full opacity-30 group-hover:opacity-100 transition-opacity"></div>
+                <div className="w-0.5 h-12 bg-white/20 rounded-full group-hover:bg-blue-400 transition-colors" />
               </div>
+
+              {/* Device Preset Header */}
+              <div className="flex items-center justify-end px-4 py-2 gap-3 border-b border-white/5 bg-white/5">
+                <button
+                  onClick={() => setPreset(25)}
+                  className={`p-1 rounded hover:bg-white/10 transition-colors ${overlayWidth <= 30 ? 'text-blue-400' : 'text-slate-400'}`}
+                  title="Phone Preview (25%)"
+                >
+                  <Smartphone size={14} />
+                </button>
+                <button
+                  onClick={() => setPreset(45)}
+                  className={`p-1 rounded hover:bg-white/10 transition-colors ${overlayWidth > 30 && overlayWidth <= 55 ? 'text-blue-400' : 'text-slate-400'}`}
+                  title="Tablet Preview (45%)"
+                >
+                  <Tablet size={14} />
+                </button>
+                <button
+                  onClick={() => setPreset(85)}
+                  className={`p-1 rounded hover:bg-white/10 transition-colors ${overlayWidth > 55 ? 'text-blue-400' : 'text-slate-400'}`}
+                  title="Full Preview (85%)"
+                >
+                  <Monitor size={14} />
+                </button>
+              </div>
+
               <div
                 className={`flex-1 overflow-auto relative ${isDragging ? 'pointer-events-none' : ''}`}
               >
@@ -160,10 +205,11 @@ const AdvancedSplitPane = ({
           >
             {left}
           </div>
-          <div className="shrink-0 relative flex items-center justify-center w-1 z-10">
+          <div className="shrink-0 relative flex items-center justify-center w-1 z-20">
             <div
-              className="absolute top-0 bottom-0 w-4 -left-1.5 cursor-col-resize z-10"
+              className="absolute top-0 bottom-0 w-5 -left-2.5 cursor-col-resize z-20"
               onMouseDown={startDrag}
+              onDoubleClick={handleDoubleClick}
             />
             <div
               className={`absolute inset-y-0 left-1/2 -translate-x-1/2 w-[1px] transition-colors pointer-events-none ${isDragging ? 'bg-blue-500' : 'bg-slate-300 dark:bg-slate-700'}`}

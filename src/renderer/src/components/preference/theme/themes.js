@@ -120,10 +120,10 @@ export const themes = [
     icon: '🌙',
     description: 'Deep Cosmic Glass',
     colors: {
-      '--color-bg-primary': 'rgb(13, 17, 23)', // Glassy Midnight Void
-      '--color-tooltip-bg': '#0d1117',
-      '--color-bg-secondary': 'rgb(13, 17, 23)',
-      '--color-bg-tertiary': 'rgb(22, 27, 34)',
+      '--color-bg-primary': 'rgb(22, 27, 34)', // Unified Midnight Pro Background (#161b22)
+      '--color-tooltip-bg': '#161b22',
+      '--color-bg-secondary': 'rgb(22, 27, 34)',
+      '--color-bg-tertiary': 'rgb(33, 38, 45)',
       '--color-text-primary': '#c9d1d9',
       '--color-text-secondary': '#8b949e',
       '--color-text-tertiary': '#6e7681',
@@ -146,28 +146,28 @@ export const themes = [
       '--color-syntax-comment': '#64748b',
       '--color-syntax-punctuation': '#94a3b8',
       // Component-specific variables
-      '--editor-bg': 'rgb(13, 17, 23)',
+      '--editor-bg': 'rgb(22, 27, 34)',
       '--editor-text': '#c9d1d9',
       '--gutter-text-color': '#8b949e',
-      '--statusbar-bg': 'rgb(13, 17, 23)',
+      '--statusbar-bg': 'rgb(22, 27, 34)',
       '--statusbar-text': '#8b949e',
-      '--header-bg': 'rgb(13, 17, 23)',
+      '--header-bg': 'rgb(22, 27, 34)',
       '--header-text': '#c9d1d9',
-      '--sidebar-bg': 'rgb(13, 17, 23)',
+      '--sidebar-bg': 'rgb(22, 27, 34)',
       '--sidebar-border': 'rgb(88, 166, 255)',
-      '--welcome-bg': 'rgb(13, 17, 23)',
+      '--welcome-bg': 'rgb(22, 27, 34)',
       '--welcome-text': '#c9d1d9',
 
-      '--gutter-bg-color': 'rgb(13, 17, 23)',
+      '--gutter-bg-color': 'rgb(22, 27, 34)',
       '--gutter-border-color': 'rgb(88, 166, 255)',
-      '--activity-bar-bg': 'rgb(13, 17, 23)',
+      '--activity-bar-bg': 'rgb(22, 27, 34)',
       '--activity-bar-active-fg': '#58a6ff',
       '--activity-bar-inactive-fg': '#404040',
       '--activity-bar-active-border': '#58a6ff',
       '--activity-bar-badge-bg': '#58a6ff',
       '--activity-bar-badge-fg': '#ffffff',
-      background: 'rgb(13, 17, 23)',
-      sidebar: 'rgb(13, 17, 23)',
+      background: 'rgb(22, 27, 34)',
+      sidebar: 'rgb(22, 27, 34)',
       text: '#c9d1d9',
       accent: '#58a6ff',
       border: 'rgb(88, 166, 255)',
@@ -177,10 +177,10 @@ export const themes = [
     },
     settings: {
       welcome: { welcomePage: '#161b22' },
-      editor: { editorBgColor: '#0d1117' },
+      editor: { editorBgColor: '#161b22' },
       gutter: { gutterBgColor: '#161b22', gutterBorderColor: '#30363d', gutterBorderWidth: 1 },
       cursor: { color: '#58a6ff' },
-      livePreview: { bgColor: '#0d1117', borderColor: '#30363d', borderWidth: 1, borderRound: 4 },
+      livePreview: { bgColor: '#161b22', borderColor: '#30363d', borderWidth: 1, borderRound: 4 },
       activityBar: {
         bgColor: '#161b22',
         activeFg: '#c9d1d9',
@@ -190,7 +190,7 @@ export const themes = [
         badgeFg: '#ffffff'
       },
       header: {
-        bgColor: '#0d1117',
+        bgColor: '#161b22',
         textColor: '#c9d1d9',
         iconColor: '#c9d1d9',
         borderColor: '#30363d'
@@ -206,7 +206,7 @@ export const themes = [
       ui: {
         statusBarBg: '#161b22',
         footerBg: '#161b22',
-        headerBg: '#0d1117'
+        headerBg: '#161b22'
       }
     },
     previewColors: ['bg-[#0d1117]', 'bg-[#161b22]', 'bg-blue-500']
@@ -217,10 +217,10 @@ export const themes = [
     icon: '🪐',
     description: '',
     colors: {
-      '--color-bg-primary': 'rgb(9, 9, 11)', // Glassy Cosmic Void
-      '--color-tooltip-bg': '#09090b',
-      '--color-bg-secondary': 'rgb(9, 9, 11)',
-      '--color-bg-tertiary': 'rgb(24, 24, 27)',
+      '--color-bg-primary': 'rgb(24, 24, 27)', // Unified Nebula Background (#18181b)
+      '--color-tooltip-bg': '#18181b',
+      '--color-bg-secondary': 'rgb(24, 24, 27)',
+      '--color-bg-tertiary': 'rgb(39, 39, 42)',
       '--color-text-primary': '#ffffff',
       '--color-text-secondary': '#e2e8f0',
       '--color-text-tertiary': '#94a3b8',
@@ -243,28 +243,28 @@ export const themes = [
       '--color-syntax-comment': '#64748b',
       '--color-syntax-punctuation': '#94a3b8',
       // Component-specific variables
-      '--editor-bg': 'rgb(9, 9, 11)',
+      '--editor-bg': 'rgb(24, 24, 27)',
       '--editor-text': '#ffffff',
       '--gutter-text-color': '#ffffff',
-      '--statusbar-bg': 'rgb(9, 9, 11)',
+      '--statusbar-bg': 'rgb(24, 24, 27)',
       '--statusbar-text': '#ffffff',
-      '--header-bg': 'rgb(9, 9, 11)',
+      '--header-bg': 'rgb(24, 24, 27)',
       '--header-text': '#ffffff',
-      '--sidebar-bg': 'rgb(9, 9, 11)',
+      '--sidebar-bg': 'rgb(24, 24, 27)',
       '--sidebar-border': 'rgb(217, 70, 239)',
-      '--welcome-bg': 'rgb(9, 9, 11)',
+      '--welcome-bg': 'rgb(24, 24, 27)',
       '--welcome-text': '#ffffff',
 
-      '--gutter-bg-color': 'rgb(9, 9, 11)',
+      '--gutter-bg-color': 'rgb(24, 24, 27)',
       '--gutter-border-color': 'rgb(217, 70, 239)',
-      '--activity-bar-bg': 'rgb(9, 9, 11)',
+      '--activity-bar-bg': 'rgb(24, 24, 27)',
       '--activity-bar-active-fg': '#d946ef',
       '--activity-bar-inactive-fg': '#404040',
       '--activity-bar-active-border': '#d946ef',
       '--activity-bar-badge-bg': '#d946ef',
       '--activity-bar-badge-fg': '#ffffff',
-      background: 'rgb(9, 9, 11)',
-      sidebar: 'rgb(9, 9, 11)',
+      background: 'rgb(24, 24, 27)',
+      sidebar: 'rgb(24, 24, 27)',
       text: '#ffffff',
       accent: '#d946ef',
       border: 'rgb(217, 70, 239)',
@@ -278,7 +278,7 @@ export const themes = [
         welcomePage: '#18181b'
       },
       editor: {
-        editorBgColor: '#09090b'
+        editorBgColor: '#18181b'
       },
       gutter: {
         gutterBgColor: '#18181b',
@@ -289,7 +289,7 @@ export const themes = [
         color: '#d946ef'
       },
       livePreview: {
-        bgColor: '#09090b',
+        bgColor: '#18181b',
         borderColor: '#27272a',
         borderWidth: 1,
         borderRound: 4
@@ -303,7 +303,7 @@ export const themes = [
         badgeFg: '#ffffff'
       },
       header: {
-        bgColor: '#09090b',
+        bgColor: '#18181b',
         textColor: '#ffffff',
         iconColor: '#ffffff',
         borderColor: '#27272a'
@@ -319,7 +319,7 @@ export const themes = [
       ui: {
         statusBarBg: '#18181b',
         footerBg: '#18181b',
-        headerBg: '#09090b'
+        headerBg: '#18181b'
       }
     },
     previewColors: ['bg-[#09090b]', 'bg-[#18181b]', 'bg-fuchsia-500']
@@ -330,10 +330,10 @@ export const themes = [
     icon: '🌲',
     description: '',
     colors: {
-      '--color-bg-primary': 'rgb(23, 28, 25)', // Glassy Forest Void
-      '--color-tooltip-bg': '#1c1917',
-      '--color-bg-secondary': 'rgb(23, 28, 25)',
-      '--color-bg-tertiary': 'rgb(34, 42, 38)',
+      '--color-bg-primary': 'rgb(41, 37, 36)', // Unified Forest/Stone Background (#292524)
+      '--color-tooltip-bg': '#292524',
+      '--color-bg-secondary': 'rgb(41, 37, 36)',
+      '--color-bg-tertiary': 'rgb(57, 52, 50)', // Slightly lighter for tertiary
       '--color-text-primary': '#ffffff',
       '--color-text-secondary': '#ffffff',
       '--color-text-tertiary': '#ffffff',
@@ -356,28 +356,28 @@ export const themes = [
       '--color-syntax-comment': '#737373',
       '--color-syntax-punctuation': '#a3a3a3',
       // Component-specific variables
-      '--editor-bg': 'rgb(23, 28, 25)',
+      '--editor-bg': 'rgb(41, 37, 36)',
       '--editor-text': '#ffffff',
       '--gutter-text-color': '#ffffff',
-      '--statusbar-bg': 'rgb(23, 28, 25)',
+      '--statusbar-bg': 'rgb(41, 37, 36)',
       '--statusbar-text': '#ffffff',
-      '--header-bg': 'rgb(23, 28, 25)',
+      '--header-bg': 'rgb(41, 37, 36)',
       '--header-text': '#ffffff',
-      '--sidebar-bg': 'rgb(23, 28, 25)',
+      '--sidebar-bg': 'rgb(41, 37, 36)',
       '--sidebar-border': 'rgb(34, 197, 94)',
-      '--welcome-bg': 'rgb(23, 28, 25)',
+      '--welcome-bg': 'rgb(41, 37, 36)',
       '--welcome-text': '#ffffff',
 
-      '--gutter-bg-color': 'rgb(23, 28, 25)',
+      '--gutter-bg-color': 'rgb(41, 37, 36)',
       '--gutter-border-color': 'rgb(34, 197, 94)',
-      '--activity-bar-bg': 'rgb(23, 28, 25)',
+      '--activity-bar-bg': 'rgb(41, 37, 36)',
       '--activity-bar-active-fg': '#4ade80',
       '--activity-bar-inactive-fg': '#404040',
       '--activity-bar-active-border': '#22c55e',
       '--activity-bar-badge-bg': '#22c55e',
       '--activity-bar-badge-fg': '#ffffff',
-      background: 'rgb(23, 28, 25)',
-      sidebar: 'rgb(23, 28, 25)',
+      background: 'rgb(41, 37, 36)',
+      sidebar: 'rgb(41, 37, 36)',
       text: '#ffffff',
       accent: '#22c55e',
       border: 'rgb(34, 197, 94)',
@@ -391,7 +391,7 @@ export const themes = [
         welcomePage: '#292524'
       },
       editor: {
-        editorBgColor: '#1c1917'
+        editorBgColor: '#292524'
       },
       gutter: {
         gutterBgColor: '#292524',
@@ -402,7 +402,7 @@ export const themes = [
         color: '#22c55e'
       },
       livePreview: {
-        bgColor: '#1c1917',
+        bgColor: '#292524',
         borderColor: '#44403c',
         borderWidth: 1,
         borderRound: 4
@@ -416,7 +416,7 @@ export const themes = [
         badgeFg: '#ffffff'
       },
       header: {
-        bgColor: '#1c1917',
+        bgColor: '#292524',
         textColor: '#ffffff',
         iconColor: '#ffffff',
         borderColor: '#44403c'
@@ -432,10 +432,10 @@ export const themes = [
       ui: {
         statusBarBg: '#292524',
         footerBg: '#292524',
-        headerBg: '#1c1917'
+        headerBg: '#292524'
       }
     },
-    previewColors: ['bg-[#1c1917]', 'bg-[#292524]', 'bg-emerald-500']
+    previewColors: ['bg-[#292524]', 'bg-[#292524]', 'bg-emerald-500']
   },
   {
     id: 'royal-gold',
@@ -443,10 +443,10 @@ export const themes = [
     icon: '👑',
     description: 'Luxurious Gold Glass',
     colors: {
-      '--color-bg-primary': 'rgb(24, 24, 27)', // Glassy Zinc Void
-      '--color-tooltip-bg': '#18181b',
-      '--color-bg-secondary': 'rgb(24, 24, 27)',
-      '--color-bg-tertiary': 'rgb(39, 39, 42)',
+      '--color-bg-primary': 'rgb(39, 39, 42)', // Unified Royal Gold Background (#27272a)
+      '--color-tooltip-bg': '#27272a',
+      '--color-bg-secondary': 'rgb(39, 39, 42)',
+      '--color-bg-tertiary': 'rgb(51, 51, 54)',
       '--color-text-primary': '#ffffff',
       '--color-text-secondary': '#a1a1aa',
       '--color-text-tertiary': '#71717a',
@@ -468,28 +468,28 @@ export const themes = [
       '--color-syntax-comment': '#71717a',
       '--color-syntax-punctuation': '#a1a1aa',
       // Component-specific variables
-      '--editor-bg': 'rgb(24, 24, 27)',
+      '--editor-bg': 'rgb(39, 39, 42)',
       '--editor-text': '#ffffff',
       '--gutter-text-color': '#71717a',
-      '--statusbar-bg': 'rgb(24, 24, 27)',
+      '--statusbar-bg': 'rgb(39, 39, 42)',
       '--statusbar-text': '#f1be36',
-      '--header-bg': 'rgb(24, 24, 27)',
+      '--header-bg': 'rgb(39, 39, 42)',
       '--header-text': '#ffffff',
-      '--sidebar-bg': 'rgb(24, 24, 27)',
+      '--sidebar-bg': 'rgb(39, 39, 42)',
       '--sidebar-border': 'rgb(241, 190, 54)',
-      '--welcome-bg': 'rgb(24, 24, 27)',
+      '--welcome-bg': 'rgb(39, 39, 42)',
       '--welcome-text': '#ffffff',
 
-      '--gutter-bg-color': 'rgb(24, 24, 27)',
+      '--gutter-bg-color': 'rgb(39, 39, 42)',
       '--gutter-border-color': 'rgb(241, 190, 54)',
-      '--activity-bar-bg': 'rgb(24, 24, 27)',
+      '--activity-bar-bg': 'rgb(39, 39, 42)',
       '--activity-bar-active-fg': '#f1be36',
       '--activity-bar-inactive-fg': '#404040',
       '--activity-bar-active-border': '#f1be36',
       '--activity-bar-badge-bg': '#f1be36',
       '--activity-bar-badge-fg': '#18181b',
-      background: 'rgb(24, 24, 27)',
-      sidebar: 'rgb(24, 24, 27)',
+      background: 'rgb(39, 39, 42)',
+      sidebar: 'rgb(39, 39, 42)',
       text: '#ffffff',
       accent: '#f1be36',
       border: 'rgb(241, 190, 54)',
@@ -498,13 +498,13 @@ export const themes = [
       boxShadow: '0 8px 32px 0 rgb(0, 0, 0)'
     },
     settings: {
-      welcome: { welcomePage: '#18181b' },
-      editor: { editorBgColor: '#18181b' },
+      welcome: { welcomePage: '#27272a' },
+      editor: { editorBgColor: '#27272a' },
       gutter: { gutterBgColor: '#27272a', gutterBorderColor: '#3f3f46', gutterBorderWidth: 1 },
       cursor: { color: '#f1be36' },
-      livePreview: { bgColor: '#18181b', borderColor: '#3f3f46', borderWidth: 1, borderRound: 4 },
+      livePreview: { bgColor: '#27272a', borderColor: '#3f3f46', borderWidth: 1, borderRound: 4 },
       activityBar: {
-        bgColor: '#18181b',
+        bgColor: '#27272a',
         activeFg: '#f1be36',
         inactiveFg: 'rgb(241, 190, 54)',
         activeBorder: '#f1be36',
@@ -512,7 +512,7 @@ export const themes = [
         badgeFg: '#18181b'
       },
       header: {
-        bgColor: '#18181b',
+        bgColor: '#27272a',
         textColor: '#ffffff',
         iconColor: '#f1be36',
         borderColor: '#3f3f46'
@@ -528,7 +528,7 @@ export const themes = [
       ui: {
         statusBarBg: '#27272a',
         footerBg: '#27272a',
-        headerBg: '#18181b'
+        headerBg: '#27272a'
       }
     },
     previewColors: ['bg-[#18181b]', 'bg-[#27272a]', 'bg-yellow-500']
@@ -539,10 +539,10 @@ export const themes = [
     icon: '🌊',
     description: 'Deep Blue & Cyan',
     colors: {
-      '--color-bg-primary': 'rgb(15, 23, 42)', // Deep Sea Glass Void
-      '--color-tooltip-bg': '#0f172a',
-      '--color-bg-secondary': 'rgb(15, 23, 42)',
-      '--color-bg-tertiary': 'rgb(30, 41, 59)',
+      '--color-bg-primary': 'rgb(30, 41, 59)', // Unified Oceanic Background (#1e293b)
+      '--color-tooltip-bg': '#1e293b',
+      '--color-bg-secondary': 'rgb(30, 41, 59)',
+      '--color-bg-tertiary': 'rgb(51, 65, 85)',
       '--color-text-primary': '#f8fafc',
       '--color-text-secondary': '#94a3b8',
       '--color-text-tertiary': '#64748b',
@@ -564,27 +564,27 @@ export const themes = [
       '--color-syntax-comment': '#64748b',
       '--color-syntax-punctuation': '#94a3b8',
       // Components
-      '--editor-bg': 'rgb(15, 23, 42)',
+      '--editor-bg': 'rgb(30, 41, 59)',
       '--editor-text': '#f8fafc',
       '--gutter-text-color': '#64748b',
-      '--statusbar-bg': 'rgb(15, 23, 42)',
+      '--statusbar-bg': 'rgb(30, 41, 59)',
       '--statusbar-text': '#f8fafc',
-      '--header-bg': 'rgb(15, 23, 42)',
+      '--header-bg': 'rgb(30, 41, 59)',
       '--header-text': '#f8fafc',
-      '--sidebar-bg': 'rgb(15, 23, 42)',
+      '--sidebar-bg': 'rgb(30, 41, 59)',
       '--sidebar-border': 'rgb(56, 189, 248)',
-      '--welcome-bg': 'rgb(15, 23, 42)',
+      '--welcome-bg': 'rgb(30, 41, 59)',
       '--welcome-text': '#f8fafc',
-      '--gutter-bg-color': 'rgb(15, 23, 42)',
+      '--gutter-bg-color': 'rgb(30, 41, 59)',
       '--gutter-border-color': 'rgb(56, 189, 248)',
-      '--activity-bar-bg': 'rgb(15, 23, 42)',
+      '--activity-bar-bg': 'rgb(30, 41, 59)',
       '--activity-bar-active-fg': '#38bdf8',
       '--activity-bar-inactive-fg': '#404040',
       '--activity-bar-active-border': '#38bdf8',
       '--activity-bar-badge-bg': '#38bdf8',
       '--activity-bar-badge-fg': '#ffffff',
-      background: 'rgb(15, 23, 42)',
-      sidebar: 'rgb(15, 23, 42)',
+      background: 'rgb(30, 41, 59)',
+      sidebar: 'rgb(30, 41, 59)',
       text: '#f8fafc',
       accent: '#38bdf8',
       border: 'rgb(56, 189, 248)',
@@ -594,10 +594,10 @@ export const themes = [
     },
     settings: {
       welcome: { welcomePage: '#1e293b' },
-      editor: { editorBgColor: '#0f172a' },
+      editor: { editorBgColor: '#1e293b' },
       gutter: { gutterBgColor: '#1e293b', gutterBorderColor: '#334155', gutterBorderWidth: 1 },
       cursor: { color: '#38bdf8' },
-      livePreview: { bgColor: '#0f172a', borderColor: '#334155', borderWidth: 1, borderRound: 4 },
+      livePreview: { bgColor: '#1e293b', borderColor: '#334155', borderWidth: 1, borderRound: 4 },
       activityBar: {
         bgColor: '#1e293b',
         activeFg: '#38bdf8',
@@ -607,7 +607,7 @@ export const themes = [
         badgeFg: '#0f172a'
       },
       header: {
-        bgColor: '#0f172a',
+        bgColor: '#1e293b',
         textColor: '#f8fafc',
         iconColor: '#f8fafc',
         borderColor: '#334155'
@@ -623,7 +623,7 @@ export const themes = [
       ui: {
         statusBarBg: '#1e293b',
         footerBg: '#1e293b',
-        headerBg: '#0f172a'
+        headerBg: '#1e293b'
       }
     },
     previewColors: ['bg-[#0f172a]', 'bg-[#1e293b]', 'bg-sky-400']
@@ -634,10 +634,10 @@ export const themes = [
     icon: '🌋',
     description: 'Fiery Red & Dark',
     colors: {
-      '--color-bg-primary': 'rgb(28, 25, 23)', // Glassy Ember Void
-      '--color-tooltip-bg': '#171717',
-      '--color-bg-secondary': 'rgb(28, 25, 23)',
-      '--color-bg-tertiary': 'rgb(45, 38, 32)',
+      '--color-bg-primary': 'rgb(38, 38, 38)', // Unified Magma Background (#262626)
+      '--color-tooltip-bg': '#262626',
+      '--color-bg-secondary': 'rgb(38, 38, 38)',
+      '--color-bg-tertiary': 'rgb(55, 50, 45)',
       '--color-text-primary': '#fafafa',
       '--color-text-secondary': '#a3a3a3',
       '--color-text-tertiary': '#737373',
@@ -659,28 +659,28 @@ export const themes = [
       '--color-syntax-comment': '#737373',
       '--color-syntax-punctuation': '#a3a3a3',
       // Components
-      '--editor-bg': 'rgb(28, 25, 23)',
+      '--editor-bg': 'rgb(38, 38, 38)',
       '--editor-text': '#fafafa',
       '--gutter-text-color': '#737373',
-      '--statusbar-bg': 'rgb(28, 25, 23)',
+      '--statusbar-bg': 'rgb(38, 38, 38)',
       '--statusbar-text': '#fafafa',
-      '--header-bg': 'rgb(28, 25, 23)',
+      '--header-bg': 'rgb(38, 38, 38)',
       '--header-text': '#fafafa',
-      '--sidebar-bg': 'rgb(28, 25, 23)',
+      '--sidebar-bg': 'rgb(38, 38, 38)',
       '--sidebar-border': 'rgb(249, 115, 22)',
-      '--welcome-bg': 'rgb(28, 25, 23)',
+      '--welcome-bg': 'rgb(38, 38, 38)',
       '--welcome-text': '#fafafa',
 
-      '--gutter-bg-color': 'rgb(28, 25, 23)',
+      '--gutter-bg-color': 'rgb(38, 38, 38)',
       '--gutter-border-color': 'rgb(249, 115, 22)',
-      '--activity-bar-bg': 'rgb(28, 25, 23)',
+      '--activity-bar-bg': 'rgb(38, 38, 38)',
       '--activity-bar-active-fg': '#f97316',
       '--activity-bar-inactive-fg': '#404040',
       '--activity-bar-active-border': '#ef4444',
       '--activity-bar-badge-bg': '#ef4444',
       '--activity-bar-badge-fg': '#ffffff',
-      background: 'rgb(28, 25, 23)',
-      sidebar: 'rgb(28, 25, 23)',
+      background: 'rgb(38, 38, 38)',
+      sidebar: 'rgb(38, 38, 38)',
       text: '#fafafa',
       accent: '#f97316',
       border: 'rgb(249, 115, 22)',
@@ -690,10 +690,10 @@ export const themes = [
     },
     settings: {
       welcome: { welcomePage: '#262626' },
-      editor: { editorBgColor: '#171717' },
+      editor: { editorBgColor: '#262626' },
       gutter: { gutterBgColor: '#262626', gutterBorderColor: '#404040', gutterBorderWidth: 1 },
       cursor: { color: '#f97316' },
-      livePreview: { bgColor: '#171717', borderColor: '#404040', borderWidth: 1, borderRound: 4 },
+      livePreview: { bgColor: '#262626', borderColor: '#404040', borderWidth: 1, borderRound: 4 },
       activityBar: {
         bgColor: '#262626',
         activeFg: '#f97316',
@@ -703,7 +703,7 @@ export const themes = [
         badgeFg: '#ffffff'
       },
       header: {
-        bgColor: '#171717',
+        bgColor: '#262626',
         textColor: '#fafafa',
         iconColor: '#fafafa',
         borderColor: '#404040'
@@ -719,10 +719,10 @@ export const themes = [
       ui: {
         statusBarBg: '#262626',
         footerBg: '#262626',
-        headerBg: '#171717'
+        headerBg: '#262626'
       }
     },
-    previewColors: ['bg-[#171717]', 'bg-[#262626]', 'bg-orange-500']
+    previewColors: ['bg-[#262626]', 'bg-[#262626]', 'bg-orange-500']
   },
   {
     id: 'minimal-gray',
@@ -841,10 +841,10 @@ export const themes = [
     icon: '🔮',
     description: 'Glassmorphism with Purple Glow',
     colors: {
-      '--color-bg-primary': 'rgb(34, 30, 42)', // Purple-tinted Void
-      '--color-tooltip-bg': '#1e1e2e',
-      '--color-bg-secondary': 'rgb(34, 30, 42)',
-      '--color-bg-tertiary': 'rgb(48, 44, 62)',
+      '--color-bg-primary': 'rgb(30, 26, 38)', // Unified Obsidian Background (#1e1a26)
+      '--color-tooltip-bg': '#1e1a26',
+      '--color-bg-secondary': 'rgb(30, 26, 38)',
+      '--color-bg-tertiary': 'rgb(44, 40, 52)',
       '--color-text-primary': '#dcddde',
       '--color-text-secondary': '#999999',
       '--color-text-tertiary': '#666666',
@@ -866,27 +866,27 @@ export const themes = [
       '--color-syntax-comment': '#6a9955',
       '--color-syntax-punctuation': '#d4d4d4',
       // Component Variables
-      '--editor-bg': 'rgb(34, 30, 42)',
+      '--editor-bg': 'rgb(30, 26, 38)',
       '--editor-text': '#dcddde',
       '--gutter-text-color': '#4a4a4a',
-      '--statusbar-bg': 'rgb(34, 30, 42)',
+      '--statusbar-bg': 'rgb(30, 26, 38)',
       '--statusbar-text': '#666666',
-      '--header-bg': 'rgb(34, 30, 42)',
+      '--header-bg': 'rgb(30, 26, 38)',
       '--header-text': '#dcddde',
-      '--sidebar-bg': 'rgb(34, 30, 42)',
+      '--sidebar-bg': 'rgb(30, 26, 38)',
       '--sidebar-border': 'rgb(124, 58, 237)',
-      '--welcome-bg': 'rgb(34, 30, 42)',
+      '--welcome-bg': 'rgb(30, 26, 38)',
       '--welcome-text': '#dcddde',
-      '--gutter-bg-color': 'rgb(34, 30, 42)',
+      '--gutter-bg-color': 'rgb(30, 26, 38)',
       '--gutter-border-color': 'rgb(124, 58, 237)',
-      '--activity-bar-bg': 'rgb(34, 30, 42)',
+      '--activity-bar-bg': 'rgb(30, 26, 38)',
       '--activity-bar-active-fg': '#7c3aed',
       '--activity-bar-inactive-fg': '#404040',
       '--activity-bar-active-border': '#7c3aed',
       '--activity-bar-badge-bg': '#7c3aed',
       '--activity-bar-badge-fg': '#ffffff',
-      background: 'rgb(34, 30, 42)',
-      sidebar: 'rgb(34, 30, 42)',
+      background: 'rgb(30, 26, 38)',
+      sidebar: 'rgb(30, 26, 38)',
       text: '#dcddde',
       accent: '#7c3aed',
       border: 'rgb(124, 58, 237)',
@@ -895,24 +895,24 @@ export const themes = [
       boxShadow: '0 8px 32px 0 rgb(0, 0, 0)'
     },
     settings: {
-      welcome: { welcomePage: 'rgb(22, 22, 22)' },
+      welcome: { welcomePage: '#1e1a26' },
       editor: {
-        editorBgColor: 'rgb(22, 22, 22)'
+        editorBgColor: '#1e1a26'
       },
       gutter: {
-        gutterBgColor: 'rgb(22, 22, 22)',
+        gutterBgColor: '#1e1a26',
         gutterBorderColor: 'rgb(124, 58, 237)',
         gutterBorderWidth: 1
       },
       cursor: { color: '#7c3aed' },
       livePreview: {
-        bgColor: 'rgb(22, 22, 22)',
+        bgColor: '#1e1a26',
         borderColor: 'rgb(124, 58, 237)',
         borderWidth: 1,
         borderRound: 8
       },
       activityBar: {
-        bgColor: 'rgb(32, 32, 32)',
+        bgColor: '#1e1a26',
         activeFg: '#7c3aed',
         inactiveFg: '#404040',
         activeBorder: '#7c3aed',
@@ -920,13 +920,13 @@ export const themes = [
         badgeFg: '#ffffff'
       },
       header: {
-        bgColor: 'rgb(32, 32, 32)',
+        bgColor: '#1e1a26',
         textColor: '#dcddde',
         iconColor: '#9f67ff',
         borderColor: 'rgb(124, 58, 237)'
       },
       sidebar: {
-        bgColor: 'rgb(32, 32, 32)',
+        bgColor: '#1e1a26',
         iconColor: '#7c3aed',
         textColor: '#dcddde',
         borderColor: 'transparent',
@@ -934,10 +934,10 @@ export const themes = [
         visible: true
       },
       ui: {
-        statusBarBg: 'rgb(32, 32, 32)',
-        footerBg: 'rgb(32, 32, 32)',
-        headerBg: 'rgb(32, 32, 32)',
-        commandPaletteBg: 'rgb(22, 22, 22)'
+        statusBarBg: '#1e1a26',
+        footerBg: '#1e1a26',
+        headerBg: '#1e1a26',
+        commandPaletteBg: '#1e1a26'
       }
     },
     previewColors: ['bg-[#1a1a1a]', 'bg-[rgba(32,32,32,0.75)]', 'bg-purple-600']
@@ -1008,24 +1008,24 @@ export const themes = [
       boxShadow: '0 8px 32px 0 rgb(0, 0, 0)'
     },
     settings: {
-      welcome: { welcomePage: 'rgb(30, 41, 59)' },
+      welcome: { welcomePage: '#1e293b' },
       editor: {
-        editorBgColor: 'rgb(15, 23, 42)'
+        editorBgColor: '#1e293b'
       },
       gutter: {
-        gutterBgColor: 'rgb(30, 41, 59)',
+        gutterBgColor: '#1e293b',
         gutterBorderColor: 'rgb(59, 130, 246)',
         gutterBorderWidth: 1
       },
       cursor: { color: '#3b82f6' },
       livePreview: {
-        bgColor: 'rgb(15, 23, 42)',
+        bgColor: '#1e293b',
         borderColor: 'rgb(59, 130, 246)',
         borderWidth: 1,
         borderRound: 8
       },
       activityBar: {
-        bgColor: 'rgb(30, 41, 59)',
+        bgColor: '#1e293b',
         activeFg: '#3b82f6',
         inactiveFg: 'rgb(241, 245, 249)',
         activeBorder: '#3b82f6',
@@ -1033,13 +1033,13 @@ export const themes = [
         badgeFg: '#ffffff'
       },
       header: {
-        bgColor: 'rgb(15, 23, 42)',
+        bgColor: '#1e293b',
         textColor: '#f1f5f9',
         iconColor: '#60a5fa',
         borderColor: 'rgb(59, 130, 246)'
       },
       sidebar: {
-        bgColor: 'rgb(30, 41, 59)',
+        bgColor: '#1e293b',
         iconColor: '#3b82f6',
         textColor: '#f1f5f9',
         borderColor: 'transparent',
@@ -1047,10 +1047,10 @@ export const themes = [
         visible: true
       },
       ui: {
-        statusBarBg: 'rgb(30, 41, 59)',
-        footerBg: 'rgb(30, 41, 59)',
-        headerBg: 'rgb(15, 23, 42)',
-        commandPaletteBg: 'rgb(15, 23, 42)' // More opaque for readability
+        statusBarBg: '#1e293b',
+        footerBg: '#1e293b',
+        headerBg: '#1e293b',
+        commandPaletteBg: '#1e293b'
       }
     },
     previewColors: ['bg-[rgba(15,23,42,0.85)]', 'bg-[rgba(30,41,59,0.75)]', 'bg-blue-500']

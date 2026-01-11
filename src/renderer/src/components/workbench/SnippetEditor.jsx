@@ -601,7 +601,11 @@ const SnippetEditor = ({
   useEffect(() => {
     // TWEAK: Slightly more aggressive update for better "Live" feel
     // while still protecting the thread for massive documents.
-    const wait = code.length > 150000 ? 1200 : code.length > 50000 ? 600 : 300
+    
+    // IF opening preview for the first time, skip debounce
+    const isOpeningPreview = showPreview && !debouncedCode && code
+    const wait = isOpeningPreview ? 0 : (code.length > 150000 ? 1200 : code.length > 50000 ? 600 : 300)
+    
     const timer = setTimeout(() => {
       setDebouncedCode(code)
       // Broadcast live code to Ghost Preview only after debounce
@@ -612,7 +616,7 @@ const SnippetEditor = ({
       )
     }, wait)
     return () => clearTimeout(timer)
-  }, [code, detectedLang, initialSnippet?.id, isDirty])
+  }, [code, detectedLang, initialSnippet?.id, isDirty, showPreview])
 
 
 
@@ -801,7 +805,7 @@ const SnippetEditor = ({
                   {isHeaderVisible && (
                     <div
                       ref={headerRef}
-                      className="absolute top-0 left-0 right-4 z-50 transition-transform will-change-transform pointer-events-none"
+                      className="absolute top-0 left-0 right-4 z-10 transition-transform will-change-transform pointer-events-none"
                     >
                       <div className="pointer-events-auto">
                         <EditorMetadataHeader

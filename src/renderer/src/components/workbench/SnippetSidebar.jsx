@@ -374,7 +374,8 @@ const SnippetSidebar = ({
       setSidebarSelected,
       handleSelectionInternal,
       todayStr,
-      togglePinned
+      togglePinned,
+      folders
     }),
     [
       treeItems,
@@ -385,7 +386,8 @@ const SnippetSidebar = ({
       isCompact,
       isSidebarSelected,
       dirtyIds,
-      todayStr
+      todayStr,
+      folders
     ]
   )
 
