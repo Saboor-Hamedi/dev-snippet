@@ -266,10 +266,13 @@ const SnippetEditor = ({
     }
   }, [])
 
+  // Header visibility logic
+  const isHeaderVisible = ((!isReadOnly && !initialSnippet?.readOnly && initialSnippet?.id !== 'system:settings' && initialSnippet?.id !== 'system:default-settings') || isCreateMode)
+
   // Memoize style to prevent CodeEditor re-renders on title change
   const editorStyle = useMemo(() => ({
-    '--editor-content-padding-top': `${headerHeight}px`
-  }), [headerHeight])
+    '--editor-content-padding-top': isHeaderVisible ? `${headerHeight}px` : '10px'
+  }), [headerHeight, isHeaderVisible])
 
   // Mode cycling logic - Defined EARLY to be used in handlers
   const cycleMode = useCallback(() => {
@@ -417,7 +420,7 @@ const SnippetEditor = ({
       const isTable =
         (oldSlice.includes('|') && oldSlice.includes('---')) ||
         (initialCode.includes('|') && initialCode.includes('---'))
-      if (isTable) {
+      if (isTable && initialSnippet?.id !== 'system:settings' && initialSnippet?.id !== 'system:default-settings') {
         openModal({
           title: 'Visual Table Editor',
           width: '90vw',
@@ -781,7 +784,7 @@ const SnippetEditor = ({
               left={
                 <div className="flex flex-col h-full w-full relative">
                   {/* SEAMLESS METADATA HEADER (Obsidian Style) - Absolute & Scrollable */}
-                  {((!isReadOnly && !initialSnippet?.readOnly) || isCreateMode) && (
+                  {isHeaderVisible && (
                     <div
                       ref={headerRef}
                       className="absolute top-0 left-0 right-4 z-50 transition-transform will-change-transform pointer-events-none"

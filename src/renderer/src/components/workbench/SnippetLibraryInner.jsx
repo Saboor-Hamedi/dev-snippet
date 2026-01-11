@@ -595,7 +595,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
             is_draft: false
           }
           setSelectedSnippet(virtual)
-          navigateTo('editor')
+          navigateTo('snippets')
           // showToast('Opened configuration for advanced editing', 'info')
         } catch (err) {
           showToast('Failed to load settings from disk', 'error')
@@ -618,8 +618,8 @@ const SnippetLibraryInner = ({ snippetData }) => {
             readOnly: true
           }
           setSelectedSnippet(virtual)
-          navigateTo('editor')
-          showToast('Opened default settings (read-only)', 'info')
+          navigateTo('snippets')
+          // showToast('Opened default settings (read-only)', 'info')
         } catch (err) {
           showToast('Failed to load default settings', 'error')
         }
