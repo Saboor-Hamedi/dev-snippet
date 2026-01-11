@@ -273,7 +273,7 @@ const SnippetLibraryInner = ({ snippetData }) => {
     if (
       selectedSnippet?.id === 'system:settings' &&
       !dirtySnippetIds.has('system:settings') &&
-      !isFocused &&
+      !window.__isSavingSettings &&
       settings
     ) {
       try {

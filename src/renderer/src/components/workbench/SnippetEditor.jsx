@@ -128,6 +128,20 @@ const SnippetEditor = ({
     isDuplicate
   } = editorState
 
+  // --- SYSTEM SETTINGS SYNC ---
+  // Force the editor to reflect background changes (like theme switching) 
+  // for virtual files that have stable IDs.
+  useEffect(() => {
+    if (
+      initialSnippet?.id === 'system:settings' && 
+      !isDirty && 
+      !window.__isSavingSettings && 
+      initialSnippet.code !== code
+    ) {
+      setCode(initialSnippet.code)
+    }
+  }, [initialSnippet?.code, isDirty, setCode])
+
   const autoSaveEnabled = settings?.behavior?.autoSave !== false
 
   const editorSave = useEditorSave({

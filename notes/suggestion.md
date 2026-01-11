@@ -420,6 +420,39 @@ Pasting very large snippets (50,000+ lines or characters) caused three issues:
 
 ---
 
+## ✅ SOLVED: Virtual Settings Editor & Smart Sync
+
+### The Challenge
+
+The `settings.json` virtual editor suffered from three UX issues:
+1. **Visual Clutter**: The `EditorMetadataHeader` (Title/Tags) was visible, which is redundant for system settings.
+2. **Layout Inefficiency**: Even when hidden, a "ghost" padding of 120px remained at the top of the editor.
+3. **Synchronization Deadlock**: Changes made in the UI (like theme switching) wouldn't reflect in the editor if it was open, and manual saves caused the cursor to "jump" to the top of the file.
+
+### The Solution
+
+- **Context-Aware Layout**: Implemented `isHeaderVisible` logic in `SnippetEditor.jsx`. When editing system files, the header is unmounted, and `--editor-content-padding-top` is dynamically reduced to a slim `10px`.
+- **Navigation Shift**: Updated `SnippetLibraryInner.jsx` to open settings using the `'snippets'` view instead of `'editor'`. This allows the workbench to treat it as an existing file rather than a "New Snippet" creation flow, unlocking accurate ID-based logic.
+- **Bi-Directional Smart Sync**:
+  - **The "Identity Lock" Break**: Added a dedicated `useEffect` in `SnippetEditor.jsx` that watches for `initialSnippet.code` updates. This allows background settings changes (themes, font sizes) to "flow" into the editor instantly.
+  - **The "Jumping" Shield**: Re-implemented the `window.__isSavingSettings` global shield. It is now shared between the conducter and the editor. During a manual save, the application blocks the "Saved-Rebound" effect (where the reformatted code tries to re-sync into the editor), ensuring the cursor stays exactly at the last edited character.
+- **Focus Respect**: The sync engine only overwrites the editor if the file is not "dirty" (unsaved typing), preserving user input.
+
+### Result
+
+- ✅ **Clean UI**: Settings now start from the very top of the window with no redundant headers.
+- ✅ **Live Theme Previews**: Switching themes in the sidebar instantly updates the JSON text in the editor.
+- ✅ **No More Jumps**: Manual saves are stable and transparent to the user.
+
+### Files Modified
+
+- `src/renderer/src/components/workbench/SnippetLibraryInner.jsx`
+- `src/renderer/src/components/workbench/SnippetEditor.jsx`
+- `src/renderer/src/components/preference/ThemeSelector.jsx`
+
+---
+
+
 ## ✅ SOLVED: WikiLink Navigation & Robustness
 
 ### The Challenge
