@@ -274,7 +274,6 @@ const SnippetLibraryInner = ({ snippetData }) => {
       selectedSnippet?.id === 'system:settings' &&
       !dirtySnippetIds.has('system:settings') &&
       !isFocused &&
-      !window.__isSavingSettings && // BLOCK SYNC DURING/AFTER MANUAL SAVE
       settings
     ) {
       try {

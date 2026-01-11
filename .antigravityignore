@@ -1,0 +1,15 @@
+# Core Editor & Logic (The "Do Not Touch" List)
+src/renderer/src/components/CodeEditor/
+src/renderer/src/components/livepreview/
+src/renderer/src/components/workbench/editor/
+src/renderer/src/config/SettingManager.js
+src/renderer/src/config/settingsManager.js
+
+# Global Styles & Assets
+src/renderer/src/assets/css/
+src/renderer/src/assets/index.css
+
+# Backend & Database Kernels
+src/main/
+
+
