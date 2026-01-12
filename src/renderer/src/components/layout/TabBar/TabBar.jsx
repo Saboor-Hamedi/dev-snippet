@@ -15,7 +15,7 @@ const TabBar = ({
     <div className="tab-bar-container">
       <div className="tab-scroll-container">
         {tabs.map((tab) => {
-          const { icon: FileIcon, color } = getFileIcon(null, tab.title || '')
+          const { icon: FileIcon, color } = getFileIcon(tab.language, tab.title || '')
           return (
             <div
               key={tab.id}

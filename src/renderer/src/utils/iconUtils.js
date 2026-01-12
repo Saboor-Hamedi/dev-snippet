@@ -127,10 +127,13 @@ export const getFileIcon = (lang, title = '') => {
 
   // 3. Language Priority (Crucial for snippets!)
   // If the user explicitly set a language (other than basic markdown), obey it.
-  if (lang && mapping[lang] && lang !== 'markdown') {
+  // if (lang && mapping[lang] && lang !== 'markdown') {
+  //   return mapping[lang]
+  // }
+
+  if (lang && mapping[lang]) {
     return mapping[lang]
   }
-
   // 4. Semantic Title Matching (Heuristics for .md files)
   const lowerBase = baseName.toLowerCase()
 

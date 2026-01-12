@@ -144,6 +144,37 @@ const SnippetEditor = ({
 
   const autoSaveEnabled = settings?.behavior?.autoSave !== false
 
+
+ 
+  // --- DETECT LANGUAGE ---
+  const detectedLang = useMemo(() => {
+    const safeTitle = typeof title === 'string' ? title : ''
+    const ext = safeTitle.includes('.') ? safeTitle.split('.').pop()?.toLowerCase() : null
+    let lang = ext || 'plaintext'
+    if (!ext && code) {
+      const trimmed = code.substring(0, 500).trim()
+      if (
+        trimmed.startsWith('# ') ||
+        trimmed.startsWith('## ') ||
+        trimmed.startsWith('### ') ||
+        trimmed.startsWith('- ') ||
+        trimmed.startsWith('* ') ||
+        trimmed.startsWith('```') ||
+        trimmed.startsWith('>') ||
+        trimmed.includes('**') ||
+        trimmed.includes(']]')
+      ) {
+        lang = 'markdown'
+      }
+    }
+    return lang
+  }, [title, code.substring(0, 20)])
+
+  // WRAPPER: Ensure the system receives the detected language on the first save
+  const handleOnSave = useCallback((item) => {
+    onSave({ ...item, language: detectedLang })
+  }, [onSave, detectedLang])
+
   const editorSave = useEditorSave({
     code,
     title,
@@ -151,7 +182,7 @@ const SnippetEditor = ({
     currentTagInput,
     initialSnippet,
     autoSaveEnabled,
-    onSave,
+    onSave: handleOnSave, // Use the wrapper
     isDuplicate,
     getSetting,
     showToast,
@@ -575,28 +606,8 @@ const SnippetEditor = ({
 
   // Debounced code for live preview
   const [debouncedCode, setDebouncedCode] = useState(code)
-  // Stabilize language detection so the editor doesn't re-mount on every keystroke
-  const detectedLang = useMemo(() => {
-    const safeTitle = typeof title === 'string' ? title : ''
-    const ext = safeTitle.includes('.') ? safeTitle.split('.').pop()?.toLowerCase() : null
-    let lang = ext || 'plaintext'
-    if (!ext && code) {
-      const trimmed = code.substring(0, 500).trim()
-      if (
-        trimmed.startsWith('# ') ||
-        trimmed.startsWith('## ') ||
-        trimmed.startsWith('### ') ||
-        trimmed.startsWith('- ') ||
-        trimmed.startsWith('* ') ||
-        trimmed.startsWith('```') ||
-        trimmed.startsWith('>') ||
-        trimmed.includes('**') ||
-        trimmed.includes(']]')
-      ) {
-        lang = 'markdown'
-      }
-    }
-  }, [title, code.substring(0, 20)]) // Re-detect if title or start of code changes
+
+
 
   const lastSnippetIdRef = useRef(initialSnippet?.id)
 

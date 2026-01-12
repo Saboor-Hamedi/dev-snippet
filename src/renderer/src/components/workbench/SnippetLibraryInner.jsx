@@ -1023,11 +1023,9 @@ const SnippetLibraryInner = ({ snippetData }) => {
               if (item._skipSelectionSwitch) return
 
               if (isCreatingSnippet && item.id === selectedSnippet?.id) {
-                if (item.language === 'markdown' && !item.title.endsWith('.md')) {
-                   item.title = item.title + '.md'
-                }
+                // Check the code content directly since 'language' is still 'plaintext'
                 setIsCreatingSnippet(false)
-                setSelectedSnippet(item)
+                setSelectedSnippet(item) // Tab receives "markdown" tag immediately
               }
               if (wasForce) window.__forceSave = false
               setAutosaveStatus('saved')
