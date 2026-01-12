@@ -45,57 +45,20 @@ const FlowPreview = ({ selectedSnippet, snippets, fontFamily, show }) => {
     return () => window.removeEventListener('app:code-update', handler)
   }, [])
 
-  // --- External Custom Scroll Sync (Lerp Smoothing) ---
-  // Fixes "shaking" by interpolating movement instead of jumping to noisy targets
+  // --- External Custom Scroll Sync (Direct & Stable) ---
   useEffect(() => {
-    let rafId = null
-    const targetPercentageRef = React.useRef(null)
-    const isAnimatingRef = React.useRef(false)
-
-    const updateScroll = () => {
-      const container = containerRef.current
-      if (!container || targetPercentageRef.current === null) {
-        isAnimatingRef.current = false
-        return
-      }
-
-      const currentScroll = container.scrollTop
-      const maxScroll = container.scrollHeight - container.clientHeight
-      const targetScroll = maxScroll * targetPercentageRef.current
-      
-      // Lerp: Move 20% of the way to target per frame (Smooths jitter)
-      const diff = targetScroll - currentScroll
-      
-      // Stop if close enough (0.5px)
-      if (Math.abs(diff) < 0.5) {
-        container.scrollTop = targetScroll
-        isAnimatingRef.current = false
-        targetPercentageRef.current = null // Idle
-        return
-      }
-
-      // Apply smoothed step
-      container.scrollTop = currentScroll + (diff * 0.2)
-      rafId = requestAnimationFrame(updateScroll)
-    }
-
     const handleSync = (e) => {
       const percentage = e.detail?.percentage
-      if (typeof percentage !== 'number') return
+      const container = containerRef.current
+      if (typeof percentage !== 'number' || !container) return
 
-      targetPercentageRef.current = percentage
-      
-      if (!isAnimatingRef.current) {
-        isAnimatingRef.current = true
-        rafId = requestAnimationFrame(updateScroll)
-      }
+      const maxScroll = container.scrollHeight - container.clientHeight
+      // Math.round is crucial - it stops the "sub-pixel" vibrating/shaking
+      container.scrollTop = Math.round(maxScroll * percentage)
     }
 
     window.addEventListener('app:editor-scroll', handleSync)
-    return () => {
-      window.removeEventListener('app:editor-scroll', handleSync)
-      if (rafId) cancelAnimationFrame(rafId)
-    }
+    return () => window.removeEventListener('app:editor-scroll', handleSync)
   }, [])
 
   // Scientific Stats Calculation

@@ -335,14 +335,12 @@ const LivePreview = ({
       shadowContentRef.current = contentContainer
       if (onContentReady) onContentReady(contentContainer)
 
-      // 1. Initial Scroll Preservation
+      // 1. Initial Scroll Preservation (Synchronous to prevent flicker)
       if (typeof lastScrollPercentage.current === 'number') {
-        requestAnimationFrame(() => {
-          const scrollTarget =
-            (contentContainer.scrollHeight - contentContainer.clientHeight) *
-            lastScrollPercentage.current
-          contentContainer.scrollTop = scrollTarget
-        })
+        const max = contentContainer.scrollHeight - contentContainer.clientHeight
+        if (max > 0) {
+          contentContainer.scrollTop = Math.round(max * lastScrollPercentage.current)
+        }
       }
 
       // Mermaid rendering removed - diagrams will display as code blocks
