@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Send, User, Bot, Sparkles, FileText, Eraser, Terminal, Zap } from 'lucide-react'
+import { Send, User, Bot, Sparkles, FileText, Eraser, Terminal, Zap, Copy, Check } from 'lucide-react'
 import './AIPilot.css'
 import { useSettings } from '../../hook/useSettingsContext'
 import { useToast } from '../../hook/useToast'
@@ -48,6 +48,28 @@ const AIMessageContent = ({ content }) => {
       {content}
     </div>
   )
+}
+
+const CopyButton = ({ content }) => {
+    const [copied, setCopied] = useState(false)
+    
+    const handleCopy = () => {
+        navigator.clipboard.writeText(content)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+    }
+
+    return (
+        <button 
+           onClick={handleCopy}
+           className="clean-copy-btn flex items-center gap-2 px-0 py-1 text-left opacity-60 hover:opacity-100 transition-opacity bg-transparent hover:bg-transparent theme-exempt text-[10px] uppercase font-bold tracking-wider text-[var(--color-text-secondary)] hover:text-[var(--color-accent-primary)]"
+           title="Copy full response"
+           style={{ backgroundColor: 'transparent', border: 'none', boxShadow: 'none' }}
+        >
+            {copied ? <Check size={12} /> : <Copy size={12} />}
+            <span>{copied ? 'Copied' : 'Copy'}</span>
+        </button>
+    )
 }
 
 /**
@@ -269,6 +291,11 @@ const AIPilot = ({ scale, selectedSnippet }) => {
                 <div className="prose prose-sm dark:prose-invert">
                   <AIMessageContent content={msg.content} />
                 </div>
+                {msg.role === 'assistant' && (
+                  <div className="flex justify-end mt-2 pt-2 border-t border-[rgba(255,255,255,0.05)]">
+                     <CopyButton content={msg.content} />
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -340,7 +367,7 @@ const AIPilot = ({ scale, selectedSnippet }) => {
             </button>
           </div>
         </div>
-        <div className="mt-3 flex justify-center opacity-20 text-[9px] uppercase tracking-[0.2em] font-bold pointer-events-none">
+        <div className="ai-pilot-footer-text">
           Powered by DeepSeek AI
         </div>
       </div>

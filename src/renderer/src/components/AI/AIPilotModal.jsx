@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react'
 import ReactDOM from 'react-dom'
 import AIPilot from './AIPilot'
-import { Sparkles, Smartphone, Tablet, Monitor, X } from 'lucide-react'
+import { Sparkles, Smartphone, Tablet, Monitor } from 'lucide-react' // X is handled by WindowControls
 import { useSettings } from '../../hook/useSettingsContext'
+import WindowControls from '../universal/WindowControls'
 
 /**
  * AIPilotModal
@@ -24,6 +25,17 @@ const AIPilotModal = ({ isOpen, onClose, selectedSnippet }) => {
     }
   }, [settings.ai?.pilotScale])
 
+  // Handle Escape Key to Close
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (isOpen && e.key === 'Escape') {
+        onClose()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose])
+
   if (!isOpen) return null
 
   // Calculate Dimensions based on scale
@@ -34,7 +46,7 @@ const AIPilotModal = ({ isOpen, onClose, selectedSnippet }) => {
         flexDirection: 'column',
         backgroundColor: 'var(--color-bg-primary)',
         border: '1px solid var(--color-border)',
-        boxShadow: '0 50px 100px -20px rgba(0, 0, 0, 0.5), 0 30px 60px -30px rgba(0, 0, 0, 0.6)',
+        boxShadow: 'none', /* No shadow as requested */
         overflow: 'hidden',
         zIndex: 9999, // Always on top
         color: 'var(--color-text-primary)'
@@ -43,12 +55,12 @@ const AIPilotModal = ({ isOpen, onClose, selectedSnippet }) => {
     if (scale === 100) {
         return {
             ...common,
-            width: '100vw',
-            height: '100vh',
-            top: 0,
-            left: 0,
+            width: '95vw',
+            height: '95vh',
+            top: '50%',
+            left: '50%',
             borderRadius: 0,
-            transform: 'none'
+            transform: 'translate(-50%, -50%)'
         }
     }
 
@@ -71,14 +83,14 @@ const AIPilotModal = ({ isOpen, onClose, selectedSnippet }) => {
         height: '80vh',
         top: '50%',
         left: '50%',
-        borderRadius: '12px',
-        transform: 'translate(-50%, -50%)'
+        transform: 'translate(-50%, -50%)',
+        borderRadius: 0
     }
   }
 
   // Simple Drag Logic
   const handleMouseDown = (e) => {
-    if (scale === 100) return // No drag in full screen
+    // Removed scale === 100 restrict
     if (e.target.closest('button') || e.target.closest('.no-drag')) return
 
     isDragging.current = true
@@ -110,7 +122,8 @@ const AIPilotModal = ({ isOpen, onClose, selectedSnippet }) => {
   const handleMouseUp = () => {
     isDragging.current = false
     if (modalRef.current) {
-        modalRef.current.style.transition = 'width 0.3s, height 0.3s' // Re-enable transitions for resizing
+        // Re-enable transitions for resizing, but carefully to avoid jumpiness
+        modalRef.current.style.transition = 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1), height 0.3s cubic-bezier(0.4, 0, 0.2, 1)' 
     }
     window.removeEventListener('mousemove', handleMouseMove)
     window.removeEventListener('mouseup', handleMouseUp)
@@ -119,64 +132,61 @@ const AIPilotModal = ({ isOpen, onClose, selectedSnippet }) => {
   // Render via Portal to Body to escape all parent stacking contexts
   return ReactDOM.createPortal(
     <div className="fixed inset-0 z-[9000] pointer-events-none">
-      {/* Overlay (only active for full screen or if we want modal blocking) */}
-      {/* We keep overlay transparent and non-blocking for 'floating' feel except in full screen maybe? 
-          Actually, standard modal usually has overlay. Let's add a subtle one that closes on click?
-          User didn't specify, but for safety let's make it non-blocking so they can see snippet behind it?
-          Wait, if it's a "Pilot", maybe they want to type in editor while this is open.
-          Let's make overlay pointer-events-none unless we decide otherwise. 
-          Actually current implementation had UniversalModal which usually blocks. 
-          Let's assume NO blocking overlay for true 'Pilot' feel, just the window.
-      */}
-      
       <div 
         ref={modalRef}
-        style={{ ...getStyle(), pointerEvents: 'auto', transition: 'width 0.3s, height 0.3s, border-radius 0.3s' }}
+        style={{ 
+            ...getStyle(), 
+            pointerEvents: 'auto', 
+            transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1), height 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            borderRadius: 0 // Explicitly Square
+        }}
         className="ai-pilot-standalone-window font-sans"
       >
         {/* HEADER */}
         <div 
-            className="flex items-center justify-between h-9 px-3 border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)] select-none cursor-grab active:cursor-grabbing flex-shrink-0"
+            className="flex items-center justify-between h-9 px-0 bg-[var(--color-bg-secondary)] select-none cursor-grab active:cursor-grabbing flex-shrink-0"
             onMouseDown={handleMouseDown}
         >
-            <div className="flex items-center gap-2 text-[11px] font-bold tracking-widest opacity-80 uppercase">
-                <Sparkles size={12} className="text-[var(--color-accent-primary)]" />
-                <span>AI Pilot</span>
+            <div className="flex items-center gap-2 pl-3 text-[13px] font-semibold text-[var(--color-text-primary)]">
+                <Sparkles size={14} className="text-[var(--color-accent-primary)]" />
+                <span>AI PILOT</span>
             </div>
 
-            <div className="flex items-center gap-2 no-drag">
-                <div className="flex items-center bg-[var(--color-bg-primary)] rounded border border-[var(--color-border)] overflow-hidden h-6">
+            <div className="flex items-center gap-1 pr-0 no-drag h-full">
+                <div className="flex items-center gap-0.5 mr-0">
                     <button 
                         onClick={() => updateSetting('ai.pilotScale', 50)}
-                        className={`px-2 h-full flex items-center justify-center hover:bg-white/5 transition-colors ${scale === 50 ? 'bg-[var(--color-accent-primary)] text-white' : 'text-[var(--color-text-tertiary)]'}`}
-                        title="Mobile"
+                        className={`p-1.5 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors ${scale === 50 ? 'text-[var(--color-accent-primary)]' : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]'}`}
+                        title="Mobile View (50%)"
                     >
-                        <Smartphone size={10} />
+                        <Smartphone size={14} />
                     </button>
-                    <div className="w-[1px] h-full bg-[var(--color-border)]" />
                     <button 
                         onClick={() => updateSetting('ai.pilotScale', 75)}
-                        className={`px-2 h-full flex items-center justify-center hover:bg-white/5 transition-colors ${scale === 75 ? 'bg-[var(--color-accent-primary)] text-white' : 'text-[var(--color-text-tertiary)]'}`}
-                        title="Tablet"
+                        className={`p-1.5 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors ${scale === 75 ? 'text-[var(--color-accent-primary)]' : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]'}`}
+                        title="Tablet View (75%)"
                     >
-                        <Tablet size={10} />
+                        <Tablet size={14} />
                     </button>
-                    <div className="w-[1px] h-full bg-[var(--color-border)]" />
                     <button 
-                         onClick={() => updateSetting('ai.pilotScale', 100)}
-                         className={`px-2 h-full flex items-center justify-center hover:bg-white/5 transition-colors ${scale === 100 ? 'bg-[var(--color-accent-primary)] text-white' : 'text-[var(--color-text-tertiary)]'}`}
-                         title="Desktop"
+                            onClick={() => updateSetting('ai.pilotScale', 100)}
+                            className={`p-1.5 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors ${scale === 100 ? 'text-[var(--color-accent-primary)]' : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]'}`}
+                            title="Desktop View (100%)"
                     >
-                        <Monitor size={10} />
+                        <Monitor size={14} />
                     </button>
                 </div>
-                
-                <button 
-                    onClick={onClose}
-                    className="h-6 w-6 flex items-center justify-center rounded hover:bg-red-500/20 hover:text-red-500 text-[var(--color-text-tertiary)] transition-colors"
-                >
-                    <X size={14} />
-                </button>
+
+                {/* Standard Window Controls for Close - 'app' variant gives wider hit target */}
+                <div className="h-full flex items-center">
+                    <WindowControls 
+                        showMinimize={false}
+                        showMaximize={false}
+                        showClose={true}
+                        onClose={onClose}
+                        variant="app" 
+                    />
+                </div>
             </div>
         </div>
 

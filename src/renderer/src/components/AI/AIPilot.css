@@ -86,8 +86,8 @@
 }
 
 .ai-message-bubble {
-  padding: 12px 16px;
-  border-radius: 5px;
+  padding: 8px 10px; /* Reduced padding */
+  border-radius: 5px; /* Subtle 2px roundness */
   font-size: 13px;
   line-height: 1.6;
   position: relative;
@@ -96,20 +96,23 @@
   word-wrap: break-word;
   word-break: break-word;
   min-width: 0;
+  
+  /* CRITICAL: Ensure text is selectable */
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  cursor: auto;
 }
 
 .user .ai-message-bubble {
   background: var(--color-bg-tertiary);
-  border: 1px solid var(--color-border);
+  border: none; /* Removed border entirely */
   color: var(--color-text-primary);
-  border-bottom-right-radius: 0px;
 }
 
 .assistant .ai-message-bubble {
   background: rgba(var(--color-accent-primary-rgb), 0.05);
   border: 1px solid rgba(var(--color-accent-primary-rgb), 0.1);
   color: var(--color-text-primary);
-  border-bottom-left-radius: 0px;
 }
 
 .ai-message-avatar {
@@ -125,6 +128,20 @@
 
 .user .ai-message-avatar {
   flex-direction: row-reverse;
+}
+
+.ai-pilot-footer-text {
+  position: absolute;
+  bottom: 8px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  opacity: 0.15;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  pointer-events: none;
 }
 
 /* Thinking State */
@@ -167,45 +184,57 @@
 
 /* Input Area */
 .ai-pilot-input-wrapper {
-  padding: 30px 40px;
-  background: linear-gradient(to top, var(--color-bg-primary) 80%, transparent);
+  margin-top: auto;
+  padding: 10px 30px 40px 30px; /* Brought down */
+  background: var(--color-bg-primary);
+  border-top: none; /* No top border */
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
 }
 
+/* Container: The box wrapping the textarea */
 .ai-pilot-input-container {
-  background: var(--color-bg-secondary);
-  /* border: 1px solid var(--color-border); */
-  border-radius: 0px;
-  padding: 8px 12px;
+  background-color: var(--color-bg-secondary);
+  border: none !important; /* NUCLEAR option: No borders ever */
+  border-radius: 0px !important; /* Strictly square */
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.2s ease; /* Only animate background */
+  box-shadow: none !important;
+  outline: none !important;
 }
 
+/* Focus State: ONLY background change, no borders/shadows/outlines */
 .ai-pilot-input-container:focus-within {
-  /* Force override any inherited focus background */
-  background-color: var(--color-bg-secondary) !important;
+  background-color: var(--color-bg-primary) !important; 
+  border-color: transparent !important;
   box-shadow: none !important;
-  border-color: var(--color-border) !important;
+  outline: none !important;
+  border-radius: 0px !important;
 }
 
 .ai-pilot-textarea {
   background: transparent;
-  border: none;
+  border: none !important;
   color: var(--color-text-primary);
-  font-size: inherit;
+  font-size: 13px; 
   resize: none;
-  min-height: 40px;
-  max-height: 150px;
-  outline: none;
+  min-height: 48px; 
+  max-height: 200px;
+  outline: none !important; 
   line-height: 1.5;
   width: 100%;
-  padding: 5px;
+  padding: 5px; /* Added padding to prevent text hugging left edge */
+  box-shadow: none !important;
+  border-radius: 0px !important;
 }
 
 .ai-pilot-textarea::selection {
-  background: transparent !important;
+  background: transparent !important; /* User explicitly requested transparent selection */
 }
 
 .ai-pilot-input-actions {
@@ -218,8 +247,6 @@
 }
 
 .ai-action-btn {
-  padding: 6px 12px;
-  border-radius: 6px;
   font-size: 11px;
   font-weight: 600;
   display: flex;
@@ -230,6 +257,18 @@
   background: transparent;
   border: 1px solid transparent;
   color: var(--color-text-secondary);
+}
+
+/* Clean Copy Button - Nuclear transparent override */
+.clean-copy-btn,
+.clean-copy-btn:hover,
+.clean-copy-btn:active,
+.clean-copy-btn:focus {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
 
 .ai-action-btn:hover {
