@@ -20,11 +20,11 @@ export const useSidebarStore = create((set) => ({
       isSidebarSelected: false
     }),
 
-  setSelectedIds: (ids) =>
-    set({
-      selectedIds: ids,
+  setSelectedIds: (idsOrFn) =>
+    set((state) => ({
+      selectedIds: typeof idsOrFn === 'function' ? idsOrFn(state.selectedIds) : idsOrFn,
       isSidebarSelected: false
-    }),
+    })),
 
   setSearchQuery: (query) =>
     set({

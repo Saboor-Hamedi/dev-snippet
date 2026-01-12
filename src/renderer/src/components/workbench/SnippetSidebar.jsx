@@ -347,6 +347,17 @@ const SnippetSidebar = ({
     return () => ro.disconnect()
   }, [containerHeight])
 
+  // --- 🎯 Auto-scroll to Creation Input (VS Code behavior) ---
+  React.useEffect(() => {
+    // Find the creation input in the tree
+    const creationInputIndex = treeItems.findIndex(item => item.type === 'creation_input')
+    
+    if (creationInputIndex !== -1 && listRef.current) {
+      // Scroll to the creation input
+      listRef.current.scrollToItem(creationInputIndex, 'smart')
+    }
+  }, [treeItems])
+
   // --- ⚙️ Memoized Item Data (VirtualList Perf) ---
   const itemData = React.useMemo(
     () => ({
@@ -484,7 +495,9 @@ const SnippetSidebar = ({
               : 'transparent',
             boxShadow: isDragOver
               ? 'inset 0 0 40px rgba(var(--color-accent-primary-rgb), 0.1), inset 0 0 0 1px var(--color-accent-primary)'
-              : 'none'
+              : isSidebarSelected && selectedIds.length === 0 && !selectedFolderId
+                ? 'inset 0 0 0 1px rgba(var(--color-accent-primary-rgb, 59, 130, 246), 0.08)'
+                : 'none'
           }}
           tabIndex={0}
           // prettier-ignore
@@ -493,8 +506,8 @@ const SnippetSidebar = ({
             if (e.target === e.currentTarget) {
               setSidebarSelected(true)
               setSelectedIds([])
-              onSelect(null)
               setSelectedFolderId(null)
+              onSelect(null) // This clears selectedSnippet
             }
           }}
           onContextMenu={(e) => handleContextMenu(e, 'background', null)}

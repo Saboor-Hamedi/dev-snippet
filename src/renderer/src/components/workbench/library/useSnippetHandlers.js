@@ -158,13 +158,20 @@ export const useSnippetHandlers = ({
           const snippetIds = ids.filter((id) => snippets.some((s) => s.id === id))
           const folderIds = ids.filter((id) => folders.some((f) => f.id === id))
 
-          if (snippetIds.length > 0) await deleteItems(snippetIds)
+          if (snippetIds.length > 0) {
+            await deleteItems(snippetIds)
+            // Explicitly close editor if we just deleted the active snippet
+            // Using loose comparison to handle number vs string ID mismatches
+            if (selectedSnippet && snippetIds.some(id => String(id) === String(selectedSnippet.id))) {
+              setSelectedSnippet(null)
+            }
+          }
           if (folderIds.length > 0) await deleteFolders(folderIds)
         },
         ids.length > 1 ? `${ids.length} items` : 'item'
       )
     },
-    [deleteItems, deleteFolders, openDeleteModal, snippets, folders]
+    [deleteItems, deleteFolders, openDeleteModal, snippets, folders, selectedSnippet, setSelectedSnippet]
   )
 
   const handleInlineRenameSnippet = useCallback(

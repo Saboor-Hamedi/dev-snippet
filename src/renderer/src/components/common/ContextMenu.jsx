@@ -64,13 +64,13 @@ const ContextMenu = ({ x, y, items, onClose }) => {
   return (
     <div
       ref={menuRef}
-      className="fixed z-[9999] min-w-[160px] max-w-[calc(100vw-20px)] max-h-[85vh] overflow-y-auto rounded-[5px] py-1 animate-in fade-in zoom-in-95 duration-75 ease-out select-none scrollbar-hide"
+      className="fixed z-[9999] min-w-[160px] max-w-[calc(100vw-20px)] max-h-[85vh] overflow-y-auto rounded-[5px] py-1 select-none scrollbar-hide border border-[var(--color-border)]"
       style={{
         ...style,
         backgroundColor: 'rgb(var(--color-bg-primary-rgb, 13, 17, 23))',
-        border: 'none',
+        border: '1px solid var(--color-border)',
         backdropFilter: 'none',
-        boxShadow: '0 12px 32px rgba(0, 0, 0, 0.6)'
+        boxShadow: 'none'
       }}
     >
       <div className="flex flex-col">

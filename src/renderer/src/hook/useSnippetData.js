@@ -160,7 +160,7 @@ export const useSnippetData = () => {
         setTrash((prev) => [{ ...isSnippet, deleted_at: Date.now() }, ...prev])
 
         if (selectedSnippet?.id === id) {
-          setSelectedSnippet(next.length ? next[0] : null)
+          setSelectedSnippet(null)
         }
         showToast('✓ Snippet moved to trash')
       } else if (isProject && window.api?.deleteProject) {
@@ -170,7 +170,7 @@ export const useSnippetData = () => {
         showToast('✓ Project deleted')
 
         if (selectedSnippet?.id === id) {
-          setSelectedSnippet(next.length ? next[0] : null)
+          setSelectedSnippet(null)
         }
       }
     } catch (error) {
@@ -197,7 +197,7 @@ export const useSnippetData = () => {
         ...prev
       ])
 
-      if (selectedSnippet && ids.includes(selectedSnippet.id)) {
+      if (selectedSnippet && ids.some(id => String(id) === String(selectedSnippet.id))) {
         setSelectedSnippet(null)
       }
       showToast(`✓ ${snippetsToDelete.length} items moved to trash`)

@@ -131,16 +131,6 @@ export const useSidebarLogic = ({
     ) => {
       let levelResult = []
 
-      // INJECTION POINT: Dynamic Creation Input Row
-      if (createState && (createState.parentId || null) == (parentId || null)) {
-        levelResult.push({
-          id: 'TEMP_CREATION_INPUT',
-          type: 'creation_input',
-          depth,
-          data: { type: createState.type, parentId }
-        })
-      }
-
       // 1. Process Folders at this level (Lookup from Index)
       const levelFolders = (indexedFolders.get(parentId) || [])
         .sort((a, b) => {
@@ -150,7 +140,10 @@ export const useSidebarLogic = ({
         })
 
       levelFolders.forEach((folder) => {
-        const isExpanded = folder.collapsed === 0 || folder.collapsed === false
+        // Auto-expand folder if we're creating something inside it
+        const shouldAutoExpand = createState && createState.parentId === folder.id
+        const isExpanded = shouldAutoExpand || folder.collapsed === 0 || folder.collapsed === false
+        
         levelResult.push({
           id: folder.id,
           type: 'folder',
@@ -186,6 +179,16 @@ export const useSidebarLogic = ({
           isEditing: editingId === snippet.id
         })
       })
+
+      // INJECTION POINT: Dynamic Creation Input Row (at the END of the level)
+      if (createState && (createState.parentId || null) == (parentId || null)) {
+        levelResult.push({
+          id: 'TEMP_CREATION_INPUT',
+          type: 'creation_input',
+          depth,
+          data: { type: createState.type, parentId }
+        })
+      }
 
       return levelResult
     }

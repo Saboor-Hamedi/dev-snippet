@@ -163,11 +163,12 @@ const CreationInputRow = ({
 
   return (
     <div style={style} className="z-20">
+      {/* Snippet input for name */}
       <div
         className="flex items-center w-full h-full pl-0 select-none animate-in fade-in slide-in-from-left-2 duration-200"
-        style={{ paddingLeft: `${depth * 16 + (isFolder ? 8 : 42)}px` }}
+        style={{ paddingLeft: `${depth * 16 + (isFolder ? 8 : 24)}px` }}
       >
-        <div className="flex-1 flex items-center bg-[var(--color-bg-primary)] h-[22px] rounded-sm ring-1 ring-[var(--color-accent-primary)]/30 shadow-inner">
+        <div className="flex-1 flex items-center bg-[var(--color-bg-primary)] h-[22px] rounded-sm ring-1 ring-[var(--color-accent-primary)]/30 shadow-inner mr-3">
           <div className="flex-shrink-0 flex items-center justify-center px-1.5 opacity-40">
             {isFolder ? <ChevronRight size={10} /> : <File size={10} />}
           </div>
@@ -302,10 +303,12 @@ const SnippetSidebarRow = ({ index, style, data }) => {
     )
   }
   if (type === 'sidebar_footer') {
+    // VS Code-style: This fills all remaining space at the bottom
+    // Clicking here focuses the sidebar and allows root-level creation
     return (
       <div
-        style={{ ...style, height: isCompact ? '24px' : '30px' }}
-        className="cursor-default group/footer"
+        style={{ ...style, minHeight: '200px' }}
+        className="cursor-default group/footer relative"
         onClick={(e) => {
           e.stopPropagation()
           onSelectionChange([])
@@ -315,7 +318,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         }}
         onContextMenu={(e) => onContextMenu && onContextMenu(e, 'background', null)}
       >
-        <div className="h-full transition-colors group-hover/footer:bg-[var(--color-bg-tertiary)] opacity-30" />
+        <div className="absolute inset-0 transition-colors group-hover/footer:bg-[var(--color-bg-tertiary)]/20" />
       </div>
     )
   }
