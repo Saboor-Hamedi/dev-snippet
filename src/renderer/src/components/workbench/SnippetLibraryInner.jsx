@@ -1023,6 +1023,9 @@ const SnippetLibraryInner = ({ snippetData }) => {
               if (item._skipSelectionSwitch) return
 
               if (isCreatingSnippet && item.id === selectedSnippet?.id) {
+                if (item.language === 'markdown' && !item.title.endsWith('.md')) {
+                   item.title = item.title + '.md'
+                }
                 setIsCreatingSnippet(false)
                 setSelectedSnippet(item)
               }

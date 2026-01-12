@@ -594,7 +594,9 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         <span className={`flex-1 truncate pl-1 text-left flex items-center gap-2 ${
            isSelected || itemData.is_dirty ? 'font-bold' : 'font-medium opacity-80 group-hover/row:opacity-100'
         }`}>
-          <HighlightText text={safeTitle || 'Untitled'} highlight={searchQuery} />
+
+          {/* Remove the .md...  */}
+          <HighlightText text={(safeTitle || 'Untitled').replace(/\.md$/, '')} highlight={searchQuery} />
           {isTodayLog && (
             <span className="text-[8px] px-1 py-0 rounded bg-[var(--color-accent-primary)]/20 text-[var(--color-accent-primary)] font-black uppercase tracking-widest border border-[var(--color-accent-primary)]/20">
               Live

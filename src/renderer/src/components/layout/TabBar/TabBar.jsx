@@ -25,7 +25,7 @@ const TabBar = ({
               <div className="tab-icon">
                 <FileIcon size={14} style={{ color: color || 'var(--color-text-secondary)' }} />
               </div>
-              <span className="tab-title">{tab.title || 'Untitled'}</span>
+              <span className="tab-title">{(tab.title || 'Untitled').replace(/\.md$/, '')}</span>
               <button
                 className="tab-close-btn"
                 onClick={(e) => {
