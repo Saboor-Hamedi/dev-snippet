@@ -39,7 +39,8 @@ const LivePreview = ({
   enableScrollSync = false,
   fontSize = null,
   renderMetadataCard = false,
-  noScroll = false
+  noScroll = false,
+  onContentReady
 }) => {
   // --- Refs & Context ---
   const lastScrollPercentage = useRef(0)
@@ -332,6 +333,7 @@ const LivePreview = ({
   const onShadowRender = useCallback(
     (shadowRoot, contentContainer) => {
       shadowContentRef.current = contentContainer
+      if (onContentReady) onContentReady(contentContainer)
 
       // 1. Initial Scroll Preservation
       if (typeof lastScrollPercentage.current === 'number') {
@@ -345,11 +347,12 @@ const LivePreview = ({
 
       // Mermaid rendering removed - diagrams will display as code blocks
     },
-    [renderedHtml, isDark, fontFamily, theme]
+    [renderedHtml, isDark, fontFamily, theme, onContentReady]
   )
 
   // --- 4. Scroll Synchronization Logic ---
     // --- 4. Scroll Synchronization Logic ---
+  // --- 4. Scroll Synchronization Logic ---
   useEffect(() => {
     if (!enableScrollSync) return
 

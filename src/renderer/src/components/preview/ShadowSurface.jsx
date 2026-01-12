@@ -31,7 +31,7 @@ const ShadowSurface = ({ html, styles, onRender, isDark, zenFocus, noScroll = fa
       
       container.style.overflowX = 'hidden'
       container.style.boxSizing = 'border-box'
-      container.style.scrollBehavior = 'smooth'
+      container.style.scrollBehavior = 'auto'
       shadowRootRef.current.appendChild(container)
       contentRef.current = container
 

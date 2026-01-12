@@ -884,7 +884,7 @@ const SnippetEditor = ({
               }
             />
 
-            {!isReadOnlySnippet && !isFlow && !isDoc && (
+            {!isReadOnlySnippet && !isDoc && (
               <EditorModeSwitcher
                 isFloating={isFloating}
                 setIsFloating={setIsFloating}

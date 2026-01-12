@@ -10,7 +10,10 @@ import {
   Minimize2,
   Hash,
   Activity,
-  Layout
+  Layout,
+  Settings,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react'
 import AutosaveIndicator from '../layout/Header/AutosaveIndicator'
 
@@ -21,6 +24,11 @@ const FlowPreview = ({ selectedSnippet, snippets, fontFamily, show }) => {
   const [isMinimized, setIsMinimized] = useState(false)
   const [isLocked, setIsLocked] = useState(true) // Start locked (click-through) for non-blocking
   const [showStats, setShowStats] = useState(false)
+  const [showControls, setShowControls] = useState(false)
+  const [customWidth, setCustomWidth] = useState(null)
+  
+  // External Scroll Container Ref for Custom Sync
+  const containerRef = React.useRef(null)
 
   useEffect(() => {
     setLiveCode(selectedSnippet?.code || '')
@@ -37,6 +45,59 @@ const FlowPreview = ({ selectedSnippet, snippets, fontFamily, show }) => {
     return () => window.removeEventListener('app:code-update', handler)
   }, [])
 
+  // --- External Custom Scroll Sync (Lerp Smoothing) ---
+  // Fixes "shaking" by interpolating movement instead of jumping to noisy targets
+  useEffect(() => {
+    let rafId = null
+    const targetPercentageRef = React.useRef(null)
+    const isAnimatingRef = React.useRef(false)
+
+    const updateScroll = () => {
+      const container = containerRef.current
+      if (!container || targetPercentageRef.current === null) {
+        isAnimatingRef.current = false
+        return
+      }
+
+      const currentScroll = container.scrollTop
+      const maxScroll = container.scrollHeight - container.clientHeight
+      const targetScroll = maxScroll * targetPercentageRef.current
+      
+      // Lerp: Move 20% of the way to target per frame (Smooths jitter)
+      const diff = targetScroll - currentScroll
+      
+      // Stop if close enough (0.5px)
+      if (Math.abs(diff) < 0.5) {
+        container.scrollTop = targetScroll
+        isAnimatingRef.current = false
+        targetPercentageRef.current = null // Idle
+        return
+      }
+
+      // Apply smoothed step
+      container.scrollTop = currentScroll + (diff * 0.2)
+      rafId = requestAnimationFrame(updateScroll)
+    }
+
+    const handleSync = (e) => {
+      const percentage = e.detail?.percentage
+      if (typeof percentage !== 'number') return
+
+      targetPercentageRef.current = percentage
+      
+      if (!isAnimatingRef.current) {
+        isAnimatingRef.current = true
+        rafId = requestAnimationFrame(updateScroll)
+      }
+    }
+
+    window.addEventListener('app:editor-scroll', handleSync)
+    return () => {
+      window.removeEventListener('app:editor-scroll', handleSync)
+      if (rafId) cancelAnimationFrame(rafId)
+    }
+  }, [])
+
   // Scientific Stats Calculation
   const stats = useMemo(() => {
     const chars = liveCode.length
@@ -48,6 +109,7 @@ const FlowPreview = ({ selectedSnippet, snippets, fontFamily, show }) => {
 
   const getWidth = () => {
     if (isMinimized) return '240px'
+    if (customWidth) return `${customWidth}px`
     switch (device) {
       case 'mobile':
         return '320px'
@@ -55,9 +117,11 @@ const FlowPreview = ({ selectedSnippet, snippets, fontFamily, show }) => {
         return '520px'
       case 'desktop':
         return '850px'
+      case 'desktop':
+        return '850px'
       case 'mini':
       default:
-        return '380px'
+        return '1000px'
     }
   }
 
@@ -72,7 +136,7 @@ const FlowPreview = ({ selectedSnippet, snippets, fontFamily, show }) => {
         return '750px'
       case 'mini':
       default:
-        return '480px'
+        return '800px'
     }
   }
 
@@ -84,7 +148,7 @@ const FlowPreview = ({ selectedSnippet, snippets, fontFamily, show }) => {
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
           <Activity size={12} className="text-blue-500/60" />
-          <span className="text-[9px] font-bold text-white/20 tracking-widest uppercase">
+          <span className="text-[9px] font-bold text-white/20 tracking-widest uppercase hidden sm:block">
             Scientist Station
           </span>
         </div>
@@ -93,53 +157,16 @@ const FlowPreview = ({ selectedSnippet, snippets, fontFamily, show }) => {
 
       <div className="flex items-center gap-2" style={{ pointerEvents: 'auto' }}>
         {!isMinimized && (
-          <>
-            {/* Ghost Icon Toggle */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                setIsLocked(!isLocked)
-              }}
-              className={`p-1.5 rounded-none-none border ${isLocked ? 'bg-blue-500/20 border-blue-500/40 text-blue-400' : 'bg-white/5 border-white/10 text-white/30 hover:text-white'}`}
-              title={isLocked ? 'Disable Click-Through' : 'Enable Click-Through'}
-            >
-              <Ghost size={12} />
-            </button>
-
-            {/* Stats Icon Toggle */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowStats(!showStats)
-              }}
-              className={`p-1.5 rounded-none-none border ${showStats ? 'bg-white/10 border-white/20 text-white' : 'bg-white/5 border-white/10 text-white/20'}`}
-              title="Toggle Statistics"
-            >
-              <Hash size={12} />
-            </button>
-
-            {/* Device Size Selectors - 4 Working Buttons */}
-            <div className="flex items-center gap-0.5 bg-black/40 rounded-none-none p-1 border border-white/5">
-              {[
-                { id: 'mini', icon: Layout, size: 10, label: 'Mini' },
-                { id: 'mobile', icon: Smartphone, size: 12, label: 'Mobile' },
-                { id: 'tablet', icon: Tablet, size: 12, label: 'Tablet' },
-                { id: 'desktop', icon: Monitor, size: 14, label: 'Desktop' }
-              ].map((v) => (
-                <button
-                  key={v.id}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setDevice(v.id)
-                  }}
-                  className={`p-1.5 rounded-none-none ${device === v.id ? 'bg-blue-600 text-white shadow-lg' : 'text-white/30 hover:text-white hover:bg-white/5'}`}
-                  title={v.label}
-                >
-                  <v.icon size={v.size} />
-                </button>
-              ))}
-            </div>
-          </>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowControls(!showControls)
+            }}
+            className={`p-1.5 rounded-none border ${showControls ? 'bg-white/10 border-white/20 text-white' : 'bg-white/5 border-white/10 text-white/40 hover:text-white'}`}
+            title="Toggle Controls"
+          >
+            <Settings size={12} />
+          </button>
         )}
         {/* Global Toggle */}
         <button
@@ -147,7 +174,7 @@ const FlowPreview = ({ selectedSnippet, snippets, fontFamily, show }) => {
             e.stopPropagation()
             setIsMinimized(!isMinimized)
           }}
-          className="p-2 rounded-none-none bg-white/5 hover:bg-white/10 text-white/60 hover:text-white ml-1 border border-white/5"
+          className="p-2 rounded-none bg-white/5 hover:bg-white/10 text-white/60 hover:text-white ml-1 border border-white/5"
           title={isMinimized ? 'Expand' : 'Collapse'}
         >
           {isMinimized ? <Maximize2 size={13} /> : <Minimize2 size={13} />}
@@ -166,14 +193,105 @@ const FlowPreview = ({ selectedSnippet, snippets, fontFamily, show }) => {
       noOverlay={true}
       customKey="flow_preview_position"
       className={`flow-ghost-modal no-padding ${isLocked && !isMinimized ? 'click-through' : ''}`}
+      hideCloseButton={true}
     >
       <div
         className="w-full h-full flex flex-col relative overflow-hidden"
         style={{ opacity: isMinimized ? 0.3 : opacity }}
       >
         <div
-          className={`flex-1 w-full bg-[#0d1117]/60 backdrop-blur-3xl ${isMinimized ? 'opacity-0 scale-95' : 'opacity-100'}`}
+          className={`flex-1 w-full bg-[#0d1117]/60 backdrop-blur-3xl relative ${isMinimized ? 'opacity-0 scale-95' : 'opacity-100'}`}
         >
+          {showControls && (
+             <div className="absolute top-0 left-0 right-0 z-50 bg-[#0d1117]/90 border-b border-white/10 p-2 flex flex-wrap items-center gap-3 animate-in slide-in-from-top-2 fade-in duration-200">
+                {/* Ghost Icon Toggle */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setIsLocked(!isLocked)
+                  }}
+                  className={`p-2 rounded border ${isLocked ? 'bg-blue-500/20 border-blue-500/40 text-blue-400' : 'bg-white/5 border-white/10 text-white/30 hover:text-white'}`}
+                  title={isLocked ? 'Disable Click-Through' : 'Enable Click-Through'}
+                >
+                  <Ghost size={14} />
+                </button>
+
+                {/* Stats Icon Toggle */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowStats(!showStats)
+                  }}
+                  className={`p-2 rounded border ${showStats ? 'bg-white/10 border-white/20 text-white' : 'bg-white/5 border-white/10 text-white/20'}`}
+                  title="Toggle Statistics"
+                >
+                  <Hash size={14} />
+                </button>
+
+                <div className="h-4 w-px bg-white/10 mx-1"></div>
+
+                {/* Device Size Selectors */}
+                <div className="flex items-center gap-1">
+                  {[
+                    { id: 'mini', icon: Layout, size: 14, label: 'Default' },
+                    { id: 'mobile', icon: Smartphone, size: 14, label: 'Mobile' },
+                    { id: 'tablet', icon: Tablet, size: 14, label: 'Tablet' },
+                    { id: 'desktop', icon: Monitor, size: 14, label: 'Desktop' }
+                  ].map((v) => (
+                    <button
+                      key={v.id}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setDevice(v.id)
+                        setCustomWidth(null)
+                      }}
+                       className={`p-2 rounded ${device === v.id && !customWidth ? 'bg-blue-600 text-white' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
+                      title={v.label}
+                    >
+                      <v.icon size={v.size} />
+                    </button>
+                  ))}
+                </div>
+
+                <div className="h-4 w-px bg-white/10 mx-1"></div>
+
+                {/* Siders */}
+                <div className="flex items-center gap-4">
+                   <div className="flex flex-col gap-0.5">
+                      <span className="text-[8px] font-bold text-white/30 uppercase">Width</span>
+                      <input
+                        type="range"
+                        min="250"
+                        max="1200"
+                        step="10"
+                        value={customWidth || (device === 'mini' ? 1000 : device === 'mobile' ? 320 : device === 'tablet' ? 520 : 850)}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => {
+                          e.stopPropagation()
+                          setCustomWidth(parseInt(e.target.value))
+                        }}
+                        className="w-24 h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                      />
+                   </div>
+                   <div className="flex flex-col gap-0.5">
+                      <span className="text-[8px] font-bold text-white/30 uppercase">Opacity</span>
+                      <input
+                        type="range"
+                        min="0.1"
+                        max="1.0"
+                        step="0.1"
+                        value={opacity}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => {
+                          e.stopPropagation()
+                          setOpacity(parseFloat(e.target.value))
+                        }}
+                        className="w-24 h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                      />
+                   </div>
+                </div>
+             </div>
+          )}
           <LivePreview
             code={liveCode}
             language={selectedSnippet?.language || 'markdown'}
@@ -181,7 +299,8 @@ const FlowPreview = ({ selectedSnippet, snippets, fontFamily, show }) => {
             theme="midnight-pro"
             fontFamily={fontFamily}
             showHeader={false}
-            enableScrollSync={true}
+            enableScrollSync={false} /* Disabled Internal Sync to use External Optimized Sync */
+            onContentReady={(el) => (containerRef.current = el)}
             fontSize={device === 'mini' || device === 'mobile' ? 16 : null}
           />
         </div>
