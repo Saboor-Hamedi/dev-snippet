@@ -99,27 +99,36 @@ export const useSidebarLogic = ({
     // --- 📁 MAIN FOLDER TREE ---
     
     /**
-     * Recursive Snipet Counter
+     * Recursive Snippet Counter
      * Recursively calculates how many items are within a folder for the badge UI.
+     * PERFORMANCE: Uses the indexed Maps for O(1) traversal.
      */
     const memoCounts = new Map()
-    const getRecursiveSnippetCount = (fid) => {
+    const getRecursiveSnippetCount = (fid, indexedF, indexedS) => {
       if (memoCounts.has(fid)) return memoCounts.get(fid)
-      let total = snippets.filter((s) => (s.folder_id || null) === (fid || null)).length
-      folders.forEach((f) => {
-        if ((f.parent_id || null) === (fid || null)) {
-          total += getRecursiveSnippetCount(f.id)
-        }
+      
+      let total = (indexedS.get(fid) || []).length
+      const subFolders = indexedF.get(fid) || []
+      
+      subFolders.forEach((f) => {
+        total += getRecursiveSnippetCount(f.id, indexedF, indexedS)
       })
+      
       memoCounts.set(fid, total)
       return total
     }
 
     /**
-     * Flattening Core
+     * Tree Construction Logic
      * Standard recursive traversal to turn folders -> tree rows.
+     * PERFORMANCE: Uses pre-indexed Maps for O(1) lookup instead of O(N) filtering.
      */
-    const flatten = (currentFolders, currentSnippets, depth = 0, parentId = null) => {
+    const flatten = (
+      indexedFolders,
+      indexedSnippets,
+      depth = 0,
+      parentId = null
+    ) => {
       let levelResult = []
 
       // INJECTION POINT: Dynamic Creation Input Row
@@ -132,11 +141,9 @@ export const useSidebarLogic = ({
         })
       }
 
-      // Process Folders
-      const levelFolders = currentFolders
-        .filter((f) => (f.parent_id || null) == (parentId || null))
+      // 1. Process Folders at this level (Lookup from Index)
+      const levelFolders = (indexedFolders.get(parentId) || [])
         .sort((a, b) => {
-          // Keep 'Inbox' at the very top of its level
           if (a.name === '📥 Inbox') return -1
           if (b.name === '📥 Inbox') return 1
           return (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
@@ -147,7 +154,7 @@ export const useSidebarLogic = ({
         levelResult.push({
           id: folder.id,
           type: 'folder',
-          data: { ...folder, itemCount: getRecursiveSnippetCount(folder.id) },
+          data: { ...folder, itemCount: getRecursiveSnippetCount(folder.id, indexedFolders, indexedSnippets) },
           depth,
           isExpanded,
           isEditing: editingId === folder.id
@@ -155,16 +162,14 @@ export const useSidebarLogic = ({
 
         if (isExpanded) {
           levelResult = levelResult.concat(
-            flatten(currentFolders, currentSnippets, depth + 1, folder.id)
+            flatten(indexedFolders, indexedSnippets, depth + 1, folder.id)
           )
         }
       })
 
-      // Process Snippets
-      const levelSnippets = currentSnippets
-        .filter((s) => (s.folder_id || null) == (parentId || null))
+      // 2. Process Snippets at this level (Lookup from Index)
+      const levelSnippets = (indexedSnippets.get(parentId) || [])
         .sort((a, b) => {
-          // Sort Order: Pinned Items -> Drafts -> Alphabetical
           if (a.is_pinned && !b.is_pinned) return -1
           if (!a.is_pinned && b.is_pinned) return 1
           if (a.is_draft && !b.is_draft) return -1
@@ -174,7 +179,7 @@ export const useSidebarLogic = ({
 
       levelSnippets.forEach((snippet) => {
         levelResult.push({
-          id: snippet.id, // Regular snippets use their real ID as the virtual ID
+          id: snippet.id,
           type: 'snippet',
           data: { ...snippet, is_dirty: dirtyIds.has(snippet.id) },
           depth,
@@ -185,8 +190,24 @@ export const useSidebarLogic = ({
       return levelResult
     }
 
-    // Initialize root-level flattening
-    result = result.concat(flatten(folders, snippets, 0, null))
+    // --- EXECUTION PHASE ---
+    // A: Index the data for O(1) retrieval
+    const indexedFolders = new Map()
+    folders.forEach(f => {
+      const pid = f.parent_id || null
+      if (!indexedFolders.has(pid)) indexedFolders.set(pid, [])
+      indexedFolders.get(pid).push(f)
+    })
+
+    const indexedSnippets = new Map()
+    snippets.forEach(s => {
+      const fid = s.folder_id || null
+      if (!indexedSnippets.has(fid)) indexedSnippets.set(fid, [])
+      indexedSnippets.get(fid).push(s)
+    })
+
+    // B: Recursively flatten using the index
+    result = result.concat(flatten(indexedFolders, indexedSnippets, 0, null))
 
     // --- 🦶 SIDEBAR FOOTER ---
     // Invisible interactive space at the bottom to allow root-level clicks.
