@@ -458,7 +458,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         <IndentGuides depth={depth} />
 
         <div
-          className={`group flex items-center gap-[6px] w-full h-full select-none pr-2 relative transition-all duration-200 ${
+          className={`group flex items-center gap-[6px] w-full h-full select-none pr-2 relative transition-[background-color,color] duration-75 ${
             isDragOver ? 'drop-target-magnetic animate-pulse' : 'hover:bg-[var(--sidebar-item-hover-bg)]'
           }`}
           style={{
@@ -555,7 +555,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         onClick={handleItemClick}
         onKeyDown={(e) => handleItemKeyDown(e, index)}
         onContextMenu={(e) => onContextMenu(e, type, itemData)}
-        className={`theme-exempt flex items-center gap-[6px] w-full h-full select-none outline-none focus:outline-none pr-3 relative transition-all duration-200 ${
+        className={`theme-exempt flex items-center gap-[6px] w-full h-full select-none outline-none focus:outline-none pr-3 relative transition-[background-color,color] duration-75 ${
           isCompact ? 'text-[11px]' : 'text-[12px]'
         } ${isSelected ? '' : 'hover:bg-[var(--sidebar-item-hover-bg)]'}`}
         style={{

@@ -24,6 +24,9 @@ export const useSnippetHandlers = ({
   saveSnippet,
   deleteItem,
   deleteItems,
+  deleteFolder,
+  deleteFolders,
+  folders,
   navigateTo,
   openRenameModal,
   openDeleteModal,
@@ -134,24 +137,34 @@ export const useSnippetHandlers = ({
         return
       }
       openDeleteModal(id, async (targetId) => {
-        await deleteItem(targetId)
+        // Check if it's a folder or a snippet
+        const isFolder = folders.some((f) => f.id === targetId)
+        if (isFolder) {
+          await deleteFolder(targetId)
+        } else {
+          await deleteItem(id)
+        }
       })
     },
-    [deleteItem, openDeleteModal]
+    [deleteItem, deleteFolder, openDeleteModal, folders]
   )
 
   const handleBulkDelete = useCallback(
     (ids) => {
       openDeleteModal(
         ids,
-        async (targetIds) => {
+        async () => {
+          // Identify snippets vs Folders
           const snippetIds = ids.filter((id) => snippets.some((s) => s.id === id))
+          const folderIds = ids.filter((id) => folders.some((f) => f.id === id))
+
           if (snippetIds.length > 0) await deleteItems(snippetIds)
+          if (folderIds.length > 0) await deleteFolders(folderIds)
         },
         ids.length > 1 ? `${ids.length} items` : 'item'
       )
     },
-    [deleteItems, openDeleteModal, snippets]
+    [deleteItems, deleteFolders, openDeleteModal, snippets, folders]
   )
 
   const handleInlineRenameSnippet = useCallback(

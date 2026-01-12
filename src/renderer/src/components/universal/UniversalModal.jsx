@@ -381,7 +381,7 @@ const UniversalModal = ({
 
   return ReactDOM.createPortal(
     <div
-      className="universal-modal-overlay"
+      className={`universal-modal-overlay ${className.includes('snappy') ? 'snappy' : ''}`}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       {modalContent}

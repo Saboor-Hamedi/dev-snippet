@@ -10,7 +10,7 @@
   align-items: center;
   justify-content: center;
   z-index: 10000;
-  animation: uni-fade-in 0.25s ease-out;
+  animation: uni-fade-in 0.15s ease-out;
   -webkit-app-region: no-drag !important;
 }
 
@@ -30,7 +30,7 @@
   max-height: 98vh;
   transform: translateZ(0);
   backdrop-filter: none !important;
-  animation: uni-scale-up 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: uni-scale-up 0.12s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .universal-modal.native-frame {
@@ -187,12 +187,20 @@
 @keyframes uni-scale-up {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: scale(0.98) translateY(5px);
   }
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: scale(1) translateY(0);
   }
+}
+
+.universal-modal.snappy {
+  animation-duration: 0.1s !important;
+}
+
+.universal-modal-overlay.snappy {
+  animation-duration: 0.1s !important;
 }
 
 /* Global Drag State Support */

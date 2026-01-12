@@ -31,7 +31,7 @@ const Prompt = ({
           inputRef.current.focus()
           inputRef.current.select()
         }
-      }, 50)
+      }, 0)
       return () => clearTimeout(timer)
     }
   }, [isOpen, showInput])
@@ -102,7 +102,7 @@ const Prompt = ({
       footer={footer}
       width="400px"
       height="auto"
-      className="prompt-modal"
+      className="prompt-modal snappy"
       noTab={true}
       zIndex={zIndex}
       allowResize={false}

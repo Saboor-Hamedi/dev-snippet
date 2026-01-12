@@ -112,10 +112,6 @@ const EditorMetadataHeader = ({
             value={title}
             onChange={handleTitleChange}
             onKeyDown={handleTitleKeyDown}
-            onWheel={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-            }}
             spellCheck="false"
             placeholder="Untitled"
             readOnly={readOnly}

@@ -137,18 +137,15 @@ const KeyboardHandler = ({
       
       // Multi-select or Folder-select delete
       if (selectedIds.length > 0 || selectedFolderId) {
-        // We'll let the existing delete logic in SnippetLibraryInner handle it via events
-        // or we can call openDeleteModal directly here if we have access to IDs
         const idsToDelete = selectedIds.length > 0 ? selectedIds : [selectedFolderId]
         
         // Skip system files
         const filteredIds = idsToDelete.filter(id => id !== 'system:settings' && id !== 'system:default-settings')
         if (filteredIds.length === 0) return
 
-        openDeleteModal(filteredIds, async (ids) => {
-          // Dispatch a custom event that SnippetLibraryInner listens to for bulk delete
-          window.dispatchEvent(new CustomEvent('app:command-bulk-delete', { detail: { ids } }))
-        })
+        // Just dispatch the event - SnippetLibraryInner's listener will call snippetHandlers.handleBulkDelete
+        // which will handle the modal and the actual deletion logic.
+        window.dispatchEvent(new CustomEvent('app:command-bulk-delete', { detail: { ids: filteredIds } }))
         return
       }
 
