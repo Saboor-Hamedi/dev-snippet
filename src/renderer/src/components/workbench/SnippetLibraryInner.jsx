@@ -1043,15 +1043,20 @@ const SnippetLibraryInner = ({ snippetData }) => {
           }}
           onDeleteRequest={snippetHandlers.handleDeleteRequest}
           onBulkDeleteRequest={snippetHandlers.handleBulkDelete}
-          onNewSnippet={(title, folderId, options) => {
+          onNewSnippet={async (title, folderId, options) => {
             try {
               const parentId = folderId || selectedFolderId || selectedSnippet?.folder_id || null
               const uniqueTitle = getUniqueTitle(title || '', parentId, snippets)
               const draft = snippetOps.createDraftSnippet(uniqueTitle, parentId, options)
-              // We no longer force-save here. Snippet stays a 'Draft' in-memory
-              // until the user either manually saves or autosave triggers.
-            } catch (e) {
-              console.error('[SnippetLibrary] Failed to create snippet:', e)
+
+              // PERSISTENCE: If a title was provided (Naming Flow), commit it to DB immediately
+              // a "Draft" is only for blank, untitled snippets.
+              if (uniqueTitle && uniqueTitle.trim()) {
+                await saveSnippet({ ...draft, is_draft: false })
+              }
+            } catch (err) {
+              console.error('Failed to create new snippet:', err)
+              showToast('Creation failed', 'error')
             }
           }}
           onRenameSnippet={snippetHandlers.handleRenameSnippetRequest}

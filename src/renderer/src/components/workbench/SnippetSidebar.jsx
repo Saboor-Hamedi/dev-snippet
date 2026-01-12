@@ -155,7 +155,7 @@ const SnippetSidebar = ({
         if (showToast) showToast(`File "${name}" already exists here`, 'error')
         return
       }
-      onNew(name, parentId, { skipNavigation: true })
+      onNew(name, parentId)
     } else {
       const normalize = (t) => (t || '').toLowerCase().trim()
       const targetBase = normalize(name)
