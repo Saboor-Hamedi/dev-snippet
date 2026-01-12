@@ -143,6 +143,11 @@ export const useSnippetHandlers = ({
           await deleteFolder(targetId)
         } else {
           await deleteItem(id)
+        // If the deleted item is the currently selected snippet, navigate to welcome
+          if(selectedSnippet && String(selectedSnippet.id) === String(id)){
+            setSelectedSnippet(null)
+            navigateTo('welcome')
+          }
         }
       })
     },
@@ -164,6 +169,7 @@ export const useSnippetHandlers = ({
             // Using loose comparison to handle number vs string ID mismatches
             if (selectedSnippet && snippetIds.some(id => String(id) === String(selectedSnippet.id))) {
               setSelectedSnippet(null)
+              navigateTo('snippets')
             }
           }
           if (folderIds.length > 0) await deleteFolders(folderIds)

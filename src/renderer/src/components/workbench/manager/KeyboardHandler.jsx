@@ -154,6 +154,10 @@ const KeyboardHandler = ({
         if (selectedSnippet.id === 'system:settings' || selectedSnippet.id === 'system:default-settings') return
         openDeleteModal(selectedSnippet.id, async (id) => {
           await deleteItem(id)
+          if (selectedSnippet && String(selectedSnippet.id) === String(id)) {
+            setSelectedSnippet(null)
+            navigateTo('snippets')
+          }
         })
       }
     },
