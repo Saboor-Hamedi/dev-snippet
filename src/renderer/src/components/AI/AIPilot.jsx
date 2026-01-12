@@ -6,6 +6,51 @@ import { useToast } from '../../hook/useToast'
 import { markdownToHtml } from '../../utils/markdownParser'
 
 /**
+ * AIMessageContent
+ * Asynchronously renders markdown content for AI messages.
+ * Extracted to root level to prevent re-mounting during parent renders.
+ */
+const AIMessageContent = ({ content }) => {
+  const [html, setHtml] = useState('')
+
+  useEffect(() => {
+    let isMounted = true
+    
+    if (!content) {
+      setHtml('')
+      return
+    }
+
+    markdownToHtml(content, { minimal: true, renderMetadata: false }).then((res) => {
+      if (isMounted) setHtml(res)
+    })
+    
+    return () => {
+      isMounted = false
+    }
+  }, [content])
+
+  // If HTML is ready, show it.
+  // If not, but we have raw content (streaming), show that in a pre-wrap div.
+  // This ensures text is NEVER hidden.
+  if (html) {
+    return (
+      <div
+        className="ai-markdown-render markdown-content"
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+    )
+  }
+  
+  // Fallback: Raw text mode (essential for streaming validity)
+  return (
+    <div className="whitespace-pre-wrap font-mono text-sm opacity-90 leading-relaxed break-words min-h-[20px]">
+      {content}
+    </div>
+  )
+}
+
+/**
  * AIPilot
  *
  * The intelligent chat interface powered by DeepSeek.
@@ -25,7 +70,6 @@ const AIPilot = ({ scale, selectedSnippet }) => {
   const [isThinking, setIsThinking] = useState(false)
   const messagesEndRef = useRef(null)
   const textareaRef = useRef(null)
-
   const messagesRef = useRef(null)
   const messagesInnerRef = useRef(null)
 
@@ -43,18 +87,8 @@ const AIPilot = ({ scale, selectedSnippet }) => {
     scrollToBottom()
   }, [messages, isThinking])
 
-  // MutationObserver/ResizeObserver for dynamic content height changes (async markdown)
-  useEffect(() => {
-    const observer = new ResizeObserver(() => {
-      scrollToBottom()
-    })
-
-    if (messagesInnerRef.current) {
-      observer.observe(messagesInnerRef.current)
-    }
-
-    return () => observer.disconnect()
-  }, [])
+  // Removed ResizeObserver to prevent layout thrashing/shaking.
+  // We rely on CSS overflow-anchor: auto for content growth stability.
 
   // Check AI health on mount
   useEffect(() => {
@@ -76,32 +110,6 @@ const AIPilot = ({ scale, selectedSnippet }) => {
       setMessages(ms)
     }
   }, [settings?.ai?.apiKey]) // Re-run only when key changes (or on mount/hydration)
-
-  /**
-
-  /**
-   * Sub-component to render markdown messages asynchronously.
-   */
-  const AIMessageContent = ({ content }) => {
-    const [html, setHtml] = useState('<p>...</p>')
-
-    useEffect(() => {
-      let isMounted = true
-      markdownToHtml(content, { minimal: true, renderMetadata: false }).then((res) => {
-        if (isMounted) setHtml(res)
-      })
-      return () => {
-        isMounted = false
-      }
-    }, [content])
-
-    return (
-      <div
-        className="ai-markdown-render markdown-content"
-        dangerouslySetInnerHTML={{ __html: html }}
-      />
-    )
-  }
 
   const handleSend = async () => {
     if (!input.trim() || isThinking) return

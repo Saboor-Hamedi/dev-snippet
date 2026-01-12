@@ -1,11 +1,15 @@
+/* Main Layout Containers */
 .ai-pilot-container {
   display: flex;
   flex-direction: column;
   height: 100%;
+  width: 100%;
   background: var(--color-bg-primary);
   color: var(--color-text-primary);
-  overflow: hidden;
+  overflow: hidden; /* Critical: Prevent parent scrolling */
   position: relative;
+  contain: strict; /* Isolate this component from the rest of the app */
+  z-index: 0;
 }
 
 /* Glassy Header for the AI Pilot */
@@ -15,12 +19,14 @@
   justify-content: space-between;
   padding: 0 16px;
   height: 32px;
+  flex-shrink: 0;
   background: rgba(255, 255, 255, 0.02);
   border-bottom: 1px solid var(--color-border);
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.1em;
+  z-index: 10;
 }
 
 .ai-pilot-model-badge {
@@ -39,9 +45,16 @@
 
 /* Messages Area */
 .ai-pilot-messages {
-  flex: 1;
+  flex: 1 1 0%;
+  width: 100%;
   overflow-y: auto;
-  scroll-behavior: smooth;
+  overflow-x: hidden;
+  /* Disable smooth scrolling to prevent 'fighting' the stream */
+  scroll-behavior: auto !important; 
+  /* Prevent scroll chaining */
+  overscroll-behavior: none;
+  /* Let the browser handle layout anchoring */
+  overflow-anchor: auto;
 }
 
 .ai-pilot-messages-inner {
@@ -49,7 +62,9 @@
   flex-direction: column;
   gap: 24px;
   padding: 20px;
+  /* Ensure container has dimensions */
   min-height: 100%;
+  width: 100%;
 }
 
 .ai-message {
@@ -57,18 +72,9 @@
   flex-direction: column;
   gap: 8px;
   max-width: 85%;
-  animation: ai-message-in 0.3s ease-out;
-}
-
-@keyframes ai-message-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  /* Strict layout containment to stop parent jitter */
+  contain: layout style;
+  /* NO ANIMATIONS allowed here */
 }
 
 .ai-message.user {
@@ -85,6 +91,11 @@
   font-size: 13px;
   line-height: 1.6;
   position: relative;
+  /* Prevent horizontal layout blowout */
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+  min-width: 0;
 }
 
 .user .ai-message-bubble {
