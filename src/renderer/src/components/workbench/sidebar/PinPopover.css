@@ -204,8 +204,8 @@
 [data-theme='solar-dawn'] .cm-mode-btn.is-active,
 [data-theme='minimal-gray'] .cm-mode-btn.is-active,
 [data-theme='quiet-light'] .cm-mode-btn.is-active {
-  background: #0366d6 !important;
-  color: #fff !important;
+  background: transparent !important;
+  color: var(--color-accent-primary) !important;
 }
 
 .cm-editor-mode-switcher.is-floating {
@@ -296,6 +296,6 @@
 }
 
 .cm-mode-btn.is-active {
-  background: var(--color-accent-primary) !important;
-  color: #fff !important;
+  background: transparent !important;
+  color: var(--color-accent-primary) !important;
 }
