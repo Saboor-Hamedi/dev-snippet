@@ -22,7 +22,8 @@ export const useKeyboardShortcuts = (shortcuts) => {
       // SHIELD: If a modal is open, we disable global background shortcuts
       // to prevent things like 'Ctrl+R' (Rename) firing while reading documentation.
       // We allow Escape so the 'onEscapeMenusOnly' handler can still close the modal.
-      if (document.querySelector('.universal-modal') && event.key !== 'Escape') {
+      // SHIELD: Updated to allow shortcuts in Flow Mode (.flow-ghost-modal)
+      if (document.querySelector('.universal-modal:not(.flow-ghost-modal)') && event.key !== 'Escape') {
         return
       }
 
