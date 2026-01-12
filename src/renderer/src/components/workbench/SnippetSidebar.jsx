@@ -219,7 +219,7 @@ const SnippetSidebar = ({
     }
     const timer = setTimeout(() => {
       if (onSearch) onSearch(filter)
-    }, 150)
+    }, 50)
     return () => clearTimeout(timer)
   }, [filter, onSearch])
 
@@ -412,6 +412,19 @@ const SnippetSidebar = ({
               placeholder="Search Snippets"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && treeItems.length > 0) {
+                  // Open the first item but keep input focus
+                  const first = treeItems[0]
+                  if (first.type === 'snippet' || first.type === 'pinned_snippet') {
+                    onSelect(first.data)
+                  }
+                } else if (e.key === 'ArrowDown' && treeItems.length > 0) {
+                  e.preventDefault()
+                  const firstEl = document.getElementById('sidebar-item-0')
+                  firstEl?.focus()
+                }
+              }}
               className="w-full h-full rounded-[5px] pl-8 pr-8 text-[12px] outline-none border border-transparent focus:border-[var(--color-accent-primary)]/30 bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] placeholder:text-[11px] placeholder:opacity-30 transition-all focus:shadow-[0_0_20px_rgba(var(--color-accent-primary-rgb),0.1)]"
             />
           </div>

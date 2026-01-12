@@ -357,7 +357,10 @@ export const useSidebarLogic = ({
           if (item.type === 'folder') {
             onToggleFolder(item.id, !item.data.collapsed)
           } else {
+            // Open the snippet
             onSelect(item.data)
+            // VS Code behavior: Keep focus on the sidebar so you can keep navigating
+            // unless the user purposefully clicks into the editor.
           }
           break
       }

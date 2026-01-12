@@ -320,9 +320,11 @@ const SnippetLibraryInner = ({ snippetData }) => {
   const sortedAndFilteredSnippets = useMemo(() => {
     // 🔍 SEARCH MODE: Use Backend Results + Local Refinement
     if (searchQuery && searchQuery.trim()) {
-      // HYBRID FALLBACK: Use local snippets as base if backend results haven't arrived yet
-      // This provides instant feedback for title/tag matches while awaiting code search.
-      const baseList = sidebarSearchResults || snippets
+      // HYBRID FALLBACK: ALWAYS use the full local list for title/metadata matching.
+      // We combine it with sidebarSearchResults (deep code search) if they exist.
+      const baseList = (sidebarSearchResults && sidebarSearchResults.length > 0)
+        ? Array.from(new Map([...snippets, ...sidebarSearchResults].map(s => [s.id, s])).values())
+        : snippets
       const lowerQuery = searchQuery.toLowerCase().trim()
       const queryTerms = lowerQuery.split(/\s+/).filter(Boolean)
 
