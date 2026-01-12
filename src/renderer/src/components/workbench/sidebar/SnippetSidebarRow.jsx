@@ -202,21 +202,32 @@ const CreationInputRow = ({
 /**
  * IndentGuides
  * Renders vertical lines to help identify the parent/child folder hierarchy.
+ * Now with "Active Path Trace" - guides light up when they're part of the selected item's ancestry.
  */
-const IndentGuides = ({ depth }) => {
+const IndentGuides = ({ depth, activePath = [] }) => {
   if (depth <= 0) return null
   return (
     <div
       className="absolute top-0 left-0 h-full pointer-events-none z-0"
       style={{ width: depth * 16 + 8 }}
     >
-      {Array.from({ length: depth }).map((_, i) => (
-        <div
-          key={i}
-          className="absolute top-0 bottom-0 w-[1px] bg-[var(--color-border)] opacity-30 group-hover/row:opacity-60 transition-opacity"
-          style={{ left: `${i * 16 + 13}px` }}
-        />
-      ))}
+      {Array.from({ length: depth }).map((_, i) => {
+        const isActive = activePath.includes(i)
+        return (
+          <div
+            key={i}
+            className={`absolute top-0 bottom-0 w-[1px] bg-[var(--color-border)] transition-all duration-200 ${
+              isActive 
+                ? 'opacity-40' 
+                : 'opacity-10 group-hover/row:opacity-30'
+            }`}
+            style={{ 
+              left: `${i * 16 + 13}px`,
+              boxShadow: isActive ? '0 0 4px rgba(var(--color-accent-primary-rgb, 59, 130, 246), 0.3)' : 'none'
+            }}
+          />
+        )
+      })}
     </div>
   )
 }
@@ -254,7 +265,8 @@ const SnippetSidebarRow = ({ index, style, data }) => {
     startCreation,
     handleSelectionInternal,
     todayStr,
-    folders
+    folders,
+    activePath
   } = data
 
   const {
@@ -455,7 +467,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         onKeyDown={(e) => handleItemKeyDown(e, index)}
         onContextMenu={(e) => onContextMenu(e, type, itemData)}
       >
-        <IndentGuides depth={depth} />
+        <IndentGuides depth={depth} activePath={activePath} />
 
         <div
           className={`group flex items-center gap-[6px] w-full h-full select-none pr-2 relative transition-[background-color,color] duration-75 ${
@@ -545,7 +557,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
 
   return (
     <div style={{ ...style }} className="relative group/row">
-      <IndentGuides depth={depth} />
+      <IndentGuides depth={depth} activePath={activePath} />
 
       <button
         id={`sidebar-item-${index}`}

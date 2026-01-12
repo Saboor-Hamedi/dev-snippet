@@ -119,7 +119,8 @@ const SnippetSidebar = ({
     collapseAll,
     editingId,
     startRenaming,
-    cancelRenaming
+    cancelRenaming,
+    activePath
   } = useSidebarLogic({
     folders,
     snippets,
@@ -376,7 +377,8 @@ const SnippetSidebar = ({
       handleSelectionInternal,
       todayStr,
       togglePinned,
-      folders
+      folders,
+      activePath
     }),
     [
       treeItems,

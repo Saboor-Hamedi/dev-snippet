@@ -456,8 +456,43 @@ export const useSidebarLogic = ({
     }
   }, [treeItems, selectedIds, snippets, folders, handleSelectionInternal, searchQuery])
 
+  /**
+   * 6. ACTIVE PATH CALCULATION
+   * Determines which folder ancestors of the selected item should be highlighted.
+   */
+  const activePath = React.useMemo(() => {
+    if (selectedIds.length !== 1) return []
+
+    const selectedId = selectedIds[0]
+    const selectedItem = treeItems.find(item => item.id === selectedId)
+    if (!selectedItem) return []
+
+    const path = []
+    let currentItem = selectedItem
+    while (currentItem && currentItem.depth > 0) {
+      // Find the parent of the current item in the treeItems array
+      // A parent is an item with a depth one less than the current item, appearing before it.
+      let parent = null
+      for (let i = treeItems.indexOf(currentItem) - 1; i >= 0; i--) {
+        if (treeItems[i].depth === currentItem.depth - 1 && treeItems[i].type === 'folder') {
+          parent = treeItems[i]
+          break
+        }
+      }
+
+      if (parent) {
+        path.unshift(parent.id) // Add parent to the beginning of the path
+        currentItem = parent
+      } else {
+        break // No parent found, stop
+      }
+    }
+    return path
+  }, [selectedIds, treeItems])
+
   return {
     treeItems,
+    activePath,
     lastSelectedIdRef,
     handleSelectionInternal,
     handleItemKeyDown,
