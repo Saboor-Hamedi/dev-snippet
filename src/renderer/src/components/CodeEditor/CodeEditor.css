@@ -100,7 +100,7 @@
   font-size: calc(var(--editor-font-size) * var(--zoom-level)) !important;
   line-height: 1.6 !important;
   min-height: 150vh !important;
-  padding-bottom: 50vh !important;
+  padding-bottom: 50vh !important; padding-top: var(--editor-content-padding-top, 10px) !important;
 }
 
 .cm-gutters {

@@ -20,6 +20,10 @@ const AdvancedSplitPane = ({
 
   const { bgColor, borderWidth, borderColor, borderRound } = useAdvancedSplitPane()
 
+  // Refs to track latest values for persistence without I/O during drag
+  const latestOverlayWidth = useRef(null)
+  const latestSideBySideLeft = useRef(null)
+
   useEffect(() => {
     if (containerRef.current) {
       containerRef.current.style.setProperty('--bg-color', bgColor)
@@ -59,7 +63,7 @@ const AdvancedSplitPane = ({
         const rightEdge = rect.width - x
         const newOverlayWidth = Math.max(15, Math.min(90, (rightEdge / rect.width) * 100))
         setOverlayWidth(newOverlayWidth)
-        localStorage.setItem('overlayWidth', newOverlayWidth)
+        latestOverlayWidth.current = newOverlayWidth
       } else {
         const x = e.clientX - rect.left
         const minLeftPx = Math.max(minLeft, 0)
@@ -67,7 +71,7 @@ const AdvancedSplitPane = ({
         const clampedX = Math.min(Math.max(x, minLeftPx), rect.width - minRightPx)
         const newPercent = Math.max(10, Math.min(90, (clampedX / rect.width) * 100))
         setSideBySideLeft(newPercent)
-        localStorage.setItem('sideBySideLeft', newPercent)
+        latestSideBySideLeft.current = newPercent
       }
     }
 
@@ -75,6 +79,15 @@ const AdvancedSplitPane = ({
       if (draggingRef.current) {
         draggingRef.current = false
         setIsDragging(false)
+
+        // Persistence: Save only once at the end of the drag to prevent I/O lag
+        if (latestOverlayWidth.current !== null) {
+          localStorage.setItem('overlayWidth', latestOverlayWidth.current)
+        }
+        if (latestSideBySideLeft.current !== null) {
+          localStorage.setItem('sideBySideLeft', latestSideBySideLeft.current)
+        }
+
         document.body.style.cursor = ''
         document.body.style.userSelect = ''
       }
@@ -141,7 +154,7 @@ const AdvancedSplitPane = ({
           <div className="absolute inset-0 w-full h-full z-0">{left}</div>
           {!rightHidden && (
             <div
-              className="absolute top-4 right-5 bottom-6 z-40 flex flex-col overflow-hidden transition-all duration-300 ease-out"
+              className={`absolute top-4 right-5 bottom-6 z-40 flex flex-col overflow-hidden ${isDragging ? 'transition-none' : 'transition-all duration-300 ease-out'}`}
               style={{
                 width: `${overlayWidth}%`,
                 minWidth: `${minRight}px`,

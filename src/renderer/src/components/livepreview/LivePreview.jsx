@@ -107,8 +107,9 @@ const LivePreview = ({
         let result = ''
 
         if (normalizedLang === 'markdown' || normalizedLang === 'md') {
-          // Large file: use incremental parsing for smooth progressive rendering
-          if (visibleCode.length > 50000) {
+          // Optimization: Increase threshold for single-pass parsing
+          // Incremental parsing is only needed for massive docs (>150k)
+          if (visibleCode.length > 150000) {
             for await (const chunk of incrementalParser.parseInChunks(
               visibleCode,
               { renderMetadata: renderMetadataCard, titles: existingTitles },
@@ -177,13 +178,10 @@ const LivePreview = ({
 
     let timeoutId = null
 
-    // Snappy Initial Load: Bypass timeout if we have nothing rendered yet
-    if (renderedHtml === '' && code) {
-      parse()
-    } else {
-      const wait = renderedHtml === '' ? 0 : 75
-      timeoutId = setTimeout(parse, wait)
-    }
+    // Snappy Load: Remove the 75ms "artificial" delay for small edits
+    // SnippetEditor already handles the major debouncing.
+    const wait = (renderedHtml === '') ? 0 : 20
+    timeoutId = setTimeout(parse, wait)
 
     return () => {
       if (timeoutId) clearTimeout(timeoutId)
@@ -204,8 +202,8 @@ const LivePreview = ({
       .map(([key, value]) => `${key}: ${value};`)
       .join('\n')
 
-    // 2. Settings Overrides (Ensures VS Code Feel applies to Preview too)
-    const syntaxSettings = settings.syntax || {}
+    // 2. Settings Overrides
+    const syntaxSettings = (settings && settings.syntax) || {}
     const varMap = {
       keyword: '--color-syntax-keyword',
       string: '--color-syntax-string',
@@ -225,11 +223,11 @@ const LivePreview = ({
     const themeVars = `:root, .shadow-wrapper {
       ${cssVars}
       ${overrides}
-      --editor-font-size: ${((fontSize || settings.editor?.fontSize || 14) * 1) / 16}rem;
+      --editor-font-size: ${((fontSize || (settings && settings.editor?.fontSize) || 14) * 1) / 16}rem;
       --font-sans: ${fontFamily}, sans-serif;
     }
     
-    /* Performance Guard: Disable expensive visuals during active dragging */
+    /* Performance Guard */
     :host-context(body.dragging-active) *,
     .shadow-wrapper.is-dragging *,
     .markdown-body.is-dragging * {
@@ -239,8 +237,10 @@ const LivePreview = ({
     }
     `
 
-    return `${variableStyles}\n${themeVars}\n${previewStyles}\n${markdownStyles}\n.markdown-body { padding-bottom: 5rem !important; }`
-  }, [theme, fontFamily, settings?.editor?.fontSize, settings?.syntax])
+    // Optimization: Cache references to raw imports outside or inside memo
+    // but ensure they are only concatenated once per theme/settings change
+    return [variableStyles, themeVars, previewStyles, markdownStyles, '.markdown-body { padding-bottom: 5rem !important; }'].join('\n')
+  }, [theme, fontFamily, settings?.editor?.fontSize, settings?.syntax, fontSize])
 
   // --- 3. Shadow DOM Event Pipeline ---
   const handleShadowClick = useCallback(

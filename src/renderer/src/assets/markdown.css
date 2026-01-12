@@ -308,7 +308,7 @@ h6 {
   margin: 0 1px !important;
   border-radius: 4px !important;
   background-color: rgba(var(--color-accent-primary-rgb, 88, 166, 255), 0.1) !important;
-  transition: all 0.2s ease !important;
+  transition: opacity 0.2s ease, transform 0.2s ease !important;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
 }
@@ -362,7 +362,7 @@ h6 {
   padding: 8px 24px !important;
   margin: 1.5rem 0 !important;
   font-style: italic;
-  transition: all 0.2s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .markdown-body blockquote p {
@@ -520,7 +520,7 @@ h6 {
   border-radius: 4px !important;
   color: #94a3b8 !important; /* slate-400 */
   cursor: pointer !important;
-  transition: all 0.2s ease !important;
+  transition: opacity 0.2s ease, transform 0.2s ease !important;
 }
 
 .copy-code-btn:hover {
@@ -545,7 +545,7 @@ h6 {
   border-radius: 12px;
   border: 1px solid var(--color-border);
   background-color: rgba(var(--color-bg-secondary-rgb), 0.3) !important;
-  transition: all 0.3s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .mermaid:hover {
@@ -623,7 +623,7 @@ h6 {
   text-decoration: none !important;
   padding: 0 2px;
   border-radius: 2px;
-  transition: all 0.2s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .markdown-body a:hover {
@@ -642,7 +642,7 @@ h6 {
   text-decoration: none !important;
   font-weight: 500 !important;
   border: none !important;
-  transition: all 0.2s ease !important;
+  transition: opacity 0.2s ease, transform 0.2s ease !important;
   font-size: inherit !important;
 }
 
@@ -721,7 +721,7 @@ h6 {
   margin-left: 0 !important;
   margin-right: 8px !important;
   flex-shrink: 0;
-  transition: all 0.2s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .markdown-body .task-list-item input[type='checkbox']:checked {
@@ -1112,7 +1112,7 @@ h6 {
   font-weight: 500 !important;
   margin: 0 2px !important;
   cursor: default !important;
-  transition: all 0.15s ease !important;
+  transition: opacity 0.2s ease, transform 0.2s ease !important;
   user-select: none !important;
   font-family: inherit !important;
   vertical-align: baseline !important;
@@ -1144,7 +1144,7 @@ h6 {
   font-weight: 400 !important;
   font-size: 11px !important;
   border: 1px solid rgba(88, 166, 255, 0.15) !important;
-  transition: all 0.15s ease !important;
+  transition: opacity 0.2s ease, transform 0.2s ease !important;
   display: inline-flex !important;
   align-items: center !important;
   vertical-align: middle !important;
@@ -1207,7 +1207,7 @@ h6 {
   border-radius: 10px;
   border: 2px solid transparent;
   background-clip: content-box;
-  transition: all 0.2s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -1384,7 +1384,7 @@ html[data-theme='nebula'] em {
   border: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
   overflow-x: auto !important; /* Allow scroll on small screens */
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .katex-display:hover {

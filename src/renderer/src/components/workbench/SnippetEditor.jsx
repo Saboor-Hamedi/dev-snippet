@@ -596,16 +596,36 @@ const SnippetEditor = ({
         lang = 'markdown'
       }
     }
-    return lang
   }, [title, code.substring(0, 20)]) // Re-detect if title or start of code changes
 
+  const lastSnippetIdRef = useRef(initialSnippet?.id)
+
   useEffect(() => {
-    // TWEAK: Slightly more aggressive update for better "Live" feel
-    // while still protecting the thread for massive documents.
+    // TWEAK: Significantly more aggressive update for an "Instant" feel
+    // while still protecting the thread for document complexity.
     
-    // IF opening preview for the first time, skip debounce
+    // DETECT SNIPPET SWITCH: If the ID changed, we want an immediate update
+    const isSwitchingSnippet = initialSnippet?.id !== lastSnippetIdRef.current
+    if (isSwitchingSnippet) {
+      lastSnippetIdRef.current = initialSnippet?.id
+      // Immediate sync for switch to avoid seeing old preview content
+      setDebouncedCode(code)
+      return
+    }
+
+    // IF opening preview for the first time or switch happened, skip debounce
     const isOpeningPreview = showPreview && !debouncedCode && code
-    const wait = isOpeningPreview ? 0 : (code.length > 150000 ? 1200 : code.length > 50000 ? 600 : 300)
+    
+    // Standard debounce mapping:
+    // Small (<10k): 75ms (Perceived as instant)
+    // Medium (<50k): 150ms 
+    // Large (<150k): 400ms
+    // Massive (>150k): 800ms
+    const wait = isOpeningPreview ? 0 : (
+      code.length > 150000 ? 800 : 
+      code.length > 50000 ? 400 : 
+      code.length > 10000 ? 150 : 75
+    )
     
     const timer = setTimeout(() => {
       setDebouncedCode(code)
@@ -617,7 +637,7 @@ const SnippetEditor = ({
       )
     }, wait)
     return () => clearTimeout(timer)
-  }, [code, detectedLang, initialSnippet?.id, isDirty, showPreview])
+  }, [code, detectedLang, initialSnippet?.id, showPreview])
 
 
 
@@ -806,7 +826,7 @@ const SnippetEditor = ({
                   {isHeaderVisible && (
                     <div
                       ref={headerRef}
-                      className="absolute top-0 left-0 right-4 z-10 transition-transform will-change-transform pointer-events-none"
+                      className="absolute top-0 left-0 right-4 z-[100] transition-transform will-change-transform pointer-events-none"
                     >
                       <div className="pointer-events-auto">
                         <EditorMetadataHeader
