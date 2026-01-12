@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Send, User, Bot, Sparkles, FileText, Eraser, Terminal, Zap, Copy, Check } from 'lucide-react'
+import { Send, User, Bot, Sparkles, FileText, Eraser, Terminal, Zap, Copy, Check, Square } from 'lucide-react'
 import './AIPilot.css'
 import { useSettings } from '../../hook/useSettingsContext'
 import { useToast } from '../../hook/useToast'
@@ -12,6 +12,7 @@ import { markdownToHtml } from '../../utils/markdownParser'
  */
 const AIMessageContent = ({ content }) => {
   const [html, setHtml] = useState('')
+  const containerRef = useRef(null)
 
   useEffect(() => {
     let isMounted = true
@@ -30,19 +31,79 @@ const AIMessageContent = ({ content }) => {
     }
   }, [content])
 
-  // If HTML is ready, show it.
-  // If not, but we have raw content (streaming), show that in a pre-wrap div.
-  // This ensures text is NEVER hidden.
+  // Post-process code blocks to add Insert/Copy buttons
+  useEffect(() => {
+      if (!html || !containerRef.current) return
+
+      const preBlocks = containerRef.current.querySelectorAll('pre')
+      preBlocks.forEach((pre) => {
+          if (pre.querySelector('.ai-code-toolbar')) return // Already processed
+
+          // Create Toolbar
+          const toolbar = document.createElement('div')
+          toolbar.className = 'ai-code-toolbar'
+          toolbar.style.display = 'flex'
+          toolbar.style.justifyContent = 'flex-end'
+          toolbar.style.gap = '8px'
+          toolbar.style.padding = '4px 8px'
+          toolbar.style.background = 'rgba(255,255,255,0.03)'
+          toolbar.style.borderBottom = '1px solid rgba(255,255,255,0.05)'
+          toolbar.style.marginBottom = '8px'
+          toolbar.style.borderRadius = '6px 6px 0 0'
+          
+          const createBtn = (text, onClick) => {
+              const btn = document.createElement('button')
+              btn.innerText = text
+              btn.style.fontSize = '10px'
+              btn.style.padding = '2px 6px'
+              btn.style.borderRadius = '4px'
+              btn.style.background = 'transparent'
+              btn.style.border = '1px solid rgba(255,255,255,0.1)'
+              btn.style.color = 'var(--color-text-secondary)'
+              btn.style.cursor = 'pointer'
+              btn.onmouseenter = () => { btn.style.borderColor = 'var(--color-accent-primary)'; btn.style.color = 'var(--color-accent-primary)' }
+              btn.onmouseleave = () => { btn.style.borderColor = 'rgba(255,255,255,0.1)'; btn.style.color = 'var(--color-text-secondary)' }
+              btn.onclick = onClick
+              return btn
+          }
+
+          // Extract pure code text (ignoring the toolbar itself if re-running)
+          // We get textContent from the code element usually
+          const codeEl = pre.querySelector('code')
+          const codeText = codeEl ? codeEl.textContent : pre.textContent
+
+          const insertBtn = createBtn('Insert', (e) => {
+              e.stopPropagation()
+              window.dispatchEvent(new CustomEvent('app:insert-text', { detail: { text: codeText } }))
+          })
+
+          const copyBtn = createBtn('Copy', (e) => {
+              e.stopPropagation()
+              navigator.clipboard.writeText(codeText)
+              e.target.innerText = 'Copied'
+              setTimeout(() => e.target.innerText = 'Copy', 2000)
+          })
+
+          toolbar.appendChild(insertBtn)
+          toolbar.appendChild(copyBtn)
+          
+          pre.insertBefore(toolbar, pre.firstChild)
+          // Adjust pre style to accommodate toolbar
+          pre.style.paddingTop = '0'
+          pre.style.position = 'relative'
+      })
+  }, [html])
+
   if (html) {
     return (
       <div
+        ref={containerRef}
         className="ai-markdown-render markdown-content"
         dangerouslySetInnerHTML={{ __html: html }}
       />
     )
   }
   
-  // Fallback: Raw text mode (essential for streaming validity)
   return (
     <div className="whitespace-pre-wrap font-mono text-sm opacity-90 leading-relaxed break-words min-h-[20px]">
       {content}
@@ -94,6 +155,9 @@ const AIPilot = ({ scale, selectedSnippet }) => {
   const textareaRef = useRef(null)
   const messagesRef = useRef(null)
   const messagesInnerRef = useRef(null)
+  
+  // Ref to track if request should be aborted
+  const abortRef = useRef(false)
 
   const scrollToBottom = (instant = false) => {
     if (messagesEndRef.current) {
@@ -141,6 +205,7 @@ const AIPilot = ({ scale, selectedSnippet }) => {
     setMessages(newMessages)
     setInput('')
     setIsThinking(true)
+    abortRef.current = false // Reset abort state
 
     if (!settings?.ai?.apiKey) {
       showToast('DeepSeek API Key is missing', 'error')
@@ -175,23 +240,21 @@ const AIPilot = ({ scale, selectedSnippet }) => {
     }
 
     try {
-      // 1. Prepare systematic context (System prompts guide the AI's behavior)
+      // 1. Prepare systematic context
       const contextMessages = [
         {
           role: 'system',
-          content: `You are DeepSeek Pilot, a high-performance AI assistant integrated into DevSnippet (a professional workstation for developers).
+          content: `You are DeepSeek Pilot, a high-performance AI assistant integrated into DevSnippet.
           Current Workspace: ${selectedSnippet ? `Snippet "${selectedSnippet.title}" (${selectedSnippet.language})` : 'Personal Library'}
           ${selectedSnippet ? `Snippet Content:\n${selectedSnippet.code}` : ''}
           
           Guidelines:
           - Be concise and technical.
-          - Use Markdown for code blocks.
-          - If the user asks to refactor, provide optimized code with explanations.
-          - If the user asks questions about the current snippet, use the provided content as context.`
+          - Use Markdown for code blocks.`
         }
       ]
 
-      // 2. Prepare payload (Forward relevant settings and chat history)
+      // 2. Prepare payload
       const payload = {
         apiKey: settings.ai?.apiKey,
         model: settings.ai?.model,
@@ -202,15 +265,28 @@ const AIPilot = ({ scale, selectedSnippet }) => {
       // 3. Invoke Secure Main Process Service
       console.log('📡 Sending AI Request:', payload.model)
       const response = await window.api.invoke('ai:chat', payload)
-      console.log('✅ AI Response Received')
+      
+      // Check if aborted during wait
+      if (abortRef.current) {
+          console.log('🛑 Request Aborted by User')
+          return
+      }
 
+      console.log('✅ AI Response Received')
       setMessages((prev) => [...prev, response])
     } catch (error) {
       console.error('AI Pilot Error (Full):', error)
-      showToast(error.message || 'Connection failed. Check your API key or internet.', 'error')
+      showToast(error.message || 'Connection failed.', 'error')
     } finally {
-      setIsThinking(false)
+      if (!abortRef.current) {
+          setIsThinking(false)
+      }
     }
+  }
+
+  const handleStop = () => {
+      abortRef.current = true
+      setIsThinking(false)
   }
 
   const handleKeyDown = (e) => {
@@ -359,11 +435,21 @@ const AIPilot = ({ scale, selectedSnippet }) => {
             </div>
             <button
               className="ai-send-btn"
-              onClick={handleSend}
-              disabled={!input.trim() || isThinking}
+              onClick={isThinking ? handleStop : handleSend}
+              disabled={!input.trim() && !isThinking}
+              style={isThinking ? { background: '#ef4444', borderColor: '#ef4444' } : {}}
             >
-              <span>SEND</span>
-              <Send size={12} />
+              {isThinking ? (
+                  <>
+                    <span>STOP</span>
+                    <Square size={12} fill="currentColor" />
+                  </>
+              ) : (
+                  <>
+                    <span>SEND</span>
+                    <Send size={12} />
+                  </>
+              )}
             </button>
           </div>
         </div>

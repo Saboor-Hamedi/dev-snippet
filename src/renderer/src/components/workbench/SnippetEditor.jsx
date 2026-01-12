@@ -799,12 +799,41 @@ const SnippetEditor = ({
     window.addEventListener('app:trigger-export-pdf', pdfFn)
     window.addEventListener('app:trigger-export-word', wordFn)
 
+    // Listen for AI Insert requests
+    const handleInsertText = (e) => {
+      const textToInsert = e.detail?.text
+      if (!textToInsert) return
+
+      // Calculate insertion index from cursorPos (line/col)
+      // Note: cursorPos is 1-based for line and col
+      const currentLines = code.split('\n')
+      let charIndex = 0
+      for (let i = 0; i < Math.min(cursorPos.line - 1, currentLines.length); i++) {
+        charIndex += currentLines[i].length + 1 // +1 for newline
+      }
+      charIndex += Math.min(cursorPos.col - 1, (currentLines[cursorPos.line - 1] || '').length)
+
+      const newCode = code.slice(0, charIndex) + textToInsert + code.slice(charIndex)
+      
+      setCode(newCode)
+      setIsDirty(true)
+      showToast('Code inserted at cursor', 'success')
+      
+      // Attempt to refocus editor
+      setTimeout(() => {
+          const editorElement = document.querySelector('.cm-editor .cm-content')
+          if (editorElement) editorElement.focus()
+      }, 100)
+    }
+    window.addEventListener('app:insert-text', handleInsertText)
+
     return () => {
       window.removeEventListener('force-save', fn)
       window.removeEventListener('app:trigger-export-pdf', pdfFn)
       window.removeEventListener('app:trigger-export-word', wordFn)
+      window.removeEventListener('app:insert-text', handleInsertText)
     }
-  }, [handleSave, handleExportPDF, handleExportWord])
+  }, [handleSave, handleExportPDF, handleExportWord, isReadOnly, code, cursorPos, setCode, setIsDirty, showToast])
 
   return (
     <>
