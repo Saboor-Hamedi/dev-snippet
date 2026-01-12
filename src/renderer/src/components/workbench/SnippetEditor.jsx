@@ -282,7 +282,7 @@ const SnippetEditor = ({
   }, [])
 
   // Header visibility logic
-  const isHeaderVisible = ((!isReadOnly && !initialSnippet?.readOnly && initialSnippet?.id !== 'system:settings' && initialSnippet?.id !== 'system:default-settings') || isCreateMode)
+  const isHeaderVisible = !isFlow && ((!isReadOnly && !initialSnippet?.readOnly && initialSnippet?.id !== 'system:settings' && initialSnippet?.id !== 'system:default-settings') || isCreateMode)
 
   // Memoize style to prevent CodeEditor re-renders on title change
   const editorStyle = useMemo(() => ({

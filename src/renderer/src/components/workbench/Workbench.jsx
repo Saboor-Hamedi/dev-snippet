@@ -696,7 +696,7 @@ const Workbench = ({
           }}
         >
           {/* Tab Bar - Always visible above content */}
-          {activeView === 'editor' || (activeView === 'snippets' && selectedSnippet) ? (
+          {(activeView === 'editor' || (activeView === 'snippets' && selectedSnippet)) && !showFlowMode ? (
             <TabBar
               tabs={selectedSnippet ? [selectedSnippet] : []}
               activeTabId={selectedSnippet?.id}

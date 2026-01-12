@@ -20,7 +20,9 @@ import {
   Maximize,
   Minimize,
   Star,
-  Pin
+  Pin,
+  GripVertical,
+  X
 } from 'lucide-react'
 import AutosaveIndicator from '../layout/Header/AutosaveIndicator'
 
@@ -128,15 +130,16 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
     const words = liveCode.trim() ? liveCode.trim().split(/\s+/).length : 0
     return { chars, words }
   }, [liveCode])
-
+ 
   const header = (
     <div
-      className="flex items-center justify-between w-full pr-1 font-mono"
+      className="flex items-center justify-between w-full pr-0 font-mono"
       style={{ pointerEvents: 'auto' }}
     >
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-2">
+        <GripVertical size={14} className="opacity-20 -ml-1.5" />
         {/* Timer Integration - Clean & Minimal */}
-        <div className="flex items-center gap-3 pl-1">
+        <div className="flex items-center gap-2 pl-0">
           <div className="flex flex-col items-start justify-center h-full pt-1">
             <div className="flex items-center gap-1.5 h-3">
               <span
@@ -177,8 +180,8 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
         </div>
 
         {/* Station Identity (Clean Text Only) */}
-        <div className="hidden md:flex items-center gap-3">
-          <div className="flex items-center gap-3 opacity-60">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 opacity-60">
             <Activity size={10} className="text-[var(--color-accent-primary)]" />
             {latestSnippet?.is_favorite ? (
               <Star size={10} className="text-yellow-500 fill-yellow-500" />
@@ -243,87 +246,19 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
           >
             {isZenFocused ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
           </button>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              localStorage.removeItem('pos_flow_workspace_position')
+              window.location.reload()
+            }}
+            className="p-1.5 rounded-none text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition-all"
+            title="Reset Station Layout"
+          >
+            <RotateCcw size={13} />
+          </button>
         </div>
-        {showPreview && (
-          <div className="hidden sm:flex items-center gap-2 border-l border-[var(--color-border)] pl-2 ml-1">
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                setIsLocked(!isLocked)
-              }}
-              className={`p-1.5 rounded-none transition-all ${isLocked ? 'text-[var(--color-accent-primary)]' : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]'}`}
-              title={isLocked ? 'Disable Ghost Interactivity' : 'Enable Ghost Interactivity'}
-            >
-              <Ghost size={13} />
-            </button>
-
-            {/* Ghost Opacity Control */}
-            <div className="flex items-center gap-2 px-2 border-l border-[var(--color-border)] ml-1 group/opacity">
-              <span className="text-[8px] font-black opacity-30 uppercase tracking-widest group-hover/opacity:opacity-60 transition-opacity">
-                Ghost
-              </span>
-              <input
-                type="range"
-                min="0.1"
-                max="1.0"
-                step="0.1"
-                value={opacity}
-                onMouseDown={(e) => e.stopPropagation()}
-                onChange={(e) => {
-                  e.stopPropagation()
-                  setOpacity(parseFloat(e.target.value))
-                }}
-                className="w-16 cursor-pointer"
-                title="Adjust Ghost Transparency"
-              />
-            </div>
-
-            {/* Viewport Presets - Minimalist */}
-            <div className="flex items-center gap-0.5">
-              {[
-                { id: 'mini', icon: Layout, size: 11 },
-                { id: 'mobile', icon: Smartphone, size: 12 },
-                { id: 'tablet', icon: Tablet, size: 12 },
-                { id: 'desktop', icon: Monitor, size: 13 }
-              ].map((v) => (
-                <button
-                  key={v.id}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setDevice(v.id)
-                    setShowPreview(true)
-                  }}
-                  className={`p-1.5 rounded-none transition-all ${device === v.id && showPreview ? 'text-[var(--color-accent-primary)]' : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]'}`}
-                >
-                  <v.icon size={v.size} />
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            localStorage.removeItem('pos_flow_workspace_position')
-            window.location.reload()
-          }}
-          className="p-1.5 rounded-none text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition-all"
-          title="Reset Station Layout"
-        >
-          <RotateCcw size={13} />
-        </button>
-
-        {/* <button
-          onClick={(e) => {
-            e.stopPropagation()
-            onExit()
-          }}
-          className="ml-1 p-1.5 rounded-none bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white transition-all"
-          title="Terminate Station"
-        >
-          <LogOut size={13} />
-        </button> */}
       </div>
     </div>
   )
@@ -382,7 +317,7 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
       >
         {/* Editor Column */}
         <div
-          className={`flex-1 min-w-[320px] flex flex-col ${isMobile ? 'border-b border-white/5' : 'border-r border-white/5'}`}
+          className="flex-1 min-w-[320px] flex flex-col"
           style={{
             backgroundColor: 'var(--editor-bg)',
             backdropFilter: 'none'
@@ -403,7 +338,75 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
               backdropFilter: 'none'
             }}
           >
-            <div className="w-full h-full">
+          <div className="flex flex-col h-full w-full">
+            {/* Ghost Preview Toolbar - Robust & Full Width */}
+            <div
+              className={`flex-none flex items-center justify-between px-3 h-10 bg-[var(--color-bg-secondary)] border-b border-white/5 z-20 transition-all duration-300 ${isZenFocused ? 'opacity-90 backdrop-blur-md' : ''}`}
+            >
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setIsLocked(!isLocked)
+                  }}
+                  className={`p-1.5 rounded-none transition-all ${isLocked ? 'text-[var(--color-accent-primary)]' : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]'}`}
+                  title={isLocked ? 'Disable Ghost Interactivity' : 'Enable Ghost Interactivity'}
+                >
+                  <Ghost size={13} />
+                </button>
+                <span className="text-[9px] font-black opacity-30 uppercase tracking-[0.2em] pl-1 hidden sm:inline">
+                  Ghost Preview
+                </span>
+              </div>
+
+              <div className="flex items-center gap-4">
+                {/* Opacity Slider */}
+                <div className="flex items-center gap-2 group/opacity">
+                  <span className="text-[8px] font-black opacity-30 uppercase tracking-widest">
+                    Opacity
+                  </span>
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="1.0"
+                    step="0.1"
+                    value={opacity}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onChange={(e) => {
+                      e.stopPropagation()
+                      setOpacity(parseFloat(e.target.value))
+                    }}
+                    className="w-16 sm:w-20 cursor-pointer accentuate-slider"
+                  />
+                </div>
+
+                <div className="w-[1px] h-3 bg-white/10" />
+
+                {/* Viewport Presets */}
+                <div className="flex items-center gap-0.5">
+                  {[
+                    { id: 'mini', icon: Layout, size: 11, label: 'Standard' },
+                    { id: 'mobile', icon: Smartphone, size: 12, label: 'Phone' },
+                    { id: 'tablet', icon: Tablet, size: 12, label: 'Tablet' },
+                    { id: 'desktop', icon: Monitor, size: 13, label: 'Desktop' }
+                  ].map((v) => (
+                    <button
+                      key={v.id}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setDevice(v.id)
+                      }}
+                      className={`p-1.5 rounded-none transition-all ${device === v.id ? 'text-[var(--color-accent-primary)]' : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]'}`}
+                      title={v.label}
+                    >
+                      <v.icon size={v.size} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-1 w-full relative overflow-hidden">
               <LivePreview
                 code={liveCode}
                 language={selectedSnippet?.language || 'markdown'}
@@ -415,10 +418,11 @@ const FlowWorkspace = ({ selectedSnippet, snippets, fontFamily, renderEditor, on
                 zenFocus={isZenFocused}
               />
             </div>
+          </div>
 
             {/* Stats Overlay */}
             {showStats && (
-              <div className="absolute top-4 left-4 p-2 bg-black/60 rounded-none border border-white/10 pointer-events-none font-mono text-[9px] text-blue-400">
+              <div className="absolute bottom-4 left-4 p-2 bg-black/60 rounded-none border border-white/10 pointer-events-none font-mono text-[9px] text-blue-400">
                 <div className="flex flex-col gap-1">
                   <span>CHARS: {stats.chars}</span>
                   <span>WORDS: {stats.words}</span>
