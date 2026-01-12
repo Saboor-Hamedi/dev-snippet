@@ -1,6 +1,7 @@
 # Core Editor & Logic (The "Do Not Touch" List)
 src/renderer/src/components/CodeEditor/
 src/renderer/src/components/workbench/editor/
+src/renderer/src/components/livepreview/LivePreview.jsx
 src/renderer/src/config/SettingManager.js
 src/renderer/src/config/settingsManager.js
 

@@ -17,7 +17,8 @@ export const useSidebarLogic = ({
   onToggleFolder,
   inputRef,
   listRef,
-  dirtyIds = new Set()
+  dirtyIds = new Set(),
+  selectedSnippet
 }) => {
   const {
     selectedIds,
@@ -208,6 +209,7 @@ export const useSidebarLogic = ({
   const handleSelectionInternal = useCallback(
     (e, id, type) => {
       let newSelection = []
+      const isMulti = e.shiftKey || e.ctrlKey || e.metaKey
 
       // SHIFT + CLICK: Range selection between last click and current click
       if (e.shiftKey && lastSelectedIdRef.current) {
@@ -217,7 +219,9 @@ export const useSidebarLogic = ({
         if (lastIndex !== -1 && currentIndex !== -1) {
           const start = Math.min(lastIndex, currentIndex)
           const end = Math.max(lastIndex, currentIndex)
-          newSelection = [...selectedIds]
+          
+          // Start with existing selection if Ctrl/Cmd is held, otherwise start fresh
+          newSelection = (e.ctrlKey || e.metaKey) ? [...selectedIds] : []
 
           for (let i = start; i <= end; i++) {
             const rowId = treeItems[i].id
@@ -234,41 +238,32 @@ export const useSidebarLogic = ({
       // STANDARD CLICK: Exclusive selection
       else {
         newSelection = [id]
-        
-        // Link logical selection to actual data
+      }
+
+      lastSelectedIdRef.current = id // Store VIRTUAL ID
+      setSidebarSelected(false)
+
+      // LOGICAL DATA SYNC:
+      // If a single item is clicked (standard click), it becomes the exclusive selection.
+      if (!isMulti) { 
         const item = treeItems.find((i) => i.id === id)
         const realId = item?.realId || id
 
         if (type === 'snippet' || type === 'pinned_snippet') {
           const snippet = snippets.find((s) => s.id === realId)
           if (snippet) onSelect(snippet)
-          setSelectedFolderId(null)
+          
+          setSelectedIds([id]) // Clean exclusive selection
+          setSelectedFolderId(null) // Clear folder context
         } else if (type === 'folder') {
           setSelectedFolderId(realId)
-          onSelect(null)
+          setSelectedIds([id]) // Folder is now the specific selection
+          // We don't onSelect(null) because we want to keep the editor open on the current file,
+          // but the SIDEBAR will now show the folder as the active item.
         }
-      }
-
-      lastSelectedIdRef.current = id // Store VIRTUAL ID
-      setSelectedIds(newSelection)   // Store VIRTUAL ID for visual rows
-      setSidebarSelected(false)
-
-      // Sync logical data for single selections
-      if (newSelection.length === 1) {
-        const virtualId = newSelection[0]
-        const item = treeItems.find((i) => i.id === virtualId)
-        const realId = item?.realId || virtualId
-
-        if (type === 'snippet' || type === 'pinned_snippet') {
-          const snippet = snippets.find((s) => s.id === realId)
-          if (snippet) {
-            onSelect(snippet)
-            setSelectedFolderId(null)
-          }
-        } else if (type === 'folder') {
-          setSelectedFolderId(realId)
-          onSelect(null)
-        }
+      } else {
+        // Multi-select mode: Add/Remove from existing set
+        setSelectedIds(newSelection)
       }
     },
     [treeItems, selectedIds, setSelectedIds, onSelect, setSelectedFolderId, snippets, setSidebarSelected]
@@ -287,7 +282,22 @@ export const useSidebarLogic = ({
       const selectIndex = (i) => {
         if (i < 0 || i >= treeItems.length) return
         const target = treeItems[i]
-        handleSelectionInternal(e, target.id, target.type)
+        
+        if (e.shiftKey) {
+          // Range selection via keyboard
+          const lastId = lastSelectedIdRef.current || treeItems[index].id
+          const lastIdx = treeItems.findIndex(item => item.id === lastId)
+          const start = Math.min(lastIdx, i)
+          const end = Math.max(lastIdx, i)
+          const newSelection = []
+          for (let k = start; k <= end; k++) {
+            newSelection.push(treeItems[k].id)
+          }
+          setSelectedIds(newSelection)
+        } else {
+          handleSelectionInternal(e, target.id, target.type)
+        }
+        
         listRef.current?.scrollToItem(i)
         
         // Ensure browser focus follows selection for screen readers and tab sync
@@ -311,9 +321,12 @@ export const useSidebarLogic = ({
           }
           break
         case 'ArrowRight':
+        case '>':
+        case '.':
           e.preventDefault()
           if (item.type === 'folder') {
-            if (item.data.collapsed) {
+            const isCollapsed = item.data.collapsed === 1 || item.data.collapsed === true
+            if (isCollapsed) {
               onToggleFolder(item.id, false) // Open
             } else {
               selectIndex(index + 1) // Enter first child
@@ -321,10 +334,13 @@ export const useSidebarLogic = ({
           }
           break
         case 'ArrowLeft':
+        case '<':
+        case ',':
           e.preventDefault()
-          if (item.type === 'folder' && !item.data.collapsed) {
+          const isExpanded = item.data.collapsed === 0 || item.data.collapsed === false
+          if (item.type === 'folder' && isExpanded) {
             onToggleFolder(item.id, true) // Close
-          } else if (item.depth > 0) {
+          } else {
             // Jump focus to parent folder
             let parentIndex = -1
             for (let i = index - 1; i >= 0; i--) {
@@ -352,8 +368,8 @@ export const useSidebarLogic = ({
   /**
    * 4. SELECTION SYNC
    * 
-   * Automatically scroll to the selected item if it changes from an external source 
-   * (e.g. Cmd+F search or "Daily Note" command).
+   * A: Visual Selection Sync
+   * Automatically scroll to the selected item if it changes from an external source.
    */
   React.useEffect(() => {
     if (selectedIds.length === 1 && listRef.current) {
@@ -364,6 +380,32 @@ export const useSidebarLogic = ({
       }
     }
   }, [selectedIds, treeItems])
+
+  /**
+   * B: Active File Sync
+   * When a snippet is opened via Welcome page, breadcrumbs, search, etc.,
+   * ensure the sidebar highlights it and clears any folder focus.
+   */
+  React.useEffect(() => {
+    if (!selectedSnippet) return
+    
+    // Check if the current file is already covered by the sidebar selection
+    const isAlreadySelected = selectedIds.some(id => 
+      id === selectedSnippet.id || id === `pinned-${selectedSnippet.id}`
+    )
+
+    if (!isAlreadySelected) {
+      // Logic: If user is actively looking at a folder, don't steal focus just because
+      // of a background save or small edit. But for a CHANGE in active snippet, reveal it.
+      const currentSelectionIsFolder = treeItems.some(i => i.id === selectedIds[0] && i.type === 'folder')
+      
+      // If we don't have a selection, or if we are switching snippets, sync selection
+      if (selectedIds.length === 0 || !currentSelectionIsFolder) {
+        setSelectedIds([selectedSnippet.id])
+        lastSelectedIdRef.current = selectedSnippet.id
+      }
+    }
+  }, [selectedSnippet?.id]) // Only trigger on ID change (ignore content edits)
 
   /**
    * 5. SMART FOCUS RECOVERY

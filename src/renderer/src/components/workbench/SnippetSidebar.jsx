@@ -127,7 +127,8 @@ const SnippetSidebar = ({
     onToggleFolder,
     inputRef,
     listRef,
-    dirtyIds
+    dirtyIds,
+    selectedSnippet
   })
 
   // --- 🪄 Creation Handlers ---
@@ -465,14 +466,10 @@ const SnippetSidebar = ({
           style={{
             backgroundColor: isDragOver
               ? 'rgba(var(--color-accent-primary-rgb), 0.05)'
-              : isSidebarSelected
-                ? 'rgba(var(--color-accent-primary-rgb), 0.02)'
-                : 'transparent',
+              : 'transparent',
             boxShadow: isDragOver
               ? 'inset 0 0 40px rgba(var(--color-accent-primary-rgb), 0.1), inset 0 0 0 1px var(--color-accent-primary)'
-              : isSidebarSelected
-                ? 'inset 0 0 0 1px var(--color-accent-primary)'
-                : 'none'
+              : 'none'
           }}
           tabIndex={0}
           // prettier-ignore

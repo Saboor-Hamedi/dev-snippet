@@ -436,7 +436,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
       )
     }
 
-    const isHighlight = selectedIds.includes(item.id) || selectedFolderId === itemData.id
+    const isHighlight = selectedIds.includes(item.id)
     const isOpen = !itemData.collapsed
     const { icon: FolderIcon, color: folderColor } = getFolderIcon(itemData.name, isOpen)
 
@@ -456,12 +456,10 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         onContextMenu={(e) => onContextMenu(e, type, itemData)}
       >
         <IndentGuides depth={depth} />
-        {isHighlight && (
-          <div className="absolute left-0 top-1 bottom-1 w-[2px] bg-[var(--color-accent-primary)] z-10" />
-        )}
+
         <div
-          className={`group flex items-center gap-[6px] w-full h-full select-none pr-2 relative transition-colors duration-150 ${
-            isDragOver ? 'drop-target-magnetic' : 'hover:bg-[var(--sidebar-item-hover-bg)]'
+          className={`group flex items-center gap-[6px] w-full h-full select-none pr-2 relative transition-all duration-200 ${
+            isDragOver ? 'drop-target-magnetic animate-pulse' : 'hover:bg-[var(--sidebar-item-hover-bg)]'
           }`}
           style={{
             backgroundColor: isHighlight ? 'var(--sidebar-item-active-bg)' : undefined,
@@ -537,7 +535,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
   
   // HIGHLIGHT LOGIC: Row is selected if it's in the multi-select array 
   // OR if it's the active snippet being edited (only in the primary folders, not pinned section)
-  const isSelected = selectedIds.includes(item.id) || (selectedSnippet && selectedSnippet.id === itemId && type !== 'pinned_snippet')
+  const isSelected = selectedIds.includes(item.id)
   
   const safeTitle = typeof itemData.title === 'string' ? itemData.title : ''
   const { icon: Icon, color } = getFileIcon(itemData.language, safeTitle)
@@ -548,9 +546,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
   return (
     <div style={{ ...style }} className="relative group/row">
       <IndentGuides depth={depth} />
-      {isSelected && (
-        <div className="absolute left-0 top-1.5 bottom-1.5 w-[2px] bg-[var(--color-accent-primary)] z-10" />
-      )}
+
       <button
         id={`sidebar-item-${index}`}
         data-snippet-id={itemId}
@@ -559,7 +555,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         onClick={handleItemClick}
         onKeyDown={(e) => handleItemKeyDown(e, index)}
         onContextMenu={(e) => onContextMenu(e, type, itemData)}
-        className={`theme-exempt flex items-center gap-[6px] w-full h-full select-none pr-3 relative transition-all duration-150 ${
+        className={`theme-exempt flex items-center gap-[6px] w-full h-full select-none outline-none focus:outline-none pr-3 relative transition-all duration-200 ${
           isCompact ? 'text-[11px]' : 'text-[12px]'
         } ${isSelected ? '' : 'hover:bg-[var(--sidebar-item-hover-bg)]'}`}
         style={{

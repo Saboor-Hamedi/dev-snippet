@@ -17,14 +17,12 @@ export const useSidebarStore = create((set) => ({
   setSelectedFolderId: (id) =>
     set({
       selectedFolderId: id,
-      selectedIds: [],
       isSidebarSelected: false
     }),
 
   setSelectedIds: (ids) =>
     set({
       selectedIds: ids,
-      selectedFolderId: null,
       isSidebarSelected: false
     }),
 
