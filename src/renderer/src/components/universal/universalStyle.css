@@ -204,6 +204,9 @@ body.dragging-active {
 body.dragging-active * {
   cursor: move !important;
   user-select: none !important;
+  -webkit-app-region: no-drag !important;
+  backdrop-filter: none !important;
+  transition: none !important;
 }
 
 /* Optimize Dragging Performance */

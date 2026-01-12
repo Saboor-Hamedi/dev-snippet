@@ -141,15 +141,14 @@ const AdvancedSplitPane = ({
           <div className="absolute inset-0 w-full h-full z-0">{left}</div>
           {!rightHidden && (
             <div
-              className="absolute top-4 right-5 bottom-6 z-40 flex flex-col overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.3)] transition-all duration-300 ease-out"
+              className="absolute top-4 right-5 bottom-6 z-40 flex flex-col overflow-hidden transition-all duration-300 ease-out"
               style={{
                 width: `${overlayWidth}%`,
                 minWidth: `${minRight}px`,
                 maxWidth: '92%',
                 backgroundColor: bgColor,
                 border: `${borderWidth}px solid ${borderColor || 'rgba(255,255,255,0.1)'}`,
-                borderRadius: `${borderRound}px`,
-                backdropFilter: 'blur(20px) saturate(180%)'
+                borderRadius: `${borderRound}px`
               }}
             >
               {/* Overlay Toolbar & Resizer */}
@@ -161,30 +160,6 @@ const AdvancedSplitPane = ({
                 <div className="w-0.5 h-12 bg-white/20 rounded-full group-hover:bg-blue-400 transition-colors" />
               </div>
 
-              {/* Device Preset Header */}
-              <div className="flex items-center justify-end px-4 py-2 gap-3 border-b border-white/5 bg-white/5">
-                <button
-                  onClick={() => setPreset(25)}
-                  className={`p-1 rounded hover:bg-white/10 transition-colors ${overlayWidth <= 30 ? 'text-blue-400' : 'text-slate-400'}`}
-                  title="Phone Preview (25%)"
-                >
-                  <Smartphone size={14} />
-                </button>
-                <button
-                  onClick={() => setPreset(45)}
-                  className={`p-1 rounded hover:bg-white/10 transition-colors ${overlayWidth > 30 && overlayWidth <= 55 ? 'text-blue-400' : 'text-slate-400'}`}
-                  title="Tablet Preview (45%)"
-                >
-                  <Tablet size={14} />
-                </button>
-                <button
-                  onClick={() => setPreset(85)}
-                  className={`p-1 rounded hover:bg-white/10 transition-colors ${overlayWidth > 55 ? 'text-blue-400' : 'text-slate-400'}`}
-                  title="Full Preview (85%)"
-                >
-                  <Monitor size={14} />
-                </button>
-              </div>
 
               <div
                 className={`flex-1 overflow-auto relative ${isDragging ? 'pointer-events-none' : ''}`}

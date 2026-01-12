@@ -86,10 +86,9 @@ const LivePreview = ({
 
       // 0. PERFORMANCE GUARD: Skip parsing if the window is currently being dragged
       // EXCEPT: Always allow the initial render (when renderedHtml is empty)
-      // Removed this guard to ensure content appears instantly without requiring a click.
-      // if (document.body.classList.contains('dragging-active') && renderedHtml !== '') {
-      //   return
-      // }
+      if (document.body.classList.contains('dragging-active') && renderedHtml !== '') {
+        return
+      }
 
       // 1. Check cache first (LRU cache hit = instant)
       const normalizedLang = (language || 'markdown').toLowerCase()
@@ -183,12 +182,11 @@ const LivePreview = ({
       parse()
     } else {
       const wait = renderedHtml === '' ? 0 : 75
-      const timeoutId = setTimeout(parse, wait)
-      return () => clearTimeout(timeoutId)
+      timeoutId = setTimeout(parse, wait)
     }
 
     return () => {
-      clearTimeout(timeoutId)
+      if (timeoutId) clearTimeout(timeoutId)
       active = false
       if (abortControllerRef.current) {
         abortControllerRef.current.abort()
@@ -229,7 +227,17 @@ const LivePreview = ({
       ${overrides}
       --editor-font-size: ${((fontSize || settings.editor?.fontSize || 14) * 1) / 16}rem;
       --font-sans: ${fontFamily}, sans-serif;
-    }`
+    }
+    
+    /* Performance Guard: Disable expensive visuals during active dragging */
+    :host-context(body.dragging-active) *,
+    .shadow-wrapper.is-dragging *,
+    .markdown-body.is-dragging * {
+      transition: none !important;
+      backdrop-filter: none !important;
+      pointer-events: none !important;
+    }
+    `
 
     return `${variableStyles}\n${themeVars}\n${previewStyles}\n${markdownStyles}\n.markdown-body { padding-bottom: 5rem !important; }`
   }, [theme, fontFamily, settings?.editor?.fontSize, settings?.syntax])
@@ -369,15 +377,15 @@ const LivePreview = ({
       {/* Parse Progress Bar - shows during incremental parsing */}
       {parseProgress < 100 && (
         <div
-          className="h-0.5 bg-gradient-to-r from-blue-500 to-blue-400 w-full"
-          style={{ width: `${parseProgress}%`, transition: 'width 0.2s ease-out' }}
+          className="h-0.5 bg-[var(--color-accent-primary)] w-full"
+          style={{ width: `${parseProgress}%` }}
         />
       )}
       {showHeader && (
         <div
-          className="flex items-center justify-between px-3 py-2 z-10 sticky top-0 transition-colors duration-300 overflow-x-auto"
+          className="flex items-center justify-between px-3 py-2 z-10 sticky top-0 overflow-x-auto"
           style={{
-            backgroundColor: 'var(--color-bg-secondary)',
+            backgroundColor: 'var(--color-bg-primary)',
             color: 'var(--color-text-primary)',
             borderBottom: '1px solid var(--color-border)'
           }}
@@ -385,7 +393,7 @@ const LivePreview = ({
           <div className="flex items-center gap-2 flex-shrink-0">
             <button
               onClick={() => setOverlay(!isOverlay)}
-              className={`w-7 h-7 flex items-center justify-center rounded-none transition-all ${isOverlay ? 'bg-[var(--color-accent-primary)] text-white' : 'hover:bg-black/5 dark:hover:bg-white/5 opacity-60 hover:opacity-100'}`}
+              className={`w-7 h-7 flex items-center justify-center rounded-none transition-opacity bg-transparent hover:bg-transparent theme-exempt ${isOverlay ? 'text-[var(--color-accent-primary)] opacity-100' : 'text-[var(--color-text-primary)] opacity-70 hover:opacity-100'}`}
               title={isOverlay ? 'Switch to Split View' : 'Switch to Overlay Mode'}
             >
               <Layers size={14} />
@@ -396,25 +404,25 @@ const LivePreview = ({
                 PREVIEW
               </span>
             )}
-            {isOverlay && splitContext && (
+            {isOverlay && (
               <div className="flex items-center gap-1 h-4 ml-1">
                 <button
-                  onClick={() => splitContext.setOverlayWidth(25)}
-                  className={`p-1 rounded-none transition-colors ${splitContext.overlayWidth === 25 ? 'bg-[var(--color-accent-primary)] text-white' : 'text-[var(--color-text-tertiary)] hover:bg-black/5 dark:hover:bg-white/5'}`}
+                  onClick={() => splitContext?.setOverlayWidth?.(25)}
+                  className={`p-1 rounded-none transition-opacity bg-transparent hover:bg-transparent theme-exempt ${(splitContext?.overlayWidth || 0) === 25 ? 'text-[var(--color-accent-primary)] opacity-100' : 'text-[var(--color-text-primary)] opacity-70 hover:opacity-100'}`}
                   title="Phone View"
                 >
                   <Smartphone size={14} />
                 </button>
                 <button
-                  onClick={() => splitContext.setOverlayWidth(50)}
-                  className={`p-1 rounded-none transition-colors ${splitContext.overlayWidth === 50 ? 'bg-[var(--color-accent-primary)] text-white' : 'text-[var(--color-text-tertiary)] hover:bg-black/5 dark:hover:bg-white/5'}`}
+                  onClick={() => splitContext?.setOverlayWidth?.(50)}
+                  className={`p-1 rounded-none transition-opacity bg-transparent hover:bg-transparent theme-exempt ${(splitContext?.overlayWidth || 0) === 50 ? 'text-[var(--color-accent-primary)] opacity-100' : 'text-[var(--color-text-primary)] opacity-70 hover:opacity-100'}`}
                   title="Tablet View"
                 >
                   <Tablet size={14} />
                 </button>
                 <button
-                  onClick={() => splitContext.setOverlayWidth(75)}
-                  className={`p-1 rounded-none transition-colors ${splitContext.overlayWidth === 75 ? 'bg-[var(--color-accent-primary)] text-white' : 'text-[var(--color-text-tertiary)] hover:bg-black/5 dark:hover:bg-white/5'}`}
+                  onClick={() => splitContext?.setOverlayWidth?.(75)}
+                  className={`p-1 rounded-none transition-opacity bg-transparent hover:bg-transparent theme-exempt ${(splitContext?.overlayWidth || 0) === 75 ? 'text-[var(--color-accent-primary)] opacity-100' : 'text-[var(--color-text-primary)] opacity-70 hover:opacity-100'}`}
                   title="Desktop View"
                 >
                   <Monitor size={14} />
@@ -425,7 +433,7 @@ const LivePreview = ({
           <div className="flex items-center gap-1 flex-shrink-0 ml-4">
             <button
               onClick={onOpenMiniPreview}
-              className="w-7 h-7 rounded-none hover:bg-[var(--hover-bg)] text-[var(--color-text-primary)] flex items-center justify-center transition-opacity hover:opacity-70"
+              className="w-7 h-7 rounded-none transition-opacity bg-transparent hover:bg-transparent theme-exempt text-[var(--color-text-primary)] opacity-70 hover:opacity-100 flex items-center justify-center font-mono"
               title="Pop out Mini Preview"
             >
               <svg
@@ -445,7 +453,7 @@ const LivePreview = ({
             </button>
             <button
               onClick={onOpenExternal}
-              className="w-7 h-7 rounded-none hover:bg-[var(--hover-bg)] text-[var(--color-text-primary)] flex items-center justify-center transition-opacity hover:opacity-70"
+              className="w-7 h-7 rounded-none transition-opacity bg-transparent hover:bg-transparent theme-exempt text-[var(--color-text-primary)] opacity-70 hover:opacity-100 flex items-center justify-center font-mono"
               title="Open in System Browser"
             >
               <svg
@@ -470,7 +478,7 @@ const LivePreview = ({
                 else if (window.api?.exportPDF) window.api.exportPDF()
                 else window.print()
               }}
-              className="px-2 py-1 rounded-none bg-blue-500 text-white text-[10px] font-bold"
+              className="px-2 py-1 rounded-none transition-opacity bg-transparent hover:bg-transparent theme-exempt text-[var(--color-text-primary)] opacity-70 hover:opacity-100 text-[10px] font-bold"
             >
               Export
             </button>

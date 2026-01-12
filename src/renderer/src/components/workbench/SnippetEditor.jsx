@@ -184,8 +184,9 @@ const SnippetEditor = ({
   const editorExport = useEditorExport({
     code,
     title,
-    initialSnippet,
+    snippets,
     currentTheme,
+    settings,
     showToast
   })
 
