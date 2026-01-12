@@ -531,6 +531,7 @@ body.dragging-active * {
 }
 
 /* Prompt & Trash Modal Specific Overrides (Square & Flush Header) */
+
 .universal-modal.prompt-modal,
 .universal-modal.trash-modal,
 .universal-modal.prompt-modal .universal-modal-header,

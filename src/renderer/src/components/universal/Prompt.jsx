@@ -67,7 +67,7 @@ const Prompt = ({
   const icon = getIcon()
 
   const footer = (
-    <div className="flex justify-end gap-2 w-full">
+    <div className="flex justify-end gap-2 w-full px-3 pb-3 pt-2">
       <button
         onClick={onClose}
         className="px-4 h-[28px] flex items-center justify-center text-xs font-medium rounded bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)] transition-all active:scale-95 border border-[var(--color-border)]"
@@ -100,18 +100,24 @@ const Prompt = ({
         </div>
       }
       footer={footer}
-      width="400px"
+      width="350px"
       height="auto"
-      className="prompt-modal snappy"
+      className="prompt-modal snappy no-padding"
       noTab={true}
+      resetPosition={true}
       zIndex={zIndex}
       allowResize={false}
       hideBorder={true}
       hideHeaderBorder={true}
       allowMaximize={false}
-      headerHeight={28}
+      headerHeight={24}
     >
-      <div className="p-0">
+      <style>{`
+        .universal-modal-overlay:has(.prompt-modal) { background-color: transparent !important; }
+        .prompt-modal .universal-modal-content { min-height: 0 !important; }
+        .prompt-modal .universal-modal-header { background-color: var(--color-bg-tertiary) !important; }
+      `}</style>
+      <div className="px-3 py-2">
         {message && (
           <p className="text-xs text-[var(--color-text-secondary)] mb-2 leading-relaxed">
             {message}
