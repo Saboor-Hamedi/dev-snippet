@@ -15,7 +15,7 @@
   --border-round: 0;
   /* --active-line-bg: rgba(88, 166, 255, 0.1); */
   --active-line-bg: transparent;
-  --shadow-box-color: #58a6ff;
+  --shadow-box-bg: #58a6ff;
   --active-line-border-width: 0px;
   --active-line-gutter-border-width: 0px;
 }
@@ -88,7 +88,7 @@
 
 .cm-editor {
   font-family: var(--editor-font-family, 'JetBrains Mono', monospace) !important;
-  font-size: calc(var(--editor-font-size) * var(--zoom-level));
+  font-size: var(--editor-font-size);
   background-color: var(--color-bg-primary, transparent) !important;
   min-width: 100% !important;
   min-height: 100% !important;
@@ -97,7 +97,7 @@
 
 .cm-content {
   font-family: var(--editor-font-family, 'JetBrains Mono', monospace) !important;
-  font-size: calc(var(--editor-font-size) * var(--zoom-level)) !important;
+  font-size: var(--editor-font-size);
   line-height: 1.6 !important;
   min-height: 150vh !important;
   padding-bottom: 50vh !important; padding-top: var(--editor-content-padding-top, 10px) !important;

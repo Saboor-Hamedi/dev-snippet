@@ -111,7 +111,7 @@ const CodeEditor = ({
     cursorShadowBoxColor
   } = useCursorProp()
   const { gutterBgColor, gutterBorderColor, gutterBorderWidth, showGutter } = useGutterProp()
-  const { getSetting } = useSettings()
+  const { getSetting } = useSettings(); const baseFontSize = getSetting("editor.fontSize") || 13;
   const fontFamily =
     getSetting('editor.fontFamily') || "'JetBrains Mono', 'Fira Code', Consolas, monospace"
 
@@ -546,6 +546,7 @@ const CodeEditor = ({
       data-cursor-blinking={cursorBlinking.toString()}
       data-caret-shape={cursorShape}
       style={{
+        '--editor-font-size': `${baseFontSize * editorZoom}px`,
         '--caret-width': `${cursorWidth}px`,
         '--caret-color': cursorColor,
         '--cursor-blinking-speed': `${cursorBlinkingSpeed}ms`,

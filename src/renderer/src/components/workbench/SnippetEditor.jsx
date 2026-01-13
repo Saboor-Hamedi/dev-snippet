@@ -95,6 +95,18 @@ const SnippetEditor = ({
   // --- WIKILINK INTEGRATION ---
   const [wikiLinkExtensions, setWikiLinkExtensions] = useState([])
 
+  // --- AUTO-TAGGING & IMMERSIVE SYNC ---
+  // Since the Meta Header is removed, we automatically sync hashtags from text to DB
+  useEffect(() => {
+    if (!code || isReadOnly) return
+    const extracted = extractTags(code)
+    
+    // Low-dependency check to avoid unnecessary state churn
+    if (JSON.stringify(extracted) !== JSON.stringify(tags)) {
+      internalSetTags(extracted)
+    }
+  }, [code, tags, internalSetTags, isReadOnly])
+
   // --- FLOW MODE BOOTSTRAP SYNC ---
   // Ensure Flow Preview gets content immediately, not just on the next keystroke.
   useEffect(() => {
@@ -317,12 +329,7 @@ const SnippetEditor = ({
   }, [activeMode])
 
   useEffect(() => {
-    if (isCreateMode && titleInputRef.current) {
-      const timer = setTimeout(() => {
-        titleInputRef.current.focus({ preventScroll: true })
-      }, 50)
-      return () => clearTimeout(timer)
-    }
+    // Focused moved to CodeEditor autoFocus prop for a more "Pure Editor" experience
   }, [isCreateMode])
 
   useEffect(() => {
@@ -451,25 +458,9 @@ const SnippetEditor = ({
                       Actually better to keep it consistent OR just hide if !id */}
                   <div className="flex-1 overflow-visible overflow-x-hidden flex flex-col">
                     <div className="w-full max-w-[850px] mx-auto flex flex-col relative text-left h-full">
-                        {initialSnippet?.id && (
-                          <div className="w-full shrink-0 relative z-30 bg-transparent">
-                            <EditorMetadataHeader
-                              title={title}
-                              setTitle={setTitle}
-                              tags={tags}
-                              setTags={handleSetTags}
-                              currentTagInput={currentTagInput}
-                              setCurrentTagInput={handleSetCurrentTagInput}
-                              isDuplicate={isDuplicate}
-                              initialSnippet={initialSnippet}
-                              onSave={onSave}
-                              code={code}
-                              setIsDirty={setIsDirty}
-                              titleInputRef={titleInputRef}
-                              readOnly={isReadOnly}
-                            />
-                          </div>
-                        )}
+                        {/* Meta Header Removed for "Pure Editor" experience - User Request */}
+                        {/* {initialSnippet?.id && ( ... EditorMetadataHeader ... )} */}
+                        
                         <div className="w-full flex flex-col bg-transparent border-none outline-none overflow-hidden min-h-[300px]">
                           <div className="flex-1 w-full flex flex-col min-h-0 bg-transparent relative">
                             <CodeEditor
@@ -479,7 +470,7 @@ const SnippetEditor = ({
                               wordWrap={wordWrap}
                               theme={currentTheme}
                               centered={true}
-                              autoFocus={!isCreateMode && initialSnippet?.id !== 'system:settings'}
+                              autoFocus={true} // Priority focus on editor since title/tags are now inline
                               snippetId={initialSnippet?.id}
                               readOnly={isReadOnly || initialSnippet?.readOnly || false}
                               onChange={onCodeChangeWrapper}

@@ -33,8 +33,7 @@ export const DEFAULT_SETTINGS = {
     cursorBlinkingSpeed: 500,
     cursorSelectionBg: 'rgba(38, 79, 120, 0.5)',
     cursorActiveLineBg: 'transparent',
-    cursorShadowBoxColor: '#58a6ff',
-    color: '#d946ef'
+    cursorShadowBoxColor: '#58a6ff'
   },
   gutter: {
     gutterBgColor: '#18181b',
