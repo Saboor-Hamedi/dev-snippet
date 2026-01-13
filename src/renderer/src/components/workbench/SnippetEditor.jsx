@@ -485,6 +485,7 @@ const SnippetEditor = ({
                               onChange={onCodeChangeWrapper}
                               onLargeFileChange={setIsLargeFile}
                               onKeyDown={handleEditorKeyDown}
+                              snippets={snippets} 
                               extensions={wikiLinkExtensions}
                               style={editorStyle}
                               height="100%"

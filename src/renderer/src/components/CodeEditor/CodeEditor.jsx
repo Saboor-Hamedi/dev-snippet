@@ -72,8 +72,9 @@ const CodeEditor = ({
   centered = false, // Default to false for modals/smaller views
   snippetId = null,
   zenFocus = false,
-  onScroll, // New prop for scroll syncing
-  style = {} // Allow passing custom styles
+  onScroll,
+  extensions = [], // Restored: Important for WikiLink and other external builders
+  style = {}
 }) => {
   // Zoom level is now managed globally by useZoomLevel at the root/SettingsProvider level.
   // Individual components consume the result via CSS variables.
@@ -413,9 +414,10 @@ const CodeEditor = ({
     () => [
       ...baseExtensions,
       ...dynamicExtensions,
+      ...extensions, // Restored: Merges extensions from the WikiLink component
       attributesExtension
     ],
-    [baseExtensions, dynamicExtensions, attributesExtension]
+    [baseExtensions, dynamicExtensions, extensions, attributesExtension]
   )
 
   // ... (keeping existing logic)

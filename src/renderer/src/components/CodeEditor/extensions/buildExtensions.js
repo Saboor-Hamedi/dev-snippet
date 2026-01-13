@@ -172,6 +172,7 @@ const buildExtensions = async (options, handlers = {}) => {
     try {
       const { wikiLinkCompletionSource } = completionExports
       if (wikiLinkCompletionSource) {
+        console.debug('[WikiLink] Registering completion source with', snippetTitles?.length, 'titles')
         completionSources.push(wikiLinkCompletionSource(snippetTitles))
       }
     } catch (e) {

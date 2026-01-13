@@ -47,13 +47,15 @@ export const wikiLinkTooltip = hoverTooltip(async (view, pos) => {
       create: () => {
         const dom = document.createElement('div')
         dom.className = 'cm-link-preview-tooltip'
-        dom.innerHTML = `<div class="preview-container-inner" style="padding: 6px 12px; cursor: pointer; color: var(--color-accent-primary);">✨ Click to create <b>"${link.title}"</b></div>`
+        dom.innerHTML = `<div class="preview-container-inner" style="cursor: pointer; padding: 12px 16px;">
+          ✨ Click to create <b>"${link.title}"</b>
+        </div>`
         dom.onclick = (e) => {
           e.preventDefault()
           e.stopPropagation()
           window.dispatchEvent(new CustomEvent('app:open-snippet', { detail: { title: link.title } }))
         }
-        return { dom, offset: { x: 0, y: 10 } }
+        return { dom, offset: { x: 0, y: 5 } }
       }
     }
   }
@@ -65,21 +67,17 @@ export const wikiLinkTooltip = hoverTooltip(async (view, pos) => {
     create: (v) => {
       const container = document.createElement('div')
       container.className = 'cm-link-preview-tooltip'
-      container.innerHTML = `<div class="preview-container-inner" style="padding: 10px 14px; min-width: 280px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
-        <div class="preview-header" style="cursor: pointer; margin-bottom: 6px; padding: 4px 6px; border-radius: 4px; transition: background 0.2s; display: flex; align-items: center; justify-content: space-between;">
-          <span class="preview-title-text" style="font-weight: 600; text-decoration: underline; color: var(--color-accent-primary); font-size: 1.1em;">${link.title}</span>
-          <span style="font-size: 0.7em; opacity: 0.5; font-style: italic;">(Open)</span>
+      container.innerHTML = `<div class="preview-container-inner">
+        <div class="preview-header" style="cursor: pointer;">
+          <span class="preview-title-text">${link.title}</span>
+          <span class="preview-open-indicator" style="font-size: 0.75em; opacity: 0.5;">(Open)</span>
         </div>
-        <div class="preview-body" style="font-size: 0.9em; opacity: 0.95; line-height: 1.4; max-height: 250px; overflow: hidden; position: relative;">
-          Loading preview...
-          <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 30px; background: linear-gradient(transparent, var(--color-bg-primary)); pointer-events: none;"></div>
+        <div class="preview-body">
+          <div class="preview-loading">Loading preview...</div>
         </div>
       </div>`
       
       const header = container.querySelector('.preview-header')
-      header.onmouseenter = () => { header.style.background = 'rgba(255,255,255,0.05)' }
-      header.onmouseleave = () => { header.style.background = 'transparent' }
-      
       header.onclick = (e) => {
         e.preventDefault()
         e.stopPropagation()
@@ -97,13 +95,13 @@ export const wikiLinkTooltip = hoverTooltip(async (view, pos) => {
           const rawCode = snippet.code || ''
           const truncatedCode = rawCode.length > 800 ? rawCode.substring(0, 800) + '...' : rawCode
           const html = await markdownToHtml(truncatedCode, { renderMetadata: false })
-          body.innerHTML = html + '<div style="position: absolute; bottom: 0; left: 0; right: 0; height: 30px; background: linear-gradient(transparent, var(--color-bg-primary)); pointer-events: none;"></div>'
+          body.innerHTML = html + '<div class="preview-fade-overlay" style="position: absolute; bottom: 0; left: 0; right: 0; height: 40px; background: linear-gradient(transparent, var(--color-tooltip-bg, #1e1e1e)); pointer-events: none;"></div>'
         } catch (e) {
           body.textContent = (snippet.code || '').substring(0, 150) + '...'
         }
       })
 
-      return { dom: container, offset: { x: 0, y: 15 } }
+      return { dom: container, offset: { x: 0, y: 5 } }
     }
   }
 }, { hoverTime: 300 })
