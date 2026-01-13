@@ -4,6 +4,7 @@ import { GripVertical } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../features/keyboard/useKeyboardShortcuts'
 import { useEditorFocus } from '../../hook/useEditorFocus.js'
 import { useZoomLevel, useEditorZoomLevel } from '../../hook/useSettingsContext'
+import useDebounce from '../../hook/useDebounce'
 import { ZOOM_STEP } from '../../hook/useZoomLevel.js'
 import WelcomePage from '../WelcomePage.jsx'
 import { StatusBar } from '../layout/StatusBar/useStatusBar'
@@ -146,13 +147,14 @@ const SnippetEditor = ({
 
 
  
-  // --- DETECT LANGUAGE ---
+  // --- DETECT LANGUAGE (THROTTLED) ---
+  const debouncedCodeForLang = useDebounce(code, 1000)
   const detectedLang = useMemo(() => {
     const safeTitle = typeof title === 'string' ? title : ''
     const ext = safeTitle.includes('.') ? safeTitle.split('.').pop()?.toLowerCase() : null
     let lang = ext || 'plaintext'
-    if (!ext && code) {
-      const trimmed = code.substring(0, 500).trim()
+    if (!ext && debouncedCodeForLang) {
+      const trimmed = debouncedCodeForLang.substring(0, 500).trim()
       if (
         trimmed.startsWith('# ') ||
         trimmed.startsWith('## ') ||
@@ -168,7 +170,7 @@ const SnippetEditor = ({
       }
     }
     return lang
-  }, [title, code.substring(0, 20)])
+  }, [title, debouncedCodeForLang])
 
   // WRAPPER: Ensure the system receives the detected language on the first save
   const handleOnSave = useCallback((item) => {
@@ -233,6 +235,58 @@ const SnippetEditor = ({
   // WikiLink Logic: Handled entirely by SnippetLibraryInner (global listener)
   // Removing redundant listener here to prevent recursive loop 'Maximum call stack size exceeded'
   
+
+  const { handleSplitSnippet } = useSnippetOperations({
+    title,
+    code,
+    setCode,
+    setIsDirty,
+    initialSnippet,
+    snippets,
+    onSave,
+    onNew,
+    showToast
+  })
+
+  const switcherRef = useRef(null)
+  const dragHandleRef = useRef(null)
+
+  // Ref for title input auto-focus
+  const titleInputRef = useRef(null)
+
+  // --- CORE UI STATE (HOISTED FOR INITIALIZATION SAFETY) ---
+  const [justRenamed, setJustRenamed] = useState(false)
+  const [isFloating, setIsFloating] = useState(
+    () => settings?.ui?.modeSwitcher?.isFloating || false
+  )
+  const [cursorPos, setCursorPos] = useState({ line: 1, col: 1 })
+  const [activeMode, setActiveMode] = useState('live_preview')
+  const [isLargeFile, setIsLargeFile] = useState(false)
+  const editorContainerRef = useRef(null)
+  const textareaRef = useRef(null)
+  const [pinPopover, setPinPopover] = useState({ visible: false, x: 0, y: 0 })
+  const debouncedCodeForPreview = useDebounce(code, code.length > 20000 ? 500 : 0)
+
+  // 1. PRIMARY SETTINGS & HANDLERS
+  const wordWrap = getSetting('editor.wordWrap') !== false
+
+  const handleCursorChange = useCallback((pos) => {
+    setCursorPos(pos)
+  }, [])
+
+  const onToggleCompactHandler = useCallback(() => {
+    if (onToggleCompact) onToggleCompact()
+  }, [onToggleCompact])
+
+  const cycleMode = useCallback(() => {
+    const modes = ['source', 'live_preview', 'reading']
+    const currentMode = activeMode || 'live_preview'
+    const nextIndex = (modes.indexOf(currentMode) + 1) % modes.length
+    window.dispatchEvent(
+      new CustomEvent('app:set-editor-mode', { detail: { mode: modes[nextIndex] } })
+    )
+  }, [activeMode])
+
   const { handleTriggerCloseCheck } = useEditorCloseCheck({
     isDirty,
     setIsDirty,
@@ -251,144 +305,130 @@ const SnippetEditor = ({
     isDirtyRef
   })
 
-  const { handleSplitSnippet } = useSnippetOperations({
-    title,
-    code,
-    setCode,
-    setIsDirty,
-    initialSnippet,
-    snippets,
-    onSave,
-    onNew,
-    showToast
-  })
-
-  const [justRenamed, setJustRenamed] = useState(false)
-  const [isFloating, setIsFloating] = useState(
-    () => settings?.ui?.modeSwitcher?.isFloating || false
-  )
-  const switcherRef = useRef(null)
-  const dragHandleRef = useRef(null)
-
-  // Ref for title input auto-focus
-  const titleInputRef = useRef(null)
-
-  const [cursorPos, setCursorPos] = useState({ line: 1, col: 1 })
-  const handleCursorChange = useCallback((pos) => {
-    setCursorPos(pos)
-  }, [])
-  const [activeMode, setActiveMode] = useState('live_preview')
-  const editorContainerRef = useRef(null)
-  const textareaRef = useRef(null)
-  const [pinPopover, setPinPopover] = useState({ visible: false, x: 0, y: 0 })
-
-  // Header visibility logic
-  const isHeaderVisible = !isFlow && ((!isReadOnly && !initialSnippet?.readOnly && initialSnippet?.id !== 'system:settings' && initialSnippet?.id !== 'system:default-settings') || isCreateMode)
-
-  // Header scroll logic - Purely DOM-driven for stability
-  const headerRef = useRef(null)
-  const isScrollingRef = useRef(false)
-  const scrollTimeoutRef = useRef(null)
-
-  // Measure header height dynamically - PURE DOM INJECTION
-  useLayoutEffect(() => {
-    // 1. Handle cases where header is hidden (Flow Mode / Documentation)
-    if (!isHeaderVisible) {
-      if (editorContainerRef.current) {
-        editorContainerRef.current.style.setProperty('--editor-content-padding-top', '10px')
-      }
-      return
-    }
-
-    if (!headerRef.current) return
-    
-    // 2. STABLE INITIALIZATION: Set immediately to prevent "Zoom/Jump Pulse"
-    const rect = headerRef.current.getBoundingClientRect()
-    const initialHeight = Math.floor(rect.height) || 120
-    
-    // Apply immediately to the container to stabilize CodeMirror view
-    if (editorContainerRef.current) {
-       editorContainerRef.current.style.setProperty('--editor-content-padding-top', `${initialHeight}px`)
-    }
-
-    const resizeObserver = new ResizeObserver((entries) => {
-      // 3. PERFORMANCE SHIELD: Absolutely block height updates during scrolling.
-      if (isScrollingRef.current) return
-
-      for (const entry of entries) {
-        // 4. PIXEL LOCK: Thresholding to ignore noise
-        const roundedHeight = Math.floor(entry.contentRect.height)
-        
-        // 5. DIRECT DOM UPDATE: Bypass React Re-render entirely
-        if (editorContainerRef.current) {
-           const current = editorContainerRef.current.style.getPropertyValue('--editor-content-padding-top')
-           if (current !== `${roundedHeight}px`) {
-             editorContainerRef.current.style.setProperty('--editor-content-padding-top', `${roundedHeight}px`)
-           }
-        }
-      }
-    })
-    
-    resizeObserver.observe(headerRef.current)
-    return () => resizeObserver.disconnect()
-  }, [isHeaderVisible])
-
-  const wordWrap = getSetting('editor.wordWrap') !== false
-
-  const onToggleCompactHandler = useCallback(() => {
-    if (onToggleCompact) onToggleCompact()
-  }, [onToggleCompact])
-
-  const onEditorScroll = useCallback((scrollTop) => {
-    // 1. SECURE SCROLLING STATE
-    isScrollingRef.current = true
-    if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current)
-    scrollTimeoutRef.current = setTimeout(() => {
-      isScrollingRef.current = false
-    }, 300) // Longer timeout for inertial scroll safety
-
-    // 2. STABILIZED HEADER TRANSFORM
-    if (headerRef.current) {
-      if (window.__headerRafId) cancelAnimationFrame(window.__headerRafId)
-      window.__headerRafId = requestAnimationFrame(() => {
-        if (headerRef.current) {
-          headerRef.current.style.transform = `translateY(-${scrollTop}px)`
-        }
-      })
-    }
-  }, [])
-
-  // STABLE STYLE: No longer includes --editor-content-padding-top as it is managed purely via DOM
-  const editorStyle = useMemo(() => ({}), []) 
-
-  // Mode cycling logic - Defined EARLY to be used in handlers
-  const cycleMode = useCallback(() => {
-    const modes = ['source', 'live_preview', 'reading']
-    // Fallback to 'live_preview' if activeMode is undefined
-    const currentMode = activeMode || 'live_preview'
-    const nextIndex = (modes.indexOf(currentMode) + 1) % modes.length
-    
-    window.dispatchEvent(
-      new CustomEvent('app:set-editor-mode', { detail: { mode: modes[nextIndex] } })
-    )
-  }, [activeMode])
-
-  // Memoize key handler to prevent CodeEditor re-renders
+  // 2. KEYBOARD ENGINE
   const handleEditorKeyDown = useCallback((e) => {
     if (e.key === 'Escape') {
-      // Trigger the close logic which now handles the warning
       handleTriggerCloseCheck()
     }
     if ((e.ctrlKey || e.metaKey) && e.key === ',') {
       e.preventDefault()
       onToggleCompactHandler()
     }
-    // Ctrl + / to cycle modes
     if ((e.ctrlKey || e.metaKey) && e.key === '/') {
       e.preventDefault()
       cycleMode()
     }
   }, [handleTriggerCloseCheck, onToggleCompactHandler, cycleMode])
+
+  // Header visibility logic - Polished for clarity
+  const isSystemSnippet = initialSnippet?.id === 'system:settings' || initialSnippet?.id === 'system:default-settings'
+  const isSnippetEditable = !isReadOnly && !initialSnippet?.readOnly && !isSystemSnippet
+  const isHeaderVisible = !isFlow && (isSnippetEditable || isCreateMode)
+
+  const headerRef = useRef(null)
+
+  // STABLE STYLE: Clean empty object to prevent any React style-diffing.
+  const editorStyle = useMemo(() => ({}), []) 
+
+  // --- MEMOIZED COMPONENT SHIELDS (Maximum Typing Speed) ---
+  
+  // 1. Surgical Header Shield
+  const memoizedHeader = useMemo(() => {
+    if (!isHeaderVisible) return null
+    return (
+      <div className="w-full shrink-0 relative z-30 bg-[var(--color-bg-primary)]">
+        <EditorMetadataHeader
+          title={title}
+          setTitle={setTitle}
+          tags={tags}
+          setTags={setTags}
+          currentTagInput={currentTagInput}
+          setCurrentTagInput={setCurrentTagInput}
+          isDuplicate={isDuplicate}
+          initialSnippet={initialSnippet}
+          onSave={onSave}
+          code={code} // Still needed for save handling, but update is throttled by parent
+          setIsDirty={setIsDirty}
+          titleInputRef={titleInputRef}
+          readOnly={isReadOnly}
+        />
+      </div>
+    )
+  }, [isHeaderVisible, title, tags, currentTagInput, isDuplicate, initialSnippet?.id, isReadOnly])
+
+  // 2. Surgical Editor Shield
+  const memoizedEditor = useMemo(() => {
+    return (
+      <div className="flex-1 w-full relative min-h-0 bg-[var(--color-bg-primary)]">
+        <CodeEditor
+          value={code || ''}
+          language={detectedLang}
+          wordWrap={wordWrap}
+          theme={currentTheme}
+          centered={true}
+          autoFocus={!isCreateMode && initialSnippet?.id !== 'system:settings'}
+          snippetId={initialSnippet?.id}
+          readOnly={isReadOnly || initialSnippet?.readOnly || false}
+          onChange={handleCodeChange}
+          onLargeFileChange={setIsLargeFile}
+          style={editorStyle}
+          onKeyDown={handleEditorKeyDown}
+          height="100%"
+          className="h-full"
+          textareaRef={textareaRef}
+          snippets={snippets}
+          zenFocus={settings?.ui?.zenFocus}
+          onCursorChange={handleCursorChange}
+        />
+      </div>
+    )
+  }, [code, detectedLang, wordWrap, currentTheme, isCreateMode, initialSnippet?.id, isReadOnly, handleCodeChange, editorStyle, handleEditorKeyDown, snippets, settings?.ui?.zenFocus, handleCursorChange])
+
+  // 3. Surgical Preview Shield
+  const memoizedPreview = useMemo(() => {
+    return (
+      <div className="h-full w-full p-0 flex justify-center bg-[var(--color-bg-primary)] overflow-hidden text-left items-stretch relative">
+        <div className="w-full max-w-[850px] h-full shadow-sm flex flex-col">
+          <LivePreview
+            code={debouncedCodeForPreview}
+            isReadOnly={isReadOnly || initialSnippet?.readOnly}
+            initialSnippet={initialSnippet}
+            onSettingsClick={onSettingsClick}
+            isFlow={isFlow}
+            snippets={snippets}
+            enableScrollSync={getSetting('editor.scrollSync') !== false}
+          />
+        </div>
+      </div>
+    )
+  }, [debouncedCodeForPreview, isReadOnly, initialSnippet?.id, onSettingsClick, isFlow, snippets, getSetting])
+
+  // 4. Final Unified Workspace Frame
+  const memoizedSplitPane = useMemo(() => {
+    return (
+      <AdvancedSplitPane
+        rightHidden={!showPreview}
+        unifiedScroll={false}
+        overlayMode={settings?.livePreview?.overlayMode || false}
+        left={
+          <div className="h-full w-full relative bg-[var(--color-bg-primary)] overflow-hidden flex flex-col">
+             {/* THE UNIFIED DOCUMENT FLOW: No overlap, seamless transition */}
+             <div className="flex-1 overflow-y-auto overflow-x-hidden">
+                <div className="w-full max-w-[850px] mx-auto flex flex-col min-h-full bg-[var(--color-bg-primary)]">
+                   {memoizedHeader}
+                   {/* Editor workspace: seamless and integrated */}
+                   <div className="flex-1 w-full bg-[var(--color-bg-primary)] border-none outline-none overflow-hidden">
+                      {memoizedEditor}
+                   </div>
+                </div>
+             </div>
+          </div>
+        }
+        right={memoizedPreview}
+      />
+    )
+  }, [showPreview, settings?.livePreview?.overlayMode, memoizedHeader, memoizedEditor, memoizedPreview])
+
 
   // Auto-focus title input when creating new snippet
   useEffect(() => {
@@ -643,7 +683,6 @@ const SnippetEditor = ({
 
   const hideWelcomePage = getSetting('ui.hideWelcomePage') || false
   const saveTimerRef = useRef(null)
-  const [isLargeFile, setIsLargeFile] = useState(false)
 
   // Debounced code for live preview
   const [debouncedCode, setDebouncedCode] = useState(code)
@@ -944,74 +983,7 @@ const SnippetEditor = ({
           style={{ backgroundColor: 'var(--editor-bg)' }}
         >
           <div className="flex-1 min-h-0 overflow-hidden editor-container relative flex flex-col">
-            <AdvancedSplitPane
-              rightHidden={!showPreview}
-              unifiedScroll={false}
-              overlayMode={settings?.livePreview?.overlayMode || false}
-              left={
-                <div className="flex flex-col h-full w-full relative">
-                  {/* SEAMLESS METADATA HEADER (Obsidian Style) - Absolute & Scrollable */}
-                  {isHeaderVisible && (
-                    <div
-                      ref={headerRef}
-                      className="absolute top-0 left-0 right-4 z-[100] transition-transform will-change-transform pointer-events-none"
-                    >
-                      <div className="pointer-events-auto">
-                        <EditorMetadataHeader
-                          title={title}
-                          setTitle={setTitle}
-                          tags={tags}
-                          setTags={setTags}
-                          currentTagInput={currentTagInput}
-                          setCurrentTagInput={setCurrentTagInput}
-                          isDuplicate={isDuplicate}
-                          initialSnippet={initialSnippet}
-                          onSave={onSave}
-                          code={code}
-                          setIsDirty={setIsDirty}
-                          titleInputRef={titleInputRef}
-                          readOnly={isReadOnly}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  <div ref={editorContainerRef} className="flex-1 w-full relative flex justify-center min-h-0">
-                    <div className="w-full h-full relative">
-                      <CodeEditor
-                        value={code || ''}
-                        language={detectedLang}
-                        wordWrap={wordWrap}
-                        theme={currentTheme}
-                        centered={true}
-                        autoFocus={!isCreateMode && initialSnippet?.id !== 'system:settings'}
-                        snippetId={initialSnippet?.id}
-                        readOnly={isReadOnly || initialSnippet?.readOnly || false}
-                        onChange={handleCodeChange}
-                        onLargeFileChange={setIsLargeFile}
-                        onScroll={onEditorScroll}
-                        style={editorStyle}
-                        isHeaderVisible={isHeaderVisible}
-                        onKeyDown={handleEditorKeyDown}
-                        height="100%"
-                        className="h-full"
-                        textareaRef={textareaRef}
-                        snippets={snippets}
-                        zenFocus={settings?.ui?.zenFocus}
-                        onCursorChange={handleCursorChange}
-                      />
-                    </div>
-                  </div>
-                </div>
-              }
-              right={
-                <div className="h-full w-full p-0 flex justify-center bg-[var(--color-bg-primary)] overflow-hidden text-left items-stretch relative">
-                  <div className="w-full max-w-[850px] h-full shadow-sm flex flex-col">
-                    {previewContent}
-                  </div>
-                </div>
-              }
-            />
+            {memoizedSplitPane}
 
             {!isReadOnlySnippet && !isDoc && (
               <EditorModeSwitcher

@@ -101,6 +101,7 @@ export const SettingsProvider = ({ children }) => {
       :root {
         --editor-font-size: ${sizeVal};
         --editor-font-family: ${family};
+        --editor-line-height: 1.6; /* STABILITY: Non-fractional line height prevents jumping */
         ${settings.editor.editorBgColor ? `--editor-bg: ${settings.editor.editorBgColor};` : ''}
         --zoom-level: ${zoom};
       }

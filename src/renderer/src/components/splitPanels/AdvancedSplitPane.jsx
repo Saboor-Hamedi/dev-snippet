@@ -193,7 +193,6 @@ const AdvancedSplitPane = ({
               width: `${sideBySideLeft}%`, 
               flex: '0 0 auto', 
               position: 'relative',
-              contain: 'content',      // STABILITY: Isolates layout from neighbors
               overflowAnchor: 'none'   // STABILITY: Prevents browser from "adjusting" scroll during measurements
             }}
           >
@@ -220,7 +219,6 @@ const AdvancedSplitPane = ({
             className={`flex-1 min-h-0 h-full ${unifiedScroll ? 'overflow-auto' : 'overflow-hidden'} ${isDragging ? 'pointer-events-none' : ''}`}
             style={{ 
               minWidth: 0,
-              contain: 'content',
               overflowAnchor: 'none'
             }}
           >
