@@ -124,6 +124,21 @@ const buildTheme = (EditorView, options = {}) => {
       },
       '.cm-tooltip-layer': {
         zIndex: '100000 !important'
+      },
+      // Syntax Highlighting for Mentions and Hashtags
+      '.cm-mention': {
+        color: 'var(--color-accent-primary, #d2a8ff) !important',
+        backgroundColor: 'rgba(210, 168, 255, 0.1)',
+        padding: '0 2px',
+        borderRadius: '3px',
+        fontWeight: '500'
+      },
+      '.cm-hashtag': {
+        color: 'var(--color-accent-secondary, #58a6ff) !important',
+        backgroundColor: 'rgba(88, 166, 255, 0.1)',
+        padding: '0 2px',
+        borderRadius: '3px',
+        fontWeight: '500'
       }
     },
     { dark: isDark }
