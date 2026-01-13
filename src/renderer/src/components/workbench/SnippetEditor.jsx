@@ -160,18 +160,38 @@ const SnippetEditor = ({
     }
   }, [initialSnippet?.code, isDirty, setCode])
 
-  // --- LIVE TAG SYNCHRONIZER ---
-  // Ensures that when you delete a #tag from the editor, it vanishes from the header.
+  // --- RESIZE OBSERVER STABILITY ---
+  // Suppresses the "Measure loop restarted" error which is often benign in complex flexbox layouts
   useEffect(() => {
-    if (!code) return
-    const currentExtracted = extractTags(code)
+    const handleError = (e) => {
+      if (e.message?.includes('ResizeObserver loop') || e.message?.includes('Measure loop restarted')) {
+        const resizeObserverErrGuid = 'document.querySelector(".editor-container")'
+        if (e.stopImmediatePropagation) e.stopImmediatePropagation()
+        return true
+      }
+    }
+    window.addEventListener('error', handleError)
+    return () => window.removeEventListener('error', handleError)
+  }, [])
+
+  // --- LIVE TAG SYNCHRONIZER (DEBOUNCED & STABLE) ---
+  // Ensures that when you delete a #tag from the editor, it vanishes from the header.
+  const debouncedCodeForTags = useDebounce(code, 500)
+  useEffect(() => {
+    if (!debouncedCodeForTags) return
+    const currentExtracted = extractTags(debouncedCodeForTags)
     
+    // Safety check: Only update if the tags have actually changed to avoid render loops
+    const tagsChanged = (prev) => {
+      if (prev.length !== currentExtracted.length) return true
+      return !currentExtracted.every(t => prev.includes(t))
+    }
+
     handleSetTags(prev => {
-      // If we simply return currentExtracted, we lose manually added tags.
-      // But for hashtags, the user typically wants them to be live.
+      if (!tagsChanged(prev)) return prev
       return Array.from(new Set([...currentExtracted]))
     })
-  }, [code, handleSetTags])
+  }, [debouncedCodeForTags, handleSetTags])
 
   const autoSaveEnabled = settings?.behavior?.autoSave !== false
 
@@ -213,13 +233,15 @@ const SnippetEditor = ({
       if (
         trimmed.includes('**') ||
         trimmed.includes(']]') ||
-        trimmed.includes('|')
+        trimmed.includes('|') ||
+        trimmed.includes('# ') || 
+        trimmed.includes('- ')
       ) {
         lang = 'markdown'
       }
     }
     return lang
-  }, [title, code, debouncedCodeForLang, initialSnippet?.language])
+  }, [title, code?.substring(0, 10), debouncedCodeForLang, initialSnippet?.language])
 
   // --- HIGH-INTEGRITY SAVING (SANITIZED) ---
   const handleOnSave = useCallback((item) => {
@@ -417,7 +439,7 @@ const SnippetEditor = ({
   // 2. Surgical Editor Shield
   const memoizedEditor = useMemo(() => {
     return (
-      <div className="flex-1 w-full h-full relative bg-transparent flex flex-col">
+      <div className="flex-1 w-full flex flex-col min-h-0 bg-transparent relative">
         <CodeEditor
           value={code || ''}
           language={detectedLang}
@@ -441,7 +463,7 @@ const SnippetEditor = ({
         />
       </div>
     )
-  }, [code, detectedLang, activeMode, wordWrap, currentTheme, isCreateMode, initialSnippet?.id, isReadOnly, handleCodeChange, editorStyle, handleEditorKeyDown, snippets, settings?.ui?.zenFocus, handleCursorChange])
+  }, [detectedLang, activeMode, wordWrap, currentTheme, isCreateMode, initialSnippet?.id, isReadOnly, handleCodeChange, editorStyle, handleEditorKeyDown, snippets, settings?.ui?.zenFocus, handleCursorChange])
 
   // 3. Surgical Preview Shield
   const memoizedPreview = useMemo(() => {
@@ -474,12 +496,11 @@ const SnippetEditor = ({
              {/* THE UNIFIED DOCUMENT FLOW: Non-collapsing flex chain for full-height coverage */}
              <div 
                className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col"
-               style={{ scrollbarGutter: 'stable' }}
              >
-                <div className="w-full max-w-[850px] mx-auto flex flex-col flex-1 min-h-full relative">
+                <div className="w-full max-w-[850px] mx-auto flex flex-col relative">
                    {memoizedHeader}
                    {/* Editor workspace: seamless and integrated */}
-                   <div className="flex-1 w-full flex flex-col min-h-0 bg-transparent border-none outline-none overflow-hidden h-full">
+                   <div className="w-full flex flex-col bg-transparent border-none outline-none overflow-hidden min-h-[300px]">
                       {memoizedEditor}
                    </div>
                 </div>
@@ -1074,6 +1095,10 @@ const SnippetEditor = ({
             }
             .cm-cursor {
               border-left-width: 2px !important;
+            }
+            .editor-container {
+              contain: content !important;
+              overflow-anchor: none !important;
             }
           `}</style>
 
