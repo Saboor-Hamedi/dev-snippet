@@ -1,8 +1,8 @@
 import { EditorView } from '@codemirror/view'
 
 /**
- * buildTheme - Optimized UI/UX engine for the CodeEditor.
- * Ensures 100% height, aggressive layout stability, and custom cursor shadow support.
+ * buildTheme - Native-performance UI/UX engine for the CodeEditor.
+ * Eliminated flex-conflicts to fix "Measure Loop" errors and jittery scrolling.
  */
 const buildTheme = (EditorView, options = {}) => {
   const {
@@ -21,36 +21,36 @@ const buildTheme = (EditorView, options = {}) => {
   return EditorView.theme(
     {
       '&': {
+        height: '100% !important',
         backgroundColor: 'var(--editor-bg, transparent) !important',
         color: 'var(--editor-text, var(--color-text-primary, #0f172a))',
         fontFamily: fontFamily,
         fontSize: fontSize,
         lineHeight: '1.6',
-        height: '100% !important',
-        minHeight: '100% !important',
-        paddingLeft: '0',
-        textAlign: 'left',
-        transition: 'none !important',
-        overflow: 'visible !important'
+        display: 'flex !important',
+        flexDirection: 'column !important',
+        overflow: 'hidden !important' /* Critical: Editor root should not scroll */
       },
       '.cm-line': {
-        textAlign: 'left',
-        padding: '0 4px !important'
+        padding: '0 4px !important',
+        textAlign: 'left'
       },
       // Header Scaling - Obsidian-like experience
       '.cm-line-h1': { 
-        fontSize: '2.25rem !important', // Use absolute rem/em scaling
+        fontSize: '2.25rem !important',
         fontWeight: '700 !important', 
         lineHeight: '1.2 !important',
-        paddingTop: '1.2em !important',
-        paddingBottom: '0.4em !important'
+        paddingTop: '1.0em !important',
+        paddingBottom: '0.4em !important',
+        borderBottom: '1px solid var(--color-border, #30363d) !important'
       },
       '.cm-line-h2': { 
         fontSize: '1.75rem !important', 
         fontWeight: '600 !important', 
         lineHeight: '1.3 !important',
-        paddingTop: '1.0em !important',
-        paddingBottom: '0.3em !important'
+        paddingTop: '0.8em !important',
+        paddingBottom: '0.3em !important',
+        borderBottom: '1px solid var(--color-border, #30363d) !important'
       },
       '.cm-line-h3': { 
         fontSize: '1.4rem !important', 
@@ -62,35 +62,28 @@ const buildTheme = (EditorView, options = {}) => {
         fontWeight: '600 !important' 
       },
       '.cm-line-h1, .cm-line-h2, .cm-line-h3, .cm-line-h4, .cm-line-h5, .cm-line-h6': {
-        textAlign: 'left !important',
-        transition: 'none !important'
+        textAlign: 'left !important'
       },
       '.cm-scroller': {
-        display: 'block !important',
+        display: 'block !important', /* Restore to standard block for stable measurement */
         height: '100% !important',
-        minHeight: '100% !important',
         overflow: 'auto !important',
         backgroundColor: 'transparent !important',
         fontFamily: 'inherit',
-        minWidth: '100%',
-        boxSizing: 'border-box',
-        position: 'relative'
+        position: 'relative',
+        scrollbarGutter: 'stable !important'
       },
       '.cm-content': {
-        width: '100%',
-        minHeight: '100% !important',
         maxWidth: 'var(--editor-max-width, 1000px) !important',
         margin: '0 auto !important',
-        marginRight: 'auto',
-        backgroundColor: 'transparent',
-        paddingTop: '60px !important', // Substantial gap at top to ensure content is never hidden
-        paddingBottom: '20vh !important',
-        position: 'relative',
+        paddingTop: 'var(--editor-content-padding-top, 60px) !important',
+        paddingBottom: '30vh !important',
         fontFamily: 'inherit',
         lineHeight: '1.6',
         fontSize: fontSize,
+        caretColor: caretColor,
         boxSizing: 'border-box',
-        caretColor: caretColor
+        minHeight: '100% !important' /* Ensures background extends to bottom */
       },
       '.cm-cursor': {
         borderLeftColor: `${caretColor} !important`,
@@ -117,15 +110,11 @@ const buildTheme = (EditorView, options = {}) => {
         fontFamily: 'inherit',
         fontSize: 'inherit',
         lineHeight: '1.6',
-        minHeight: '100%',
-        boxSizing: 'border-box',
         padding: '0',
         transition: 'none !important'
       },
       '.cm-activeLine': {
-        boxShadow: 'none !important',
-        backgroundColor: `${cursorActiveLineBg} !important`,
-        transition: 'none !important'
+        backgroundColor: `${cursorActiveLineBg} !important`
       },
       '.cm-selectionBackground': {
         display: 'none !important'

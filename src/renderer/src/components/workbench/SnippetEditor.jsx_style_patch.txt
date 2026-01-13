@@ -1,0 +1,7 @@
+        <style>{`
+          .title-input-container { margin-bottom: 0 !important; padding-bottom: 0 !important; }
+          .title-input { padding-top: 0 !important; padding-bottom: 0 !important; margin: 0 !important; line-height: 1.2 !important; }
+          .tags-container { margin-top: 0.25rem !important; padding: 0 !important; min-height: 20px !important; display: flex !important; align-items: center !important; }
+          .editor-container { overflow-anchor: none !important; }
+          .cm-scroller { scrollbar-width: thin; scrollbar-color: var(--color-border) transparent; }
+        `}</style>

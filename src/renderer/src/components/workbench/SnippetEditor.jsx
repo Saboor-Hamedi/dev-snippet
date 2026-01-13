@@ -433,20 +433,13 @@ const SnippetEditor = ({
         style={editorStyle}
         data-snippet-id={initialSnippet?.id || 'new'}
       >
-        <style>{`
-          .cm-scroller { scrollbar-width: thin; scrollbar-color: var(--color-border) transparent; scroll-behavior: smooth !important; }
-          .cm-content, .cm-gutter { min-height: 100% !important; }
-          .cm-editor { height: 100% !important; background: transparent !important; }
-          .title-input-container { margin-bottom: 0 !important; padding-bottom: 0 !important; }
-          .title-input { padding-top: 0 !important; padding-bottom: 0 !important; margin: 0 !important; line-height: 1.2 !important; }
-          .tags-container { margin-top: 0.25rem !important; padding: 0 !important; min-height: 20px !important; display: flex !important; align-items: center !important; }
-          .cm-content { padding-bottom: 100px !important; }
-          .cm-cursor { border-left-width: 2px !important; }
-          .editor-container {
-            overflow-anchor: none !important;
-          }
+        <style>{` 
+          .title-input-container { margin-bottom: 0 !important; padding-bottom: 0 !important; } 
+          .title-input { padding-top: 0 !important; padding-bottom: 0 !important; margin: 0 !important; line-height: 1.2 !important; } 
+          .tags-container { margin-top: 0.25rem !important; padding: 0 !important; min-height: 20px !important; display: flex !important; align-items: center !important; } 
+          .editor-container { overflow-anchor: none !important; } 
+          .cm-scroller { scrollbar-width: thin; scrollbar-color: var(--color-border) transparent; } 
         `}</style>
-        
         <div className="flex-1 min-h-0 overflow-visible editor-container relative flex flex-col z-10">
           <AdvancedSplitPane
             rightHidden={!showPreview}

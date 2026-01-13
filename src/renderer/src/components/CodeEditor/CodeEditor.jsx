@@ -253,7 +253,7 @@ const CodeEditor = ({
 
     const view = viewRef.current
     try {
-      view.requestMeasure()
+      if (view && view.state) view.requestMeasure()
       if (view.state?.selection?.main) {
         view.dispatch({
           effects: [EditorView.scrollIntoView(view.state.selection.main, { y: 'center' })]
@@ -278,15 +278,6 @@ const CodeEditor = ({
         cursorActiveLineBg,
         cursorSelectionBg,
         disableComplexCM: settingsManager.get('advanced.disableComplexCM')
-      }),
-      // --- DYNAMIC PADDING THEME ---
-      EditorView.theme({
-        '& .cm-scroller': {
-          paddingTop: 'var(--editor-content-padding-top, 0px) !important'
-        },
-        '& .cm-content': {
-          paddingTop: '0px !important' // Ensure content doesn't double-pad
-        }
       }),
       // --- UNIFIED PERFORMANCE LISTENER ---
       EditorView.updateListener.of((update) => {

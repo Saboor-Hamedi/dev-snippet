@@ -74,12 +74,12 @@
 .cm-editor-wrapper {
   --zoom-level: 1;
   transition: all 140ms cubic-bezier(0.4, 0, 0.2, 1);
-  min-height: 100vh !important;
+  
 }
 
 .cm-scroller {
   background-color: transparent !important;
-  min-height: 100vh !important;
+  
 }
 
 .cm-editor.cm-focused {
@@ -90,17 +90,17 @@
   font-family: var(--editor-font-family, 'JetBrains Mono', monospace) !important;
   font-size: var(--editor-font-size);
   background-color: var(--color-bg-primary, transparent) !important;
-  min-width: 100% !important;
-  min-height: 100% !important;
-  line-height: 1.6 !important;
+  
+  
+  line-height: 1.6;
 }
 
 .cm-content {
   font-family: var(--editor-font-family, 'JetBrains Mono', monospace) !important;
   font-size: var(--editor-font-size);
-  line-height: 1.6 !important;
-  min-height: 150vh !important;
-  padding-bottom: 50vh !important; padding-top: var(--editor-content-padding-top, 10px) !important;
+  line-height: 1.6;
+  
+  padding-bottom: 20vh !important; 
 }
 
 .cm-gutters {
@@ -108,19 +108,19 @@
   border-right: 1px solid var(--color-border, transparent) !important;
   font-family: inherit !important;
   font-size: inherit !important;
-  line-height: 1.6 !important;
+  line-height: 1.6;
   min-width: calc(40px * var(--zoom-level, 1)) !important;
 }
 
 .cm-lineNumbers {
   padding-right: 8px !important;
-  line-height: 1.6 !important;
+  line-height: 1.6;
 } */
 
 /* Layout Reset: Ensure no global CSS affects the editor internals */
 .cm-content {
   margin: 0 !important;
-  line-height: 1.6 !important;
+  line-height: 1.6;
   box-sizing: border-box !important;
   /* padding-bottom: 50px !important;  */
   /* Fixed: Reduced from 300px to remove huge gap */
@@ -147,7 +147,7 @@
   padding-left: 0 !important;
   margin-left: 0 !important;
   text-indent: 0 !important;
-  line-height: 1.6 !important;
+  line-height: 1.6;
   vertical-align: baseline !important;
   transition: none !important; /* Stop theme-switching artifacts */
 }
