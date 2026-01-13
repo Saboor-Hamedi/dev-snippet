@@ -89,19 +89,39 @@ export const wikiLinkTooltip = hoverTooltip(async (view, pos) => {
       
       // Async load content
       window.api.invoke('db:getSnippetById', cached.id).then(async (snippet) => {
-        if (!snippet) return
         const body = container.querySelector('.preview-body')
+        if (!body) return
+
+        if (!snippet) {
+          body.innerHTML = '<div style="opacity:0.5; font-style:italic; padding: 10px;">Snippet not found or deleted.</div>'
+          return
+        }
+
         try {
           const rawCode = snippet.code || ''
-          const truncatedCode = rawCode.length > 800 ? rawCode.substring(0, 800) + '...' : rawCode
-          const html = await markdownToHtml(truncatedCode, { renderMetadata: false })
-          body.innerHTML = html + '<div class="preview-fade-overlay" style="position: absolute; bottom: 0; left: 0; right: 0; height: 40px; background: linear-gradient(transparent, var(--color-tooltip-bg, #1e1e1e)); pointer-events: none;"></div>'
+          if (!rawCode.trim()) {
+            body.innerHTML = '<div style="opacity:0.5; font-style:italic; padding: 10px;">(Empty snippet)</div>'
+            return
+          }
+
+          const truncatedCode = rawCode.length > 2000 ? rawCode.substring(0, 2000) + '...' : rawCode
+          const html = await markdownToHtml(truncatedCode, { 
+            renderMetadata: false,
+            minimal: true // User Request: Remove intelligence header and extra spacing
+          })
+          
+          if (html) {
+            body.innerHTML = html + '<div class="preview-fade-overlay" style="position: absolute; bottom: 0; left: 0; right: 0; height: 50px; background: linear-gradient(transparent, var(--color-tooltip-bg, #1c1c1c)); pointer-events: none;"></div>'
+          } else {
+            body.textContent = truncatedCode
+          }
         } catch (e) {
-          body.textContent = (snippet.code || '').substring(0, 150) + '...'
+          console.error('[WikiLink] Preview failed:', e)
+          body.innerHTML = `<div style="color:var(--color-text-danger); opacity:0.7; font-size:11px;">Error loading preview</div>`
         }
       })
 
-      return { dom: container, offset: { x: 0, y: 5 } }
+      return { dom: container, offset: { x: 0, y: 10 } }
     }
   }
 }, { hoverTime: 300 })

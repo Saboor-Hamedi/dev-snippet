@@ -25,6 +25,7 @@ const buildTheme = (EditorView, options = {}) => {
         fontSize: fontSize,
         lineHeight: '1.6',
         height: '100%',
+        minHeight: '100% !important',
         paddingLeft: '0',
         textAlign: 'left',
         transition: 'none !important' // Fixed: Stop theme-switching "fades" or jumps
@@ -43,6 +44,7 @@ const buildTheme = (EditorView, options = {}) => {
       '.cm-scroller': {
         display: 'flex !important',
         height: '100% !important',
+        minHeight: '100% !important',
         overflow: 'auto !important',
         backgroundColor: 'transparent !important',
         fontFamily: 'inherit',
@@ -54,6 +56,7 @@ const buildTheme = (EditorView, options = {}) => {
       // Height of the content should be 100% of the scroller
       '.cm-content': {
         width: '100%',
+        minHeight: '100% !important',
         maxWidth: 'var(--editor-max-width, 1000px) !important',
         margin: '0 auto !important', // Center in strict flex/block context
         marginRight: 'auto',

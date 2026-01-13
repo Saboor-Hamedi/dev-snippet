@@ -25,7 +25,7 @@
   flex-direction: column;
   overflow: hidden;
   background-color: var(--color-tooltip-bg, #1e1e1e);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: none !important;
   animation: tooltipFadeIn 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.05s backwards;
   transform-origin: top center;
 }

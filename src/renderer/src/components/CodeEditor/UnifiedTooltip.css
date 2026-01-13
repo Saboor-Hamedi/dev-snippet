@@ -1,34 +1,28 @@
 /* 
-  UNIFIED TOOLTIP STYLING (Premium & Robust)
+  UNIFIED TOOLTIP STYLING (Premium & Clean)
   Targets: Autocomplete, Slash Commands, Wiki Links, Hover Previews
 */
 
-/* 1. Global Tooltip Container Reset & Base Style */
+/* 1. Global Tooltip Container Reset */
 body .cm-tooltip.cm-tooltip-autocomplete,
 body .cm-tooltip:has(.cm-link-preview-tooltip) {
   position: absolute !important;
   z-index: 100000 !important; 
-
-  /* User Request: Remove background and border for 'Ghost' feel */
   background-color: transparent !important;
   border: none !important;
-  box-shadow: none !important;
-
-  /* Reset generic styles */
+  box-shadow: none !important; /* User Request: Remove shadow */
   padding: 0 !important;
   margin: 0 !important;
   overflow: visible !important;
 }
 
-/* 2. COMPLETION LIST (The 'Ghost' List) */
+/* 2. COMPLETION LIST (Ghost List) */
 body .cm-tooltip-autocomplete ul {
-  /* Give the list itself the background since the container is now transparent */
-  background-color: var(--color-tooltip-bg, rgba(20, 20, 20, 0.95)) !important;
+  background-color: var(--color-tooltip-bg, rgba(20, 20, 20, 0.98)) !important;
   backdrop-filter: blur(12px) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  border-radius: 8px !important;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4) !important;
-  
+  border-radius: 4px !important;
+  box-shadow: none !important; /* User Request: Remove shadow */
   max-height: 350px !important;
   padding: 4px !important;
   margin: 0 !important;
@@ -38,90 +32,122 @@ body .cm-tooltip-autocomplete ul {
 
 /* 3. THE SMART POP-UP (Preview Card) */
 .cm-link-preview-tooltip .preview-container-inner {
-  /* Robust & Premium Aesthetic */
-  background-color: var(--color-tooltip-bg, rgba(30, 30, 30, 0.9)) !important;
-  backdrop-filter: blur(16px) saturate(180%) !important;
+  background-color: var(--color-tooltip-bg, rgba(28, 28, 28, 0.98)) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
   
-  /* User Request: Remove round border color */
-  border: none !important; 
-  border-radius: 8px !important; /* Kept slightly rounded for premium feel, but removed border line */
+  /* User Request: Remove border color/shadow */
+  border: 1px solid rgba(255, 255, 255, 0.05) !important; 
+  border-radius: 4px !important;
+  box-shadow: none !important; 
   
-  box-shadow: 
-    0 20px 50px rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(255, 255, 255, 0.05) !important; /* Subtle internal glow instead of border */
-  
-  width: 340px !important;
+  width: 360px !important;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  animation: cm-tooltip-premium-in 0.2s ease-out forwards;
+  animation: cm-tooltip-premium-in 0.15s ease-out forwards;
 }
 
 @keyframes cm-tooltip-premium-in {
-  from { opacity: 0; transform: translateY(4px) scale(0.99); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-/* Header - No Break */
+/* Header */
 .cm-link-preview-tooltip .preview-header {
-  padding: 12px 14px !important;
+  padding: 8px 12px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  background: rgba(255, 255, 255, 0.03) !important;
-  border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.03) !important;
 }
 
 .cm-link-preview-tooltip .preview-title-text {
   font-weight: 700 !important;
-  font-size: 14px !important;
+  font-size: 13px !important;
   color: var(--color-accent-primary) !important;
-  /* NO BREAK */
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
-  max-width: 240px !important;
-  text-decoration: none !important;
+  max-width: 260px !important;
 }
 
-/* Body Content Resilience */
+/* 
+   Body Content - TIGHTER SPACING (User Request)
+*/
 .cm-link-preview-tooltip .preview-body {
-  padding: 14px !important;
-  font-size: 13.5px !important;
-  line-height: 1.55 !important;
+  padding: 8px 12px !important; /* Reduced padding */
+  font-size: 13px !important;
+  line-height: 1.4 !important;
   max-height: 320px !important;
   overflow-y: auto !important;
-  /* Ensure code blocks and text wrap correctly */
   word-wrap: break-word !important;
   overflow-wrap: break-word !important;
   color: var(--color-text-secondary, #ccc) !important;
 }
 
-/* 4. INVISIBLE BRIDGE (Gap Closer) */
+/* Reduce internal margins for markdown elements */
+.cm-link-preview-tooltip .preview-body p {
+  padding: 0 !important;
+  margin: 0 !important; /* Tiny paragraph margin */
+}
+
+.cm-link-preview-tooltip .preview-body p:last-child {
+  margin-bottom: 0 !important;
+}
+
+.cm-link-preview-tooltip .preview-body h1,
+.cm-link-preview-tooltip .preview-body h2,
+.cm-link-preview-tooltip .preview-body h3,
+.cm-link-preview-tooltip .preview-body h4 {
+  margin: 12px 0 6px 0 !important; /* Tight header spacing */
+  padding: 0 !important;
+  border: none !important;
+}
+
+.cm-link-preview-tooltip .preview-body ul,
+.cm-link-preview-tooltip .preview-body ol {
+  margin: 4px 0 8px 0 !important;
+  padding-left: 18px !important;
+}
+
+/* Special fix for images/pre tags in preview */
+.cm-link-preview-tooltip .preview-body img {
+  max-width: 100% !important;
+  border-radius: 4px;
+  margin: 8px 0 !important;
+}
+
+.cm-link-preview-tooltip .preview-body pre {
+  margin: 8px 0 !important;
+  padding: 10px !important;
+  background: rgba(0,0,0,0.3) !important;
+  border-radius: 4px !important;
+}
+
+/* 4. INVISIBLE BRIDGE */
 body .cm-tooltip.cm-tooltip-below::before {
   content: '' !important; position: absolute !important; display: block !important;
-  top: -12px !important; left: 0 !important; width: 100% !important; height: 12px !important;
-  background: transparent !important; pointer-events: auto !important; z-index: 100000 !important;
+  top: -8px !important; left: 0 !important; width: 100% !important; height: 8px !important;
+  background: transparent !important; pointer-events: auto !important;
 }
 
 body .cm-tooltip.cm-tooltip-above::after {
   content: '' !important; position: absolute !important; display: block !important;
-  bottom: -12px !important; left: 0 !important; width: 100% !important; height: 12px !important;
-  background: transparent !important; pointer-events: auto !important; z-index: 100000 !important;
+  bottom: -8px !important; left: 0 !important; width: 100% !important; height: 8px !important;
+  background: transparent !important; pointer-events: auto !important;
 }
 
-/* 5. Autocomplete Items (Ghost List Polish) */
+/* 5. Autocomplete Items */
 body .cm-tooltip-autocomplete ul li {
-  padding: 8px 12px !important;
-  font-family: var(--editor-font-family, sans-serif) !important;
-  font-size: 13.5px !important;
+  padding: 6px 10px !important;
+  font-size: 13px !important;
   display: flex !important;
   align-items: center !important;
-  gap: 10px !important;
+  gap: 8px !important;
   color: var(--color-text-secondary, #ccc) !important;
   cursor: pointer !important;
-  border-radius: 6px !important;
-  transition: all 0.1s ease !important;
+  border-radius: 4px !important;
 }
 
 body .cm-tooltip-autocomplete ul li[aria-selected='true'] {
@@ -130,16 +156,9 @@ body .cm-tooltip-autocomplete ul li[aria-selected='true'] {
 }
 
 body .cm-completionIcon {
-  width: 22px !important; height: 22px !important;
+  width: 18px !important; height: 18px !important;
   background: rgba(255, 255, 255, 0.05) !important;
-  border-radius: 4px !important;
-  font-size: 12px !important;
-  display: flex !important; align-items: center !important; justify-content: center !important;
-}
-
-body .cm-tooltip-autocomplete ul::-webkit-scrollbar { width: 5px; }
-body .cm-tooltip-autocomplete ul::-webkit-scrollbar-thumb { 
-  background: rgba(255,255,255,0.1); border-radius: 10px; 
+  border-radius: 3px !important;
 }
 
 @media (max-width: 768px) {
