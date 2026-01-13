@@ -570,9 +570,9 @@ const CodeEditor = ({
         readOnly={readOnly}
         extensions={allExtensions}
         basicSetup={false}
-        height="100%"
+        height="100%" minHeight="100%"
         theme={isDark ? 'dark' : 'light'}
-        className={`${className} h-full`}
+        className={`${className} h-full flex flex-col flex-1`}
         onCreateEditor={(view) => {
           viewRef.current = view
 
