@@ -97,8 +97,8 @@ const SnippetEditor = ({
     window.dispatchEvent(new CustomEvent('app:navigate-to-snippet', { detail: { id } }))
   }, [])
 
-  // Call the hook - ensure stable dependencies (no 'code' passed!)
   // STABILITY FIX: Filter snippets to only metadata so typing doesn't trigger re-renders
+  // logic: JSON.stringify is fast for metadata and ensures by-value stability
   const stableSnippetMetadata = useMemo(() => {
     return (snippets || []).map(s => ({ id: s.id, title: s.title }))
   }, [snippets])
@@ -109,11 +109,28 @@ const SnippetEditor = ({
   const rawExtensions = useWikiLinks({ 
     snippets: refinedSnippets,
     handleSelectSnippet: handleNav,
+    showToast,
+    setSelectedSnippet: (s) => handleNav(s?.id || s), 
+    navigateTo: (id) => handleNav(id), 
+    saveSnippet: (s) => onSave(s), 
     // Provide all likely callback names since we cannot see the file definition
-    createDraftSnippet: (title) => window.dispatchEvent(new CustomEvent('app:create-draft', { detail: { title } })),
-    onCreateSnippet: (title) => window.dispatchEvent(new CustomEvent('app:create-draft', { detail: { title } })),
-    createDraft: (title) => window.dispatchEvent(new CustomEvent('app:create-draft', { detail: { title } })),
-    onCreate: (title) => window.dispatchEvent(new CustomEvent('app:create-draft', { detail: { title } }))
+    // And ensure they return a basic object if the hook uses the return value
+    createDraftSnippet: (title) => {
+       window.dispatchEvent(new CustomEvent('app:create-draft', { detail: { title } }))
+       return { title, id: Date.now().toString(), content: '' }
+    },
+    onCreateSnippet: (title) => {
+       window.dispatchEvent(new CustomEvent('app:create-draft', { detail: { title } }))
+       return { title, id: Date.now().toString(), content: '' }
+    },
+    createDraft: (title) => {
+       window.dispatchEvent(new CustomEvent('app:create-draft', { detail: { title } }))
+       return { title, id: Date.now().toString(), content: '' }
+    },
+    onCreate: (title) => {
+       window.dispatchEvent(new CustomEvent('app:create-draft', { detail: { title } }))
+       return { title, id: Date.now().toString(), content: '' }
+    }
   })
   
   // Memoize the RESULT of the hook to prevent passing new array references to CodeMirror
@@ -447,7 +464,7 @@ const SnippetEditor = ({
   return (
     <>
       <div 
-        className="h-full w-full flex flex-col bg-[var(--color-bg-primary)] overflow-visible"
+        className="h-full w-full flex flex-col bg-[var(--color-bg-primary)] overflow-visible relative z-50"
         style={editorStyle}
         data-snippet-id={initialSnippet?.id || 'new'}
       >
