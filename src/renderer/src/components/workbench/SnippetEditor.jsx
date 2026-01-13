@@ -23,7 +23,7 @@ import Prompt from '../universal/Prompt'
 
 // Extracted Editor Hooks & Components
 import { useEditorState } from './editor/useEditorState'  
-import { useWikiLinks } from './editor/useWikiLinks' // RESTORED: Core Extension
+import { useWikiLinks } from './editor/useWikiLinks' // RETURNING TO ORIGINAL
 import { useEditorExport } from './editor/useEditorExport'
 import { useEditorSave } from './editor/useEditorSave'
 import EditorMetadataHeader from './editor/EditorMetadataHeader'
@@ -98,9 +98,22 @@ const SnippetEditor = ({
   }, [])
 
   // Call the hook - ensure stable dependencies (no 'code' passed!)
+  // STABILITY FIX: Filter snippets to only metadata so typing doesn't trigger re-renders
+  const stableSnippetMetadata = useMemo(() => {
+    return (snippets || []).map(s => ({ id: s.id, title: s.title }))
+  }, [snippets])
+
+  const metadataString = JSON.stringify(stableSnippetMetadata)
+  const refinedSnippets = useMemo(() => stableSnippetMetadata, [metadataString])
+
   const rawExtensions = useWikiLinks({ 
-    snippets,
-    handleSelectSnippet: handleNav
+    snippets: refinedSnippets,
+    handleSelectSnippet: handleNav,
+    // Provide all likely callback names since we cannot see the file definition
+    createDraftSnippet: (title) => window.dispatchEvent(new CustomEvent('app:create-draft', { detail: { title } })),
+    onCreateSnippet: (title) => window.dispatchEvent(new CustomEvent('app:create-draft', { detail: { title } })),
+    createDraft: (title) => window.dispatchEvent(new CustomEvent('app:create-draft', { detail: { title } })),
+    onCreate: (title) => window.dispatchEvent(new CustomEvent('app:create-draft', { detail: { title } }))
   })
   
   // Memoize the RESULT of the hook to prevent passing new array references to CodeMirror
@@ -434,7 +447,7 @@ const SnippetEditor = ({
   return (
     <>
       <div 
-        className="h-full w-full flex flex-col bg-[var(--color-bg-primary)] overflow-hidden"
+        className="h-full w-full flex flex-col bg-[var(--color-bg-primary)] overflow-visible"
         style={editorStyle}
         data-snippet-id={initialSnippet?.id || 'new'}
       >
@@ -449,6 +462,7 @@ const SnippetEditor = ({
           .cm-cursor { border-left-width: 2px !important; }
           .editor-container {
             overflow-anchor: none !important;
+            contain: layout style !important;
           }
         `}</style>
         
@@ -458,11 +472,11 @@ const SnippetEditor = ({
             unifiedScroll={false}
             overlayMode={settings?.livePreview?.overlayMode || false}
             left={
-              <div className="h-full w-full relative bg-[var(--color-bg-primary)] overflow-hidden flex flex-col">
+              <div className="h-full w-full relative bg-[var(--color-bg-primary)] overflow-visible flex flex-col">
                   {/* For System Settings, we might want to hide the header? 
                       Actually better to keep it consistent OR just hide if !id */}
-                  <div className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col">
-                    <div className="w-full max-w-[850px] mx-auto flex flex-col relative text-left">
+                  <div className="flex-1 overflow-visible overflow-x-hidden flex flex-col">
+                    <div className="w-full max-w-[850px] mx-auto flex flex-col relative text-left h-full">
                         {initialSnippet?.id && (
                           <div className="w-full shrink-0 relative z-30 bg-transparent">
                             <EditorMetadataHeader
@@ -502,7 +516,6 @@ const SnippetEditor = ({
                               height="100%"
                               className="flex-1 h-full"
                               textareaRef={textareaRef}
-                              snippets={snippets}
                               zenFocus={settings?.ui?.zenFocus}
                               onCursorChange={handleCursorChange}
                             />
