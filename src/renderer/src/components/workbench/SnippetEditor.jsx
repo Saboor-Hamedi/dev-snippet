@@ -336,7 +336,7 @@ const SnippetEditor = ({
   const memoizedHeader = useMemo(() => {
     if (!isHeaderVisible) return null
     return (
-      <div className="w-full shrink-0 relative z-30 bg-[var(--color-bg-primary)]">
+      <div className="w-full shrink-0 relative z-30 bg-transparent">
         <EditorMetadataHeader
           title={title}
           setTitle={setTitle}
@@ -359,7 +359,7 @@ const SnippetEditor = ({
   // 2. Surgical Editor Shield
   const memoizedEditor = useMemo(() => {
     return (
-      <div className="flex-1 w-full relative min-h-0 bg-[var(--color-bg-primary)]">
+      <div className="flex-1 w-full h-full relative bg-transparent flex flex-col">
         <CodeEditor
           value={code || ''}
           language={detectedLang}
@@ -374,7 +374,7 @@ const SnippetEditor = ({
           style={editorStyle}
           onKeyDown={handleEditorKeyDown}
           height="100%"
-          className="h-full"
+          className="flex-1 h-full"
           textareaRef={textareaRef}
           snippets={snippets}
           zenFocus={settings?.ui?.zenFocus}
@@ -412,12 +412,15 @@ const SnippetEditor = ({
         overlayMode={settings?.livePreview?.overlayMode || false}
         left={
           <div className="h-full w-full relative bg-[var(--color-bg-primary)] overflow-hidden flex flex-col">
-             {/* THE UNIFIED DOCUMENT FLOW: No overlap, seamless transition */}
-             <div className="flex-1 overflow-y-auto overflow-x-hidden">
-                <div className="w-full max-w-[850px] mx-auto flex flex-col min-h-full bg-[var(--color-bg-primary)]">
+             {/* THE UNIFIED DOCUMENT FLOW: Non-collapsing flex chain for full-height coverage */}
+             <div 
+               className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col"
+               style={{ scrollbarGutter: 'stable' }}
+             >
+                <div className="w-full max-w-[850px] mx-auto flex flex-col flex-1 min-h-full relative">
                    {memoizedHeader}
                    {/* Editor workspace: seamless and integrated */}
-                   <div className="flex-1 w-full bg-[var(--color-bg-primary)] border-none outline-none overflow-hidden">
+                   <div className="flex-1 w-full flex flex-col min-h-0 bg-transparent border-none outline-none overflow-hidden h-full">
                       {memoizedEditor}
                    </div>
                 </div>
@@ -982,6 +985,31 @@ const SnippetEditor = ({
           className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative SnippetEditor_root"
           style={{ backgroundColor: 'var(--editor-bg)' }}
         >
+          {/* UI Compactness Overrides: Hyper-tightening the header for maximum code visibility */}
+          <style>{`
+            .EditorMetadataHeader_root {
+              padding-top: 0.75rem !important;
+              padding-bottom: 0.25rem !important;
+              gap: 0.25rem !important;
+              min-height: auto !important;
+            }
+            .title-input-container {
+              margin-bottom: 0 !important;
+              padding-bottom: 0 !important;
+            }
+            .title-input {
+              padding-top: 0 !important;
+              padding-bottom: 0 !important;
+              margin: 0 !important;
+              line-height: 1.2 !important;
+            }
+            .tags-container {
+              margin-top: 0.25rem !important;
+              padding: 0 !important;
+              min-height: auto !important;
+            }
+          `}</style>
+
           <div className="flex-1 min-h-0 overflow-hidden editor-container relative flex flex-col">
             {memoizedSplitPane}
 

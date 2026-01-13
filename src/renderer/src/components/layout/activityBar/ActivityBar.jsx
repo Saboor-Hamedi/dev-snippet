@@ -261,8 +261,8 @@ const ActivityBar = ({
 
   return (
     <div
-      className="w-[48px] h-full flex flex-col items-stretch z-10 select-none activity-bar transition-colors duration-300 border-r border-white/5 overflow-hidden pt-0"
-      style={{ backgroundColor: 'var(--activity-bar-bg, #09090b)' }}
+      className="w-[48px] flex-shrink-0 h-full flex flex-col items-stretch z-10 select-none activity-bar transition-colors duration-300 border-r border-white/5 overflow-hidden pt-0"
+      style={{ backgroundColor: 'var(--activity-bar-bg, #09090b)', width: '48px' }}
     >
       {/* Spacer to align with Sidebar Header (optional, if user wants icons below header level. But usually sidebars have icons flush top) */}
       {/* Use explicitly empty flex column */}

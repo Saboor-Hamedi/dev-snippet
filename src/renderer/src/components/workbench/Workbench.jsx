@@ -549,9 +549,10 @@ const Workbench = ({
         {/* Activity Bar */}
         {(getSetting('ui.showActivityBar') !== false || showFlowMode) && (
           <div
-            className="h-full overflow-hidden"
+            className="h-full overflow-hidden flex-none"
             style={{
               width: 'var(--activity-bar-width)',
+              minWidth: showFlowMode ? 0 : '48px',
               opacity: showFlowMode ? 0 : 1
             }}
           >
