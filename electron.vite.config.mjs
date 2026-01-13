@@ -8,7 +8,7 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()],
     build: {
       rollupOptions: {
-        // Letting externalizeDepsPlugin handle it exclusively to avoid property-access crashes
+        external: ['electron', 'path', 'fs', 'os', 'child_process']
       }
     }
   },

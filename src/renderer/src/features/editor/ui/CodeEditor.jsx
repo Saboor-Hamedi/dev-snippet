@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, useLayoutEffect } from 'react'
 import { AnimatePresence } from 'framer-motion'
-import useCursorProp from '../../hook/settings/useCursorProp.js'
-import useGutterProp from '../../hook/settings/useGutterProp.js'
-import { useSettings, useZoomLevel, useEditorZoomLevel } from '../../hook/useSettingsContext'
-import useFocus from '../../hook/useFocus'
-import settingsManager from '../../config/settingsManager'
+import useCursorProp from '../../../hook/settings/useCursorProp.js'
+import useGutterProp from '../../../hook/settings/useGutterProp.js'
+import { useSettings, useZoomLevel, useEditorZoomLevel } from '../../../hook/useSettingsContext'
+import useFocus from '../../../hook/useFocus'
+import settingsManager from '../../../config/settingsManager'
 import CodeMirror from '@uiw/react-codemirror'
 import { EditorView, closeHoverTooltips } from '@codemirror/view'
 import { closeCompletion } from '@codemirror/autocomplete'
-import buildTheme from './extensions/buildTheme'
-import buildExtensions from './extensions/buildExtensions'
-import './UnifiedTooltip.css' // Import unified tooltip styling
-import ErrorBoundary from '../ErrorBoundary'
-import SearchPanel from './search/SearchPanel'
+import buildTheme from '../engine/buildTheme'
+import buildExtensions from '../engine/buildExtensions'
+import '../../../components/CodeEditor/UnifiedTooltip.css'
+import ErrorBoundary from '../../../components/ErrorBoundary'
+import SearchPanel from '../../../components/CodeEditor/search/SearchPanel'
 import { lineNumbers } from '@codemirror/view'
 import { foldGutter, codeFolding } from '@codemirror/language'
 
@@ -25,7 +25,7 @@ const debounce = (func, wait) => {
   }
 }
 
-import { saveCursorPosition, getCursorPosition } from '../../utils/persistentPosition'
+import { saveCursorPosition, getCursorPosition } from '../../../utils/persistentPosition'
 
 /**
  * ╔══════════════════════════════════════════════════════════════════════════╗

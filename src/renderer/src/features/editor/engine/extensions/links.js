@@ -1,8 +1,8 @@
 import { Decoration, ViewPlugin, hoverTooltip, EditorView } from '@codemirror/view'
 import { RangeSetBuilder } from '@codemirror/state'
-import { sortDecorations } from '../CodeEditor/engine/utils'
-import { EditorMode, editorModeField, activeLinesField } from '../CodeEditor/engine/state'
-import { useSidebarStore } from '../../store/useSidebarStore'
+import { sortDecorations } from '../utils'
+import { EditorMode, editorModeField, activeLinesField } from '../state'
+import { useSidebarStore } from '../../../sidebar/store/useSidebarStore'
 import { markdownToHtml } from '../../utils/markdownParser'
 
 const hideMarkerDeco = Decoration.mark({ class: 'cm-marker-hidden' })
