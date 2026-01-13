@@ -422,9 +422,13 @@ const CodeEditor = ({
   
   // Detect large files (Optimized for zero typing lag)
   const [isLargeFile, setIsLargeFile] = useState(() => {
-    const len = (value || '').length
-    return len > 80000 // Slightly lower threshold for earlier protection
+    const charCount = (value || '').length
+    return charCount > 150000 
   })
+
+  // Viewport Margin - Higher margin for massive files ensures smoother scrolling
+  // by keeping more lines pre-measured in the background.
+  const viewportMarginAdjustment = isLargeFile ? 1500 : 1000
 
   // ... (keeping large file logic)
   

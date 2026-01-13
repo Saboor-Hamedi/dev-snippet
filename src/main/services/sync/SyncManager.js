@@ -22,6 +22,9 @@ const BACKUP_FILENAME = 'dev-snippet-data.json'
 const SETTINGS_FILENAME = 'dev-snippet-config.json'
 const SENSITIVE_SETTINGS_KEYS = new Set(['github.token'])
 
+// SIGNATURE: Used to identify the backup gist on GitHub
+const GIST_DESCRIPTION = getGistDescription() 
+
 /**
  * Status Keys for SQLite persistence
  * Keeps track of sync history without exposing data to the UI on every query.

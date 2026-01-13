@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useMemo, useLayoutEffect } from 'react'
 import PropTypes from 'prop-types'
 import { GripVertical } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../features/keyboard/useKeyboardShortcuts'
@@ -282,22 +282,56 @@ const SnippetEditor = ({
   const textareaRef = useRef(null)
   const [pinPopover, setPinPopover] = useState({ visible: false, x: 0, y: 0 })
 
-  // Header scroll logic
-  const headerRef = useRef(null)
-  const [headerHeight, setHeaderHeight] = useState(120) // Default estimate
+  // Header visibility logic
+  const isHeaderVisible = !isFlow && ((!isReadOnly && !initialSnippet?.readOnly && initialSnippet?.id !== 'system:settings' && initialSnippet?.id !== 'system:default-settings') || isCreateMode)
 
-  // Measure header height dynamically
-  useEffect(() => {
+  // Header scroll logic - Purely DOM-driven for stability
+  const headerRef = useRef(null)
+  const isScrollingRef = useRef(false)
+  const scrollTimeoutRef = useRef(null)
+
+  // Measure header height dynamically - PURE DOM INJECTION
+  useLayoutEffect(() => {
+    // 1. Handle cases where header is hidden (Flow Mode / Documentation)
+    if (!isHeaderVisible) {
+      if (editorContainerRef.current) {
+        editorContainerRef.current.style.setProperty('--editor-content-padding-top', '10px')
+      }
+      return
+    }
+
     if (!headerRef.current) return
+    
+    // 2. STABLE INITIALIZATION: Set immediately to prevent "Zoom/Jump Pulse"
+    const rect = headerRef.current.getBoundingClientRect()
+    const initialHeight = Math.floor(rect.height) || 120
+    
+    // Apply immediately to the container to stabilize CodeMirror view
+    if (editorContainerRef.current) {
+       editorContainerRef.current.style.setProperty('--editor-content-padding-top', `${initialHeight}px`)
+    }
+
     const resizeObserver = new ResizeObserver((entries) => {
+      // 3. PERFORMANCE SHIELD: Absolutely block height updates during scrolling.
+      if (isScrollingRef.current) return
+
       for (const entry of entries) {
-        // Add a little buffer or exact height
-        setHeaderHeight(entry.contentRect.height)
+        // 4. PIXEL LOCK: Thresholding to ignore noise
+        const roundedHeight = Math.floor(entry.contentRect.height)
+        
+        // 5. DIRECT DOM UPDATE: Bypass React Re-render entirely
+        if (editorContainerRef.current) {
+           const current = editorContainerRef.current.style.getPropertyValue('--editor-content-padding-top')
+           if (current !== `${roundedHeight}px`) {
+             editorContainerRef.current.style.setProperty('--editor-content-padding-top', `${roundedHeight}px`)
+           }
+        }
       }
     })
+    
     resizeObserver.observe(headerRef.current)
     return () => resizeObserver.disconnect()
-  }, [])
+  }, [isHeaderVisible])
 
   const wordWrap = getSetting('editor.wordWrap') !== false
 
@@ -306,19 +340,26 @@ const SnippetEditor = ({
   }, [onToggleCompact])
 
   const onEditorScroll = useCallback((scrollTop) => {
-    // Header is now Absolute (Sticky-Simulated), so we transform it to move with scroll
+    // 1. SECURE SCROLLING STATE
+    isScrollingRef.current = true
+    if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current)
+    scrollTimeoutRef.current = setTimeout(() => {
+      isScrollingRef.current = false
+    }, 300) // Longer timeout for inertial scroll safety
+
+    // 2. STABILIZED HEADER TRANSFORM
     if (headerRef.current) {
-      headerRef.current.style.transform = `translateY(-${scrollTop}px)`
+      if (window.__headerRafId) cancelAnimationFrame(window.__headerRafId)
+      window.__headerRafId = requestAnimationFrame(() => {
+        if (headerRef.current) {
+          headerRef.current.style.transform = `translateY(-${scrollTop}px)`
+        }
+      })
     }
   }, [])
 
-  // Header visibility logic
-  const isHeaderVisible = !isFlow && ((!isReadOnly && !initialSnippet?.readOnly && initialSnippet?.id !== 'system:settings' && initialSnippet?.id !== 'system:default-settings') || isCreateMode)
-
-  // Memoize style to prevent CodeEditor re-renders on title change
-  const editorStyle = useMemo(() => ({
-    '--editor-content-padding-top': isHeaderVisible ? `${headerHeight}px` : '10px'
-  }), [headerHeight, isHeaderVisible])
+  // STABLE STYLE: No longer includes --editor-content-padding-top as it is managed purely via DOM
+  const editorStyle = useMemo(() => ({}), []) 
 
   // Mode cycling logic - Defined EARLY to be used in handlers
   const cycleMode = useCallback(() => {
@@ -788,6 +829,53 @@ const SnippetEditor = ({
     }
   })
 
+  // --- GIST SYNC HANDLER ---
+  const handleGistSync = useCallback(async () => {
+    try {
+      showToast('☁️ Starting Gist backup...', 'info')
+      await window.api.syncBackup()
+      showToast('✅ Backup completed successfully', 'success')
+    } catch (err) {
+      console.error('Backup failed:', err)
+      const errorMsg = err.message || 'Unknown error'
+      if (errorMsg.includes('401') || errorMsg.includes('Invalid Token')) {
+        showToast('❌ Backup failed: Invalid or expired token', 'error')
+      } else if (errorMsg.includes('403')) {
+        showToast('❌ Backup failed: Token lacks gist permissions', 'error')
+      } else if (errorMsg.includes('No GitHub Token')) {
+        showToast('❌ Backup failed: No token configured', 'error')
+      } else {
+        showToast(`❌ Backup failed: ${errorMsg}`, 'error')
+      }
+    }
+  }, [showToast])
+
+  const handleGistRestore = useCallback(async () => {
+    if (!confirm('⚠️ This will OVERWRITE your local data with the GitHub backup. Are you sure?')) {
+      return
+    }
+
+    try {
+      showToast('☁️ Restoring from Gist...', 'info')
+      await window.api.syncRestore()
+      showToast('✅ Restore completed successfully', 'success')
+    } catch (err) {
+      console.error('Restore failed:', err)
+      const errorMsg = err.message || 'Unknown error'
+      if (errorMsg.includes('401') || errorMsg.includes('Invalid Token')) {
+        showToast('❌ Restore failed: Invalid or expired token', 'error')
+      } else if (errorMsg.includes('403')) {
+        showToast('❌ Restore failed: Token lacks gist permissions', 'error')
+      } else if (errorMsg.includes('No GitHub Token')) {
+        showToast('❌ Restore failed: No token configured', 'error')
+      } else if (errorMsg.includes('No backup found')) {
+        showToast('❌ Restore failed: No backup found on GitHub', 'error')
+      } else {
+        showToast(`❌ Restore failed: ${errorMsg}`, 'error')
+      }
+    }
+  }, [showToast])
+
   useEffect(() => {
     if (justRenamed && !namePrompt.isOpen) {
       setTimeout(() => {
@@ -903,6 +991,7 @@ const SnippetEditor = ({
                         onLargeFileChange={setIsLargeFile}
                         onScroll={onEditorScroll}
                         style={editorStyle}
+                        isHeaderVisible={isHeaderVisible}
                         onKeyDown={handleEditorKeyDown}
                         height="100%"
                         className="h-full"
@@ -936,6 +1025,8 @@ const SnippetEditor = ({
                 initialSnippet={initialSnippet}
                 onFavorite={onFavorite}
                 onPing={onPing}
+                onGistSync={handleGistSync}
+                onGistRestore={handleGistRestore}
                 isFlow={isFlow}
               />
             )}

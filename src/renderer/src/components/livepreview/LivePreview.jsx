@@ -354,21 +354,29 @@ const LivePreview = ({
   useEffect(() => {
     if (!enableScrollSync) return
 
+    let rafId = null
     const handleSync = (e) => {
       const percentage = e.detail?.percentage
       if (typeof percentage !== 'number') return
 
       lastScrollPercentage.current = percentage
-      const container = shadowContentRef.current
-      if (container) {
-        const scrollTarget = (container.scrollHeight - container.clientHeight) * percentage
-        container.scrollTop = scrollTarget
-      }
+      
+      // OPTIMIZATION: Use RAF to decouple preview scroll from editor scroll event stream
+      // This prevents the preview's scroll calculation from dragging down editor performance.
+      if (rafId) cancelAnimationFrame(rafId)
+      rafId = requestAnimationFrame(() => {
+        const container = shadowContentRef.current
+        if (container) {
+          const scrollTarget = (container.scrollHeight - container.clientHeight) * percentage
+          container.scrollTop = scrollTarget
+        }
+      })
     }
 
     window.addEventListener('app:editor-scroll', handleSync)
     return () => {
       window.removeEventListener('app:editor-scroll', handleSync)
+      if (rafId) cancelAnimationFrame(rafId)
     }
   }, [enableScrollSync])
 

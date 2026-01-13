@@ -9,22 +9,9 @@ export const readingModeLayoutPlugin = ViewPlugin.fromClass(
 
       this.listener = (e) => {
         if (e.detail?.mode) {
-          // If NOT currently updating, try to capture offset for mode switch
-          if (!view.updating) {
-            try {
-              const head = view.state.selection.main.head
-              const coords = view.coordsAtPos(head)
-              const scrollerRect = view.scrollDOM.getBoundingClientRect()
-              // Capture absolute document offset (viewport + scroll)
-              this.lastOffset = coords
-                ? coords.top - scrollerRect.top + view.scrollDOM.scrollTop
-                : null
-              this.lastLine = view.state.doc.lineAt(head).number
-            } catch (err) {
-              console.warn('[Layout] Failed to capture pre-mode-switch offset:', err)
-            }
-          }
-
+          // CAPTURE ANCHOR IMMEDIATELY: This is the most efficient point.
+          // It only happens once per mode switch, leaving scrolling at 60fps.
+          this.captureAnchor(view)
           view.dispatch({ effects: setEditorMode.of(e.detail.mode) })
         }
       }
@@ -33,6 +20,20 @@ export const readingModeLayoutPlugin = ViewPlugin.fromClass(
       const mode = view.state.field(editorModeField)
       this.syncClasses(view, mode)
       window.dispatchEvent(new CustomEvent('app:mode-changed', { detail: { mode } }))
+    }
+
+    captureAnchor(view) {
+      try {
+        const head = view.state.selection.main.head
+        const coords = view.coordsAtPos(head)
+        const scrollerRect = view.scrollDOM.getBoundingClientRect()
+        if (coords && scrollerRect) {
+          this.lastOffset = coords.top - scrollerRect.top + view.scrollDOM.scrollTop
+          this.lastLine = view.state.doc.lineAt(head).number
+        }
+      } catch (e) {
+        // Fail silently
+      }
     }
 
     syncClasses(view, mode) {
@@ -44,65 +45,51 @@ export const readingModeLayoutPlugin = ViewPlugin.fromClass(
     update(update) {
       const modeChanged =
         update.startState.field(editorModeField) !== update.state.field(editorModeField)
-      const selectionChanged = update.selectionSet
-      const docChanged = update.docChanged
 
       if (modeChanged) {
         const mode = update.state.field(editorModeField)
         this.syncClasses(update.view, mode)
         window.dispatchEvent(new CustomEvent('app:mode-changed', { detail: { mode } }))
+
+        // --- STABILIZATION ENGINE (MODE SWITCH ONLY) ---
+        const savedOffset = this.lastOffset
+        const savedLine = this.lastLine
+
+        update.view.requestMeasure({
+          read: (v) => {
+            try {
+              const head = v.state.selection.main.head
+              const line = v.state.doc.lineAt(head).number
+              const coords = v.coordsAtPos(head)
+              if (!coords || line !== savedLine || savedOffset === null) return null
+
+              const scrollerRect = v.scrollDOM.getBoundingClientRect()
+              
+              // Use fluids (no Math.round) for High-DPI smoothness
+              const currentDocOffset = coords.top - scrollerRect.top + v.scrollDOM.scrollTop
+              let diff = currentDocOffset - savedOffset
+
+              const isAtBottom = v.scrollDOM.scrollTop + v.scrollDOM.clientHeight >= v.scrollDOM.scrollHeight - 2
+              if (isAtBottom && diff > 0) return null
+              
+              // Only stabilize if jump is meaningful (> 2px) to avoid micro-jitter
+              if (Math.abs(diff) < 2) return null 
+              if (Math.abs(diff) > 800) return null
+
+              return { diff }
+            } catch (e) {
+              return null
+            }
+          },
+          write: (res, v) => {
+            if (res && Math.abs(res.diff) > 0.5) {
+              requestAnimationFrame(() => {
+                if (v.scrollDOM) v.scrollDOM.scrollTop += res.diff
+              })
+            }
+          }
+        })
       }
-
-      // --- STABILIZATION ENGINE ---
-      const savedOffset = this.lastOffset
-      const savedLine = this.lastLine
-
-      update.view.requestMeasure({
-        read: (v) => {
-          try {
-            const head = v.state.selection.main.head
-            const line = v.state.doc.lineAt(head).number
-            const coords = v.coordsAtPos(head)
-            if (!coords) return null
-
-            const scrollerRect = v.scrollDOM.getBoundingClientRect()
-            // ALWAYS use absolute document offset for stability
-            const currentDocOffset = coords.top - scrollerRect.top + v.scrollDOM.scrollTop
-
-            let diff = 0
-            // ONLY apply correction if the layout shifted (mode or doc change)
-            // and we are still on the same line.
-            if ((modeChanged || docChanged) && line === savedLine && savedOffset !== null) {
-              diff = currentDocOffset - savedOffset
-            }
-
-            return {
-              line,
-              docOffset: currentDocOffset,
-              diff,
-              shouldApply: (modeChanged || docChanged) && !update.view.composing
-            }
-          } catch (e) {
-            return null
-          }
-        },
-        write: (res, v) => {
-          if (!res) return
-
-          // 1. Apply Correction
-          // We only apply if the mode or document changed.
-          // If the user is just moving the selection, we DON'T stabilize.
-          if (res.shouldApply && Math.abs(res.diff) > 1) {
-            v.scrollDOM.scrollTop += res.diff
-          }
-
-          // 2. Continuous Tracking
-          // Update the anchor after EVERY frame to ensure the next delta is relative
-          // to the current cursor position.
-          this.lastLine = res.line
-          this.lastOffset = res.docOffset
-        }
-      })
     }
 
     destroy() {

@@ -188,8 +188,14 @@ const AdvancedSplitPane = ({
           className={`flex h-full w-full ${unifiedScroll ? 'overflow-auto' : 'overflow-hidden'}`}
         >
           <div
-            className={`min-h-0 h-full overflow-auto ${isDragging ? 'pointer-events-none' : ''}`}
-            style={{ width: `${sideBySideLeft}%`, flex: '0 0 auto', position: 'relative' }}
+            className={`min-h-0 h-full ${unifiedScroll ? 'overflow-auto' : 'overflow-hidden'} ${isDragging ? 'pointer-events-none' : ''}`}
+            style={{ 
+              width: `${sideBySideLeft}%`, 
+              flex: '0 0 auto', 
+              position: 'relative',
+              contain: 'content',      // STABILITY: Isolates layout from neighbors
+              overflowAnchor: 'none'   // STABILITY: Prevents browser from "adjusting" scroll during measurements
+            }}
           >
             {left}
           </div>
@@ -211,8 +217,12 @@ const AdvancedSplitPane = ({
             </div>
           </div>
           <div
-            className={`flex-1 min-h-0 h-full overflow-auto ${isDragging ? 'pointer-events-none' : ''}`}
-            style={{ minWidth: 0 }}
+            className={`flex-1 min-h-0 h-full ${unifiedScroll ? 'overflow-auto' : 'overflow-hidden'} ${isDragging ? 'pointer-events-none' : ''}`}
+            style={{ 
+              minWidth: 0,
+              contain: 'content',
+              overflowAnchor: 'none'
+            }}
           >
             {right}
           </div>
