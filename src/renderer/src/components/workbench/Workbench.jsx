@@ -18,8 +18,8 @@ import {
 import { generateRandomGraphTheme } from '../Graph/GraphLogic'
 
 import SidebarTheme from '../preference/SidebarTheme'
-import SnippetSidebar from './SnippetSidebar'
-import ActivityBar from '../layout/activityBar/ActivityBar'
+import { SnippetSidebar } from '../../features/sidebar/ui'
+import { ActivityBar } from '../../features/activity-bar'
 import { StatusBar, SystemStatusFooter } from '../layout/StatusBar/useStatusBar'
 import { useModal } from './manager/ModalContext'
 import UniversalModal from '../universal/UniversalModal'

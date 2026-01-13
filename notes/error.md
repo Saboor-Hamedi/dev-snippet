@@ -131,17 +131,43 @@ If you modify these, the editor will start **JUMPING** or trigger **Measure Loop
   1. **Class Exemption**: Explicitly add `.theme-exempt` to the sidebar row `className`.
   2. **Animation Removal**: Remove entrance animations from virtualized list rows. They are computationally expensive and visually distracting during state updates.
 
+### ❌ Error: "Invalid child" or "RangeError: posBefore" (WikiLinks)
+
+- **Why it happens**: Multiple plugins (e.g., a regex decorator and a link previewer) attempting to manage or "decorate" the same range of text simultaneously. CodeMirror’s DOM builder detects conflicting instructions for the same node and crashes.
+- **The Fix (The "Consolidation Pattern")**:
+  1. **Single Passing**: Merge existence-checking, coloring (Blue/Red), and marker hiding into a **single** `inlineRegexPlugin` in `links.js`.
+  2. **Central Logic**: Move hover tooltips and double-click navigation into the same definitive file (`links.js`).
+  3. **Identity Purity**: Ensure navigation callbacks only pass the snippet `id` (string) to prevent identity mismatch errors in the main workbench.
+
+### ❌ Error: "Jittery Scrolling & Height Jumps" (Measure Loop v2)
+
+- **Why it happens**:
+  1. **Flex Conflicts**: Using `display: flex` on `.cm-scroller` or `.cm-content`. CodeMirror’s virtualization engine calculates line positions based on standard block flows; flex alignment can cause sub-pixel rounding errors that trigger infinite re-measurements.
+  2. **Competing Styles**: Having `padding-top` or `min-height` defined in three places (CSS file, `buildTheme.js`, and `SnippetEditor.jsx` `<style>` blocks).
+- **The Fix**:
+  1. **Restore Block Flow**: Force `.cm-scroller { display: block !important; }`.
+  2. **Single Truth**: Move the "Pure Editor" top gutter (`60px`) exclusively into `buildTheme.js` and remove all `padding-top` overrides from global CSS and local component styles.
+  3. **Safety Measurement**: Wrap `view.requestMeasure()` in a check: `if (view && view.state)`. This prevents the "Cannot read isText" crash if a zoom event fires while the editor is unmounting.
+
 ---
 
 ## 3. The "Obsidian Secret" Implementation Details
 
-| Feature           | File                 | Strategy                                                                     |
-| :---------------- | :------------------- | :--------------------------------------------------------------------------- |
-| **Stability**     | `CodeEditor.css`     | Fixed `min-width` on gutters; opacity-based hiding.                          |
-| **Solid UI**      | `UniversalModal.jsx` | Forced `rgb()` background; no-blur overlay.                                  |
-| **Consolidation** | `structure.js`       | Single-pass Viewport walking; deduplicated line styles.                      |
-| **Logic**         | `index.js`           | Mode detection and high-level extension orchestration.                       |
-| **Scrolling**     | `*.jsx` (Sidebars)   | **Absolute Inset Pattern** (`absolute inset-0`) for 100% reliable scrolling. |
+### ❌ Error: "Failed to fetch dynamically imported module" (Unified/Vite)
+
+- **Why it happens**: Vite attempts to pre-bundle CommonJS/mixed dependencies into ESM. Pure ESM packages like `unified` v11+, `remark-parse`, etc., can fail this process when imported dynamically inside an `async` function (Lazy Loading), leading to a 404 or fetch error in the browser/renderer.
+- **The Fix**:
+  1. **Exclude from Optimization**: Explicitly add these packages to `renderer.optimizeDeps.exclude` in `electron.vite.config.mjs`. This forces Vite to serve them as native ESM files, bypassing the broken pre-bundling step.
+  2. **Affected Packages**: `unified`, `remark-parse`, `remark-gfm`, `rehype-raw`, etc.
+
+## 4. Stability Architecture
+
+| Component | Strategy | Owner File |
+| :--- | :--- | :--- |
+| **Editor Parsing** | **Debounced Web Worker** | `markdown.worker.js` |
+| **WikiLink Logic** | **Consolidation Pattern** | `links.js` |
+| **Layout Metrics** | **Single Source of Truth** | `buildTheme.js` |
+| **Module Loading** | **Optimization Exclusion** | `electron.vite.config.mjs` |
 
 ---
 
@@ -166,4 +192,4 @@ If you modify these, the editor will start **JUMPING** or trigger **Measure Loop
 
   5. **Clean Settings Layout**: Removed borders and backgrounds from `SettingSection` components in typical settings tabs. This moves the UI from a "Boxed" layout to a cleaner "List/Reference" layout, particularly effectively for the two-column Keyboard Shortcuts view.
 
-_Technical reference for DevSnippet stability. Last updated: January 5, 2026. v1.4.1_
+_Technical reference for DevSnippet stability. Last updated: January 13, 2026. v1.5.0_

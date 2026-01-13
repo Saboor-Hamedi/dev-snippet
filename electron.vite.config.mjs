@@ -45,6 +45,20 @@ export default defineConfig({
         }
       },
       chunkSizeWarningLimit: 1000
+    },
+    optimizeDeps: {
+      exclude: [
+        'unified',
+        'remark-parse',
+        'remark-gfm',
+        'remark-breaks',
+        'remark-directive',
+        'remark-rehype',
+        'rehype-raw',
+        'rehype-highlight',
+        'rehype-stringify',
+        'unist-util-visit'
+      ]
     }
   },
   test: {
