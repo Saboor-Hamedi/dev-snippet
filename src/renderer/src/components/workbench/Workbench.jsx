@@ -26,6 +26,7 @@ import UniversalModal from '../universal/UniversalModal'
 import FlowWorkspace from '../FlowMode/FlowWorkspace'
 import '../FlowMode/FlowMode.css'
 import LivePreview from '../livepreview/LivePreview'
+import { getDisplayTitle } from '../../utils/editorUtils'
 import { useTheme } from '../../hook/useTheme'
 import { useSettings } from '../../hook/useSettingsContext'
 import { useView } from '../../context/ViewContext'
@@ -299,9 +300,9 @@ const Workbench = ({
     switch (activeView) {
       case 'editor':
         // FIX: Prioritize actual title even if untyped to avoid " - Quick Snippets" glitch
-        return selectedSnippet?.title || 'Untitled'
+        return getDisplayTitle(selectedSnippet?.title) || 'Untitled'
       case 'snippets':
-        return selectedSnippet?.title || 'Dev Snippet'
+        return getDisplayTitle(selectedSnippet?.title) || 'Dev Snippet'
       case 'welcome':
         return 'Dev Snippet'
       case 'graph':

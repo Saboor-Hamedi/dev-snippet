@@ -10,17 +10,18 @@ import ContextMenu from '../../common/ContextMenu'
 /**
  * CursorDisplay - Specialized for high-frequency cursor position updates.
  */
-const CursorDisplay = memo(({ line, col, show }) => {
+const CursorDisplay = memo(({ line, col, selectionCount, show }) => {
+  if (!show) return null
   return (
     <div
-      className={`status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer min-w-[30px] sm:min-w-[80px] justify-end ${!show ? 'opacity-0 invisible pointer-events-none' : ''}`}
+      className="status-bar-item hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer min-w-[30px] sm:min-w-[80px] justify-end"
       title="Go to Line"
     >
       <span className="font-mono tabular-nums hidden sm:inline">
-        Ln {line}, Col {col}
+        {selectionCount > 0 ? `Selected ${selectionCount}` : `Ln ${line}, Col ${col}`}
       </span>
       <span className="font-mono tabular-nums sm:hidden text-[10px]">
-        {line}:{col}
+        {selectionCount > 0 ? `Sel ${selectionCount}` : `${line}:${col}`}
       </span>
     </div>
   )
@@ -66,6 +67,7 @@ const StatusBar = ({
   stats,
   line = 1,
   col = 1,
+  selectionCount = 0,
   minimal = false
 }) => {
   const [version, setVersion] = useState('...')
@@ -172,7 +174,7 @@ const StatusBar = ({
         </div>
 
         <div className="status-bar-right flex items-center gap-0 overflow-hidden text-clip">
-          <CursorDisplay line={line} col={col} show={showCursorPosition} />
+          <CursorDisplay line={line} col={col} selectionCount={selectionCount} show={showCursorPosition} />
 
           {!minimal && showIndentation && (
             <div
@@ -317,7 +319,8 @@ StatusBar.propTypes = {
     words: PropTypes.number
   }),
   line: PropTypes.number,
-  col: PropTypes.number
+  col: PropTypes.number,
+  selectionCount: PropTypes.number
 }
 
 export default memo(StatusBar)

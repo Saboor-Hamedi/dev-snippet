@@ -27,9 +27,9 @@ export const ensureExtension = (name, ext = '.md') => {
 export const extractTags = (text) => {
   if (!text) return []
   const tags = new Set()
-  // Improved Regex: Must start with a letter or underscore, 
-  // followed by alphanumeric/dashes. Prevents #1 or @2024 from being tags.
-  const re = /(?:^|\s)[#@]([a-zA-Z_][a-zA-Z0-9_-]*)/g
+  // Improved Regex: Only match hashtags (#).
+  // Mentions (@) are kept in text only to avoid cluttering the Tag library.
+  const re = /(?:^|\s)#([a-zA-Z_][a-zA-Z0-9_-]*)/g
   let m
   const str = String(text)
   while ((m = re.exec(str))) {

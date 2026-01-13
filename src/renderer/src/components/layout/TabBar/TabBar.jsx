@@ -2,6 +2,7 @@ import React from 'react'
 import './TabBar.css'
 import { X, File } from 'lucide-react'
 import { getFileIcon } from '../../../utils/iconUtils'
+import { getDisplayTitle } from '../../../utils/editorUtils'
 
 const TabBar = ({
   tabs = [],
@@ -25,7 +26,7 @@ const TabBar = ({
               <div className="tab-icon">
                 <FileIcon size={14} style={{ color: color || 'var(--color-text-secondary)' }} />
               </div>
-              <span className="tab-title">{(tab.title || 'Untitled').replace(/\.md$/, '')}</span>
+              <span className="tab-title">{getDisplayTitle(tab.title)}</span>
               <button
                 className="tab-close-btn"
                 onClick={(e) => {

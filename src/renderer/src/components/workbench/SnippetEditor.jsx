@@ -28,8 +28,10 @@ import { useEditorExport } from './editor/useEditorExport'
 import { useEditorSave } from './editor/useEditorSave'
 import EditorMetadataHeader from './editor/EditorMetadataHeader'
 import EditorModeSwitcher from './editor/EditorModeSwitcher'
+import { sanitizeTitle, getDisplayTitle, sanitizeTag } from '../../utils/editorUtils'
 import { useEditorCloseCheck } from './editor/useEditorCloseCheck.jsx'
 import { useSnippetOperations } from './editor/useSnippetOperations'
+import { extractTags } from '../../utils/snippetUtils'
 import '../universal/universalStyle.css'
 import './editor/EditorMetadata.css'
 
@@ -123,15 +125,30 @@ const SnippetEditor = ({
     title,
     setTitle,
     tags,
-    setTags,
     currentTagInput,
     setCurrentTagInput,
-    isDuplicate
+    isDuplicate,
+    setTags: internalSetTags 
   } = editorState
 
-  // --- SYSTEM SETTINGS SYNC ---
-  // Force the editor to reflect background changes (like theme switching) 
-  // for virtual files that have stable IDs.
+  // --- CLEAN TAG GUARD ---
+  // Automatically strips # and , from tags for a robust organization.
+  const handleSetTags = useCallback((val) => {
+    const process = (t) => (Array.isArray(t) ? t : []).map(sanitizeTag).filter(Boolean)
+    if (typeof val === 'function') {
+      internalSetTags(prev => process(val(prev)))
+    } else {
+      internalSetTags(process(val))
+    }
+  }, [internalSetTags])
+
+  // --- LIVE TAG INPUT SANITIZER ---
+  // Strips #, @, and , in real-time as the user types in the tag input.
+  const handleSetCurrentTagInput = useCallback((val) => {
+    const clean = sanitizeTag(val)
+    setCurrentTagInput(clean)
+  }, [setCurrentTagInput])
+
   useEffect(() => {
     if (
       initialSnippet?.id === 'system:settings' && 
@@ -143,42 +160,72 @@ const SnippetEditor = ({
     }
   }, [initialSnippet?.code, isDirty, setCode])
 
+  // --- LIVE TAG SYNCHRONIZER ---
+  // Ensures that when you delete a #tag from the editor, it vanishes from the header.
+  useEffect(() => {
+    if (!code) return
+    const currentExtracted = extractTags(code)
+    
+    handleSetTags(prev => {
+      // If we simply return currentExtracted, we lose manually added tags.
+      // But for hashtags, the user typically wants them to be live.
+      return Array.from(new Set([...currentExtracted]))
+    })
+  }, [code, handleSetTags])
+
   const autoSaveEnabled = settings?.behavior?.autoSave !== false
 
 
  
   // --- DETECT LANGUAGE (THROTTLED) ---
-  const debouncedCodeForLang = useDebounce(code, 1000)
+  // --- DETECT LANGUAGE (FAST & HYBRID) ---
+  // 1. Raw code check for instant header/list detection
+  // 2. Debounced code for deeper pattern matching (performance)
+  const debouncedCodeForLang = useDebounce(code, 600)
   const detectedLang = useMemo(() => {
     const safeTitle = typeof title === 'string' ? title : ''
     const ext = safeTitle.includes('.') ? safeTitle.split('.').pop()?.toLowerCase() : null
-    let lang = ext || 'plaintext'
+    
+    // 0. ENSURE: .md always maps to 'markdown' engine (Instant)
+    if (ext === 'md' || ext === 'markdown') return 'markdown'
+    
+    // Default to markdown as the project standard to avoid "Language Flips"
+    // that cause the caret to jump on the first character.
+    let lang = ext || 'markdown'
+    
+    // 1. FAST CHECK (Synchronous on raw code)
+    // Checks only the first few bytes. Extremely cheap and ensures instant # -> H1
+    const fastTrim = (code || '').substring(0, 10).trim()
+    if (
+      fastTrim.startsWith('#') || // Instant: Headings (# ) and Tags (#tag)
+      fastTrim.startsWith('@') || // Instant: Mentions (@user)
+      fastTrim.startsWith('- ') ||
+      fastTrim.startsWith('* ') ||
+      fastTrim.startsWith('```') ||
+      fastTrim.startsWith('>')
+    ) {
+      return 'markdown'
+    }
+
+    // 2. DEEP CHECK (Debounced for performance on large files)
     if (!ext && debouncedCodeForLang) {
       const trimmed = debouncedCodeForLang.substring(0, 500).trim()
       if (
-        trimmed.startsWith('# ') ||
-        trimmed.startsWith('## ') ||
-        trimmed.startsWith('### ') ||
-        trimmed.startsWith('- ') ||
-        trimmed.startsWith('* ') ||
-        trimmed.startsWith('```') ||
-        trimmed.startsWith('>') ||
         trimmed.includes('**') ||
-        trimmed.includes(']]')
+        trimmed.includes(']]') ||
+        trimmed.includes('|')
       ) {
         lang = 'markdown'
       }
     }
     return lang
-  }, [title, debouncedCodeForLang])
+  }, [title, code, debouncedCodeForLang, initialSnippet?.language])
 
   // --- HIGH-INTEGRITY SAVING (SANITIZED) ---
-  // Blocks characters that break file systems: \ / : * ? " < > |
   const handleOnSave = useCallback((item) => {
-    const cleanTitle = (item.title || '').replace(/[\\/:*?"<>|]/g, '').trim()
     const finalItem = {
       ...item,
-      title: cleanTitle || 'Untitled',
+      title: sanitizeTitle(item.title),
       language: detectedLang 
     }
     onSave(finalItem)
@@ -267,6 +314,7 @@ const SnippetEditor = ({
     () => settings?.ui?.modeSwitcher?.isFloating || false
   )
   const [cursorPos, setCursorPos] = useState({ line: 1, col: 1 })
+  const [selectionCount, setSelectionCount] = useState(0)
   const [activeMode, setActiveMode] = useState('live_preview')
   const [isLargeFile, setIsLargeFile] = useState(false)
   const editorContainerRef = useRef(null)
@@ -278,7 +326,10 @@ const SnippetEditor = ({
   const wordWrap = getSetting('editor.wordWrap') !== false
 
   const handleCursorChange = useCallback((pos) => {
-    setCursorPos(pos)
+    setCursorPos({ line: pos.line, col: pos.col })
+    if (typeof pos.selectionCount === 'number') {
+      setSelectionCount(pos.selectionCount)
+    }
   }, [])
 
   const onToggleCompactHandler = useCallback(() => {
@@ -348,9 +399,9 @@ const SnippetEditor = ({
           title={title}
           setTitle={setTitle}
           tags={tags}
-          setTags={setTags}
+          setTags={handleSetTags}
           currentTagInput={currentTagInput}
-          setCurrentTagInput={setCurrentTagInput}
+          setCurrentTagInput={handleSetCurrentTagInput}
           isDuplicate={isDuplicate}
           initialSnippet={initialSnippet}
           onSave={onSave}
@@ -370,6 +421,7 @@ const SnippetEditor = ({
         <CodeEditor
           value={code || ''}
           language={detectedLang}
+          mode={activeMode} // CRITICAL: Restored mode for Advanced System (Live/Source/Reading)
           wordWrap={wordWrap}
           theme={currentTheme}
           centered={true}
@@ -389,7 +441,7 @@ const SnippetEditor = ({
         />
       </div>
     )
-  }, [code, detectedLang, wordWrap, currentTheme, isCreateMode, initialSnippet?.id, isReadOnly, handleCodeChange, editorStyle, handleEditorKeyDown, snippets, settings?.ui?.zenFocus, handleCursorChange])
+  }, [code, detectedLang, activeMode, wordWrap, currentTheme, isCreateMode, initialSnippet?.id, isReadOnly, handleCodeChange, editorStyle, handleEditorKeyDown, snippets, settings?.ui?.zenFocus, handleCursorChange])
 
   // 3. Surgical Preview Shield
   const memoizedPreview = useMemo(() => {
@@ -1013,7 +1065,15 @@ const SnippetEditor = ({
             .tags-container {
               margin-top: 0.25rem !important;
               padding: 0 !important;
-              min-height: auto !important;
+              min-height: 20px !important;
+              display: flex !important;
+              align-items: center !important;
+            }
+            .cm-content {
+              padding-bottom: 100px !important;
+            }
+            .cm-cursor {
+              border-left-width: 2px !important;
             }
           `}</style>
 
@@ -1046,6 +1106,7 @@ const SnippetEditor = ({
             stats={stats}
             line={cursorPos.line}
             col={cursorPos.col}
+            selectionCount={selectionCount}
             minimal={isFlow || settings?.ui?.showFlowMode}
           />
 
