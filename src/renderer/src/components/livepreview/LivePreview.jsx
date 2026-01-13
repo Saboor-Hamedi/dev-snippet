@@ -367,8 +367,9 @@ const LivePreview = ({
       rafId = requestAnimationFrame(() => {
         const container = shadowContentRef.current
         if (container) {
-          const scrollTarget = (container.scrollHeight - container.clientHeight) * percentage
-          container.scrollTop = scrollTarget
+          const maxScroll = container.scrollHeight - container.clientHeight
+          // Use Math.round for "Scientific Precision" - stops the shaking
+          container.scrollTop = Math.round(maxScroll * percentage)
         }
       })
     }

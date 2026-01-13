@@ -53,7 +53,7 @@ const FlowPreview = ({ selectedSnippet, snippets, fontFamily, show }) => {
       if (typeof percentage !== 'number' || !container) return
 
       const maxScroll = container.scrollHeight - container.clientHeight
-      // Math.round is crucial - it stops the "sub-pixel" vibrating/shaking
+      // Use Math.round for "Scientific Precision" - stops the shaking
       container.scrollTop = Math.round(maxScroll * percentage)
     }
 
@@ -262,7 +262,7 @@ const FlowPreview = ({ selectedSnippet, snippets, fontFamily, show }) => {
             theme="midnight-pro"
             fontFamily={fontFamily}
             showHeader={false}
-            enableScrollSync={false} /* Disabled Internal Sync to use External Optimized Sync */
+            enableScrollSync={false} /* Using External Sync for Ghost stability */
             onContentReady={(el) => (containerRef.current = el)}
             fontSize={device === 'mini' || device === 'mobile' ? 16 : null}
           />

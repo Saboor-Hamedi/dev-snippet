@@ -233,6 +233,25 @@ const Workbench = ({
   const [activeSidebarTab, setActiveSidebarTab] = React.useState('explorer')
   const [showFlowPreview, setShowFlowPreview] = React.useState(false)
 
+
+
+  // --- GLOBAL NAVIGATION LISTENER ---
+  // Listens for 'app:navigate-to-snippet' events dispatched by the Editor/WikiLinks
+  React.useEffect(() => {
+    const handleNav = (e) => {
+      const id = e.detail?.id
+      if (id) {
+        const target = (allSnippets || snippets || []).find((s) => s.id === id)
+        if (target && onSelectSnippet) {
+          onSelectSnippet(target)
+          // If in sidebar mode, ensure sidebar is open? Optional.
+        }
+      }
+    }
+    window.addEventListener('app:navigate-to-snippet', handleNav)
+    return () => window.removeEventListener('app:navigate-to-snippet', handleNav)
+  }, [allSnippets, snippets, onSelectSnippet])
+
   // Listen for global commands (Command Palette) - REMOVED (Handled in SnippetLibraryInner)
 
   const { navigateTo } = useView()
