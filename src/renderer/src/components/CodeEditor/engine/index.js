@@ -4,7 +4,7 @@ import { syntaxTree } from '@codemirror/language'
 
 import { EditorMode, editorModeField, setEditorMode, activeLinesField } from './state'
 import { richMarkdownStateField } from './structure'
-import { inlineRegexPlugin } from './links'
+import { inlineRegexPlugin } from '../../WikiLink/links'
 import { readingModeLayoutPlugin } from './layout'
 import { smartKeymap } from './keymap'
 import { assetExtensions } from './assets'

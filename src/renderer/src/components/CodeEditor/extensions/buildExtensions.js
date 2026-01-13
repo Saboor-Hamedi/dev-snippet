@@ -2,8 +2,8 @@ import { forceSelection } from './forceSelection'
 import buildTheme from './buildTheme'
 import { premiumTypingBundle } from './premiumFeatures'
 import { zenFocusExtension } from './zenFocus'
-import { linkPreviewTooltip } from './linkPreview'
-import './linkPreview.css'
+import { wikiLinkTooltip } from '../../WikiLink/links'
+import '../../WikiLink/linkPreview.css'
 import { richMarkdownExtension } from '../engine'
 import { tags as t } from '@lezer/highlight'
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
@@ -12,9 +12,9 @@ import * as viewExports from '@codemirror/view'
 import * as commandsExports from '@codemirror/commands'
 import * as autocompleteExports from '@codemirror/autocomplete'
 import * as languageExports from '@codemirror/language'
-import * as completionExports from './wikiLinkCompletion.js'
+import * as completionExports from '../../WikiLink/wikiLinkCompletion.js'
 import { slashCommandCompletionSource } from './slashCommandCompletion.js'
-import { wikiLinkWarp, wikiLinkPlugin } from './linkPreview'
+import { wikiLinkWarp } from '../../WikiLink/links'
 
 // Note: slashCommandCompletion.js still lazily loaded if needed,
 // but let's try to stabilize the core.
@@ -160,14 +160,13 @@ const buildExtensions = async (options, handlers = {}) => {
   )
 
   // 2.5 LINK PREVIEW (WikiLinks) - Premium Feature
-  exts.push(linkPreviewTooltip)
+  exts.push(wikiLinkTooltip)
 
   // 2.5.1 ZEN FOCUS - Immersive Writing Feature
   exts.push(zenFocusExtension(zenFocus))
 
   // 2.6 DOUBLE-CLICK WARP - Navigation Speed Feature
   exts.push(wikiLinkWarp)
-  exts.push(wikiLinkPlugin)
   const completionSources = []
   if (!isLargeFile) {
     try {

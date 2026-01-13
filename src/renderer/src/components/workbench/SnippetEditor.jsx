@@ -23,7 +23,6 @@ import Prompt from '../universal/Prompt'
 
 // Extracted Editor Hooks & Components
 import { useEditorState } from './editor/useEditorState'  
-import { useWikiLinks } from './editor/useWikiLinks' // RETURNING TO ORIGINAL
 import { useEditorExport } from './editor/useEditorExport'
 import { useEditorSave } from './editor/useEditorSave'
 import EditorMetadataHeader from './editor/EditorMetadataHeader'
@@ -34,6 +33,7 @@ import { useSnippetOperations } from './editor/useSnippetOperations'
 import { extractTags } from '../../utils/snippetUtils'
 import '../universal/universalStyle.css'
 import './editor/EditorMetadata.css'
+import WikiLink from '../WikiLink/WikiLink'
 
 const SnippetEditor = ({
   onSave,
@@ -92,50 +92,8 @@ const SnippetEditor = ({
     setTags: internalSetTags 
   } = editorState
 
-  // --- WIKILINK & EXTENSION LOGIC ---
-  const handleNav = useCallback((id) => {
-    window.dispatchEvent(new CustomEvent('app:navigate-to-snippet', { detail: { id } }))
-  }, [])
-
-  // STABILITY FIX: Filter snippets to only metadata so typing doesn't trigger re-renders
-  // logic: JSON.stringify is fast for metadata and ensures by-value stability
-  const stableSnippetMetadata = useMemo(() => {
-    return (snippets || []).map(s => ({ id: s.id, title: s.title }))
-  }, [snippets])
-
-  const metadataString = JSON.stringify(stableSnippetMetadata)
-  const refinedSnippets = useMemo(() => stableSnippetMetadata, [metadataString])
-
-  const rawExtensions = useWikiLinks({ 
-    snippets: refinedSnippets,
-    handleSelectSnippet: handleNav,
-    showToast,
-    setSelectedSnippet: (s) => handleNav(s?.id || s), 
-    navigateTo: (id) => handleNav(id), 
-    saveSnippet: (s) => onSave(s), 
-    // Provide all likely callback names since we cannot see the file definition
-    // And ensure they return a basic object if the hook uses the return value
-    createDraftSnippet: (title) => {
-       window.dispatchEvent(new CustomEvent('app:create-draft', { detail: { title } }))
-       return { title, id: Date.now().toString(), content: '' }
-    },
-    onCreateSnippet: (title) => {
-       window.dispatchEvent(new CustomEvent('app:create-draft', { detail: { title } }))
-       return { title, id: Date.now().toString(), content: '' }
-    },
-    createDraft: (title) => {
-       window.dispatchEvent(new CustomEvent('app:create-draft', { detail: { title } }))
-       return { title, id: Date.now().toString(), content: '' }
-    },
-    onCreate: (title) => {
-       window.dispatchEvent(new CustomEvent('app:create-draft', { detail: { title } }))
-       return { title, id: Date.now().toString(), content: '' }
-    }
-  })
-  
-  // Memoize the RESULT of the hook to prevent passing new array references to CodeMirror
-  // causing needless reconfiguration and crashes.
-  const wikiLinkExtensionsMemo = useMemo(() => rawExtensions, [rawExtensions])
+  // --- WIKILINK INTEGRATION ---
+  const [wikiLinkExtensions, setWikiLinkExtensions] = useState([])
 
   // --- FLOW MODE BOOTSTRAP SYNC ---
   // Ensure Flow Preview gets content immediately, not just on the next keystroke.
@@ -479,7 +437,6 @@ const SnippetEditor = ({
           .cm-cursor { border-left-width: 2px !important; }
           .editor-container {
             overflow-anchor: none !important;
-            contain: layout style !important;
           }
         `}</style>
         
@@ -528,7 +485,7 @@ const SnippetEditor = ({
                               onChange={onCodeChangeWrapper}
                               onLargeFileChange={setIsLargeFile}
                               onKeyDown={handleEditorKeyDown}
-                              extensions={wikiLinkExtensionsMemo}
+                              extensions={wikiLinkExtensions}
                               style={editorStyle}
                               height="100%"
                               className="flex-1 h-full"
@@ -618,6 +575,15 @@ const SnippetEditor = ({
         >
           {uniContent}
         </UniversalModal>
+
+        {/* WikiLink & Smart Preview Manager */}
+        <WikiLink 
+          snippets={snippets} 
+          onSave={onSave} 
+          showToast={showToast} 
+          handleNav={(id) => window.dispatchEvent(new CustomEvent('app:navigate-to-snippet', { detail: { id } }))}
+          onExtensionsReady={setWikiLinkExtensions}
+        />
       </div>
     </>
   )

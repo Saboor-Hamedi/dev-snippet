@@ -1,6 +1,6 @@
 import { hoverTooltip, EditorView, ViewPlugin, MatchDecorator, Decoration } from '@codemirror/view'
-import { markdownToHtml } from '../../../utils/markdownParser'
-import { useSidebarStore } from '../../../store/useSidebarStore' // For instant cache lookup
+import { markdownToHtml } from '../../utils/markdownParser'
+import { useSidebarStore } from '../../store/useSidebarStore' // For instant cache lookup
 
 // Mermaid removed
 
@@ -208,48 +208,7 @@ export const linkPreviewTooltip = hoverTooltip(
   { hoverTime: 300 }
 )
 
-/**
- * Double-click to navigate to linked snippet
- */
-// Decoration Plugin: Applies .cm-wiki-link class to all [[links]]
-// This ensures reliable cursor styling via CSS instead of JS events
-// which can be flaky when tooltips are involved.
-const wikiLinkMatcher = new MatchDecorator({
-  regexp: /\[\[(.*?)\]\]/g,
-  decoration: (match) => {
-    const title = match[1].trim()
-    const { snippetIndex } = useSidebarStore.getState()
-
-    // Check existence using the normalized cache
-    const norm = title.toLowerCase()
-    const exists = !!(
-      snippetIndex[norm] ||
-      snippetIndex[`${norm}.md`] ||
-      snippetIndex[norm.replace(/\.md$/, '')]
-    )
-
-    return Decoration.mark({
-      class: exists ? 'cm-wiki-link' : 'cm-wiki-link-dead',
-      attributes: {
-        title: exists ? 'Click to open' : 'Double-click to create'
-      }
-    })
-  }
-})
-
-export const wikiLinkPlugin = ViewPlugin.fromClass(
-  class {
-    constructor(view) {
-      this.decorations = wikiLinkMatcher.createDeco(view)
-    }
-    update(update) {
-      this.decorations = wikiLinkMatcher.updateDeco(update, this.decorations)
-    }
-  },
-  {
-    decorations: (v) => v.decorations
-  }
-)
+// wikiLinkPlugin REMOVED (Logic moved to links.js to prevent posBefore collisions)
 
 /**
  * Double-click to navigate to linked snippet
