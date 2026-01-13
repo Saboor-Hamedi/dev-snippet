@@ -172,9 +172,16 @@ const SnippetEditor = ({
     return lang
   }, [title, debouncedCodeForLang])
 
-  // WRAPPER: Ensure the system receives the detected language on the first save
+  // --- HIGH-INTEGRITY SAVING (SANITIZED) ---
+  // Blocks characters that break file systems: \ / : * ? " < > |
   const handleOnSave = useCallback((item) => {
-    onSave({ ...item, language: detectedLang })
+    const cleanTitle = (item.title || '').replace(/[\\/:*?"<>|]/g, '').trim()
+    const finalItem = {
+      ...item,
+      title: cleanTitle || 'Untitled',
+      language: detectedLang 
+    }
+    onSave(finalItem)
   }, [onSave, detectedLang])
 
   const editorSave = useEditorSave({
