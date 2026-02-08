@@ -3,7 +3,7 @@ import { RangeSetBuilder } from '@codemirror/state'
 import { sortDecorations } from '../utils'
 import { EditorMode, editorModeField, activeLinesField } from '../state'
 import { useSidebarStore } from '../../../sidebar/store/useSidebarStore'
-import { markdownToHtml } from '../../utils/markdownParser'
+import { markdownToHtml } from '@renderer/utils/markdownParser'
 
 const hideMarkerDeco = Decoration.mark({ class: 'cm-marker-hidden' })
 const resolvedWikiLinkDeco = Decoration.mark({ class: 'cm-wikilink cm-wiki-link-resolved' })

@@ -1,0 +1,16 @@
+.activity-button-icon {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.activity-button:hover .activity-button-icon {
+  transform: scale(1.1) translateY(-1px);
+}
+
+.activity-button:active .activity-button-icon {
+  transform: scale(0.95);
+}
+
+.active-pulse {
+  /* Animation removed as per user request */
+}
+

@@ -12,13 +12,22 @@ export class CodeBlockHeaderWidget extends WidgetType {
   toDOM(view) {
     const wrap = document.createElement('div')
     wrap.className = 'cm-code-block-header'
+    // Ensure flex layout for proper positioning
+    wrap.style.display = 'flex'
+    wrap.style.alignItems = 'center'
+    wrap.style.justifyContent = 'space-between'
+
+    // Language label FIRST (on the left)
     const langSpan = document.createElement('span')
     langSpan.textContent = (this.lang || 'code').toUpperCase()
     wrap.appendChild(langSpan)
+
+    // Copy button SECOND (on the right)
     const copyBtn = document.createElement('button')
     copyBtn.className = 'cm-code-copy-btn'
     copyBtn.textContent = 'Copy'
     copyBtn.addEventListener('click', (e) => {
+      e.stopPropagation()
       const pos = view.posAtDOM(wrap)
       if (pos < 0) return
       const node = syntaxTree(view.state).resolveInner(pos, 1)
@@ -36,6 +45,7 @@ export class CodeBlockHeaderWidget extends WidgetType {
       }
     })
     wrap.appendChild(copyBtn)
+
     return wrap
   }
 }

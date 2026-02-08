@@ -1,5 +1,5 @@
 import { hoverTooltip, EditorView, ViewPlugin, MatchDecorator, Decoration } from '@codemirror/view'
-import { markdownToHtml } from '../../utils/markdownParser'
+import { markdownToHtml } from '@renderer/utils/markdownParser'
 import { useSidebarStore } from '../../store/useSidebarStore' // For instant cache lookup
 
 // Mermaid removed

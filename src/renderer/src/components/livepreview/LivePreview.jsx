@@ -14,6 +14,7 @@ import { themes } from '../preference/theme/themes'
 import { useModal } from '../workbench/manager/ModalContext'
 import useAdvancedSplitPane from '../splitPanels/useAdvancedSplitPane.js'
 import ShadowSurface from '../preview/ShadowSurface'
+import { useMiniBrowser } from '../MiniBrowser'
 
 /**
  * LivePreview - Enterprise-Grade High-Performance Shadow DOM Rendering Engine.
@@ -48,6 +49,16 @@ const LivePreview = ({
   const { overlayMode: isOverlay, setOverlayMode: setOverlay } = useAdvancedSplitPane()
   const { settings } = useSettings()
   const abortControllerRef = useRef(null)
+
+  // --- Mini Browser Hook (DRY: centralized mini browser logic) ---
+  const { openMiniBrowser: openMiniBrowserInternal } = useMiniBrowser({
+    code,
+    title: 'Untitled',
+    theme,
+    snippets,
+    fontFamily: fontFamily || settings?.editor?.fontFamily || "'Outfit', 'Inter', sans-serif",
+    settings
+  })
 
   // --- State ---
   const [renderedHtml, setRenderedHtml] = useState('')
@@ -179,9 +190,9 @@ const LivePreview = ({
 
     let timeoutId = null
 
-    // Snappy Load: Remove the 75ms "artificial" delay for small edits
-    // SnippetEditor already handles the major debouncing.
-    const wait = (renderedHtml === '') ? 0 : 20
+    // Snappy Load: Increased debounce to 150ms to prevent "Heavy Typing" feel.
+    // Small files parse quickly, but the render cycle is expensive.
+    const wait = (renderedHtml === '') ? 0 : 150
     timeoutId = setTimeout(parse, wait)
 
     return () => {
@@ -227,7 +238,7 @@ const LivePreview = ({
       --editor-font-size: ${((fontSize || (settings && settings.editor?.fontSize) || 14) * 1) / 16}rem;
       --font-sans: ${fontFamily}, sans-serif;
     }
-    
+
     /* Performance Guard */
     :host-context(body.dragging-active) *,
     .shadow-wrapper.is-dragging *,
@@ -360,7 +371,7 @@ const LivePreview = ({
       if (typeof percentage !== 'number') return
 
       lastScrollPercentage.current = percentage
-      
+
       // OPTIMIZATION: Use RAF to decouple preview scroll from editor scroll event stream
       // This prevents the preview's scroll calculation from dragging down editor performance.
       if (rafId) cancelAnimationFrame(rafId)
@@ -442,7 +453,15 @@ const LivePreview = ({
           </div>
           <div className="flex items-center gap-1 flex-shrink-0 ml-4">
             <button
-              onClick={onOpenMiniPreview}
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                if (onOpenMiniPreview) {
+                  onOpenMiniPreview()
+                } else {
+                  openMiniBrowserInternal()
+                }
+              }}
               className="w-7 h-7 rounded-none transition-opacity bg-transparent hover:bg-transparent theme-exempt text-[var(--color-text-primary)] opacity-70 hover:opacity-100 flex items-center justify-center font-mono"
               title="Pop out Mini Preview"
             >
@@ -497,7 +516,7 @@ const LivePreview = ({
       )}
       <div
         className={noScroll ? "w-full min-h-0 relative" : "flex-1 w-full min-h-0 relative live-preview-scroller-container"}
-        style={{ 
+        style={{
           backgroundColor: isDark ? 'transparent' : '#ffffff',
           height: noScroll ? 'auto' : undefined
         }}

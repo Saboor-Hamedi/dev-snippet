@@ -398,13 +398,26 @@ export const useSidebarLogic = ({
    * A: Visual Selection Sync
    * Automatically scroll to the selected item if it changes from an external source.
    */
+  /**
+   * 4. SELECTION SYNC
+   * 
+   * A: Visual Selection Sync
+   * Automatically scroll to the selected item ONLY when the selection changes.
+   * PERFORMANCE: Avoid scrolling on every treeItem change (e.g. background saves).
+   */
+  const lastScrolledIdRef = useRef(null)
   React.useEffect(() => {
     if (selectedIds.length === 1 && listRef.current) {
       const selectedId = selectedIds[0]
-      const itemIndex = treeItems.findIndex((item) => item.id === selectedId)
-      if (itemIndex !== -1) {
-        listRef.current.scrollToItem(itemIndex)
+      if (selectedId !== lastScrolledIdRef.current) {
+        lastScrolledIdRef.current = selectedId
+        const itemIndex = treeItems.findIndex((item) => item.id === selectedId)
+        if (itemIndex !== -1) {
+          listRef.current.scrollToItem(itemIndex)
+        }
       }
+    } else if (selectedIds.length === 0) {
+      lastScrolledIdRef.current = null
     }
   }, [selectedIds, treeItems])
 

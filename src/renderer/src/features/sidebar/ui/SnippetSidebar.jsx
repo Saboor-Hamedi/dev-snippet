@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import PropTypes from 'prop-types'
 import {
   Search,
@@ -347,13 +347,14 @@ const SnippetSidebar = ({
   }, [containerHeight])
 
   // --- 🎯 Auto-scroll to Creation Input (VS Code behavior) ---
+  const lastCreationIdxRef = useRef(-1)
   React.useEffect(() => {
-    // Find the creation input in the tree
-    const creationInputIndex = treeItems.findIndex(item => item.type === 'creation_input')
-    
-    if (creationInputIndex !== -1 && listRef.current) {
-      // Scroll to the creation input
-      listRef.current.scrollToItem(creationInputIndex, 'smart')
+    const idx = treeItems.findIndex(item => item.type === 'creation_input')
+    if (idx !== -1 && idx !== lastCreationIdxRef.current && listRef.current) {
+      lastCreationIdxRef.current = idx
+      listRef.current.scrollToItem(idx, 'smart')
+    } else if (idx === -1) {
+      lastCreationIdxRef.current = -1
     }
   }, [treeItems])
 
@@ -410,23 +411,22 @@ const SnippetSidebar = ({
       <PaneHeader className="px-2 py-1">
         <div className="flex items-center gap-2 w-full">
           {/* SEARCH INPUT */}
-          <div className="relative group flex-1 h-7">
-            <div className="absolute left-2.5 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-70 transition-opacity pointer-events-none">
+          <div className="relative group flex-1 h-8 sidebar-search-container border border-white/5 bg-white/[0.02] rounded-lg overflow-hidden">
+            <div className="absolute left-2.5 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-70 transition-opacity pointer-events-none flex items-center gap-1.5">
               {isSearching ? (
                 <RefreshCw size={12} className="animate-spin text-[var(--color-accent-primary)]" />
               ) : (
-                <Search size={12} />
+                <Search size={13} />
               )}
             </div>
             <input
               ref={inputRef}
               type="text"
-              placeholder="Search Snippets"
+              placeholder="Search library..."
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && treeItems.length > 0) {
-                  // Open the first item but keep input focus
                   const first = treeItems[0]
                   if (first.type === 'snippet' || first.type === 'pinned_snippet') {
                     onSelect(first.data)
@@ -437,7 +437,7 @@ const SnippetSidebar = ({
                   firstEl?.focus()
                 }
               }}
-              className="w-full h-full rounded-[5px] pl-8 pr-8 text-[12px] outline-none border border-transparent focus:border-[var(--color-accent-primary)]/30 bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] placeholder:text-[11px] placeholder:opacity-30 transition-all focus:shadow-[0_0_20px_rgba(var(--color-accent-primary-rgb),0.1)]"
+              className="w-full h-full pl-9 pr-8 text-[12px] outline-none border-none bg-transparent text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)]/40 transition-all font-medium"
             />
           </div>
 
@@ -484,7 +484,7 @@ const SnippetSidebar = ({
       </PaneHeader>
 
       {/* VIRTUALIZED BODY SECTION */}
-      <SidebarBody noPadding>
+      <SidebarBody noPadding noScroll>
         <div
           ref={parentRef}
           className="w-full h-full relative outline-none"
@@ -528,10 +528,10 @@ const SnippetSidebar = ({
             } catch (err) {}
           }}
         >
-          {treeItems.length === 0 ? (
+          {treeItems.length === 0 && !isSearching ? (
             <div className="flex flex-col items-center justify-center h-full px-6 text-center animate-in fade-in duration-500">
               <Plus className="w-12 h-12 text-[var(--color-text-primary)] opacity-10 mb-4" />
-              <p className="text-[12px] opacity-40">Nothing found in library.</p>
+              <p className="text-[12px] opacity-40 italic">Library is empty.</p>
             </div>
           ) : (
             <VirtualList
@@ -539,7 +539,7 @@ const SnippetSidebar = ({
               height={containerHeight}
               width="100%"
               itemCount={treeItems.length}
-              itemSize={isCompact ? 24 : 30}
+              itemSize={isCompact ? 24 : 32}
               overscan={15}
               itemData={itemData}
             >

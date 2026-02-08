@@ -201,10 +201,9 @@ const buildExtensions = async (options, handlers = {}) => {
   // 3. CORE EDITOR FUNCTIONALITY (High Stability)
   try {
     // ========================================================================
-    // HYBRID SELECTION SYSTEM (Custom Cursor + Text-Only Selection)
+    // SELECTION ENGINE (Standard DrawSelection with custom theme styling)
     // ========================================================================
     exts.push(drawSelection({ cursorBlinkRate: 0 }))
-    exts.push(forceSelection())
 
     // Only load heavy interaction handlers for standard files
     if (!isLargeFile) {

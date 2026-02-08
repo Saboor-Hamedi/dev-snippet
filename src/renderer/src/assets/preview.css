@@ -133,13 +133,13 @@ h1 {
   font-size: 1.8rem !important;
   padding-top: 28px !important;
   padding-bottom: 12px !important;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: none !important; /* Removed horizontal line - user requested */
 }
 h2 {
   font-size: 1.5rem !important;
   padding-top: 20px !important;
   padding-bottom: 8px !important;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: none !important; /* Removed horizontal line - user requested */
 }
 h3 {
   font-size: 1.25rem !important;

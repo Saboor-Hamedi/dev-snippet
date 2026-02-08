@@ -406,15 +406,12 @@ select:not(.theme-exempt):focus {
 /* ===== HEADER AND NAVIGATION FIXES ===== */
 
 /* Force all headers to use proper theme colors */
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
+h1, h2, h3, h4, h5, h6 {
   color: var(--color-text-primary) !important;
   font-weight: 600;
   line-height: 1.3;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
 }
 
 h1 {
@@ -636,12 +633,8 @@ body {
   min-height: 100vh;
   color: var(--color-text);
   background: var(--color-background);
-  line-height: 1.6;
-  font-family:
-    'Inter',
-    system-ui,
-    -apple-system,
-    sans-serif;
+  line-height: 1.5; /* Tightened from 1.6 */
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

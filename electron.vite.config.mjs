@@ -44,21 +44,14 @@ export default defineConfig({
           }
         }
       },
-      chunkSizeWarningLimit: 1000
+      chunkSizeWarningLimit: 1000,
+      commonjsOptions: {
+        include: [/node_modules/],
+        transformMixedEsModules: true
+      }
     },
     optimizeDeps: {
-      exclude: [
-        'unified',
-        'remark-parse',
-        'remark-gfm',
-        'remark-breaks',
-        'remark-directive',
-        'remark-rehype',
-        'rehype-raw',
-        'rehype-highlight',
-        'rehype-stringify',
-        'unist-util-visit'
-      ]
+      include: ['extend']
     }
   },
   test: {

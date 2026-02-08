@@ -32,5 +32,8 @@
   "editor.find.autoFindInSelection": "never",
   "editor.fontFamily": "'JetBrains Mono'",
   "editor.fontSize": 14,
-  "editor.formatOnPaste": true
+  "editor.formatOnPaste": true,
+  "python-envs.defaultEnvManager": "ms-python.python:conda",
+  "python-envs.defaultPackageManager": "ms-python.python:conda",
+  "python-envs.pythonProjects": []
 }

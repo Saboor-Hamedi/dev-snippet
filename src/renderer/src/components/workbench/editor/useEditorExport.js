@@ -1,9 +1,10 @@
 import { useCallback } from 'react'
 import { generatePreviewHtml } from '../../../utils/previewGenerator'
+import { useMiniBrowser } from '../../MiniBrowser'
 
 /**
  * useEditorExport - Handles all export functionality (PDF, Word, Clipboard, HTML)
- * 
+ *
  * This hook manages:
  * - HTML generation for previews and exports
  * - PDF export
@@ -18,6 +19,16 @@ export const useEditorExport = ({
   settings,
   showToast
 }) => {
+  // Mini Browser Hook (DRY: uses centralized mini browser logic)
+  const { openMiniBrowser } = useMiniBrowser({
+    code,
+    title: title || 'Untitled',
+    theme: currentTheme,
+    snippets,
+    fontFamily: settings?.editor?.fontFamily,
+    settings
+  })
+
   // Helper to generate the complete HTML for external/mini previews
   const generateFullHtml = useCallback(
     (forPrint = false) => {
@@ -45,14 +56,8 @@ export const useEditorExport = ({
     }
   }, [generateFullHtml])
 
-  const handleOpenMiniPreview = useCallback(async () => {
-    const fullHtml = await generateFullHtml()
-    if (window.api?.invoke) {
-      await window.api.invoke('window:openMiniBrowser', fullHtml).catch(() => {
-        return window.api.invoke('shell:previewInBrowser', fullHtml)
-      })
-    }
-  }, [generateFullHtml])
+  // Use the centralized mini browser hook
+  const handleOpenMiniPreview = openMiniBrowser
 
   // Helper function to pre-process HTML for export
   const preProcessExportHtml = useCallback(

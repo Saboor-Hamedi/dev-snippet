@@ -155,14 +155,21 @@ async function getMarkdownEngines() {
 
   function customCodePlugin() {
     return (tree) => {
-      visit(tree, 'code', (node) => {
-        const lang = (node.lang || 'text').toLowerCase()
+      visit(tree, 'code', (node, index, parent) => {
+        // Only process block-level code blocks (fenced code blocks)
+        // In remark: code blocks have 'lang' property, inline code doesn't
+        // Also check parent - inline code is usually inside paragraphs
+        if (!node.lang && parent && parent.type === 'paragraph') {
+          return // Skip inline code
+        }
+
+        const lang = (node.lang || 'text').toLowerCase().trim()
         const escaped = node.value
           .replace(/&/g, '&amp;')
           .replace(/</g, '&lt;')
           .replace(/>/g, '&gt;')
           .replace(/"/g, '&quot;')
-        
+
         // Use Base64 for robust data transport
         const toBase64 = (str) => {
           try {
@@ -172,11 +179,12 @@ async function getMarkdownEngines() {
             return btoa(binaryString)
           } catch (e) {
             return encodeURIComponent(str) // Fallback
+          }
         }
-        
+
         const encoded = toBase64(node.value)
 
-        // Standard code block enhancement
+        // Standard code block enhancement with header
         node.type = 'html'
         node.value = `
         <div class="code-block-wrapper">
@@ -190,6 +198,53 @@ async function getMarkdownEngines() {
             </div>
             <pre><code class="language-${lang}">${escaped}</code></pre>
           </div>`
+      })
+    }
+  }
+
+  function mentionsAndTagsPlugin() {
+    return (tree) => {
+      visit(tree, 'text', (node, index, parent) => {
+        if (!parent || typeof node.value !== 'string') return
+
+        // Skip if parent is a code block or inline code
+        if (parent.type === 'code' || parent.type === 'inlineCode') return
+
+        // Process @mentions and #tags
+        const regex = /(^|\s)([#@][a-zA-Z0-9_-]+)/g
+        let match
+        const children = []
+        let lastPos = 0
+
+        while ((match = regex.exec(node.value)) !== null) {
+          // Add text before the match
+          if (match.index > lastPos) {
+            children.push({ type: 'text', value: node.value.slice(lastPos, match.index) })
+          }
+
+          const tag = match[2]
+          const isMention = tag.startsWith('@')
+          const type = isMention ? 'mention' : 'tag'
+          const dataAttr = isMention ? `data-mention="${tag}"` : `data-hashtag="${tag}"`
+
+          // Add the mention/tag as HTML
+          children.push({
+            type: 'html',
+            value: `<span class="preview-${type}" ${dataAttr}>${tag}</span>`
+          })
+
+          lastPos = regex.lastIndex
+        }
+
+        // Add remaining text
+        if (lastPos < node.value.length) {
+          children.push({ type: 'text', value: node.value.slice(lastPos) })
+        }
+
+        // Replace the text node with the processed children
+        if (children.length > 0) {
+          parent.children.splice(index, 1, ...children)
+          return index + children.length
         }
       })
     }
@@ -235,6 +290,7 @@ async function getMarkdownEngines() {
     .use(remarkDirective)
     .use(directivePlugin)
     .use(wikiLinkPlugin)
+    .use(mentionsAndTagsPlugin)
     .use(tasklistPlugin)
     .use(customCodePlugin)
     .use(remarkRehype, { allowDangerousHtml: true })
@@ -254,6 +310,7 @@ async function getMarkdownEngines() {
     .use(remarkGfm)
     .use(remarkBreaks)
     .use(wikiLinkPlugin)
+    .use(mentionsAndTagsPlugin)
     .use(tasklistPlugin)
     .use(remarkRehype, { allowDangerousHtml: true })
 

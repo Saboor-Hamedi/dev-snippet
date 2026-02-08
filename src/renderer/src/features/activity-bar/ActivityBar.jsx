@@ -15,6 +15,8 @@ import {
 } from 'lucide-react'
 import { useActivityBar } from './useActivityBar'
 
+import './ActivityBar.css'
+
 const ActivityButton = ({
   item,
   isActive,
@@ -34,14 +36,14 @@ const ActivityButton = ({
         e.currentTarget.blur()
         item.id === 'settings' ? onSettings() : handleAction(item)
       }}
-      className={`w-full h-[36px] flex items-center justify-center relative cursor-pointer group transition-all duration-300 theme-exempt ${
+      className={`w-full h-[40px] flex items-center justify-center relative cursor-pointer group transition-all duration-300 theme-exempt activity-button ${
         isActive ? 'opacity-100' : 'opacity-40 hover:opacity-100'
       }`}
       style={{ background: 'transparent' }}
       title={item.label}
     >
       {/* Sliding Hover Overlay */}
-      <div className="absolute inset-0 bg-white/[0.05] translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 pointer-events-none" />
+      <div className="absolute inset-x-0 inset-y-[2px] bg-white/[0.04] translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 pointer-events-none rounded-[6px] mx-1" />
 
       {/* Active Selection Indicator */}
       <div
@@ -49,18 +51,18 @@ const ActivityButton = ({
           isActive && !loading ? 'h-6 opacity-100' : 'h-0 opacity-0'
         }`}
         style={{
+          boxShadow: '0 0 10px rgba(var(--activity-bar-active-fg-rgb, 255,255,255), 0.5)',
           backgroundColor: 'var(--activity-bar-active-border, #ffffff)'
         }}
       />
 
-      {/* Change icon on activitybar hover */}
       <div
         className={`flex items-center justify-center w-full h-full relative z-10 transition-transform duration-150 ${!loading && 'group-active:scale-95'}`}
       >
         <Icon
-          strokeWidth={isActive ? 2 : 1.5}
-          size={item.iconSize || 19}
-          className={loading ? 'animate-spin' : ''}
+          strokeWidth={isActive ? 2.5 : 1.8}
+          size={item.iconSize || 20}
+          className={`activity-button-icon ${loading ? 'animate-spin' : ''}`}
           color={
             isActive || loading
               ? 'var(--activity-bar-active-fg, #ffffff)'
@@ -70,9 +72,9 @@ const ActivityButton = ({
         
         {/* Round Progress Indicator */}
         {isDownloading && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none scale-75">
             <svg 
-              className="w-8 h-8 -rotate-90 drop-shadow-[0_0_2px_rgba(0,0,0,0.5)]"
+              className="w-10 h-10 -rotate-90"
               viewBox="0 0 32 32"
             >
               <circle
@@ -82,7 +84,7 @@ const ActivityButton = ({
                 stroke="currentColor"
                 strokeWidth="2.5"
                 fill="transparent"
-                className="text-white/10"
+                className="text-white/5"
               />
               <circle
                 cx="16"
@@ -102,13 +104,14 @@ const ActivityButton = ({
 
         {item.badge > 0 && !loading && !isDownloading && (
           <div
-            className="absolute top-3 right-3  min-w-[10px] h-[10px] rounded-full flex items-center justify-center font-bold shadow-sm"
+            className="absolute top-[8px] right-[8px] min-w-[12px] h-[12px] rounded-full flex items-center justify-center font-bold shadow-[0_0_8px_rgba(0,0,0,0.5)] z-20"
             style={{
               backgroundColor: 'var(--activity-bar-badge-bg, #ef4444)',
-              color: 'var(--activity-bar-badge-fg, #ffffff)'
+              color: 'var(--activity-bar-badge-fg, #ffffff)',
+              fontSize: '7px'
             }}
           >
-            <span className="text-[6px] px-0.5 pointer-events-none">
+            <span className="px-0.5 pointer-events-none">
               {item.badge > 99 ? '99+' : item.badge}
             </span>
           </div>

@@ -22,7 +22,7 @@ import PerformanceBarrier from '../universal/PerformanceBarrier/PerformanceBarri
 import Prompt from '../universal/Prompt'
 
 // Extracted Editor Hooks & Components
-import { useEditorState } from './editor/useEditorState'  
+import { useEditorState } from './editor/useEditorState'
 import { useEditorExport } from './editor/useEditorExport'
 import { useEditorSave } from './editor/useEditorSave'
 import EditorMetadataHeader from './editor/EditorMetadataHeader'
@@ -62,7 +62,7 @@ const SnippetEditor = ({
   const isDocSnippet = initialSnippet?.id?.startsWith('doc:')
   const hideWelcomePage = initialSnippet?.id
   const { zoomLevel } = useZoomLevel()
-  
+
   const editorState = useEditorState({
     initialSnippet,
     isCreateMode,
@@ -89,7 +89,7 @@ const SnippetEditor = ({
     currentTagInput,
     setCurrentTagInput,
     isDuplicate,
-    setTags: internalSetTags 
+    setTags: internalSetTags
   } = editorState
 
   // --- WIKILINK INTEGRATION ---
@@ -100,7 +100,7 @@ const SnippetEditor = ({
   useEffect(() => {
     if (!code || isReadOnly) return
     const extracted = extractTags(code)
-    
+
     // Low-dependency check to avoid unnecessary state churn
     if (JSON.stringify(extracted) !== JSON.stringify(tags)) {
       internalSetTags(extracted)
@@ -137,9 +137,9 @@ const SnippetEditor = ({
 
   useEffect(() => {
     if (
-      initialSnippet?.id === 'system:settings' && 
-      !isDirty && 
-      !window.__isSavingSettings && 
+      initialSnippet?.id === 'system:settings' &&
+      !isDirty &&
+      !window.__isSavingSettings &&
       initialSnippet.code !== code
     ) {
       setCode(initialSnippet.code)
@@ -180,8 +180,8 @@ const SnippetEditor = ({
     let lang = ext || 'markdown'
     const fastTrim = (code || '').substring(0, 10).trim()
     if (
-      fastTrim.startsWith('#') || 
-      fastTrim.startsWith('@') || 
+      fastTrim.startsWith('#') ||
+      fastTrim.startsWith('@') ||
       fastTrim.startsWith('- ') ||
       fastTrim.startsWith('* ') ||
       fastTrim.startsWith('```') ||
@@ -195,7 +195,7 @@ const SnippetEditor = ({
         trimmed.includes('**') ||
         trimmed.includes(']]') ||
         trimmed.includes('|') ||
-        trimmed.includes('# ') || 
+        trimmed.includes('# ') ||
         trimmed.includes('- ')
       ) {
         lang = 'markdown'
@@ -208,7 +208,7 @@ const SnippetEditor = ({
     const finalItem = {
       ...item,
       title: sanitizeTitle(item.title),
-      language: detectedLang 
+      language: detectedLang
     }
     onSave(finalItem)
   }, [onSave, detectedLang])
@@ -344,7 +344,7 @@ const SnippetEditor = ({
     }
   }, [isFloating])
 
-  const isDoc = String(initialSnippet?.id || '').startsWith('doc:') || 
+  const isDoc = String(initialSnippet?.id || '').startsWith('doc:') ||
                 String(initialSnippet?.title || '').toLowerCase().includes('manual') ||
                 String(initialSnippet?.title || '').toLowerCase().includes('documentation')
   const isReadOnlySnippet = !!(isReadOnly || initialSnippet?.readOnly || isDoc)
@@ -412,7 +412,7 @@ const SnippetEditor = ({
 
   const memoizedPreview = useMemo(() => (
     <div className="h-full w-full p-0 flex justify-center bg-[var(--color-bg-primary)] overflow-hidden text-left items-stretch relative">
-      <div className="w-full max-w-[850px] h-full shadow-sm flex flex-col">
+      <div className="w-full h-full shadow-sm flex flex-col px-12">
         <LivePreview
           code={code}
           isReadOnly={isReadOnly || initialSnippet?.readOnly}
@@ -421,24 +421,27 @@ const SnippetEditor = ({
           isFlow={isFlow}
           snippets={snippets}
           enableScrollSync={getSetting('editor.scrollSync') !== false}
+          onOpenMiniPreview={handleOpenMiniPreview}
+          onOpenExternal={handleOpenExternalPreview}
+          onExportPDF={handleExportPDF}
         />
       </div>
     </div>
-  ), [code, isReadOnly, initialSnippet?.id, onSettingsClick, isFlow, snippets, getSetting])
+  ), [code, isReadOnly, initialSnippet?.id, onSettingsClick, isFlow, snippets, getSetting, handleOpenMiniPreview, handleOpenExternalPreview, handleExportPDF])
 
   return (
     <>
-      <div 
+      <div
         className="h-full w-full flex flex-col bg-[var(--color-bg-primary)] overflow-visible relative z-50"
         style={editorStyle}
         data-snippet-id={initialSnippet?.id || 'new'}
       >
-        <style>{` 
-          .title-input-container { margin-bottom: 0 !important; padding-bottom: 0 !important; } 
-          .title-input { padding-top: 0 !important; padding-bottom: 0 !important; margin: 0 !important; line-height: 1.2 !important; } 
-          .tags-container { margin-top: 0.25rem !important; padding: 0 !important; min-height: 20px !important; display: flex !important; align-items: center !important; } 
-          .editor-container { overflow-anchor: none !important; } 
-          .cm-scroller { scrollbar-width: thin; scrollbar-color: var(--color-border) transparent; } 
+        <style>{`
+          .title-input-container { margin-bottom: 0 !important; padding-bottom: 0 !important; }
+          .title-input { padding-top: 0 !important; padding-bottom: 0 !important; margin: 0 !important; line-height: 1.2 !important; }
+          .tags-container { margin-top: 0.25rem !important; padding: 0 !important; min-height: 20px !important; display: flex !important; align-items: center !important; }
+          .editor-container { overflow-anchor: none !important; }
+          .cm-scroller { scrollbar-width: thin; scrollbar-color: var(--color-border) transparent; }
         `}</style>
         <div className="flex-1 min-h-0 overflow-visible editor-container relative flex flex-col z-10">
           <AdvancedSplitPane
@@ -447,17 +450,17 @@ const SnippetEditor = ({
             overlayMode={settings?.livePreview?.overlayMode || false}
             left={
               <div className="h-full w-full relative bg-[var(--color-bg-primary)] overflow-visible flex flex-col">
-                  {/* For System Settings, we might want to hide the header? 
+                  {/* For System Settings, we might want to hide the header?
                       Actually better to keep it consistent OR just hide if !id */}
                   <div className="flex-1 overflow-visible overflow-x-hidden flex flex-col">
-                    <div className="w-full max-w-[850px] mx-auto flex flex-col relative text-left h-full">
+                    <div className="w-full flex flex-col relative text-left h-full px-12">
                         {/* Meta Header Removed for "Pure Editor" experience - User Request */}
                         {/* {initialSnippet?.id && ( ... EditorMetadataHeader ... )} */}
-                        
+
                         <div className="w-full flex flex-col bg-transparent border-none outline-none overflow-hidden min-h-[300px]">
                           <div className="flex-1 w-full flex flex-col min-h-0 bg-transparent relative">
                             <CodeEditor
-                              value={code || ''} 
+                              value={code || ''}
                               language={detectedLang}
                               mode={activeMode}
                               wordWrap={wordWrap}
@@ -469,7 +472,7 @@ const SnippetEditor = ({
                               onChange={onCodeChangeWrapper}
                               onLargeFileChange={setIsLargeFile}
                               onKeyDown={handleEditorKeyDown}
-                              snippets={snippets} 
+                              snippets={snippets}
                               extensions={wikiLinkExtensions}
                               style={editorStyle}
                               height="100%"
@@ -562,10 +565,10 @@ const SnippetEditor = ({
         </UniversalModal>
 
         {/* WikiLink & Smart Preview Manager */}
-        <WikiLink 
-          snippets={snippets} 
-          onSave={onSave} 
-          showToast={showToast} 
+        <WikiLink
+          snippets={snippets}
+          onSave={onSave}
+          showToast={showToast}
           handleNav={(id) => window.dispatchEvent(new CustomEvent('app:navigate-to-snippet', { detail: { id } }))}
           onExtensionsReady={setWikiLinkExtensions}
         />

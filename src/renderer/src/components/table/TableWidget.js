@@ -155,7 +155,15 @@ export class TableWidget extends WidgetType {
     wrap.className = 'cm-md-table-rendered-wrapper'
     wrap.appendChild(table)
 
-    const curMode = view.state.field(editorModeField)
+    // Safely access editorModeField - it may not be present in all editor contexts
+    // (e.g., large files where richMarkdownExtension is skipped)
+    let curMode = this.mode || EditorMode.LIVE_PREVIEW
+    try {
+      curMode = view.state.field(editorModeField)
+    } catch (err) {
+      // Field not present in this state - use the mode passed to constructor or default
+      curMode = this.mode || EditorMode.LIVE_PREVIEW
+    }
 
     /**
      * Double-Click to Edit:

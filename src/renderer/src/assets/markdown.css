@@ -49,6 +49,13 @@
   border-bottom: none;
 }
 
+.code-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin-left: auto !important;
+}
+
 .code-language {
   font-family: 'Outfit', sans-serif;
   font-size: 10px;
@@ -93,8 +100,8 @@
   position: relative;
   box-sizing: border-box;
   min-width: 200px;
-  max-width: 980px;
-  margin: 0 auto;
+  max-width: 100%;
+  margin: 0;
   background-color: transparent !important;
   font-size: var(--editor-font-size, 14px) !important;
 }
@@ -226,7 +233,7 @@ h6 {
 .markdown-body h1 {
   font-size: 1.8em !important;
   padding-bottom: 0.3rem !important;
-  border-bottom: 1px solid var(--color-border, #30363d) !important;
+  border-bottom: none !important; /* Removed horizontal line - user requested */
   margin-top: 1.2em !important;
   margin-bottom: 0.8em !important;
 }
@@ -234,7 +241,7 @@ h6 {
 .markdown-body h2 {
   font-size: 1.4em !important;
   padding-bottom: 0.2rem !important;
-  border-bottom: 1px solid var(--color-border, #30363d) !important;
+  border-bottom: none !important; /* Removed horizontal line - user requested */
   margin-top: 1em !important;
   margin-bottom: 0.6em !important;
 }
@@ -1013,7 +1020,7 @@ h6 {
 
   .markdown-body h1,
   .markdown-body h2 {
-    border-bottom-color: var(--border-color) !important;
+    border-bottom: none !important; /* Removed horizontal line - user requested */
   }
 
   .markdown-body table tr:nth-child(2n) {

@@ -1,144 +1,63 @@
 import { EditorView } from '@codemirror/view'
 
 /**
- * buildTheme - Native-performance UI/UX engine for the CodeEditor.
- * Eliminated flex-conflicts to fix "Measure Loop" errors and jittery scrolling.
+ * buildTheme - Optimized CM6 Theme Engine
+ * Focus: selection precision and layout stability.
  */
 const buildTheme = (EditorView, options = {}) => {
   const {
     isDark = false,
-    fontSize = 'var(--editor-font-size, 14px)',
-    fontFamily = 'var(--editor-font-family, "Outfit", "Inter", sans-serif)',
+    fontSize = 'var(--editor-font-size, 13px)',
+    fontFamily = 'var(--editor-font-family, monospace)',
     caretColor = 'var(--caret-color, #ffffff)',
     cursorWidth = 2,
     cursorShape = 'bar',
-    cursorShadowBoxColor = 'var(--shadow-box-bg, var(--caret-color))',
-    cursorActiveLineBg = 'var(--active-line-bg, transparent)',
-    cursorSelectionBg = 'rgba(88,166,255,0.28)',
-    disableComplexCM = false
+    cursorSelectionBg = 'rgba(88,166,255,0.3)',
+    cursorActiveLineBg = 'rgba(255,255,255,0.03)'
   } = options
 
   return EditorView.theme(
     {
       '&': {
-        height: '100% !important',
-        backgroundColor: 'var(--editor-bg, transparent) !important',
-        color: 'var(--editor-text, var(--color-text-primary, #0f172a))',
-        fontFamily: fontFamily,
+        height: '100%',
+        backgroundColor: 'transparent',
         fontSize: fontSize,
-        lineHeight: '1.6',
-        display: 'flex !important',
-        flexDirection: 'column !important',
-        overflow: 'hidden !important' /* Critical: Editor root should not scroll */
-      },
-      '.cm-line': {
-        padding: '0 4px !important',
-        textAlign: 'left'
-      },
-      // Header Scaling - Obsidian-like experience
-      '.cm-line-h1': { 
-        fontSize: '2.25rem !important',
-        fontWeight: '700 !important', 
-        lineHeight: '1.2 !important',
-        paddingTop: '1.0em !important',
-        paddingBottom: '0.4em !important',
-        borderBottom: '1px solid var(--color-border, #30363d) !important'
-      },
-      '.cm-line-h2': { 
-        fontSize: '1.75rem !important', 
-        fontWeight: '600 !important', 
-        lineHeight: '1.3 !important',
-        paddingTop: '0.8em !important',
-        paddingBottom: '0.3em !important',
-        borderBottom: '1px solid var(--color-border, #30363d) !important'
-      },
-      '.cm-line-h3': { 
-        fontSize: '1.4rem !important', 
-        fontWeight: '600 !important', 
-        lineHeight: '1.4 !important'
-      },
-      '.cm-line-h4': { 
-        fontSize: '1.2rem !important', 
-        fontWeight: '600 !important' 
-      },
-      '.cm-line-h1, .cm-line-h2, .cm-line-h3, .cm-line-h4, .cm-line-h5, .cm-line-h6': {
-        textAlign: 'left !important'
+        fontFamily: fontFamily,
+        outline: 'none'
       },
       '.cm-scroller': {
-        display: 'block !important', /* Restore to standard block for stable measurement */
-        height: '100% !important',
-        overflow: 'auto !important',
-        backgroundColor: 'transparent !important',
-        fontFamily: 'inherit',
-        position: 'relative',
-        scrollbarGutter: 'stable !important'
+        display: 'flex !important',
+        flexDirection: 'column !important',
+        alignItems: 'center !important', /* Critical for Centered Mode */
+        overflow: 'auto',
+        fontFamily: 'inherit'
       },
       '.cm-content': {
-        maxWidth: 'var(--editor-max-width, 1000px) !important',
-        margin: '0 auto !important',
-        paddingTop: 'var(--editor-content-padding-top, 60px) !important',
-        paddingBottom: '30vh !important',
+        width: '100%',
+        maxWidth: 'var(--editor-max-width, 1000px)',
+        padding: '50px 0 30vh 0',
         fontFamily: 'inherit',
-        lineHeight: '1.6',
-        fontSize: fontSize,
-        caretColor: caretColor,
-        boxSizing: 'border-box',
-        minHeight: '100% !important' /* Ensures background extends to bottom */
+        caretColor: caretColor
+      },
+      '.cm-line': {
+        padding: '0 64px', /* Horizontal padding inside lines is safest for CM6 selection */
+        textAlign: 'left',
+        lineHeight: '1.6'
       },
       '.cm-cursor': {
-        borderLeftColor: `${caretColor} !important`,
-        borderLeftWidth:
-          cursorShape === 'block' || cursorShape === 'underline'
-            ? '0px !important'
-            : `${cursorWidth}px !important`,
-        borderBottom:
-          cursorShape === 'underline' ? `${cursorWidth}px solid ${caretColor}` : 'none',
-        backgroundColor: cursorShape === 'block' ? `${caretColor} !important` : 'transparent',
-        width: cursorShape === 'block' || cursorShape === 'underline' ? '1ch !important' : '0px',
-        opacity: cursorShape === 'block' ? '0.6 !important' : '1',
-        display: 'block',
-        boxShadow:
-          disableComplexCM || cursorShape === 'block' || cursorShape === 'underline'
-            ? 'none'
-            : `0 0 12px 1px ${cursorShadowBoxColor} !important`,
-        transition: 'none !important'
-      },
-      '.cm-gutters': {
-        backgroundColor: 'transparent !important',
-        color: 'var(--color-text-secondary, #64748b)',
-        borderRight: 'var(--gutter-border-width, 1px) solid var(--gutter-border-color, transparent) !important',
-        fontFamily: 'inherit',
-        fontSize: 'inherit',
-        lineHeight: '1.6',
-        padding: '0',
-        transition: 'none !important'
-      },
-      '.cm-activeLine': {
-        backgroundColor: `${cursorActiveLineBg} !important`
+        borderLeftColor: caretColor,
+        borderLeftWidth: cursorShape === 'block' ? '0' : `${cursorWidth}px`,
+        backgroundColor: cursorShape === 'block' ? caretColor : 'transparent',
+        width: cursorShape === 'block' ? '1ch' : 'auto'
       },
       '.cm-selectionBackground': {
-        display: 'none !important'
+        backgroundColor: `${cursorSelectionBg} !important`
       },
-      '& ::selection, .cm-content ::selection': {
-        backgroundColor: 'transparent !important'
-      },
-      '.cm-tooltip-layer': {
-        zIndex: '100000 !important'
-      },
-      // Syntax Highlighting for Mentions and Hashtags
-      '.cm-mention': {
-        color: 'var(--color-accent-primary, #d2a8ff) !important',
-        backgroundColor: 'rgba(210, 168, 255, 0.1)',
-        padding: '0 2px',
-        borderRadius: '3px',
-        fontWeight: '500'
-      },
-      '.cm-hashtag': {
-        color: 'var(--color-accent-secondary, #58a6ff) !important',
-        backgroundColor: 'rgba(88, 166, 255, 0.1)',
-        padding: '0 2px',
-        borderRadius: '3px',
-        fontWeight: '500'
+      '.cm-gutters': {
+        backgroundColor: 'transparent',
+        border: 'none',
+        position: 'sticky', /* Ensure gutters don't shift selection */
+        left: 0
       }
     },
     { dark: isDark }

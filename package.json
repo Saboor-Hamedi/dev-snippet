@@ -69,7 +69,6 @@
     "remark-breaks": "^4.0.0",
     "remark-directive": "^4.0.0",
     "remark-emoji": "^5.0.2",
-    "remark-external-links": "^9.0.1",
     "remark-gfm": "^4.0.1",
     "remark-github-blockquote-alert": "^2.0.1",
     "remark-math": "^6.0.0",
