@@ -146,6 +146,8 @@ export const themeProps = () => {
     root.style.setProperty('--color-text', theme.colors.text, 'important')
     root.style.setProperty('--text-main', theme.colors.text, 'important')
     root.style.setProperty('--accent', theme.colors.accent, 'important')
+    const accentRGB = extractRGB(theme.colors['--color-accent-primary'] || theme.colors.accent)
+    root.style.setProperty('--color-accent-primary-rgb', accentRGB, 'important')
     root.style.setProperty('--border-color', theme.colors.border, 'important')
 
     if (theme.colors['--selected-bg'])

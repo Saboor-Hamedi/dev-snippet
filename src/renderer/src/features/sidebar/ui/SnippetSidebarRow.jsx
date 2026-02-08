@@ -445,9 +445,9 @@ const SnippetSidebarRow = ({ index, style, data }) => {
           </button>
           <div className="flex-shrink-0 px-0.5 ml-1">
             {itemData.name === '📥 Inbox' ? (
-              <Inbox size={14} className={isHighlight ? 'text-white' : 'text-[var(--color-accent-primary)]'} />
+              <Inbox size={14} className={isHighlight ? '' : 'text-[var(--color-accent-primary)]'} style={{ color: isHighlight ? 'var(--sidebar-item-active-fg)' : undefined }} />
             ) : (
-              <FolderIcon size={14} style={{ color: isHighlight ? '#fff' : folderColor }} />
+              <FolderIcon size={14} style={{ color: isHighlight ? 'var(--sidebar-item-active-fg)' : folderColor }} />
             )}
           </div>
           <span className={`flex-1 truncate text-[12.5px] pl-1 tracking-tight ${isHighlight ? 'font-bold' : 'font-medium'}`}>
@@ -509,7 +509,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
       >
         <div
           className={`flex-shrink-0 flex items-center justify-center transition-opacity duration-200 sidebar-item-icon ml-1 ${isSelected ? 'scale-110 opacity-100' : 'opacity-90 group-hover/row:opacity-100'}`}
-          style={{ color: isSelected ? 'white' : color }}
+          style={{ color: isSelected ? 'var(--sidebar-item-active-fg)' : color }}
         >
           <Icon size={14} />
         </div>

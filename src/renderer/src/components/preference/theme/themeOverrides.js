@@ -147,16 +147,22 @@ export const applyThemeOverrides = (parsedSettings, root) => {
   }
   // Avoid nuking global --color-border here as it breaks content-specific borders (like headers/tables)
 
-  // 5. Enforce Robust Sidebar Item Defaults (Prevent Transparency Issues)
+  // 5. Enforce Robust Sidebar Item Defaults (Prevent Visibility Issues)
   const hoverBg = getValueByPath(parsedSettings, 'list.hoverBackground')
   if (!hoverBg) {
-    // Default to a visible but subtle overlay if not set
-    root.style.setProperty('--sidebar-item-hover-bg', 'var(--color-bg-secondary)', 'important')
+    // Default to a subtle version of the accent or a soft overlay
+    root.style.setProperty('--sidebar-item-hover-bg', 'rgba(var(--color-accent-primary-rgb), 0.08)', 'important')
   }
 
   const activeBg = getValueByPath(parsedSettings, 'list.activeBackground')
   if (!activeBg) {
-    // Default to a solid active state
-    root.style.setProperty('--sidebar-item-active-bg', 'var(--color-bg-tertiary)', 'important')
+    // If no specific override, use theme's selected bg or a stronger accent overlay
+    root.style.setProperty('--sidebar-item-active-bg', 'var(--selected-bg, rgba(var(--color-accent-primary-rgb), 0.15))', 'important')
+  }
+
+  const activeFg = getValueByPath(parsedSettings, 'list.activeForeground')
+  if (!activeFg) {
+    // Sync text color with theme selection or accent color
+    root.style.setProperty('--sidebar-item-active-fg', 'var(--selected-text, var(--color-accent-primary))', 'important')
   }
 }

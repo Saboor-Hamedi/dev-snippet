@@ -19,7 +19,7 @@ export const themes = [
       '--hover-bg': 'rgb(3, 102, 214)',
       '--hover-text': '#0366d6',
       '--selected-bg': 'rgb(3, 102, 214)',
-      '--selected-text': '#0969da',
+      '--selected-text': '#ffffff',
       '--sidebar-text': '#24292f',
       '--sidebar-header-text': '#586069',
       // Syntax Highlighting (Light Mode)
@@ -106,12 +106,17 @@ export const themes = [
         width: 260,
         visible: true
       },
-      ui: {
-        statusBarBg: '#f6f8fa',
-        footerBg: '#f6f8fa',
-        headerBg: '#ffffff'
-      }
-    },
+        ui: {
+          statusBarBg: '#f6f8fa',
+          footerBg: '#f6f8fa',
+          headerBg: '#ffffff'
+        },
+        list: {
+          activeBackground: '#0366d6',
+          activeForeground: '#ffffff',
+          hoverBackground: 'rgba(3, 102, 214, 0.1)'
+        }
+      },
     previewColors: ['bg-white', 'bg-gray-50', 'bg-blue-500']
   },
   {
@@ -203,12 +208,17 @@ export const themes = [
         width: 260,
         visible: true
       },
-      ui: {
-        statusBarBg: '#161b22',
-        footerBg: '#161b22',
-        headerBg: '#161b22'
-      }
-    },
+        ui: {
+          statusBarBg: '#161b22',
+          footerBg: '#161b22',
+          headerBg: '#161b22'
+        },
+        list: {
+          activeBackground: 'rgba(88, 166, 255, 0.15)',
+          activeForeground: '#58a6ff',
+          hoverBackground: 'rgba(88, 166, 255, 0.08)'
+        }
+      },
     previewColors: ['bg-[#0d1117]', 'bg-[#161b22]', 'bg-blue-500']
   },
   {
@@ -316,12 +326,17 @@ export const themes = [
         width: 260,
         visible: true
       },
-      ui: {
-        statusBarBg: '#18181b',
-        footerBg: '#18181b',
-        headerBg: '#18181b'
-      }
-    },
+        ui: {
+          statusBarBg: '#18181b',
+          footerBg: '#18181b',
+          headerBg: '#18181b'
+        },
+        list: {
+          activeBackground: 'rgba(217, 70, 239, 0.15)',
+          activeForeground: '#d946ef',
+          hoverBackground: 'rgba(217, 70, 239, 0.08)'
+        }
+      },
     previewColors: ['bg-[#09090b]', 'bg-[#18181b]', 'bg-fuchsia-500']
   },
   {
@@ -433,7 +448,12 @@ export const themes = [
         statusBarBg: '#292524',
         footerBg: '#292524',
         headerBg: '#292524'
-      }
+      },
+      list: {
+          activeBackground: 'rgba(34, 197, 94, 0.15)',
+          activeForeground: '#4ade80',
+          hoverBackground: 'rgba(34, 197, 94, 0.08)'
+        }
     },
     previewColors: ['bg-[#292524]', 'bg-[#292524]', 'bg-emerald-500']
   },
@@ -529,7 +549,12 @@ export const themes = [
         statusBarBg: '#27272a',
         footerBg: '#27272a',
         headerBg: '#27272a'
-      }
+      },
+      list: {
+          activeBackground: 'rgba(241, 190, 54, 0.2)',
+          activeForeground: '#f1be36',
+          hoverBackground: 'rgba(241, 190, 54, 0.1)'
+        }
     },
     previewColors: ['bg-[#18181b]', 'bg-[#27272a]', 'bg-yellow-500']
   },
@@ -624,7 +649,12 @@ export const themes = [
         statusBarBg: '#1e293b',
         footerBg: '#1e293b',
         headerBg: '#1e293b'
-      }
+      },
+      list: {
+          activeBackground: 'rgba(56, 189, 248, 0.2)',
+          activeForeground: '#38bdf8',
+          hoverBackground: 'rgba(56, 189, 248, 0.1)'
+        }
     },
     previewColors: ['bg-[#0f172a]', 'bg-[#1e293b]', 'bg-sky-400']
   },
@@ -720,7 +750,12 @@ export const themes = [
         statusBarBg: '#262626',
         footerBg: '#262626',
         headerBg: '#262626'
-      }
+      },
+      list: {
+          activeBackground: 'rgba(249, 115, 22, 0.2)',
+          activeForeground: '#f97316',
+          hoverBackground: 'rgba(249, 115, 22, 0.1)'
+        }
     },
     previewColors: ['bg-[#262626]', 'bg-[#262626]', 'bg-orange-500']
   },
@@ -831,6 +866,11 @@ export const themes = [
         statusBarBg: '#f6f6f6',
         footerBg: '#f6f6f6',
         headerBg: '#f6f6f6'
+      },
+      list: {
+        activeBackground: '#000000',
+        activeForeground: '#ffffff',
+        hoverBackground: 'rgba(0, 0, 0, 0.05)'
       }
     },
     previewColors: ['bg-[#ffffff]', 'bg-[#f6f6f6]', 'bg-gray-900']
@@ -938,6 +978,11 @@ export const themes = [
         footerBg: '#1e1a26',
         headerBg: '#1e1a26',
         commandPaletteBg: '#1e1a26'
+      },
+      list: {
+        activeBackground: 'rgba(124, 58, 237, 0.2)',
+        activeForeground: '#a78bfa',
+        hoverBackground: 'rgba(124, 58, 237, 0.1)'
       }
     },
     previewColors: ['bg-[#1a1a1a]', 'bg-[rgba(32,32,32,0.75)]', 'bg-purple-600']
