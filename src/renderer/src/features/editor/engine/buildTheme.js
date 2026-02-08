@@ -45,7 +45,7 @@ const buildTheme = (EditorView, options = {}) => {
         minHeight: '100%'
       },
       '.cm-line': {
-        paddingLeft: '64px !important', /* Core gutter alignment padding */
+        paddingLeft: '64px !important', /* Stable internal padding */
         paddingRight: '64px !important',
         textAlign: 'left'
       },
@@ -63,7 +63,7 @@ const buildTheme = (EditorView, options = {}) => {
         fontFamily: 'inherit'
       },
       '.cm-activeLine': {
-        backgroundColor: `${cursorActiveLineBg} !important`
+        backgroundColor: 'transparent !important' /* Pure Dark look: body highlight removed */
       },
       '.cm-selectionBackground': {
         backgroundColor: `${cursorSelectionBg} !important`

@@ -16,6 +16,7 @@
   height: 100% !important;
   width: 100% !important;
   outline: none !important;
+  user-select: text !important; /* Ensure everything is selectable */
 }
 
 .cm-scroller {
@@ -38,36 +39,29 @@
 }
 
 /* --- THE "NOT SHOWING" / SCROLL FIX --- */
-/* Remove any filters or opacities that might interfere with virtualization */
+/* Standard line height for consistent selection bounding boxes */
 .cm-editor .cm-line {
-  backface-visibility: hidden;
-  transform: translateZ(0);
+  backface-visibility: visible;
+  transform: none;
 }
 
 /* --- OBSIDIAN MARKER REVELATION --- */
-.cm-marker-hidden,
-.cm-marker {
-  text-decoration: none !important;
-  font-style: normal !important;
-}
-
-/* Hide in preview modes */
-.cm-reading-mode .cm-marker,
-.cm-live-preview-mode .cm-marker,
-.cm-reading-mode .cm-marker-hidden,
-.cm-live-preview-mode .cm-marker-hidden {
-  display: none !important;
+/* Marker revelation logic is now handled by standard mark decorations
+   to ensure characters maintain their width for stable selection. */
+.cm-marker-hidden {
+  display: inline !important;
+  opacity: 0 !important; /* Hide but keep width for Zero-Jump */
+  user-select: text !important;
 }
 
 /* Reveal in source mode OR on active line in live-preview */
 .cm-source-mode .cm-marker,
-.cm-source-mode .cm-marker-hidden,
-.cm-live-preview-mode .cm-activeLine .cm-marker,
-.cm-live-preview-mode .cm-activeLine .cm-marker-hidden {
+.cm-live-preview-mode .cm-activeLine .cm-marker {
   display: inline !important;
   opacity: 0.6 !important;
   color: var(--color-accent-primary, #58a6ff) !important;
   visibility: visible !important;
+  font-size: inherit !important;
 }
 
 /* --- HEADINGS (Relativized) --- */
@@ -86,12 +80,12 @@
 
 /* --- SELECTION & INTERACTION --- */
 .cm-selectionBackground {
-  background-color: var(--cursor-selection-bg, rgba(88, 166, 255, 0.35)) !important;
+  background-color: var(--cursor-selection-bg, rgba(88, 166, 255, 0.45)) !important;
   opacity: 1 !important;
 }
 
 .cm-activeLine {
-  background-color: rgba(255, 255, 255, 0.03) !important;
+  background-color: transparent !important; /* Pure Dark look: no body highlight */
   border-left: 2px solid var(--caret-color, #ffffff) !important;
 }
 
@@ -123,7 +117,7 @@
 }
 
 .cm-code-block-header {
-  margin: 1.5rem 64px 0 64px !important; /* Aligns with standard text indentation */
+  margin: 1.5rem 64px 0 64px !important; /* Matches line padding */
   padding: 12px 16px !important;
   background-color: var(--color-bg-secondary, #161b22) !important;
   border: 1px solid var(--color-border);
@@ -136,7 +130,8 @@
   color: var(--color-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  user-select: none;
+  user-select: none; /* Keep labels unselectable to avoid cluttering text blocks */
+  pointer-events: auto;
 }
 
 .cm-code-block-header span {
@@ -185,9 +180,9 @@
 .cm-code-block-start,
 .cm-code-block,
 .cm-code-block-end {
-  margin-left: 64px !important; /* Unified alignment with standard text */
+  margin-left: 64px !important; /* Matches line padding */
   margin-right: 64px !important;
-  padding-left: 20px !important; /* Balanced internal breathing room */
+  padding-left: 20px !important;
   padding-right: 20px !important;
   border-left: 3px solid rgba(var(--color-accent-primary-rgb), 0.3) !important;
   border-right: 1px solid var(--color-border) !important;
@@ -203,7 +198,7 @@
 
 /* --- RENDERED TABLES (LIVE PREVIEW) --- */
 .cm-md-table-rendered-wrapper {
-  margin: 1.5rem 64px !important; /* Aligns with standard text indentation */
+  margin: 1.5rem 64px !important; /* Matches line padding */
   border: 1px solid var(--color-border);
   border-radius: 8px;
   overflow: hidden;
@@ -240,7 +235,7 @@
 
 /* --- HORIZONTAL RULES --- */
 .cm-md-hr {
-  margin: 2rem 64px !important; /* Unified alignment with standard text */
+  margin: 2rem 64px !important; /* Matches line padding */
   border: none;
   border-top: 1px solid var(--color-border);
   opacity: 0.5;

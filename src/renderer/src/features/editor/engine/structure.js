@@ -136,46 +136,49 @@ export const richMarkdownStateField = StateField.define({
           if (node.name === 'FencedCode') {
             const info = node.node.getChild('CodeInfo')
             const lang = info ? doc.sliceString(info.from, info.to).toLowerCase() : ''
-            // Mermaid checks removed - treating as standard code block
 
-              const startLine = safeLineAt(doc, from)
-              const endLine = safeLineAt(doc, to)
+            const startLine = safeLineAt(doc, from)
+            const endLine = safeLineAt(doc, to)
 
-              // ALWAYS show the header widget (contains Copy button) except in SOURCE mode
-              collected.push({
-                from: startLine.from,
-                to: startLine.from,
-                deco: Decoration.widget({
-                  widget: new CodeBlockHeaderWidget(lang),
-                  side: -1,
-                  block: true
-                })
+            // Determine if the WHOLE block should be "active" (revealing fences)
+            const blockActive = isRangeActive(from, to)
+
+            // ALWAYS show the header widget (contains Copy button) except in SOURCE mode
+            collected.push({
+              from: startLine.from,
+              to: startLine.from,
+              deco: Decoration.widget({
+                widget: new CodeBlockHeaderWidget(lang),
+                side: -1,
+                block: true
               })
+            })
 
-              // Determine activity state for the fences
-              const startActive = isRangeActive(startLine.from, startLine.to)
-              const endActive = isRangeActive(endLine.from, endLine.to)
-
-              for (let i = startLine.number; i <= endLine.number; i++) {
-                if (!lineDecos.has(i)) {
-                  let cls = 'cm-code-block'
-                  if (i === startLine.number) {
-                    cls += ' cm-code-block-start'
-                    if (!startActive) cls += ' cm-hidden-fence'
-                  }
-                  if (i === endLine.number - 1 && !endActive) {
-                    cls += ' cm-code-block-bottom'
-                  }
-
-                  if (i === endLine.number) {
-                    cls += ' cm-code-block-end'
-                    if (!endActive) cls += ' cm-hidden-fence'
-                  }
-                  
-                  lineDecos.set(i, Decoration.line({ class: cls }))
+            for (let i = startLine.number; i <= endLine.number; i++) {
+              if (!lineDecos.has(i)) {
+                let cls = 'cm-code-block'
+                if (i === startLine.number) {
+                  cls += ' cm-code-block-start'
+                  if (!blockActive) cls += ' cm-hidden-fence'
                 }
+                
+                // Closure logic for when active lines are within the block but not on the end fence
+                const isFinalFence = i === endLine.number
+                const isLineBeforeFinal = i === endLine.number - 1
+                
+                if (isLineBeforeFinal && !blockActive) {
+                  cls += ' cm-code-block-bottom'
+                }
+
+                if (isFinalFence) {
+                  cls += ' cm-code-block-end'
+                  if (!blockActive) cls += ' cm-hidden-fence'
+                }
+                
+                lineDecos.set(i, Decoration.line({ class: cls }))
               }
             }
+          }
 
           // 7. Admonitions
           if (node.name === 'Paragraph') {

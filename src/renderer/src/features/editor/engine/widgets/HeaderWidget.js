@@ -9,6 +9,11 @@ export class CodeBlockHeaderWidget extends WidgetType {
   eq(other) {
     return other.lang === this.lang
   }
+  // Allow events to pass through for selection stability
+  ignoreEvent(e) {
+    if (e.type === 'mousedown' || e.type === 'click') return false
+    return true
+  }
   toDOM(view) {
     const wrap = document.createElement('div')
     wrap.className = 'cm-code-block-header'

@@ -88,8 +88,9 @@ export class TableWidget extends WidgetType {
     return other.raw === this.raw && other.from === this.from && other.to === this.to
   }
 
-  // We handle our own click events, so CodeMirror shouldn't intercept them.
-  ignoreEvent() {
+  // We allow events to pass to the editor so clicking can focus the line
+  ignoreEvent(e) {
+    if (e.type === 'mousedown' || e.type === 'click') return false
     return true
   }
 
@@ -173,9 +174,7 @@ export class TableWidget extends WidgetType {
      */
     /**
      * Single-Click to Edit:
-     * This is the bridge between the simple preview and the advanced TableEditorModal.
-     * We re-resolve the table range before opening to ensure we're replacing the
-     * correct part of the document.
+     * Restored to launch the TableEditorModal on a single click for premium UX.
      */
     wrap.onclick = (e) => {
       if (curMode === EditorMode.READING) return
@@ -202,7 +201,6 @@ export class TableWidget extends WidgetType {
     }
 
     wrap.ondblclick = (e) => {
-      // Keep dblclick for backward compatibility/muscle memory
       wrap.onclick(e)
     }
 
