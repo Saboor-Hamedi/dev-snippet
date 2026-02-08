@@ -12,14 +12,28 @@
 }
 
 .sidebar-row-inner.is-selected {
-  background-color: var(--sidebar-item-active-bg) !important;
-  color: var(--sidebar-item-active-fg) !important;
+  background-color: var(--sidebar-item-active-bg, rgba(var(--color-accent-primary-rgb, 88, 166, 255), 0.15)) !important;
+  color: var(--sidebar-item-active-fg, var(--color-accent-primary, #58a6ff)) !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
   transform: scale(1.02);
 }
 
+/* Active indicator bar - Obsidian/VS Code style */
+.sidebar-row-inner.is-selected::before {
+  content: '';
+  position: absolute;
+  left: -8px; /* Offset the parent margin to hit the hard edge */
+  top: 15%;
+  bottom: 15%;
+  width: 3px;
+  background-color: var(--color-accent-primary, #58a6ff);
+  border-radius: 0 2px 2px 0;
+  box-shadow: 0 0 10px rgba(var(--color-accent-primary-rgb, 88, 166, 255), 0.5);
+  z-index: 10;
+}
+
 .sidebar-row-inner:hover:not(.is-selected) {
-  background-color: var(--sidebar-item-hover-bg) !important;
+  background-color: var(--sidebar-item-hover-bg, rgba(255, 255, 255, 0.05)) !important;
 }
 
 .sidebar-item-icon {

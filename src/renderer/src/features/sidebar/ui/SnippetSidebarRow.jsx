@@ -382,6 +382,10 @@ const SnippetSidebarRow = ({ index, style, data }) => {
 
   const handleItemClick = (e) => {
     handleSelectionInternal(e, item.id, type)
+    // VS Code behavior: Toggle folder on click if it's a standard click (no modifiers)
+    if (type === 'folder' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+      onToggleFolder(itemData.id, !itemData.collapsed)
+    }
   }
 
   // --- RENDER: FOLDER ROW ---
@@ -402,7 +406,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         />
       )
     }
-    const isHighlight = selectedIds.includes(item.id)
+    const isHighlight = selectedIds.some(id => String(id) === String(item.id))
     const isOpen = !itemData.collapsed
     const { icon: FolderIcon, color: folderColor } = getFolderIcon(itemData.name, isOpen)
     return (
@@ -430,7 +434,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
               e.stopPropagation()
               onToggleFolder(itemData.id, !itemData.collapsed)
             }}
-            className={`flex-shrink-0 flex items-center justify-center rounded w-5 h-5 ml-1 transition-opacity ${isHighlight ? 'opacity-100' : 'opacity-40 hover:opacity-100'}`}
+            className={`flex-shrink-0 flex items-center justify-center rounded w-5 h-5 ml-1 transition-opacity ${isHighlight ? 'opacity-100' : 'opacity-60 hover:opacity-100'}`}
           >
             <ChevronRight
               size={isCompact ? 11 : 13}
@@ -444,7 +448,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
               <FolderIcon size={14} style={{ color: isHighlight ? '#fff' : folderColor }} />
             )}
           </div>
-          <span className={`flex-1 truncate text-[12.5px] pl-1 tracking-tight ${isHighlight ? 'font-bold' : 'font-medium opacity-85'}`}>
+          <span className={`flex-1 truncate text-[12.5px] pl-1 tracking-tight ${isHighlight ? 'font-bold' : 'font-medium'}`}>
             {itemData.name}
           </span>
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pr-1">
@@ -483,7 +487,7 @@ const SnippetSidebarRow = ({ index, style, data }) => {
     )
   }
   const itemId = type === 'pinned_snippet' ? item.realId : itemData.id
-  const isSelected = selectedIds.includes(item.id)
+  const isSelected = selectedIds.some(id => String(id) === String(item.id))
   const safeTitle = typeof itemData.title === 'string' ? itemData.title : ''
   const { icon: Icon, color } = getFileIcon(itemData.language, safeTitle)
   const isTodayLog = getBaseTitle(itemData.title) === todayStr
@@ -498,16 +502,16 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         onClick={handleItemClick}
         onKeyDown={(e) => handleItemKeyDown(e, index)}
         onContextMenu={(e) => onContextMenu(e, type, itemData)}
-        className={`sidebar-row-inner theme-exempt group select-none outline-none focus:outline-none relative transition-all duration-75 ${isSelected ? 'is-selected' : ''}`}
+        className={`sidebar-row-inner theme-exempt group h-full select-none outline-none focus:outline-none relative transition-all duration-75 ${isSelected ? 'is-selected' : ''}`}
         style={{ paddingLeft: `${depth * 16 + 24}px` }}
       >
         <div
-          className={`flex-shrink-0 flex items-center justify-center transition-all sidebar-item-icon ${isSelected ? 'scale-110 opacity-100' : 'opacity-60 group-hover/row:opacity-100'}`}
-          style={{ color: isSelected ? '#fff' : color }}
+          className={`flex-shrink-0 flex items-center justify-center transition-all sidebar-item-icon ${isSelected ? 'scale-110 opacity-100' : 'opacity-90 group-hover/row:opacity-100'}`}
+          style={{ color: isSelected ? 'white' : color }}
         >
           <Icon size={14} />
         </div>
-        <span className={`flex-1 truncate pl-1 text-left flex items-center gap-2 text-[12.5px] ${isSelected || itemData.is_dirty ? 'font-bold' : 'font-medium opacity-85'}`}>
+        <span className={`flex-1 truncate pl-1 text-left flex items-center gap-2 text-[12.5px] ${isSelected || itemData.is_dirty ? 'font-bold' : 'font-medium'}`}>
           <HighlightText text={getDisplayTitle(safeTitle)} highlight={searchQuery} />
           {isTodayLog && (
             <span className={`text-[8px] px-1 py-0 rounded font-black uppercase tracking-widest border ${isSelected ? 'bg-white/20 border-white/20 text-white' : 'bg-[var(--color-accent-primary)]/20 border-[var(--color-accent-primary)]/20 text-[var(--color-accent-primary)]'}`}>
@@ -518,12 +522,12 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         <div className="flex items-center gap-1.5 flex-shrink-0 pr-1">
           {itemData.is_dirty && <UnsavedDot />}
           {itemData.is_pinned === 1 && (
-            <div className={isSelected ? 'text-white' : 'text-[var(--color-accent-primary)] opacity-80'}>
+            <div className={isSelected ? 'text-white' : 'text-[var(--color-accent-primary)]'}>
               <Pin size={12} className="fill-current" />
             </div>
           )}
           {itemData.is_favorite === 1 && (
-            <div className={isSelected ? 'text-white' : 'text-[var(--color-accent-primary)] opacity-90'}>
+            <div className={isSelected ? 'text-white' : 'text-[var(--color-accent-primary)]'}>
               <Star size={13} className="fill-current" />
             </div>
           )}

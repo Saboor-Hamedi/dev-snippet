@@ -131,7 +131,17 @@ export const useSidebarLogic = ({
     ) => {
       let levelResult = []
 
-      // 1. Process Folders at this level (Lookup from Index)
+      // 1. INJECTION: New Folder Input (Top of folders)
+      if (createState && createState.type === 'folder' && (createState.parentId || null) == (parentId || null)) {
+        levelResult.push({
+          id: 'TEMP_FOLDER_INPUT',
+          type: 'creation_input',
+          depth,
+          data: { type: 'folder', parentId }
+        })
+      }
+
+      // 2. Process Folders at this level
       const levelFolders = (indexedFolders.get(parentId) || [])
         .sort((a, b) => {
           if (a.name === '📥 Inbox') return -1
@@ -140,7 +150,6 @@ export const useSidebarLogic = ({
         })
 
       levelFolders.forEach((folder) => {
-        // Auto-expand folder if we're creating something inside it
         const shouldAutoExpand = createState && createState.parentId === folder.id
         const isExpanded = shouldAutoExpand || folder.collapsed === 0 || folder.collapsed === false
         
@@ -160,11 +169,22 @@ export const useSidebarLogic = ({
         }
       })
 
-      // 2. Process Snippets at this level (Lookup from Index)
+      // 3. INJECTION: New Snippet Input (Top of snippets, below folders)
+      if (createState && createState.type === 'snippet' && (createState.parentId || null) == (parentId || null)) {
+        levelResult.push({
+          id: 'TEMP_SNIPPET_INPUT',
+          type: 'creation_input',
+          depth,
+          data: { type: 'snippet', parentId }
+        })
+      }
+
+      // 4. Process Snippets at this level
       const levelSnippets = (indexedSnippets.get(parentId) || [])
         .sort((a, b) => {
-          if (a.is_pinned && !b.is_pinned) return -1
-          if (!a.is_pinned && b.is_pinned) return 1
+          // Internal pinned items should NOT be forced to the top of the folder list
+          // Users expect alphabetical order within folders regardless of pinned status
+          // Pinned status is already highlighted by the Pinned section and the icon
           if (a.is_draft && !b.is_draft) return -1
           if (!a.is_draft && b.is_draft) return 1
           return (a.title || '').localeCompare(b.title || '', undefined, { sensitivity: 'base' })
@@ -179,16 +199,6 @@ export const useSidebarLogic = ({
           isEditing: editingId === snippet.id
         })
       })
-
-      // INJECTION POINT: Dynamic Creation Input Row (at the END of the level)
-      if (createState && (createState.parentId || null) == (parentId || null)) {
-        levelResult.push({
-          id: 'TEMP_CREATION_INPUT',
-          type: 'creation_input',
-          depth,
-          data: { type: createState.type, parentId }
-        })
-      }
 
       return levelResult
     }
@@ -427,25 +437,40 @@ export const useSidebarLogic = ({
    * ensure the sidebar highlights it and clears any folder focus.
    */
   React.useEffect(() => {
-    if (!selectedSnippet) return
+    if (!selectedSnippet?.id) return
     
-    // Check if the current file is already covered by the sidebar selection
-    const isAlreadySelected = selectedIds.some(id => 
-      id === selectedSnippet.id || id === `pinned-${selectedSnippet.id}`
+    // 1. DATA SYNC: Highlight the active snippet in the sidebar
+    // Cast all IDs to strings to ensure consistent highlighting for numeric DB IDs
+    const isAlreadyHighlighted = selectedIds.some(id => 
+      String(id) === String(selectedSnippet.id) || id === `pinned-${selectedSnippet.id}`
     )
 
-    if (!isAlreadySelected) {
-      // Logic: If user is actively looking at a folder, don't steal focus just because
-      // of a background save or small edit. But for a CHANGE in active snippet, reveal it.
-      const currentSelectionIsFolder = treeItems.some(i => i.id === selectedIds[0] && i.type === 'folder')
-      
-      // If we don't have a selection, or if we are switching snippets, sync selection
-      if (selectedIds.length === 0 || !currentSelectionIsFolder) {
-        setSelectedIds([selectedSnippet.id])
-        lastSelectedIdRef.current = selectedSnippet.id
-      }
+    if (!isAlreadyHighlighted) {
+      // Set selection as a string to match the tree item IDs exactly
+      setSelectedIds([String(selectedSnippet.id)])
+      lastSelectedIdRef.current = String(selectedSnippet.id)
     }
-  }, [selectedSnippet?.id]) // Only trigger on ID change (ignore content edits)
+
+    // 2. VISIBILITY SYNC: If the snippet is in a folder, ensure all parents are expanded
+    if (selectedSnippet.folder_id && onToggleFolder) {
+      const parentIdsToExpand = []
+      let currentFolderId = selectedSnippet.folder_id
+
+      while (currentFolderId) {
+        const folder = folders.find(f => f.id === currentFolderId)
+        if (!folder) break
+        
+        // If folder is collapsed, queue it for expansion
+        if (folder.collapsed === 1 || folder.collapsed === true) {
+          parentIdsToExpand.push(currentFolderId)
+        }
+        currentFolderId = folder.parent_id
+      }
+
+      // Expand from top to bottom or all at once if supported
+      parentIdsToExpand.forEach(fid => onToggleFolder(fid, false))
+    }
+  }, [selectedSnippet?.id])
 
   /**
    * 5. SMART FOCUS RECOVERY

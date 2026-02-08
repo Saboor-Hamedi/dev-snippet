@@ -180,11 +180,12 @@ const SnippetSidebar = ({
     let targetParentId = null
     if (selectedIds.length === 1) {
       const virtualId = selectedIds[0]
-      const realId = virtualId.replace(VIRTUAL_ID_PREFIX, '')
-      const snippet = snippets.find((s) => s.id === realId)
+      const realId = String(virtualId).replace(VIRTUAL_ID_PREFIX, '')
+      
+      const snippet = snippets.find((s) => String(s.id) === realId)
       if (snippet) targetParentId = snippet.folder_id || null
       else {
-        const folder = folders.find((f) => f.id === realId)
+        const folder = folders.find((f) => String(f.id) === realId)
         if (folder) targetParentId = folder.id
       }
     } else if (selectedFolderId) {
@@ -199,17 +200,17 @@ const SnippetSidebar = ({
     const handleGlobalClick = (e) => {
       // If we clicked outside the sidebar pane
       if (parentRef.current && !parentRef.current.contains(e.target)) {
-        // Only clear if something is actually selected to avoid redundant renders
-        if (isSidebarSelected || selectedIds.length > 0) {
+        // Only clear the 'isSidebarSelected' flag. 
+        // We do NOT clear selectedIds anymore, as we want to keep the 
+        // "Active File" highlighted even when focus is in the editor.
+        if (isSidebarSelected) {
           setSidebarSelected(false)
-          setSelectedIds([]) // Clear highlights as well for total deselection
-          // We do NOT clear selectedFolderId here as that represents the current view filter
         }
       }
     }
     document.addEventListener('mousedown', handleGlobalClick)
     return () => document.removeEventListener('mousedown', handleGlobalClick)
-  }, [isSidebarSelected, selectedIds, setSidebarSelected, setSelectedIds])
+  }, [isSidebarSelected, setSidebarSelected])
 
   // --- 🔍 Search Sync ---
   React.useEffect(() => {
@@ -412,7 +413,7 @@ const SnippetSidebar = ({
         <div className="flex items-center gap-2 w-full">
           {/* SEARCH INPUT */}
           <div className="relative group flex-1 h-8 sidebar-search-container border border-white/5 bg-white/[0.02] rounded-lg overflow-hidden">
-            <div className="absolute left-2.5 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-70 transition-opacity pointer-events-none flex items-center gap-1.5">
+            <div className="absolute left-2.5 top-1/2 -translate-y-1/2 opacity-60 group-focus-within:opacity-90 transition-opacity pointer-events-none flex items-center gap-1.5">
               {isSearching ? (
                 <RefreshCw size={12} className="animate-spin text-[var(--color-accent-primary)]" />
               ) : (
@@ -445,7 +446,7 @@ const SnippetSidebar = ({
           <div className="flex items-center gap-px shrink-0">
             <button
               onClick={() => handleSmartCreation('snippet')}
-              className="h-7 w-7 flex items-center justify-center rounded-[5px] opacity-40 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all group/btn"
+              className="h-7 w-7 flex items-center justify-center rounded-[5px] opacity-90 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all group/btn"
               title="New Snippet"
             >
               <FilePlus
@@ -456,7 +457,7 @@ const SnippetSidebar = ({
             </button>
             <button
               onClick={() => handleSmartCreation('folder')}
-              className="h-7 w-7 flex items-center justify-center rounded-[5px] opacity-40 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all group/btn"
+              className="h-7 w-7 flex items-center justify-center rounded-[5px] opacity-90 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all group/btn"
               title="New Folder"
             >
               <FolderPlus
@@ -470,7 +471,7 @@ const SnippetSidebar = ({
                 collapseAll()
                 setSidebarSelected(true)
               }}
-              className="h-7 w-7 flex items-center justify-center rounded-[5px] opacity-40 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all group/btn"
+              className="h-7 w-7 flex items-center justify-center rounded-[5px] opacity-90 hover:opacity-100 hover:bg-[var(--color-bg-tertiary)] transition-all group/btn"
               title="Collapse Folders"
             >
               <ChevronsUp
