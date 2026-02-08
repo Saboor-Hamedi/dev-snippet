@@ -181,13 +181,12 @@ a:hover {
 /* INLINE ELEMENTS */
 /* INLINE ELEMENTS SYNC (Matches Editor Monospace) */
 .inline-code,
-.markdown-body code:not(pre code) {
-  background-color: rgba(var(--color-accent-primary-rgb, 139, 148, 158), 0.08) !important;
-  color: var(--color-accent-primary) !important;
-  padding: 2px 4px !important;
-  border-radius: 4px !important;
-  font-family: var(--font-mono) !important;
+.markdown-body code {
+  color: var(--color-accent-primary, #58a6ff) !important;
   font-size: 0.9em !important;
+  font-family: var(--editor-font-family, 'JetBrains Mono', monospace) !important;
+  letter-spacing: -0.01em;
+  white-space: break-spaces;
 }
 
 .preview-quicklink {
@@ -211,11 +210,11 @@ a:hover {
 
 /* CODE BLOCKS & SYNTAX HIGHLIGHTING (Font color change only) */
 .code-block-wrapper {
-  margin: 24px 0;
+  margin: 24px 0 !important;
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid var(--color-border);
-  background: rgba(var(--color-bg-tertiary-rgb), 0.15);
+  background: transparent;
 }
 .code-block-header {
   display: flex;
@@ -249,10 +248,9 @@ code {
 
 /* TABLES */
 .table-wrapper {
-  width: 100%;
-  overflow-x: auto;
-  margin: 24px 0;
-  border-radius: 12px;
+  width: 100% !important;
+  margin: 24px 0 !important;
+  border-radius: 8px;
   border: 1px solid var(--color-border);
 }
 table {

@@ -45,7 +45,7 @@ const buildTheme = (EditorView, options = {}) => {
         minHeight: '100%'
       },
       '.cm-line': {
-        paddingLeft: '64px !important', /* Core padding */
+        paddingLeft: '64px !important', /* Core gutter alignment padding */
         paddingRight: '64px !important',
         textAlign: 'left'
       },

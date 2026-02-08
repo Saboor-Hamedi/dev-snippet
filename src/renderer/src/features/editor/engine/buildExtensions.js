@@ -85,10 +85,7 @@ const premiumHighlightStyle = HighlightStyle.define([
   { tag: t.strikethrough, textDecoration: 'line-through' },
   {
     tag: t.monospace,
-    color: 'var(--color-accent-primary, #58a6ff)',
-    backgroundColor: 'rgba(var(--color-accent-primary-rgb, 88, 166, 255), 0.08)',
-    padding: '1px 4px',
-    borderRadius: '4px'
+    color: 'var(--color-accent-primary, #58a6ff)'
   },
   // MD Markers & Punctuation Sync
   {

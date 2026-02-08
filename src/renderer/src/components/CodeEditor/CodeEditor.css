@@ -107,6 +107,8 @@
 
 /* --- COMPONENT STYLING --- */
 .cm-blockquote-line {
+  margin-left: 64px !important;
+  margin-right: 64px !important;
   border-left: 4px solid var(--color-accent-primary, #58a6ff) !important;
   background-color: rgba(var(--color-accent-primary-rgb), 0.04) !important;
   padding-left: 1.25rem !important;
@@ -115,14 +117,17 @@
 
 /* --- PREMIUM CODE BLOCKS --- */
 .cm-code-block {
-  background-color: rgba(var(--color-bg-tertiary-rgb, 33, 38, 45), 0.15) !important;
+  background-color: transparent !important;
+  border-left: 3px solid rgba(var(--color-accent-primary-rgb), 0.3) !important;
+  border-right: 1px solid var(--color-border) !important;
 }
 
 .cm-code-block-header {
-  margin: 1.5rem 64px 0 64px !important;
-  padding: 10px 16px !important;
+  margin: 1.5rem 64px 0 64px !important; /* Aligns with standard text indentation */
+  padding: 12px 16px !important;
   background-color: var(--color-bg-secondary, #161b22) !important;
   border: 1px solid var(--color-border);
+  border-left: 3px solid rgba(var(--color-accent-primary-rgb), 0.3) !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
   border-radius: 8px 8px 0 0;
   font-family: var(--editor-font-family);
@@ -156,21 +161,36 @@
 }
 
 .cm-code-block-start {
-  padding-top: 12px !important;
-  border-left: 3px solid rgba(var(--color-accent-primary-rgb), 0.3) !important;
+  padding-top: 14px !important;
+  border-top: 1px solid transparent !important;
 }
 
 .cm-code-block-end {
+  padding-bottom: 12px !important; /* Tighter finish for hidden fence */
+  margin-bottom: 1.5rem !important;
+  border-bottom: 1px solid var(--color-border) !important;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+/* Structural closure for when the fence or header is hidden */
+.cm-code-block-bottom {
+  border-bottom: 1px solid var(--color-border) !important;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
   padding-bottom: 12px !important;
   margin-bottom: 1.5rem !important;
-  border-left: 3px solid rgba(var(--color-accent-primary-rgb), 0.3) !important;
-  border-bottom-left-radius: 8px;
 }
 
 .cm-code-block-start,
 .cm-code-block,
 .cm-code-block-end {
+  margin-left: 64px !important; /* Unified alignment with standard text */
+  margin-right: 64px !important;
+  padding-left: 20px !important; /* Balanced internal breathing room */
+  padding-right: 20px !important;
   border-left: 3px solid rgba(var(--color-accent-primary-rgb), 0.3) !important;
+  border-right: 1px solid var(--color-border) !important;
 }
 
 /* Hide fences in Live Preview when not focused */
@@ -183,7 +203,7 @@
 
 /* --- RENDERED TABLES (LIVE PREVIEW) --- */
 .cm-md-table-rendered-wrapper {
-  margin: 1.5rem 64px !important;
+  margin: 1.5rem 64px !important; /* Aligns with standard text indentation */
   border: 1px solid var(--color-border);
   border-radius: 8px;
   overflow: hidden;
@@ -216,6 +236,14 @@
 
 .cm-md-rendered-table tr:hover {
   background-color: rgba(var(--color-accent-primary-rgb), 0.08) !important;
+}
+
+/* --- HORIZONTAL RULES --- */
+.cm-md-hr {
+  margin: 2rem 64px !important; /* Unified alignment with standard text */
+  border: none;
+  border-top: 1px solid var(--color-border);
+  opacity: 0.5;
 }
 
 /* ZEN MODE */

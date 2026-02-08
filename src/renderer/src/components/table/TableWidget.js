@@ -171,7 +171,13 @@ export class TableWidget extends WidgetType {
      * We re-resolve the table range before opening to ensure we're replacing the
      * correct part of the document.
      */
-    wrap.ondblclick = (e) => {
+    /**
+     * Single-Click to Edit:
+     * This is the bridge between the simple preview and the advanced TableEditorModal.
+     * We re-resolve the table range before opening to ensure we're replacing the
+     * correct part of the document.
+     */
+    wrap.onclick = (e) => {
       if (curMode === EditorMode.READING) return
       e.preventDefault()
       e.stopPropagation()
@@ -193,6 +199,11 @@ export class TableWidget extends WidgetType {
 
       const fresh = view.state.doc.sliceString(from, to)
       showSourceModal(view, from, to, fresh)
+    }
+
+    wrap.ondblclick = (e) => {
+      // Keep dblclick for backward compatibility/muscle memory
+      wrap.onclick(e)
     }
 
     if (curMode !== EditorMode.READING) {

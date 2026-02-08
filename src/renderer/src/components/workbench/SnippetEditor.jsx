@@ -291,6 +291,33 @@ const SnippetEditor = ({
   const [pinPopover, setPinPopover] = useState({ visible: false, x: 0, y: 0 })
   const debouncedCode = useDebounce(code, 1000)
   const [namePrompt, setNamePrompt] = useState({ isOpen: false, initialName: '' })
+  const [tableModal, setTableModal] = useState({ isOpen: false, from: 0, to: 0, code: '' })
+
+  // --- SOURCE MODAL BRIDGE (TABLES, ETC) ---
+  useEffect(() => {
+    const handleOpenModal = (e) => {
+      const { from, to, initialCode } = e.detail
+      setTableModal({ isOpen: true, from, to, code: initialCode })
+    }
+    window.addEventListener('app:open-source-modal', handleOpenModal)
+    return () => window.removeEventListener('app:open-source-modal', handleOpenModal)
+  }, [])
+
+  const handleTableSave = useCallback((newMarkdown) => {
+    if (!tableModal.isOpen || !codeRef.current) return
+
+    // Calculate update
+    const previousCode = codeRef.current
+    const before = previousCode.substring(0, tableModal.from)
+    const after = previousCode.substring(tableModal.to)
+    const updated = before + newMarkdown + after
+
+    onCodeChangeWrapper(updated)
+    setTableModal({ isOpen: false, from: 0, to: 0, code: '' })
+    
+    // Pulse save to persistence
+    if (!isReadOnly) handleSave(false)
+  }, [tableModal, onCodeChangeWrapper, isReadOnly, handleSave])
 
   // --- KEYBOARD SHORTCUTS ---
   const handleEditorKeyDown = useCallback((e) => {
@@ -572,6 +599,21 @@ const SnippetEditor = ({
           handleNav={(id) => window.dispatchEvent(new CustomEvent('app:navigate-to-snippet', { detail: { id } }))}
           onExtensionsReady={setWikiLinkExtensions}
         />
+        <UniversalModal
+          isOpen={tableModal.isOpen}
+          onClose={() => setTableModal(prev => ({ ...prev, isOpen: false }))}
+          title="Table Editor"
+          width={900}
+          height={600}
+          resetPosition={true}
+          className="premium-table-modal"
+        >
+          <TableEditorModal
+            initialCode={tableModal.code}
+            onSave={handleTableSave}
+            onCancel={() => setTableModal(prev => ({ ...prev, isOpen: false }))}
+          />
+        </UniversalModal>
       </div>
     </>
   )

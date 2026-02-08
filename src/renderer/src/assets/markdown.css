@@ -7,7 +7,7 @@
   overflow: hidden;
   width: 100%;
   box-sizing: border-box;
-  background-color: rgba(var(--color-bg-tertiary-rgb), 0.15) !important;
+  background-color: transparent !important;
   border: 1px solid var(--color-border) !important;
   border-radius: 8px !important;
   margin: 1.5rem 0 !important;
@@ -378,12 +378,8 @@ h6 {
 
 /* Inline code - Clean, high-fidelity highlight */
 .markdown-body code {
-  background-color: rgba(var(--color-accent-primary-rgb), 0.08) !important;
   color: var(--color-accent-primary, #58a6ff) !important;
   font-size: 0.9em !important;
-  padding: 0.2em 0.4em !important;
-  border-radius: 4px !important;
-  border: 1px solid rgba(88, 166, 255, 0.1) !important;
   font-family: var(--editor-font-family, 'JetBrains Mono', monospace) !important;
   letter-spacing: -0.01em;
   white-space: break-spaces;
@@ -396,7 +392,7 @@ h6 {
 
 /* Code blocks - Refined, modern look */
 .markdown-body pre {
-  background-color: rgba(var(--color-bg-tertiary-rgb), 0.15) !important;
+  background-color: transparent !important;
   border: 1px solid var(--color-border) !important;
   border-radius: 8px !important;
   padding: 20px !important;
