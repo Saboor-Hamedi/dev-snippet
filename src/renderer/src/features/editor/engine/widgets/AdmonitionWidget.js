@@ -10,6 +10,9 @@ export class AdmonitionWidget extends WidgetType {
   eq(other) {
     return other.type === this.type && other.title === this.title && other.content === this.content
   }
+  ignoreEvent() {
+    return false // Let CodeMirror handle all events
+  }
   toDOM() {
     const wrap = document.createElement('div')
     wrap.className = `cm-admonition cm-admonition-${this.type.toLowerCase()}`

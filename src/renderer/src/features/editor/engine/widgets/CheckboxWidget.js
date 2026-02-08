@@ -9,6 +9,13 @@ export class CheckboxWidget extends WidgetType {
   eq(other) {
     return other.checked === this.checked && other.pos === this.pos
   }
+  ignoreEvent(event) {
+    // Allow checkbox clicks but let CodeMirror handle other events
+    if (event.type === 'mousedown' && event.target.type === 'checkbox') {
+      return true // Widget handles checkbox clicks
+    }
+    return false // CodeMirror handles everything else
+  }
   toDOM(view) {
     const span = document.createElement('span')
     span.className = `cm-md-checkbox ${this.checked ? 'is-checked' : ''}`

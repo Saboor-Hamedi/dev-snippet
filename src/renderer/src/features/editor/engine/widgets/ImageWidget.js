@@ -9,6 +9,9 @@ export class ImageWidget extends WidgetType {
   eq(other) {
     return other.src === this.src && other.alt === this.alt
   }
+  ignoreEvent() {
+    return false // Let CodeMirror handle all events
+  }
   toDOM() {
     const wrap = document.createElement('div')
     wrap.className = 'cm-md-image-container'

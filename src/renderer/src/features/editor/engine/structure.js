@@ -12,7 +12,7 @@ import { AdmonitionWidget } from './widgets/AdmonitionWidget'
 import { CodeBlockHeaderWidget } from './widgets/HeaderWidget'
 import { CheckboxWidget } from './widgets/CheckboxWidget'
 
-// Decoration for hiding text while keeping its footprint perfectly stable
+// Decoration for hiding text - using mark to keep it selectable
 const hideMarkerDeco = Decoration.mark({ class: 'cm-marker-hidden' })
 const revealedMarkerDeco = Decoration.mark({ class: 'cm-marker' })
 
@@ -143,16 +143,22 @@ export const richMarkdownStateField = StateField.define({
             // Determine if the WHOLE block should be "active" (revealing fences)
             const blockActive = isRangeActive(from, to)
 
-            // ALWAYS show the header widget (contains Copy button) except in SOURCE mode
-            collected.push({
-              from: startLine.from,
-              to: startLine.from,
-              deco: Decoration.widget({
-                widget: new CodeBlockHeaderWidget(lang),
-                side: -1,
-                block: true
+            // Show header based on mode
+            if (mode === EditorMode.SOURCE || mode === EditorMode.READING) {
+              // Full header bar in SOURCE and READING modes
+              collected.push({
+                from: startLine.from,
+                to: startLine.from,
+                deco: Decoration.widget({
+                  widget: new CodeBlockHeaderWidget(lang),
+                  side: -1,
+                  block: true
+                })
               })
-            })
+            }
+
+
+
 
             for (let i = startLine.number; i <= endLine.number; i++) {
               if (!lineDecos.has(i)) {
@@ -160,6 +166,13 @@ export const richMarkdownStateField = StateField.define({
                 if (i === startLine.number) {
                   cls += ' cm-code-block-start'
                   if (!blockActive) cls += ' cm-hidden-fence'
+                  
+                  // Add language as data attribute
+                  lineDecos.set(i, Decoration.line({
+                    class: cls,
+                    attributes: { 'data-language': lang || 'code' }
+                  }))
+                  continue
                 }
                 
                 // Closure logic for when active lines are within the block but not on the end fence
@@ -238,15 +251,10 @@ export const richMarkdownStateField = StateField.define({
 
         if (isMarker && !isException) {
           if (!isRangeActive(from, to)) {
-            // Hide symbols (###, **, etc.)
-            // And hide all following spaces to ensure perfect alignment with paragraphs.
-            let actualTo = to
-            while (doc.sliceString(actualTo, actualTo + 1) === ' ') {
-              actualTo++
-            }
-            collected.push({ from, to: actualTo, deco: hideMarkerDeco })
+            // Hide symbols (###, **, etc.) completely from layout
+            collected.push({ from, to, deco: hideMarkerDeco })
           } else {
-            // REVEAL: Apply the 'cm-marker' class so CSS can pull it into the gutter (Zero-Jump)
+            // REVEAL: Apply the 'cm-marker' class for visibility
             collected.push({ from, to, deco: revealedMarkerDeco })
           }
         }

@@ -88,10 +88,8 @@ export class TableWidget extends WidgetType {
     return other.raw === this.raw && other.from === this.from && other.to === this.to
   }
 
-  // We allow events to pass to the editor so clicking can focus the line
-  ignoreEvent(e) {
-    if (e.type === 'mousedown' || e.type === 'click') return false
-    return true
+  ignoreEvent() {
+    return false // Let CodeMirror handle all events for proper coordinate mapping
   }
 
   /**
