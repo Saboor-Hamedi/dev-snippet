@@ -55,7 +55,7 @@ export const SidebarBody = ({ children, className = '', noPadding = false, noScr
   return (
     <div className="flex-1 relative min-h-0">
       <div
-        className={`absolute inset-0 ${noScroll ? 'overflow-hidden' : 'overflow-y-auto custom-scrollbar'} ${noPadding ? '' : 'p-2 pb-6'} space-y-4 ${className}`}
+        className={`absolute inset-0 ${noScroll ? 'overflow-hidden' : 'overflow-y-auto custom-scrollbar'} ${noPadding ? '' : 'p-2 pb-6 space-y-4'} ${className}`}
       >
         {children}
       </div>

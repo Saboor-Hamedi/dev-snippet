@@ -23,6 +23,7 @@ import ContextMenu from './ContextMenu'
 import SnippetSidebarRow from './SnippetSidebarRow'
 import { useSidebarLogic } from '../hooks/useSidebarLogic'
 import { useSidebarStore } from '../store/useSidebarStore'
+import './SnippetSidebar.css'
 
 // Constant for differentiating virtual UI rows from real data rows
 const VIRTUAL_ID_PREFIX = 'pinned-'

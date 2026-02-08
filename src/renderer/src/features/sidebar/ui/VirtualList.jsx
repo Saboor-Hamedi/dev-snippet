@@ -61,9 +61,11 @@ const VirtualList = React.forwardRef(
 
     const items = []
     for (let i = startIndex; i <= endIndex; i++) {
+      const item = itemData?.treeItems?.[i]
+      const rowKey = item?.id !== undefined ? item.id : i
       items.push(
         <Row
-          key={i}
+          key={rowKey}
           index={i}
           style={{
             position: 'absolute',

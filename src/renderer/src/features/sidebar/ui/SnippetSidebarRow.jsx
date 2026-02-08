@@ -70,9 +70,10 @@ const HighlightText = ({ text, highlight }) => {
 const PinnedHeaderRow = ({ style, data, togglePinned }) => {
   const isCollapsed = data ? data.collapsed : false
   return (
-    <div style={style} className="select-none outline-none focus:outline-none relative py-1">
+    <div style={style} className="select-none outline-none focus:outline-none relative py-0.5">
       <div
-        className="sidebar-row-inner group h-full cursor-pointer opacity-80 hover:opacity-100"
+        className="sidebar-row-inner group h-full cursor-pointer"
+        style={{ paddingLeft: '8px' }}
         onClick={(e) => {
           e.stopPropagation()
           togglePinned()
@@ -83,16 +84,16 @@ const PinnedHeaderRow = ({ style, data, togglePinned }) => {
         >
           <ChevronRight
             size={12}
-            className={`transition-transform duration-300 ${!isCollapsed ? 'rotate-90' : ''}`}
+            className={`${!isCollapsed ? 'rotate-90' : ''}`}
           />
         </button>
         <div
-          className="flex-shrink-0 opacity-80 group-hover:opacity-100 px-0.5 text-[var(--color-accent-primary)]"
+          className="flex-shrink-0 px-0.5 ml-1 text-[var(--color-accent-primary)]"
         >
           <Pin size={12} className="fill-current" />
         </div>
         <span
-          className="flex-1 truncate font-bold text-[10px] uppercase tracking-widest opacity-60 group-hover:opacity-90 pl-1 text-[var(--color-text-secondary)]"
+          className="flex-1 truncate font-bold text-[10px] uppercase tracking-widest pl-1 text-[var(--color-text-secondary)]"
         >
           Pinned
         </span>
@@ -154,10 +155,10 @@ const CreationInputRow = ({
   }
 
   return (
-    <div style={style} className="z-20 py-0.5 pl-2">
+    <div style={style} className="z-20 py-0.5">
       <div
         className="flex items-center w-full h-full select-none animate-in fade-in slide-in-from-left-2 duration-200"
-        style={{ paddingLeft: `${depth * 16}px` }}
+        style={{ paddingLeft: `${depth * 16 + 8}px` }}
       >
         <div className="flex-1 flex items-center bg-[var(--color-bg-primary)] h-[24px] rounded-md ring-1 ring-[var(--color-accent-primary)]/40 shadow-xl overflow-hidden mr-3">
           <div className="flex-shrink-0 flex items-center justify-center px-1.5 opacity-40">
@@ -194,21 +195,22 @@ const IndentGuides = ({ depth, activePath = [] }) => {
   return (
     <div
       className="absolute top-0 left-0 h-full pointer-events-none z-0"
-      style={{ width: depth * 16 + 8 }}
+      style={{ width: depth * 16 + 8, transition: 'none' }}
     >
       {Array.from({ length: depth }).map((_, i) => {
         const isActive = activePath.includes(i)
         return (
           <div
             key={i}
-            className={`absolute top-0 bottom-0 w-[1px] bg-[var(--color-border)] transition-all duration-200 ${
+            className={`absolute top-0 bottom-0 w-[1px] bg-[var(--color-border)] ${
               isActive 
                 ? 'opacity-40' 
                 : 'opacity-10 group-hover/row:opacity-20'
             }`}
             style={{ 
-              left: `${i * 16 + 18}px`,
-              boxShadow: isActive ? '0 0 4px rgba(var(--color-accent-primary-rgb, 59, 130, 246), 0.3)' : 'none'
+              left: `${i * 16 + 24}px`, 
+              borderLeft: '0.5px solid currentColor',
+              transition: 'opacity 0.2s ease' 
             }}
           />
         )
@@ -426,8 +428,8 @@ const SnippetSidebarRow = ({ index, style, data }) => {
       >
         <IndentGuides depth={depth} activePath={activePath} />
         <div
-          className={`sidebar-row-inner group h-full select-none transition-all duration-75 ${isHighlight ? 'is-selected' : ''} ${isDragOver ? 'drop-target-magnetic animate-pulse ring-1 ring-[var(--color-accent-primary)]/50' : ''}`}
-          style={{ paddingLeft: `${depth * 16}px` }}
+          className={`sidebar-row-inner group h-full select-none ${isHighlight ? 'is-selected' : ''} ${isDragOver ? 'drop-target-magnetic animate-pulse ring-1 ring-[var(--color-accent-primary)]/50' : ''}`}
+          style={{ paddingLeft: `${depth * 16 + 8}px` }}
         >
           <button
             onClick={(e) => {
@@ -438,10 +440,10 @@ const SnippetSidebarRow = ({ index, style, data }) => {
           >
             <ChevronRight
               size={isCompact ? 11 : 13}
-              className={`transition-transform duration-300 ${isOpen ? 'rotate-90 text-[var(--color-accent-primary)]' : ''}`}
+              className={`${isOpen ? 'rotate-90 text-[var(--color-accent-primary)]' : ''}`}
             />
           </button>
-          <div className="flex-shrink-0 px-0.5 ml-0.5">
+          <div className="flex-shrink-0 px-0.5 ml-1">
             {itemData.name === '📥 Inbox' ? (
               <Inbox size={14} className={isHighlight ? 'text-white' : 'text-[var(--color-accent-primary)]'} />
             ) : (
@@ -502,11 +504,11 @@ const SnippetSidebarRow = ({ index, style, data }) => {
         onClick={handleItemClick}
         onKeyDown={(e) => handleItemKeyDown(e, index)}
         onContextMenu={(e) => onContextMenu(e, type, itemData)}
-        className={`sidebar-row-inner theme-exempt group h-full select-none outline-none focus:outline-none relative transition-all duration-75 ${isSelected ? 'is-selected' : ''}`}
-        style={{ paddingLeft: `${depth * 16 + 24}px` }}
+        className={`sidebar-row-inner theme-exempt group h-full select-none outline-none focus:outline-none relative ${isSelected ? 'is-selected' : ''}`}
+        style={{ paddingLeft: `${depth * 16 + 32}px` }}
       >
         <div
-          className={`flex-shrink-0 flex items-center justify-center transition-all sidebar-item-icon ${isSelected ? 'scale-110 opacity-100' : 'opacity-90 group-hover/row:opacity-100'}`}
+          className={`flex-shrink-0 flex items-center justify-center transition-opacity duration-200 sidebar-item-icon ml-1 ${isSelected ? 'scale-110 opacity-100' : 'opacity-90 group-hover/row:opacity-100'}`}
           style={{ color: isSelected ? 'white' : color }}
         >
           <Icon size={14} />

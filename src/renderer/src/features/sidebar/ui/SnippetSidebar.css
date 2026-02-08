@@ -1,28 +1,29 @@
 /* PREMIUM SIDEBAR ENHANCEMENTS */
 
 .sidebar-row-inner {
-  margin: 0 8px !important;
-  width: calc(100% - 16px) !important;
-  border-radius: 6px !important;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  margin: 0 !important;
+  width: 100% !important;
+  border-radius: 0 !important;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease, opacity 0.15s ease !important;
   background-color: transparent;
   display: flex !important;
   align-items: center !important;
   padding-right: 8px !important;
+  box-sizing: border-box !important;
 }
 
 .sidebar-row-inner.is-selected {
   background-color: var(--sidebar-item-active-bg, rgba(var(--color-accent-primary-rgb, 88, 166, 255), 0.15)) !important;
   color: var(--sidebar-item-active-fg, var(--color-accent-primary, #58a6ff)) !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
-  transform: scale(1.02);
+  /* Transform scale removed to prevent layout jiggle on selection change */
 }
 
 /* Active indicator bar - Obsidian/VS Code style */
 .sidebar-row-inner.is-selected::before {
   content: '';
   position: absolute;
-  left: -8px; /* Offset the parent margin to hit the hard edge */
+  left: 0 !important; /* Flush with edge now that margin is 0 */
   top: 15%;
   bottom: 15%;
   width: 3px;
@@ -36,13 +37,7 @@
   background-color: var(--sidebar-item-hover-bg, rgba(255, 255, 255, 0.05)) !important;
 }
 
-.sidebar-item-icon {
-  transition: transform 0.2s ease;
-}
-
-.sidebar-row-inner:hover .sidebar-item-icon {
-  transform: translateX(1px);
-}
+/* Hover transform removed to prevent "moves left or right" jiggle */
 
 .sidebar-search-container {
   transition: box-shadow 0.3s ease, border-color 0.3s ease;
@@ -56,6 +51,10 @@
 /* Scroll Animation */
 .custom-scrollbar::-webkit-scrollbar {
   width: 5px;
+}
+
+.virtual-list-container {
+  scrollbar-gutter: stable;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
