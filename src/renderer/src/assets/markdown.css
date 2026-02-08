@@ -7,10 +7,10 @@
   overflow: hidden;
   width: 100%;
   box-sizing: border-box;
-  background-color: var(--color-bg-tertiary, #161b22) !important;
-  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.05)) !important;
-  border-radius: 12px !important;
-  margin: 0.75rem 0 !important;
+  background-color: rgba(var(--color-bg-tertiary-rgb), 0.15) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 8px !important;
+  margin: 1.5rem 0 !important;
 }
 
 /* Plaintext: Invisible wrapper for clean text display */
@@ -39,14 +39,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 16px !important;
-  background-color: rgba(255, 255, 255, 0.05) !important;
-  border-bottom: none !important;
+  padding: 10px 16px !important;
+  background-color: var(--color-bg-secondary, #161b22) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03) !important;
   min-height: 38px;
   box-sizing: border-box;
-  border-radius: 12px 12px 0 0 !important;
-  border: 1px solid var(--color-border, transparent);
-  border-bottom: none;
+  border-radius: 8px 8px 0 0 !important;
 }
 
 .code-actions {
@@ -104,6 +102,8 @@
   margin: 0;
   background-color: transparent !important;
   font-size: var(--editor-font-size, 14px) !important;
+  padding-left: 40px !important;
+  padding-right: 40px !important;
 }
 
 /* Force pure black scrollbar for Minimal Gray */
@@ -378,12 +378,12 @@ h6 {
 
 /* Inline code - Clean, high-fidelity highlight */
 .markdown-body code {
-  background-color: var(--color-bg-tertiary, rgba(139, 148, 158, 0.3)) !important;
+  background-color: rgba(var(--color-accent-primary-rgb), 0.08) !important;
   color: var(--color-accent-primary, #58a6ff) !important;
   font-size: 0.9em !important;
-  padding: 0.2em 0.45em !important;
-  border-radius: 6px !important;
-  border: 1px solid rgba(88, 166, 255, 0.15) !important;
+  padding: 0.2em 0.4em !important;
+  border-radius: 4px !important;
+  border: 1px solid rgba(88, 166, 255, 0.1) !important;
   font-family: var(--editor-font-family, 'JetBrains Mono', monospace) !important;
   letter-spacing: -0.01em;
   white-space: break-spaces;
@@ -396,9 +396,9 @@ h6 {
 
 /* Code blocks - Refined, modern look */
 .markdown-body pre {
-  background-color: var(--color-bg-tertiary, #161b22) !important;
+  background-color: rgba(var(--color-bg-tertiary-rgb), 0.15) !important;
   border: 1px solid var(--color-border) !important;
-  border-radius: 10px !important;
+  border-radius: 8px !important;
   padding: 20px !important;
   margin: 1.5rem 0 !important;
   overflow: auto;

@@ -86,9 +86,9 @@ const premiumHighlightStyle = HighlightStyle.define([
   {
     tag: t.monospace,
     color: 'var(--color-accent-primary, #58a6ff)',
-    backgroundColor: 'rgba(139, 148, 158, 0.15)',
-    padding: '2px 4px',
-    borderRadius: '6px'
+    backgroundColor: 'rgba(var(--color-accent-primary-rgb, 88, 166, 255), 0.08)',
+    padding: '1px 4px',
+    borderRadius: '4px'
   },
   // MD Markers & Punctuation Sync
   {

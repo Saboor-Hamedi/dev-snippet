@@ -108,9 +108,114 @@
 /* --- COMPONENT STYLING --- */
 .cm-blockquote-line {
   border-left: 4px solid var(--color-accent-primary, #58a6ff) !important;
-  background-color: rgba(88, 166, 255, 0.05) !important;
+  background-color: rgba(var(--color-accent-primary-rgb), 0.04) !important;
   padding-left: 1.25rem !important;
   font-style: italic;
+}
+
+/* --- PREMIUM CODE BLOCKS --- */
+.cm-code-block {
+  background-color: rgba(var(--color-bg-tertiary-rgb, 33, 38, 45), 0.15) !important;
+}
+
+.cm-code-block-header {
+  margin: 1.5rem 64px 0 64px !important;
+  padding: 10px 16px !important;
+  background-color: var(--color-bg-secondary, #161b22) !important;
+  border: 1px solid var(--color-border);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: 8px 8px 0 0;
+  font-family: var(--editor-font-family);
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  user-select: none;
+}
+
+.cm-code-block-header span {
+  opacity: 0.8;
+}
+
+.cm-code-copy-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 2px 8px;
+  color: var(--color-text-tertiary);
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cm-code-copy-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-primary);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.cm-code-block-start {
+  padding-top: 12px !important;
+  border-left: 3px solid rgba(var(--color-accent-primary-rgb), 0.3) !important;
+}
+
+.cm-code-block-end {
+  padding-bottom: 12px !important;
+  margin-bottom: 1.5rem !important;
+  border-left: 3px solid rgba(var(--color-accent-primary-rgb), 0.3) !important;
+  border-bottom-left-radius: 8px;
+}
+
+.cm-code-block-start,
+.cm-code-block,
+.cm-code-block-end {
+  border-left: 3px solid rgba(var(--color-accent-primary-rgb), 0.3) !important;
+}
+
+/* Hide fences in Live Preview when not focused */
+.cm-hidden-fence {
+  height: 0 !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+  padding: 0 !important;
+}
+
+/* --- RENDERED TABLES (LIVE PREVIEW) --- */
+.cm-md-table-rendered-wrapper {
+  margin: 1.5rem 64px !important;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: transparent;
+}
+
+.cm-md-rendered-table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  font-size: 13px;
+  color: var(--color-text-primary);
+}
+
+.cm-md-table-cell {
+  padding: 10px 14px !important;
+  border: 1px solid var(--color-border) !important;
+}
+
+.cm-md-rendered-table th {
+  background-color: var(--color-bg-secondary, #161b22) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  text-align: left;
+}
+
+.cm-md-rendered-table tr {
+  transition: background-color 0.1s ease;
+}
+
+.cm-md-rendered-table tr:hover {
+  background-color: rgba(var(--color-accent-primary-rgb), 0.08) !important;
 }
 
 /* ZEN MODE */

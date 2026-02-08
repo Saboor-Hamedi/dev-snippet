@@ -167,11 +167,18 @@ export const themeProps = () => {
     const primaryBgColor = theme.colors['--color-bg-primary'] || theme.colors.background
     const primaryBgRGB = extractRGB(primaryBgColor)
 
+    const secondaryBgColor = theme.colors['--color-bg-secondary'] || theme.colors.sidebar
+    const secondaryBgRGB = extractRGB(secondaryBgColor)
+    const tertiaryBgColor = theme.colors['--color-bg-tertiary'] || theme.colors['--color-bg-secondary'] || theme.colors.sidebar
+    const tertiaryBgRGB = extractRGB(tertiaryBgColor)
+
     root.style.setProperty('--editor-bg', editorColor, 'important')
     root.style.setProperty('--editor-bg-rgb', editorRGB, 'important')
     root.style.setProperty('--sidebar-bg-rgb', sidebarRGB, 'important')
     root.style.setProperty('--header-bg-rgb', headerRGB, 'important')
     root.style.setProperty('--color-bg-primary-rgb', primaryBgRGB, 'important')
+    root.style.setProperty('--color-bg-secondary-rgb', secondaryBgRGB, 'important')
+    root.style.setProperty('--color-bg-tertiary-rgb', tertiaryBgRGB, 'important')
     root.style.setProperty(
       '--editor-text',
       theme.colors['--editor-text'] || theme.colors.text,
