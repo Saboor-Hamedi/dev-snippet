@@ -453,7 +453,7 @@ const SnippetEditor = ({
                   {/* For System Settings, we might want to hide the header?
                       Actually better to keep it consistent OR just hide if !id */}
                   <div className="flex-1 overflow-visible overflow-x-hidden flex flex-col">
-                    <div className="w-full flex flex-col relative text-left h-full px-12">
+                    <div className="w-full flex flex-col relative text-left h-full">
                         {/* Meta Header Removed for "Pure Editor" experience - User Request */}
                         {/* {initialSnippet?.id && ( ... EditorMetadataHeader ... )} */}
 

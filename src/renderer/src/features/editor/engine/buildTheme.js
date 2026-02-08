@@ -1,8 +1,8 @@
 import { EditorView } from '@codemirror/view'
 
 /**
- * buildTheme - Optimized CM6 Theme Engine
- * Focus: selection precision and layout stability.
+ * buildTheme - Native-performance UI/UX engine for the CodeEditor.
+ * STABILITY FIRST: Reverted to standard CodeMirror block layout to fix virtualization/scrolling bugs.
  */
 const buildTheme = (EditorView, options = {}) => {
   const {
@@ -19,45 +19,57 @@ const buildTheme = (EditorView, options = {}) => {
   return EditorView.theme(
     {
       '&': {
-        height: '100%',
-        backgroundColor: 'transparent',
+        height: '100% !important',
+        backgroundColor: 'transparent !important',
         fontSize: fontSize,
         fontFamily: fontFamily,
         outline: 'none'
       },
       '.cm-scroller': {
-        display: 'flex !important',
-        flexDirection: 'column !important',
-        alignItems: 'center !important', /* Critical for Centered Mode */
-        overflow: 'auto',
-        fontFamily: 'inherit'
+        display: 'block !important', /* Restore standard block for correct measurement */
+        height: '100% !important',
+        overflow: 'auto !important',
+        fontFamily: 'inherit',
+        scrollbarGutter: 'stable',
+        position: 'relative'
       },
       '.cm-content': {
-        width: '100%',
+        margin: '0 auto !important', /* Centering logic restored to content-margin */
         maxWidth: 'var(--editor-max-width, 1000px)',
-        padding: '50px 0 30vh 0',
+        paddingTop: '60px !important',
+        paddingBottom: '30vh !important',
         fontFamily: 'inherit',
-        caretColor: caretColor
+        lineHeight: '1.6',
+        caretColor: caretColor,
+        boxSizing: 'border-box',
+        minHeight: '100%'
       },
       '.cm-line': {
-        padding: '0 64px', /* Horizontal padding inside lines is safest for CM6 selection */
-        textAlign: 'left',
-        lineHeight: '1.6'
+        paddingLeft: '64px !important', /* Core padding */
+        paddingRight: '64px !important',
+        textAlign: 'left'
       },
       '.cm-cursor': {
         borderLeftColor: caretColor,
         borderLeftWidth: cursorShape === 'block' ? '0' : `${cursorWidth}px`,
         backgroundColor: cursorShape === 'block' ? caretColor : 'transparent',
-        width: cursorShape === 'block' ? '1ch' : 'auto'
+        width: cursorShape === 'block' ? '1ch' : 'auto',
+        opacity: cursorShape === 'block' ? '0.6' : '1'
+      },
+      '.cm-gutters': {
+        backgroundColor: 'transparent !important',
+        border: 'none !important',
+        color: 'var(--color-text-tertiary)',
+        fontFamily: 'inherit'
+      },
+      '.cm-activeLine': {
+        backgroundColor: `${cursorActiveLineBg} !important`
       },
       '.cm-selectionBackground': {
         backgroundColor: `${cursorSelectionBg} !important`
       },
-      '.cm-gutters': {
-        backgroundColor: 'transparent',
-        border: 'none',
-        position: 'sticky', /* Ensure gutters don't shift selection */
-        left: 0
+      '.cm-tooltip-layer': {
+        zIndex: '100000'
       }
     },
     { dark: isDark }

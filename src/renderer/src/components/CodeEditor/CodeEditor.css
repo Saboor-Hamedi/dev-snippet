@@ -7,28 +7,51 @@
   --editor-font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
 }
 
-/* --- SELECTION & INTERACTION PRECISION --- */
+/* --- CORE STABILITY (The Click-to-Render Fix) --- */
+.cm-editor-container {
+  width: 100% !important;
+}
+
 .cm-editor {
-  transition: none;
+  height: 100% !important;
+  width: 100% !important;
+  outline: none !important;
 }
 
-/* Ensure scroller doesn't displace selection coordinates */
 .cm-scroller {
+  display: block !important;
+  height: 100% !important;
+  width: 100% !important; /* Force full width to keep scrollbar on the right */
   margin: 0 !important;
+  padding: 0 !important;
 }
 
+/* 
+  Centering the "Readable" area Obsidian-style.
+  This allows the scroller to stay full-width (for the scrollbar)
+  while the text stays in a centered "island".
+*/
 .cm-content {
-  margin: 0 !important; /* Alignment now handled by flex-centering in buildTheme.js */
-  transition: none;
+  margin: 0 auto !important;
+  max-width: var(--editor-max-width, 1000px) !important;
+  min-height: 100% !important;
 }
 
-/* --- THE OBSIDIAN MARKER SYSTEM --- */
+/* --- THE "NOT SHOWING" / SCROLL FIX --- */
+/* Remove any filters or opacities that might interfere with virtualization */
+.cm-editor .cm-line {
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* --- OBSIDIAN MARKER REVELATION --- */
 .cm-marker-hidden,
 .cm-marker {
   text-decoration: none !important;
   font-style: normal !important;
 }
 
+/* Hide in preview modes */
 .cm-reading-mode .cm-marker,
 .cm-live-preview-mode .cm-marker,
 .cm-reading-mode .cm-marker-hidden,
@@ -36,6 +59,7 @@
   display: none !important;
 }
 
+/* Reveal in source mode OR on active line in live-preview */
 .cm-source-mode .cm-marker,
 .cm-source-mode .cm-marker-hidden,
 .cm-live-preview-mode .cm-activeLine .cm-marker,
@@ -43,9 +67,10 @@
   display: inline !important;
   opacity: 0.6 !important;
   color: var(--color-accent-primary, #58a6ff) !important;
+  visibility: visible !important;
 }
 
-/* --- HEADINGS (Relativized to Selection Layer) --- */
+/* --- HEADINGS (Relativized) --- */
 .cm-line-h1 { font-size: 1.83em !important; font-weight: 700 !important; }
 .cm-line-h2 { font-size: 1.5em !important; font-weight: 600 !important; }
 .cm-line-h3 { font-size: 1.25em !important; font-weight: 600 !important; }
@@ -55,23 +80,22 @@
 
 .cm-line-h1, .cm-line-h2, .cm-line-h3, .cm-line-h4, .cm-line-h5, .cm-line-h6 {
   line-height: 1.4 !important;
-  color: var(--color-text-primary) !important;
-  padding-top: 0.6em !important;
-  padding-bottom: 0.3em !important;
+  padding-top: 0.8em !important;
+  padding-bottom: 0.4em !important;
 }
 
-/* --- ACTIVE LINE --- */
+/* --- SELECTION & INTERACTION --- */
+.cm-selectionBackground {
+  background-color: var(--cursor-selection-bg, rgba(88, 166, 255, 0.35)) !important;
+  opacity: 1 !important;
+}
+
 .cm-activeLine {
   background-color: rgba(255, 255, 255, 0.03) !important;
   border-left: 2px solid var(--caret-color, #ffffff) !important;
 }
 
-.cm-reading-mode .cm-activeLine {
-  background-color: transparent !important;
-  border-left-color: transparent !important;
-}
-
-/* --- CURSOR BLINKING --- */
+/* --- CURSOR --- */
 @keyframes cm-cursor-blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.2; }
@@ -81,7 +105,7 @@
   animation: cm-cursor-blink var(--cursor-blinking-speed, 500ms) steps(2, start) infinite !important;
 }
 
-/* --- BLOCKQUOTES & CODE --- */
+/* --- COMPONENT STYLING --- */
 .cm-blockquote-line {
   border-left: 4px solid var(--color-accent-primary, #58a6ff) !important;
   background-color: rgba(88, 166, 255, 0.05) !important;
@@ -89,6 +113,11 @@
   font-style: italic;
 }
 
-.cm-code-block {
-  background-color: rgba(125, 125, 125, 0.03) !important;
+/* ZEN MODE */
+body.zen-focus-active .cm-content > * {
+  opacity: 0.2 !important;
+}
+
+body.zen-focus-active .cm-content > .cm-zen-active {
+  opacity: 1 !important;
 }

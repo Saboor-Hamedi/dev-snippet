@@ -547,7 +547,7 @@ const CodeEditor = ({
         '--gutter-bg-color': gutterBgColor,
         '--gutter-border-color': gutterBorderColor,
         '--gutter-border-width': `${gutterBorderWidth}px`,
-        backgroundColor: 'var(--editor-bg)',
+        backgroundColor: 'transparent',
         ...style // Merge incoming styles
       }}
       ref={editorDomRef}
